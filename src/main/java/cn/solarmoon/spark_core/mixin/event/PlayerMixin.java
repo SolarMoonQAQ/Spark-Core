@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.mixin.event;
 
-import cn.solarmoon.spark_core.api.event.EntityGetWeaponEvent;
-import cn.solarmoon.spark_core.api.event.PlayerGetAttackStrengthEvent;
+import cn.solarmoon.spark_core.event.EntityGetWeaponEvent;
+import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;

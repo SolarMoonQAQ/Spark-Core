@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.mixin.compat.geckolib;
 
-import cn.solarmoon.spark_core.api.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.api.animation.vanilla.VanillaModelHelper;
+import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mod.azure.azurelib.common.api.common.animatable.GeoItem;

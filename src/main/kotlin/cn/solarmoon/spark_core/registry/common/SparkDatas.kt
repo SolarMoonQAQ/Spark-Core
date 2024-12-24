@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.registry.common
 
-import cn.solarmoon.spark_core.api.animation.anim.EntityAnimListener
-import cn.solarmoon.spark_core.api.animation.model.EntityModelListener
+import cn.solarmoon.spark_core.animation.anim.EntityAnimListener
+import cn.solarmoon.spark_core.animation.model.EntityModelListener
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.AddReloadListenerEvent
 

@@ -8,7 +8,7 @@
     "animation.LivingEntityMixin",
     "event.EntityMixin",
     "event.PlayerMixin",
-    "fighter.player.PlayerMixin",
+    "animation.PlayerMixin",
     "phys.LevelMixin"
   ],
   "client": [

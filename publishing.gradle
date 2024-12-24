@@ -1,3 +1,12 @@
+javadoc {
+    options.encoding("UTF-8")
+}
+
+java {
+    //withJavadocJar()
+    withSourcesJar()
+}
+
 java {
     withSourcesJar()
 }
@@ -10,7 +19,7 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("${core_maven_url}")
+            url = uri("https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core")
             credentials {
                 username = System.getenv("GITMAVEN_USERNAME")
                 password = System.getenv("GITMAVEN_TOKEN")
@@ -26,21 +35,32 @@ publishing {
             artifact sourcesJar
             pom {
                 name = mod_name
-                url = "https://github.com/SolarMoonQAQ/Spark-Core"
-                issueManagement {
-                    system = 'github'
-                    url = 'https://github.com/SolarMoonQAQ/Spark-Core/issues'
+                description = mod_description
+                url = "https://github.com/SolarMoonQAQ/${githubRepoName}"
+
+                scm {
+                    connection = "scm:git:git://github.com/SolarMoonQAQ/${githubRepoName}.git"
+                    developerConnection = "scm:git:ssh://github.com/SolarMoonQAQ/${githubRepoName}.git"
+                    url = "https://github.com/SolarMoonQAQ/${githubRepoName}"
                 }
+
                 licenses {
                     license {
                         name = 'GPL-3.0 licence'
                         url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
                     }
                 }
+
+                issueManagement {
+                    system = 'github'
+                    url = 'https://github.com/SolarMoonQAQ/Spark-Core/issues'
+                }
+
                 developers {
                     developer {
                         id = 'solarmoonqaq'
                         name = 'SolarMoon'
+                        email = '3213382746@qq.com'
                     }
                 }
             }

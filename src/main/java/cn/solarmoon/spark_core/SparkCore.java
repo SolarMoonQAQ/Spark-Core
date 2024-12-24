@@ -1,15 +1,10 @@
 package cn.solarmoon.spark_core;
 
-import cn.solarmoon.spark_core.registry.client.SparkEntityRendererRegister;
 import cn.solarmoon.spark_core.registry.common.SparkRegistries;
-import cn.solarmoon.spark_core.api.entry_builder.ObjectRegister;
-import cn.solarmoon.spark_core.api.phys.DxHelper;
+import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
+import cn.solarmoon.spark_core.phys.DxHelper;
 import cn.solarmoon.spark_core.registry.client.SparkClientEvents;
 import cn.solarmoon.spark_core.registry.common.*;
-import cn.solarmoon.spirit_of_fight.registry.client.SOFClientEvents;
-import cn.solarmoon.spirit_of_fight.registry.client.SOFGuis;
-import cn.solarmoon.spirit_of_fight.registry.client.SOFKeyMappings;
-import cn.solarmoon.spirit_of_fight.registry.common.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -29,9 +24,6 @@ public class SparkCore {
 
         if (FMLEnvironment.dist.isClient()) {
             SparkClientEvents.register();
-            SOFClientEvents.register();
-            SOFKeyMappings.register();
-            SparkEntityRendererRegister.register(modEventBus);
         }
 
         SparkRegistries.register();
@@ -42,14 +34,6 @@ public class SparkCore {
         SparkPayloads.register(modEventBus);
         SparkDatas.register();
         SparkAnimRegister.register();
-
-        SOFNetworks.register(modEventBus);
-        SOFGuis.register(modEventBus);
-        SOFCommonEvents.register();
-        SOFAttachments.register();
-        SOFVisualEffects.register();
-        SOFAnimRegister.register();
-        SparkSkills.register();
         SparkEntityTypes.register();
 
         DxHelper.initOde();

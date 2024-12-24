@@ -1,13 +1,13 @@
 package cn.solarmoon.spark_core.registry.common
 
-import cn.solarmoon.spark_core.api.animation.sync.AnimDataPayload
-import cn.solarmoon.spark_core.api.animation.sync.AnimFreezingPayload
-import cn.solarmoon.spark_core.api.animation.sync.ModelDataPayload
-import cn.solarmoon.spark_core.api.animation.sync.ModelDataSendingTask
-import cn.solarmoon.spark_core.api.animation.sync.SyncedAnimPayload
-import cn.solarmoon.spark_core.api.phys.obb.renderable.RenderableOBBPayload
-import cn.solarmoon.spark_core.api.visual_effect.common.camera_shake.CameraShakePayload
-import cn.solarmoon.spark_core.api.visual_effect.common.shadow.ShadowPayload
+import cn.solarmoon.spark_core.animation.sync.AnimDataPayload
+import cn.solarmoon.spark_core.animation.sync.AnimFreezingPayload
+import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
+import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
+import cn.solarmoon.spark_core.animation.sync.SyncedAnimPayload
+import cn.solarmoon.spark_core.visual_effect.common.geom.RenderableGeomPayload
+import cn.solarmoon.spark_core.visual_effect.common.camera_shake.CameraShakePayload
+import cn.solarmoon.spark_core.visual_effect.common.shadow.ShadowPayload
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
@@ -23,7 +23,7 @@ object SparkPayloads {
         anim.playToClient(SyncedAnimPayload.TYPE, SyncedAnimPayload.STREAM_CODEC, SyncedAnimPayload::handleInClient)
         anim.playToClient(AnimFreezingPayload.TYPE, AnimFreezingPayload.STREAM_CODEC, AnimFreezingPayload::handleInClient)
         val box = event.registrar("box")
-        box.playToClient(RenderableOBBPayload.TYPE, RenderableOBBPayload.STREAM_CODEC, RenderableOBBPayload::handleInClient)
+        box.playToClient(RenderableGeomPayload.TYPE, RenderableGeomPayload.STREAM_CODEC, RenderableGeomPayload::handleInClient)
         val visual = event.registrar("visual_effect")
         visual.playToClient(ShadowPayload.TYPE, ShadowPayload.STREAM_CODEC, ShadowPayload::handleInClient)
         visual.playToClient(CameraShakePayload.TYPE, CameraShakePayload.STREAM_CODEC, CameraShakePayload::handleInClient)

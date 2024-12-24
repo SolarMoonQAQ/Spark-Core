@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.api.entity.skill.test.Skill
+import cn.solarmoon.spark_core.entity.skill.Skill
 
 object SparkRegistries {
 

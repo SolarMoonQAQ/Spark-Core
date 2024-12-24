@@ -36,14 +36,23 @@ import java.util.Iterator;
 public class DContactBuffer implements Iterable<DContact> {
 	
 	private final ArrayList<DContact> buf = new ArrayList<DContact>();
+	private boolean shouldCreateJoint = false;
 
 	public DContactBuffer(int size) {
 		for (int i = 0; i < size; i++) {
 			buf.add(new DContact());
 		}
 	}
-	
-    public DContact get(int i) {
+
+	public void createJoint() {
+		shouldCreateJoint = true;
+	}
+
+	public boolean shouldCreateJoint() {
+		return shouldCreateJoint;
+	}
+
+	public DContact get(int i) {
         return buf.get(i);
     }
     

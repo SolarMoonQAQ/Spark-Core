@@ -1,12 +1,11 @@
 package cn.solarmoon.spark_core.registry.common
 
-import cn.solarmoon.spark_core.api.animation.anim.auto_anim.AutoAnimApplier
-import cn.solarmoon.spark_core.api.animation.anim.play.AnimTicker
-import cn.solarmoon.spark_core.api.entity.attack.AttackedDataController
-import cn.solarmoon.spark_core.api.entity.preinput.PreInputApplier
-import cn.solarmoon.spark_core.api.entity.skill.AnimSkillApplier
-import cn.solarmoon.spark_core.api.entity.state.EntityStateModifier
-import cn.solarmoon.spark_core.api.phys.thread.PhysThreadApplier
+import cn.solarmoon.spark_core.animation.anim.auto_anim.AutoAnimApplier
+import cn.solarmoon.spark_core.animation.anim.play.AnimTicker
+import cn.solarmoon.spark_core.entity.preinput.PreInputApplier
+import cn.solarmoon.spark_core.entity.state.EntityStateModifier
+import cn.solarmoon.spark_core.phys.attached_body.AttachedBodyApplier
+import cn.solarmoon.spark_core.phys.thread.PhysThreadApplier
 import net.neoforged.neoforge.common.NeoForge
 
 object SparkCommonEvents {
@@ -14,12 +13,11 @@ object SparkCommonEvents {
     @JvmStatic
     fun register() {
         add(AnimTicker())
-        add(AttackedDataController())
-        add(AnimSkillApplier())
         add(EntityStateModifier())
         add(PreInputApplier())
         add(AutoAnimApplier())
         add(PhysThreadApplier())
+        add(AttachedBodyApplier())
     }
 
     private fun add(event: Any) {

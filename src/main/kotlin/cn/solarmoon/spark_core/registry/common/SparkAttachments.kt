@@ -1,10 +1,10 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.api.animation.anim.play.AnimData
-import cn.solarmoon.spark_core.api.entity.attack.AttackedData
-import cn.solarmoon.spark_core.api.entity.preinput.PreInput
-import cn.solarmoon.spark_core.api.phys.attached_body.AttachedBody
+import cn.solarmoon.spark_core.animation.anim.play.AnimData
+import cn.solarmoon.spark_core.entity.attack.AttackedData
+import cn.solarmoon.spark_core.entity.preinput.PreInput
+import cn.solarmoon.spark_core.phys.attached_body.AttachedBody
 import java.util.Optional
 
 

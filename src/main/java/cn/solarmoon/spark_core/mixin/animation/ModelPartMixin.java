@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
-import cn.solarmoon.spark_core.api.animation.vanilla.ITransformModelPart;
+import cn.solarmoon.spark_core.animation.vanilla.ITransformModelPart;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelPart;
 import org.joml.Vector3f;

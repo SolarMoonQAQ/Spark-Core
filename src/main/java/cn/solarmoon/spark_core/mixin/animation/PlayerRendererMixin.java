@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
-import cn.solarmoon.spark_core.api.animation.model.CommonModel;
-import cn.solarmoon.spark_core.api.animation.vanilla.PlayerAnimHelper;
+import cn.solarmoon.spark_core.animation.model.CommonModel;
+import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;

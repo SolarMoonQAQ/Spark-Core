@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.mixin.compat.azurelib;
 
-import cn.solarmoon.spark_core.api.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.api.animation.vanilla.VanillaModelHelper;
+import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mod.azure.azurelib.common.api.client.renderer.GeoArmorRenderer;

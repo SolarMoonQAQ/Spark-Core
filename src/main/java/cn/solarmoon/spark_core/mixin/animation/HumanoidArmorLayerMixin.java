@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
-import cn.solarmoon.spark_core.api.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.api.animation.vanilla.VanillaModelHelper;
+import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;

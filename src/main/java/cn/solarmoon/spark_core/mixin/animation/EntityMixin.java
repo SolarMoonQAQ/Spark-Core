@@ -1,13 +1,13 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
-import cn.solarmoon.spark_core.api.animation.IAnimatable;
-import cn.solarmoon.spark_core.api.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.api.animation.anim.auto_anim.AutoAnim;
-import cn.solarmoon.spark_core.api.animation.anim.auto_anim.AutoAnimRegisterEvent;
-import cn.solarmoon.spark_core.api.animation.anim.play.AnimData;
-import cn.solarmoon.spark_core.api.entity.state.EntityStateHelper;
-import cn.solarmoon.spark_core.api.phys.SparkMathKt;
-import cn.solarmoon.spark_core.api.phys.thread.ThreadHelperKt;
+import cn.solarmoon.spark_core.animation.IAnimatable;
+import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.anim.auto_anim.AutoAnim;
+import cn.solarmoon.spark_core.animation.anim.auto_anim.AutoAnimRegisterEvent;
+import cn.solarmoon.spark_core.animation.anim.play.AnimData;
+import cn.solarmoon.spark_core.entity.state.EntityStateHelper;
+import cn.solarmoon.spark_core.phys.SparkMathKt;
+import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import cn.solarmoon.spark_core.registry.common.SparkAttachments;
 import com.llamalad7.mixinextras.sugar.Local;
 import kotlin.Lazy;

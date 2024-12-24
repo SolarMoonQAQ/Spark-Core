@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.mixin;
 
-import cn.solarmoon.spark_core.api.visual_effect.VisualEffectRenderer;
+import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;

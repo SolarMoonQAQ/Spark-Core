@@ -27,7 +27,7 @@ package org.ode4j.ode;
 import java.io.File;
 import java.util.List;
 
-import cn.solarmoon.spark_core.api.phys.PhysWorld;
+import cn.solarmoon.spark_core.phys.PhysWorld;
 import kotlin.Unit;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;

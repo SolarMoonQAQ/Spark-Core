@@ -1,9 +1,9 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
 import cn.solarmoon.spark_core.SparkCore;
-import cn.solarmoon.spark_core.api.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.api.animation.vanilla.VanillaModelHelper;
-import cn.solarmoon.spark_core.api.phys.thread.ClientPhysLevel;
+import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
+import cn.solarmoon.spark_core.phys.thread.ClientPhysLevel;
 import cn.solarmoon.spark_core.registry.common.SparkAttachments;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;

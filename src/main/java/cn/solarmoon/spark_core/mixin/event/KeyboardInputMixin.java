@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.mixin.event;
 
-import cn.solarmoon.spark_core.api.event.KeyboardInputTickEvent;
+import cn.solarmoon.spark_core.event.KeyboardInputTickEvent;
 import net.minecraft.client.Options;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.KeyboardInput;
