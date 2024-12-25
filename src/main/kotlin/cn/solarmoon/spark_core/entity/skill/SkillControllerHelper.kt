@@ -15,4 +15,4 @@ fun IAttachmentHolder.getSkillController() = getAllSkillControllers()
     .sortedByDescending { it.priority } // 按照优先级降序排序
     .firstOrNull() // 选择优先级最高的一个
 
-fun IAttachmentHolder.addSkillController(controller: SkillController) = getAllSkillControllers().add(controller)
+fun IAttachmentHolder.addSkillController(controller: SkillController<*>) = getAllSkillControllers().add(controller)

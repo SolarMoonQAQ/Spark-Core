@@ -41,7 +41,7 @@ object SparkAttachments {
         .build()
 
     @JvmStatic
-    val SKILL_CONTROLLER = SparkCore.REGISTER.attachment<MutableList<SkillController>>()
+    val SKILL_CONTROLLER = SparkCore.REGISTER.attachment<MutableList<SkillController<*>>>()
         .id("skill_controller")
         .defaultValue { mutableListOf() }
         .build()

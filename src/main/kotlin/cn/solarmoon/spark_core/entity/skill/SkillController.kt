@@ -12,14 +12,29 @@ import kotlin.properties.Delegates
  * 需要注意的是，技能控制器最好同一时间只存在一个可用的，否则最好将大部分可能重复可用的控制器合并到一个控制器中，这是为了保证每次调用时只有一个控制器能被调用，从而简化控制器的管理。
  *
  * 当无法避免重复时，可以配合[priority]参数进行权重管理，当多个控制器满足时会优先选择权重值更大的。
+ * @param T 该控制器的持有者类型
  */
-abstract class SkillController {
+abstract class SkillController<T> {
+
+    abstract val holder: T
+
+    /**
+     * 所有控制器可用的技能
+     *
+     * *注意：必须将所有技能添加到此列表中，否则一些方法可能不会返回期望的结果*
+     */
+    val allSkills = hashSetOf<Skill<T>>()
 
     private var loadMoment by Delegates.observable(false) { _, old, new ->
         if (old != new) {
             if (new) onLoadedMoment() else onDisabledMoment()
         }
     }
+
+    /**
+     * 是否正在播放任意技能（请为技能实现[Skill.isPlaying]）
+     */
+    fun isPlaying(): Boolean = allSkills.any { it.isPlaying(holder) }
 
     /**
      * 技能控制器的优先级，当多个控制器满足时会优先选择权重值更大的。

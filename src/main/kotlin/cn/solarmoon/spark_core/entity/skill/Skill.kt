@@ -21,6 +21,11 @@ interface Skill<T> {
 
     fun tick(ob: T)
 
+    /**
+     * 是否正在释放技能，此值需要手动指定状态，不会影响技能本身的释放，但会影响控制器等别的地方对技能是否正在进行的判断
+     */
+    fun isPlaying(ob: T): Boolean
+
     val registryKey get() = SparkRegistries.SKILL.getKey(this) ?: throw NullPointerException("Skill ${this.javaClass::getSimpleName} not yet registered.")
 
     val resourceKey get() = SparkRegistries.SKILL.getResourceKey(this).get()
