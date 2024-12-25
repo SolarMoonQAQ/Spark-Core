@@ -27,6 +27,10 @@ class PreInput(
     private var maxRemainTime = DEFAULT_REMAIN_TIME
     private var remain = 0
 
+    /**
+     * 是否拥有指定标识符的预输入指令
+     * @param id 默认为空，也就是只要指令存在，无论id为什么，都会返回true
+     */
     fun hasInput(id: String = ""): Boolean {
         return if (id.isEmpty()) hasInput
         else hasInput && this.id == id
@@ -53,6 +57,7 @@ class PreInput(
 
     /**
      * 只在指定预输入存在的情况下调用预输入指令并清空
+     * @param id 预输入的标识符，默认为空，也就是只要存在预输入就会执行指令
      */
     fun executeIfPresent(id: String = "", action: () -> Unit = {}): Boolean {
         return if (hasInput(id)) {
