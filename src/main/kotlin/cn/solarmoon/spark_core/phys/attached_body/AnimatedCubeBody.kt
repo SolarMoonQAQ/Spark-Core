@@ -17,6 +17,7 @@ import java.util.UUID
 /**
  * ### 贴合动画块Body
  * > 会基于该动画体名为[name]的骨骼所包含的每个块来生成几何体并随时贴合。
+ *
  * 注意：
  * - 此方法并不像[EntityBoundingBoxBody]一样自动给予，为了性能考虑请手动给予指定的可碰撞骨骼（因为一些复杂模型动辄上百上千个骨骼），并请尽量保证body数量上的优化，比如可在BlockBench中创建多个不可见的骨骼以涵盖主要的可碰撞部位
  * - 由于[EntityBoundingBoxBody]会在生物加入世界时自动给予，如果想要抛弃原有的可碰撞内容，请读取[cn.solarmoon.spark_core.registry.common.SparkAttachments.BODY]并手动删除

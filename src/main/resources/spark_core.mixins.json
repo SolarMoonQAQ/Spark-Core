@@ -6,9 +6,9 @@
   "mixins": [
     "animation.EntityMixin",
     "animation.LivingEntityMixin",
+    "animation.PlayerMixin",
     "event.EntityMixin",
     "event.PlayerMixin",
-    "animation.PlayerMixin",
     "phys.LevelMixin"
   ],
   "client": [

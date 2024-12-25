@@ -22,7 +22,7 @@ import org.ode4j.ode.DGeom
  * - 只会在碰撞到几何体时对几何体的所有者发动攻击
  * - 攻击到目标后会给予目标一个[cn.solarmoon.spark_core.entity.attack.AttackedData]，主要储存了攻击到的body名称以及此次攻击到时所用的box
  * - 默认情况下，如果不对动画生物指定可碰撞的[AnimatedCubeBody]，那么可击打的部分和实体原生碰撞箱一致，可见[EntityBoundingBoxBody]
- * - 默认情况下，攻击根据当前所有者类型调用[Player.attack]或[net.minecraft.world.entity.LivingEntity.doHurtTarget]，不使用默认的话覆写[onCollide]即可
+ * - 默认情况下，攻击根据当前所有者类型调用[Player.attack]或[net.minecraft.world.entity.LivingEntity.doHurtTarget]，不使用默认的话覆写[attack]即可
  * - 攻击将默认无视无敌时间，但可以通过[attackedEntities]来控制
  * - 默认禁用碰撞检测，在合适的节点使用[enableAttack]来启用
  * @param bodyName 该碰撞体的名称，最好不要和骨骼名重复以免冲突
@@ -56,6 +56,7 @@ open class EntityAnimatedAttackBody(
 
     init {
         body.name = bodyName
+        geom.isPassFromCollide = true
         body.disable()
     }
 
