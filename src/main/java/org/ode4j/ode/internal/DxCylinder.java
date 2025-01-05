@@ -27,6 +27,7 @@ package org.ode4j.ode.internal;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.DCylinder;
+import org.ode4j.ode.OdeHelper;
 
 import static org.ode4j.ode.OdeMath.*;
 
@@ -120,6 +121,14 @@ public class DxCylinder extends DxGeom implements DCylinder {
 	@Override
 	public double getLength() {
 		return _lz;
+	}
+
+	@Override
+	public DCylinder baseCopy(DCylinder c) {
+		var cylinder = OdeHelper.createCylinder(c.getRadius(),c.getLength());
+		cylinder.setPosition(c.getPosition().copy());
+		cylinder.setRotation(c.getRotation().copy());
+		return cylinder;
 	}
 
 	@Override
