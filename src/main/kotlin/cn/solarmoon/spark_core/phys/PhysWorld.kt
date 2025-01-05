@@ -31,10 +31,9 @@ class PhysWorld(val stepSize: Long) {
     fun physTick() {
         while (lateConsumer.isNotEmpty()) lateConsumer.removeLast().invoke()
         world.bodyIteration.forEach { it.tick() }
-
-        world.quickStep(1000.0 / stepSize)
-        space.collide(Any(), ::nearCallback)
         contactGroup.empty()
+        world.quickStep(stepSize / 1000.0)
+        space.collide(Any(), ::nearCallback)
     }
 
     fun nearCallback(data: Any, o1: DGeom, o2: DGeom) {
