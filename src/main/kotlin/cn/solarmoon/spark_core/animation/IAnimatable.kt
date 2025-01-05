@@ -14,7 +14,7 @@ import org.joml.Vector3f
 import org.ode4j.ode.DBody
 import org.ode4j.ode.OdeHelper
 
-interface IAnimatable<T: IAttachmentHolder> {
+interface IAnimatable<T> {
 
     /**
      * 一般而言输入this即可，用于调用该生物的位置信息等
@@ -48,12 +48,23 @@ interface IAnimatable<T: IAttachmentHolder> {
     /**
      * 获取该生物指定骨骼在世界坐标系中的枢轴点
      */
-    fun getBonePivot(name: String, partialTick: Float = 1f): Vector3f
+    fun getBonePivot(name: String, partialTick: Float = 1f): Vector3f {
+        val ma = getPositionMatrix(partialTick)
+        val bone = animData.model.getBone(name)
+        bone.applyTransformWithParents(animData.playData, ma, getExtraTransform(partialTick), partialTick)
+        val pivot = bone.pivot.toVector3f()
+        return ma.transformPosition(pivot)
+    }
 
     /**
      * 获取指定骨骼的变换
      */
-    fun getBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f
+    fun getBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f {
+        val ma = getPositionMatrix(partialTick)
+        val bone = animData.model.getBone(name)
+        bone.applyTransformWithParents(animData.playData, ma, getExtraTransform(partialTick), partialTick)
+        return ma
+    }
 
     /**
      * 同步当前动画播放和定位的所有必要数据到客户端

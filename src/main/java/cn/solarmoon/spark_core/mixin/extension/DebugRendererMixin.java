@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.mixin;
+package cn.solarmoon.spark_core.mixin.extension;
 
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;

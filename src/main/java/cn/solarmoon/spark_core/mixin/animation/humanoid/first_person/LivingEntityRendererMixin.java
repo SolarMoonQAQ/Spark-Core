@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.mixin.animation.humanoid.first_person;
 
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelper;
+import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -29,7 +30,7 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
             at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;layers:Ljava/util/List;", opcode = Opcodes.GETFIELD)
     )
     private List<RenderLayer<T, M>> preventRenderArmorLayerInFirstPersonAnim(LivingEntityRenderer instance, LivingEntity entity, float f, float g, PoseStack poseStack, MultiBufferSource multiBufferSource, int i) {
-        if (entity instanceof AbstractClientPlayer player && PlayerAnimHelper.shouldRenderArmAnimInFirstPerson(player)) {
+        if (entity instanceof AbstractClientPlayer player && PlayerAnimHelperKt.shouldRenderArmAnimInFirstPerson(player)) {
             return layers.stream().filter(layer -> layer instanceof PlayerItemInHandLayer<?,?>).toList();
         } else return layers;
     }

@@ -28,13 +28,6 @@ import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
 
 object DxHelper {
 
-    @JvmStatic
-    fun initOde() {
-        CoroutineScope(Dispatchers.Default).launch {
-            OdeHelper.initODE()
-        }
-    }
-
 }
 
 inline fun <reified T> DBody.getOwner(): T? {

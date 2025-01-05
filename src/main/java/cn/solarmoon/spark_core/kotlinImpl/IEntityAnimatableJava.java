@@ -13,10 +13,10 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-// 可恶我竟然不知道怎么把kotlin接口用到java mixin里
 public interface IEntityAnimatableJava<T extends Entity> extends IEntityAnimatable<T> {
 
     @Override
@@ -32,11 +32,6 @@ public interface IEntityAnimatableJava<T extends Entity> extends IEntityAnimatab
     @Override
     default void setAnimData(AnimData value) {
         getAnimatable().setData(SparkAttachments.getANIM_DATA(), value);
-    }
-
-    @Override
-    default @NotNull List<@NotNull String> getTurnBodyAnims() {
-        return List.of();
     }
 
     @Override

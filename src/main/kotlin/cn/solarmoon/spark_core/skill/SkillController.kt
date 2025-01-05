@@ -1,5 +1,6 @@
-package cn.solarmoon.spark_core.entity.skill
+package cn.solarmoon.spark_core.skill
 
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import kotlin.properties.Delegates
 
 /**
@@ -23,18 +24,13 @@ abstract class SkillController<T> {
      *
      * *注意：必须将所有技能添加到此列表中，否则一些方法可能不会返回期望的结果*
      */
-    val allSkills = hashSetOf<Skill<T>>()
+    val allSkills = mutableListOf<Skill<*>>()
 
     private var loadMoment by Delegates.observable(false) { _, old, new ->
         if (old != new) {
             if (new) onLoadedMoment() else onDisabledMoment()
         }
     }
-
-    /**
-     * 是否正在播放任意技能（请为技能实现[Skill.isPlaying]）
-     */
-    fun isPlaying(): Boolean = allSkills.any { it.isPlaying(holder) }
 
     /**
      * 技能控制器的优先级，当多个控制器满足时会优先选择权重值更大的。
@@ -52,10 +48,18 @@ abstract class SkillController<T> {
     abstract fun tick()
 
     /**
+     * 是否正在播放任意技能
+     */
+    fun isPlaying(): Boolean = allSkills.any { it.isActive() }
+
+    fun addSkill(skill: Skill<*>) { allSkills.add(skill) }
+
+    /**
      * 只要技能控制器存在，就会不断执行
      */
     open fun baseTick() {
         loadMoment = isAvailable()
+        allSkills.forEach { it.update() }
     }
 
     /**
@@ -67,5 +71,10 @@ abstract class SkillController<T> {
      * 当此技能控制器失效的一瞬间调用此方法
      */
     open fun onDisabledMoment() {}
+
+    /**
+     * 当技能控制器有效并将要受到伤害时触发
+     */
+    open fun onHurt(event: LivingIncomingDamageEvent) {}
 
 }

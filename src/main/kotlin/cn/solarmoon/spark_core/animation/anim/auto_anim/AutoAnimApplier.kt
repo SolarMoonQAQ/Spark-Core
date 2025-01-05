@@ -6,7 +6,7 @@ import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
-class AutoAnimApplier {
+object AutoAnimApplier {
 
     @SubscribeEvent
     private fun entityTick(event: EntityTickEvent.Pre) {

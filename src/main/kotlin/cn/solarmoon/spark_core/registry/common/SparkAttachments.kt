@@ -3,11 +3,8 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.AnimData
 import cn.solarmoon.spark_core.entity.attack.AttackedData
-import cn.solarmoon.spark_core.entity.preinput.PreInput
-import cn.solarmoon.spark_core.entity.skill.Skill
-import cn.solarmoon.spark_core.entity.skill.SkillController
+import cn.solarmoon.spark_core.skill.SkillController
 import cn.solarmoon.spark_core.phys.attached_body.AttachedBody
-import net.minecraft.world.entity.Entity
 import java.util.Optional
 
 
@@ -26,12 +23,6 @@ object SparkAttachments {
     val ATTACKED_DATA = SparkCore.REGISTER.attachment<Optional<AttackedData>>()
         .id("attacked_data")
         .defaultValue { Optional.empty() }
-        .build()
-
-    @JvmStatic
-    val PREINPUT = SparkCore.REGISTER.attachment<PreInput>()
-        .id("preinput")
-        .defaultValue { PreInput(it) }
         .build()
 
     @JvmStatic

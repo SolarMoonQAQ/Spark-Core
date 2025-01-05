@@ -23,6 +23,10 @@ fun Float.toRadians(): Float {
     return Math.toRadians(this.toDouble()).toFloat()
 }
 
+fun Double.toRadians(): Double {
+    return Math.toRadians(this)
+}
+
 fun Float.toDegrees(): Float {
     return Math.toDegrees(this.toDouble()).toFloat()
 }
@@ -59,3 +63,7 @@ fun Matrix3d.toDMatrix3() = DMatrix3(m00, m01, m02, m10, m11, m12, m20, m21, m22
 fun DVector3C.toVector3d() = Vector3d(get0(), get1(), get2())
 
 fun DVector3C.toVec3() = Vec3(get0(), get1(), get2())
+
+fun Vector3d.toRotationMatrix() = Matrix3d().rotateXYZ(x, y, z)
+
+fun Vec3.toRotationMatrix() = Matrix3d().rotateXYZ(x, y, z)

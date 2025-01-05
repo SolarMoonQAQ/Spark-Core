@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.mixin.animation;
 
 import cn.solarmoon.spark_core.animation.model.CommonModel;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelper;
+import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -28,7 +29,7 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
 
     @Inject(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
     private void render(AbstractClientPlayer entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        var animatable = PlayerAnimHelper.getAnimatable(entity);
+        var animatable = PlayerAnimHelperKt.asAnimatable(entity);
         var animData = animatable.getAnimData();
         var path = animData.getModelPath();
         if (!path.equals(ResourceLocation.withDefaultNamespace("player"))) {

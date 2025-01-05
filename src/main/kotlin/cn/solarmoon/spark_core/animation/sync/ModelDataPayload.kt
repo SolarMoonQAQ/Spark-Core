@@ -11,8 +11,8 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 data class ModelDataPayload(
-    val models: MutableMap<ResourceLocation, CommonModel>,
-    val animationSets: MutableMap<ResourceLocation, AnimationSet>
+    val models: LinkedHashMap<ResourceLocation, CommonModel>,
+    val animationSets: LinkedHashMap<ResourceLocation, AnimationSet>
 ): CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {

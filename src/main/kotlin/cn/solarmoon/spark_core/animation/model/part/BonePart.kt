@@ -5,22 +5,26 @@ import cn.solarmoon.spark_core.animation.model.CommonModel
 import cn.solarmoon.spark_core.data.SerializeHelper
 import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
+import com.mojang.serialization.DataResult
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.phys.Vec3
 import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
+import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 import java.util.Optional
+import kotlin.collections.LinkedHashMap
 
 data class BonePart(
     val name: String,
     val parentName: String?, // parent相当于在顶部的变换，给到所有子类
     val pivot: Vec3,
     val rotation: Vec3,
-    val cubes: ArrayList<CubePart>
+    val locators: LinkedHashMap<String, Locator>,
+    val cubes: List<CubePart>
 ) {
 
     /**
@@ -50,7 +54,7 @@ data class BonePart(
         ma.translate(playData.getMixedBoneAnimPosition(name, partialTick))
         ma.rotateZYX(rotation.toVector3f().add(playData.getMixedBoneAnimRotation(name, partialTick)))
         ma.scale(playData.getMixedBoneAnimScale(name, partialTick))
-        extraMatrix.forEach { eName, eMa -> if (name == eName) ma.mul(eMa) }
+        extraMatrix[name]?.let { ma.mul(it) }
         ma.translate(pivot.toVector3f().mul(-1f))
         return ma
     }
@@ -98,12 +102,6 @@ data class BonePart(
         }
     }
 
-    fun copy(): BonePart {
-        val copiedBones = ArrayList<CubePart>()
-        cubes.forEach { copiedBones.add(it.copy()) }
-        return BonePart(name, parentName, pivot, rotation, cubes)
-    }
-
     companion object {
         @JvmStatic
         val CODEC: Codec<BonePart> = RecordCodecBuilder.create {
@@ -112,14 +110,18 @@ data class BonePart(
                 Codec.STRING.optionalFieldOf("parent").forGetter { Optional.ofNullable(it.parentName) },
                 Vec3.CODEC.optionalFieldOf("pivot", Vec3.ZERO).forGetter { it.pivot },
                 Vec3.CODEC.optionalFieldOf("rotation", Vec3.ZERO).forGetter { it.rotation },
+                Locator.MAP_CODEC.optionalFieldOf("locators", linkedMapOf()).forGetter { it.locators },
                 CubePart.LIST_CODEC.optionalFieldOf("cubes", arrayListOf()).forGetter { it.cubes },
-            ).apply(it) { name, parent, pivot, rotation, cubes ->
-                BonePart(name, parent.orElse(null), pivot, rotation, ArrayList(cubes))
+            ).apply(it) { name, parent, pivot, rotation, locators, cubes ->
+                BonePart(name, parent.orElse(null), pivot, rotation, LinkedHashMap(locators), ArrayList(cubes))
             }
         }
 
         @JvmStatic
-        val LIST_CODEC = CODEC.listOf()
+        val MAP_CODEC = CODEC.listOf().xmap(
+            { LinkedHashMap(it.associateBy { it.name }) },
+            { it.values.toList() }
+        )
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
@@ -127,12 +129,17 @@ data class BonePart(
             ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8), { Optional.ofNullable(it.parentName) },
             SerializeHelper.VEC3_STREAM_CODEC, BonePart::pivot,
             SerializeHelper.VEC3_STREAM_CODEC, BonePart::rotation,
+            Locator.MAP_STREAM_CODEC, BonePart::locators,
             CubePart.LIST_STREAM_CODEC, BonePart::cubes,
-            { a, b, c, d, e -> BonePart(a, b.orElse(null), c, d, e)}
+            { a, b, c, d, l, e -> BonePart(a, b.orElse(null), c, d, l , e)}
         )
 
         @JvmStatic
-        val LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.collection { arrayListOf() })
+        val MAP_STREAM_CODEC = ByteBufCodecs.map(
+            ::LinkedHashMap,
+            ByteBufCodecs.STRING_UTF8,
+            STREAM_CODEC
+        )
     }
 
 }

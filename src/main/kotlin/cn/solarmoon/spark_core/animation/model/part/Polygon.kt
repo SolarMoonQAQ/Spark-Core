@@ -110,8 +110,8 @@ data class Polygon(
                     direction,
                     true
                 )
-            } else {
-                val uv = uvUnion.faceUV!![direction]!!.uv
+            } else if (uvUnion.faceUV != null && uvUnion.faceUV[direction] != null) {
+                val uv = uvUnion.faceUV[direction]!!.uv
                 val size = uvUnion.faceUV[direction]!!.uvSize
                 return Polygon(
                     vertexSet.verticesForQuad(direction, false, cube.mirror),
@@ -119,6 +119,16 @@ data class Polygon(
                     size.x, size.y,
                     cube.textureWidth.toFloat(),
                     cube.textureHeight.toFloat(),
+                    cube.mirror,
+                    direction,
+                    false
+                )
+            } else {
+                return Polygon(
+                    vertexSet.verticesForQuad(direction, false, cube.mirror),
+                    0f, 0f,
+                    0f, 0f,
+                    0f, 0f,
                     cube.mirror,
                     direction,
                     false

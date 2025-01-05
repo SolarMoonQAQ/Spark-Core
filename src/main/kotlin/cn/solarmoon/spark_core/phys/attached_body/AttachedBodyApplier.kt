@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
 import org.ode4j.math.DVector3
 
-class AttachedBodyApplier {
+object AttachedBodyApplier {
 
     @SubscribeEvent
     private fun join(event: EntityJoinLevelEvent) {

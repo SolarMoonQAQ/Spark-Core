@@ -9,6 +9,8 @@ import net.minecraft.network.syncher.EntityDataSerializers
 import net.minecraft.network.syncher.SynchedEntityData
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.phys.Vec3
 import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
@@ -159,7 +161,6 @@ fun Entity.smoothLookAt(target: Vec3, partialTicks: Float = 1f) {
 /**
  * 根据玩家客户端输入和玩家自身朝向输出玩家的移动速度向量
  */
-@OnlyIn(Dist.CLIENT)
 fun LocalPlayer.getInputVector(): Vec3 {
     val v = input.moveVector.normalized()
     val f2 = v.x
@@ -167,4 +168,23 @@ fun LocalPlayer.getInputVector(): Vec3 {
     val f4 = sin(yRot * (PI / 180.0))
     val f5 = cos(yRot * (PI / 180.0))
     return Vec3((f2 * f5 - f3 * f4), deltaMovement.y, (f3 * f5 + f2 * f4))
+}
+
+/**
+ * 获取以生物水平朝向为内容的移动值
+ * @param mul 对水平速度进行乘积以调整大小
+ */
+fun Entity.getForwardMoveVector(mul: Float): Vec3 {
+    return Vec3(forward.x * mul, deltaMovement.y, forward.z * mul)
+}
+
+/**
+ * 根据该生物的攻速以及输入的基础攻速进行差值，以此获取一个基于攻速的动画速度
+ */
+fun Entity.getAttackAnimSpeed(baseSpeedValue: Float): Float {
+    val entity = this
+    if (entity is LivingEntity) {
+        val sp = entity.getAttribute(Attributes.ATTACK_SPEED) ?: return 1f
+        return ((sp.value.toFloat() - baseSpeedValue) / 2 + 1f).coerceAtLeast(0.05f)
+    } else return 1f
 }

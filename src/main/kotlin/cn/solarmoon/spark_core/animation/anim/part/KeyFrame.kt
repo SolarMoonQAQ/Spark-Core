@@ -1,48 +1,69 @@
 package cn.solarmoon.spark_core.animation.anim.part
 
-import cn.solarmoon.spark_core.data.SerializeHelper.VECTOR3F_STREAM_CODEC
-import cn.solarmoon.spark_core.phys.copy
+import cn.solarmoon.spark_core.data.SerializeHelper
+import com.mojang.datafixers.util.Either
 import com.mojang.serialization.Codec
+import com.mojang.serialization.DataResult
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
-import net.minecraft.util.ExtraCodecs
-import org.joml.Vector3f
+import net.minecraft.world.phys.Vec3
+import org.joml.Vector3d
+import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
+import java.util.Optional
+import kotlin.jvm.optionals.getOrNull
 
 data class KeyFrame(
-    val timestamp: Float,
-    val targetPre: Vector3f,
-    val targetPost: Vector3f,
+    var pre: Vec3,
+    var post: Vec3,
     val interpolation: InterpolationType
 ) {
 
-    fun copy() = KeyFrame(timestamp, targetPre.copy(), targetPost.copy(), interpolation)
-
     companion object {
         @JvmStatic
-        val CODEC: Codec<KeyFrame> = RecordCodecBuilder.create {
-            it.group(
-                Codec.FLOAT.fieldOf("timestamp").forGetter { it.timestamp },
-                ExtraCodecs.VECTOR3F.fieldOf("value").forGetter { it.targetPre },
-                ExtraCodecs.VECTOR3F.fieldOf("value").forGetter { it.targetPost },
-                InterpolationType.CODEC.fieldOf("transition_type").forGetter { it.interpolation }
-            ).apply(it, ::KeyFrame)
-        }
+        val CODEC: Codec<KeyFrame> = Codec.either(
+            Vec3.CODEC,
+            RecordCodecBuilder.create<KeyFrame> {
+                it.group(
+                    Vec3.CODEC.optionalFieldOf("pre").forGetter { Optional.ofNullable(it.pre) },
+                    Vec3.CODEC.fieldOf("post").forGetter { it.post },
+                    InterpolationType.CODEC.optionalFieldOf("lerp_mode", InterpolationType.LINEAR).forGetter { it.interpolation }
+                ).apply(it) { preOp, post, type ->
+                    val pre = preOp.getOrNull() ?: post
+                    KeyFrame(pre, post, type)
+                }
+            }
+        ).xmap(
+            { it.map({ KeyFrame(it, it, InterpolationType.LINEAR) }, { it }) },
+            { if (it.pre == it.post && it.interpolation == InterpolationType.LINEAR) Either.left(it.post) else Either.right(it) }
+        )
+
+        @JvmStatic
+        val MAP_CODEC = Codec.either(
+            Codec.unboundedMap(Codec.STRING, CODEC).xmap({ LinkedHashMap(it.mapKeys { it.key.toDouble() }) }, { it.mapKeys { it.key.toString() } }),
+            Codec.either(
+                Vec3.CODEC.flatComapMap({ linkedMapOf(Pair(0.0, KeyFrame(it, it, InterpolationType.LINEAR))) }, { if (it.size == 1 && it.firstEntry().key == 0.0) DataResult.success(it.values.first().pre) else DataResult.error { "" } }),
+                Codec.DOUBLE.flatComapMap({ linkedMapOf(Pair(0.0, KeyFrame(Vector3d(it).toVec3(), Vector3d(it).toVec3(), InterpolationType.LINEAR)))}, { if (it.size == 1 && it.firstEntry().key == 0.0) DataResult.success(it.values.first().pre.x) else DataResult.error { "" } })
+            ).xmap({ it.map({ it }, { it }) }, { Either.left(it) })
+        ).xmap(
+            { it.map( { it }, { it }) },
+            { Either.right(it) }
+        )
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.FLOAT, KeyFrame::timestamp,
-            VECTOR3F_STREAM_CODEC, KeyFrame::targetPre,
-            VECTOR3F_STREAM_CODEC, KeyFrame::targetPost,
+            SerializeHelper.VEC3_STREAM_CODEC, KeyFrame::pre,
+            SerializeHelper.VEC3_STREAM_CODEC, KeyFrame::post,
             InterpolationType.STREAM_CODEC, KeyFrame::interpolation,
             ::KeyFrame
         )
 
         @JvmStatic
-        val LIST_CODEC = CODEC.listOf()
-
-        @JvmStatic
-        val LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.collection { arrayListOf() })
+        val MAP_STREAM_CODEC = ByteBufCodecs.map(
+            ::LinkedHashMap,
+            ByteBufCodecs.DOUBLE,
+            STREAM_CODEC
+        )
     }
 
 }

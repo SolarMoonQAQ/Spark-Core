@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.level.LevelEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 import net.neoforged.neoforge.event.tick.LevelTickEvent
 
-class PhysThreadApplier {
+object PhysThreadApplier {
 
 //    @SubscribeEvent
 //    private fun onLevelLoad(event: LevelEvent.Load) {

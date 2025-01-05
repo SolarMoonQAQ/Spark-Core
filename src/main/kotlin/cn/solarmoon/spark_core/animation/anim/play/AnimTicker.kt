@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
-class AnimTicker {
+object AnimTicker {
 
     @SubscribeEvent
     private fun entityTick(event: EntityTickEvent.Pre) {

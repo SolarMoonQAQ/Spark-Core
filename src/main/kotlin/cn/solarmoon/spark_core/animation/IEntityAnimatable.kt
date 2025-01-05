@@ -22,30 +22,8 @@ interface IEntityAnimatable<T: Entity>: IAnimatable<T> {
         get() = animatable.getData(SparkAttachments.ANIM_DATA)
         set(value) { animatable.setData(SparkAttachments.ANIM_DATA, value) }
 
-    override val level get() = animatable.level()
-
-    /**
-     * 在此组中的动画播放时，会强制让生物的yRot逐渐旋转到目视方向
-     */
-    val turnBodyAnims: List<String> get() = listOf()
-
     override fun getPositionMatrix(partialTick: Float): Matrix4f {
         return Matrix4f().translate(animatable.getPosition(partialTick).toVector3f()).rotateY(PI.toFloat() - animatable.getPreciseBodyRotation(partialTick).toRadians())
-    }
-
-    override fun getBonePivot(name: String, partialTick: Float): Vector3f {
-        val ma = getPositionMatrix(partialTick)
-        val bone = animData.model.getBone(name)
-        bone.applyTransformWithParents(animData.playData, ma, getExtraTransform(partialTick), partialTick)
-        val pivot = bone.pivot.toVector3f()
-        return ma.transformPosition(pivot)
-    }
-
-    override fun getBoneMatrix(name: String, partialTick: Float): Matrix4f {
-        val ma = getPositionMatrix(partialTick)
-        val bone = animData.model.getBone(name)
-        bone.applyTransformWithParents(animData.playData, ma, getExtraTransform(partialTick), partialTick)
-        return ma
     }
 
     /**
@@ -57,16 +35,6 @@ interface IEntityAnimatable<T: Entity>: IAnimatable<T> {
         return mapOf(
             "head" to Matrix4f().rotateZYX(0f, yaw, pitch)
         )
-    }
-
-    override fun syncAnimDataToClient(playerExcept: ServerPlayer?) {
-        if (!animatable.level().isClientSide) {
-            val data = AnimDataPayload(0, animData.copy())
-            playerExcept?.let { PacketDistributor.sendToPlayersNear(it.serverLevel(), it, it.x, it.y, it.z, 512.0, data) }
-                ?: run {
-                    PacketDistributor.sendToAllPlayers(data)
-                }
-        }
     }
 
 }

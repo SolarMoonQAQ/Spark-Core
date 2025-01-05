@@ -2,17 +2,20 @@ package cn.solarmoon.spark_core.entity.preinput
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.OnPreInputExecuteEvent
+import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.attachment.IAttachmentHolder
 import net.neoforged.neoforge.common.NeoForge
 
 /**
- * #### 通过Attachment装载的预输入，使用[getPreInput]来获取并修改
+ * ### 预输入
+ * > 装载在[net.minecraft.world.entity.Entity]中的预输入，使用[getPreInput]来获取并修改
  * - 预输入通过id进行标识，每次设置预输入都会覆盖上一个预输入内容
  * - 预输入在生物tick中进行计时，默认存在半秒后会自动清除留存的指令
  * - 预输入不会在游戏中保存，游戏重启后会丢失
+ * - 预输入可在双端进行操作，但如果考虑到操作的即时反馈，建议只在客户端进行
  */
 class PreInput(
-    val holder: IAttachmentHolder
+    val holder: Entity
 ) {
 
     companion object {

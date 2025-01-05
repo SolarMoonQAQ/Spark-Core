@@ -1,11 +1,11 @@
 package cn.solarmoon.spark_core.entry_builder
 
-import cn.solarmoon.spark_core.entity.skill.Skill
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.entry_builder.client.KeyMappingBuilder
 import cn.solarmoon.spark_core.entry_builder.client.LayerBuilder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.entry_builder.common.fluid.FluidBuilder
+import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.util.RegisterUtil
 import net.minecraft.core.RegistrySetBuilder
 import net.minecraft.core.particles.ParticleType
@@ -45,7 +45,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val soundDeferredRegister = DeferredRegister.create(Registries.SOUND_EVENT, modId)
     val dataComponentDeferredRegister = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, modId)
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
-    val skillDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SKILL, modId) }
+    val skillTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SKILL_TYPE, modId) }
 
     fun register(bus: IEventBus) {
         modBus = bus
@@ -112,11 +112,11 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     fun layer() = LayerBuilder(modId, modBus!!)
     fun keyMapping() = KeyMappingBuilder(modId, modBus!!)
 
-    fun <S: Skill<*>> skill(): SkillBuilder<S> {
-        if (!skillDeferredRegister.isInitialized()) {
-            skillDeferredRegister.value.register(modBus!!)
+    fun <T, S: Skill<T>> skillType(): SkillTypeBuilder<T, S> {
+        if (!skillTypeDeferredRegister.isInitialized()) {
+            skillTypeDeferredRegister.value.register(modBus!!)
         }
-        return SkillBuilder<S>(skillDeferredRegister.value)
+        return SkillTypeBuilder(modId, skillTypeDeferredRegister.value)
     }
 
 }

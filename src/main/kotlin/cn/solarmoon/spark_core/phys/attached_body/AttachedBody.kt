@@ -8,4 +8,12 @@ interface AttachedBody {
 
     val body: DBody
 
+    fun enable() {
+        body.enable()
+    }
+
+    fun disable() {
+        body.disable()
+    }
+
 }

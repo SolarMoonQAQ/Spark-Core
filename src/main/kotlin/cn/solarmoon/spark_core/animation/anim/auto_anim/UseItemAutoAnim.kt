@@ -15,7 +15,7 @@ open class UseItemAutoAnim(
     override val shouldTurnBody: Boolean = true
 
     override fun getAllAnimNames(): Set<String> {
-        return animatable.animData.animationSet.animations.map { it.name }.filter { it.substringBefore("/") == prefix }.toSet()
+        return animatable.animData.animationSet.animations.keys.filter { it.substringBefore("/") == prefix }.toSet()
     }
 
     override fun isValid(): Boolean {

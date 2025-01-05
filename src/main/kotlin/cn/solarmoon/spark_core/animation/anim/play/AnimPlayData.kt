@@ -24,7 +24,7 @@ data class AnimPlayData(
         mixedAnims.forEach {
             if (boneName in it.boneBlacklist) return@forEach
             val weight = getMixedWeight(it, boneName, partialTick)
-            it.animation?.getBoneAnim(boneName)?.getPresentAnimRot(it, partialTick)?.let { rot ->
+            it.animation.getBoneAnim(boneName)?.getPresentAnimRot(it, partialTick)?.let { rot ->
                 if (it.isCancelled) {
                     // 结束的过渡从最短路径进行过渡
                     fun normalizeAngle(angle: Float): Float {
@@ -51,7 +51,7 @@ data class AnimPlayData(
         mixedAnims.forEach {
             if (boneName in it.boneBlacklist) return@forEach
             val weight = getMixedWeight(it, boneName, partialTick)
-            it.animation?.getBoneAnim(boneName)?.getPresentAnimPos(it, partialTick)?.let { pos ->
+            it.animation.getBoneAnim(boneName)?.getPresentAnimPos(it, partialTick)?.let { pos ->
                 mixed.add(pos.mul(weight))
             }
         }
@@ -65,7 +65,7 @@ data class AnimPlayData(
         mixedAnims.forEach {
             if (boneName in it.boneBlacklist) return@forEach
             val weight = getMixedWeight(it, boneName, partialTick).takeIf { it > 0 } ?: return@forEach
-            it.animation?.getBoneAnim(boneName)?.getPresentAnimScale(it, partialTick)?.let { scale ->
+            it.animation.getBoneAnim(boneName)?.getPresentAnimScale(it, partialTick)?.let { scale ->
                 // 混合比例
                 val mixRatio = weight / (weight + totalWeight)
                 mixed.lerp(scale, mixRatio)

@@ -12,21 +12,15 @@ import net.minecraft.resources.ResourceLocation
  * 动画集合，代表一个模型的所有动画
  */
 data class AnimationSet(
-    val animations: ArrayList<Animation>
+    val animations: LinkedHashMap<String, Animation>
 ) {
 
     /**
      * 获取第一个匹配输入名字的动画
      */
-    fun getAnimation(name: String) = animations.filter { it.name == name }.firstOrNull()
+    fun getAnimation(name: String) = animations[name]
 
-    fun hasAnimation(name: String): Boolean = animations.any { it.name == name }
-
-    fun copy(): AnimationSet {
-        val list = arrayListOf<Animation>()
-        animations.forEach { list.add(it.copy()) }
-        return AnimationSet(list)
-    }
+    fun hasAnimation(name: String) = animations[name] != null
 
     companion object {
         /**
@@ -38,48 +32,30 @@ data class AnimationSet(
         }
 
         @JvmStatic
-        val EMPTY get() = AnimationSet(arrayListOf())
+        val EMPTY get() = AnimationSet(linkedMapOf())
 
         @JvmStatic
-        var ORIGINS = mutableMapOf<ResourceLocation, AnimationSet>()
-
-        @JvmStatic
-        val ORIGIN_MAP_STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, MutableMap<ResourceLocation, AnimationSet>> {
-            override fun decode(buffer: FriendlyByteBuf): MutableMap<ResourceLocation, AnimationSet> {
-                val map = mutableMapOf<ResourceLocation, AnimationSet>()
-                val size = buffer.readInt()
-                repeat(size) {
-                    val id = buffer.readResourceLocation()
-                    val anim = STREAM_CODEC.decode(buffer)
-                    map.put(id, anim)
-                }
-                return map
-            }
-
-            override fun encode(buffer: FriendlyByteBuf, value: MutableMap<ResourceLocation, AnimationSet>) {
-                buffer.writeInt(value.size)
-                value.forEach { id, anim ->
-                    buffer.writeResourceLocation(id)
-                    STREAM_CODEC.encode(buffer, anim)
-                }
-            }
-        }
+        var ORIGINS = linkedMapOf<ResourceLocation, AnimationSet>()
 
         @JvmStatic
         val CODEC: Codec<AnimationSet> = RecordCodecBuilder.create {
             it.group(
-                Animation.LIST_CODEC.fieldOf("animations").forGetter { it.animations }
-            ).apply(it) { AnimationSet(ArrayList(it)) }
+                Animation.MAP_CODEC.fieldOf("animations").forGetter { it.animations }
+            ).apply(it, ::AnimationSet)
         }
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            Animation.LIST_STREAM_CODEC, AnimationSet::animations,
+            Animation.MAP_STREAM_CODEC, AnimationSet::animations,
             ::AnimationSet
         )
 
         @JvmStatic
-        val LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.collection { arrayListOf() })
+        val ORIGIN_MAP_STREAM_CODEC = ByteBufCodecs.map(
+            ::LinkedHashMap,
+            ResourceLocation.STREAM_CODEC,
+            STREAM_CODEC
+        )
     }
 
 }

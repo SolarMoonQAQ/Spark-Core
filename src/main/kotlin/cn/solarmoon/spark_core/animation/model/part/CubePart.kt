@@ -158,7 +158,7 @@ data class CubePart(
         }
 
         @JvmStatic
-        val LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.collection { arrayListOf() })
+        val LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.collection { mutableListOf() }).map({ it.toList() }, { it.toMutableList() })
     }
 
 }

@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.mixin.animation.humanoid.first_person;
 
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelper;
+import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -22,7 +23,7 @@ public class LevelRendererMixin {
     private void fakeThirdPersonMode(DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci) {
         defaultCameraState = camera.isDetached();
         if (camera.getEntity() instanceof AbstractClientPlayer player) {
-            if (PlayerAnimHelper.shouldRenderArmAnimInFirstPerson(player)) {
+            if (PlayerAnimHelperKt.shouldRenderArmAnimInFirstPerson(player)) {
                 camera.detached = true;
             }
         }

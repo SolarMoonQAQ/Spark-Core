@@ -31,6 +31,7 @@ import org.ode4j.math.DQuaternionC;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
 
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 /**
@@ -54,6 +55,8 @@ public interface DGeom {
 	 * @return 是否可被碰撞检测（当且仅当绑定了任意body且body为enable时为true）
 	 */
 	boolean collisionDetectable();
+
+	UUID getUUID();
 
 	/** the maximum number of user classes that are supported. */
 	//	enum {

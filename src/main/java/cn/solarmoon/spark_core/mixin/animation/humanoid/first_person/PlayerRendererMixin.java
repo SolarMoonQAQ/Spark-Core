@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.mixin.animation.humanoid.first_person;
 
 import cn.solarmoon.spark_core.animation.vanilla.ITransformModel;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelper;
+import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
@@ -26,7 +27,7 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
     @Inject(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"))
     private void hideUnnecessaryBonesWhenRenderInFirstPerson(AbstractClientPlayer entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        if (PlayerAnimHelper.shouldRenderArmAnimInFirstPerson(entity)) {
+        if (PlayerAnimHelperKt.shouldRenderArmAnimInFirstPerson(entity)) {
             model.setAllVisible(false);
             // 感觉不是很好看先注释掉了
 //            model.leftArm.visible = true;

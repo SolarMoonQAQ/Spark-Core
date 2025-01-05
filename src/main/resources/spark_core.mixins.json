@@ -7,12 +7,13 @@
     "animation.EntityMixin",
     "animation.LivingEntityMixin",
     "animation.PlayerMixin",
+    "event.ClientHooksMixin",
     "event.EntityMixin",
     "event.PlayerMixin",
+    "extension.EntityMixin",
     "phys.LevelMixin"
   ],
   "client": [
-    "DebugRendererMixin",
     "animation.CapeLayerMixin",
     "animation.ElytraModelMixin",
     "animation.HumanoidArmorLayerMixin",
@@ -29,7 +30,8 @@
     "animation.humanoid.first_person.PlayerRendererMixin",
     "compat.azurelib.GeoArmorRendererMixin",
     "compat.geckolib.GeoArmorRendererMixin",
-    "event.KeyboardInputMixin"
+    "event.KeyboardInputMixin",
+    "extension.DebugRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

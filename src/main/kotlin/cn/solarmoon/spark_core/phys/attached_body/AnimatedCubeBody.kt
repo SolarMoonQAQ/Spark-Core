@@ -1,17 +1,26 @@
 package cn.solarmoon.spark_core.phys.attached_body
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.model.part.BonePart
 import cn.solarmoon.spark_core.phys.thread.getPhysWorld
+import cn.solarmoon.spark_core.phys.toDMatrix3
 import cn.solarmoon.spark_core.phys.toDQuaternion
 import cn.solarmoon.spark_core.phys.toDVector3
+import cn.solarmoon.spark_core.phys.toRadians
+import cn.solarmoon.spark_core.phys.toRotationMatrix
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.world.level.Level
+import org.joml.Matrix3d
 import org.joml.Matrix4f
 import org.joml.Quaterniond
 import org.ode4j.math.DVector3
 import org.ode4j.ode.DBody
 import org.ode4j.ode.DBox
+import org.ode4j.ode.DContactBuffer
+import org.ode4j.ode.DGeom
 import org.ode4j.ode.OdeHelper
+import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3d
+import java.awt.Color
 import java.util.UUID
 
 /**
@@ -24,29 +33,29 @@ import java.util.UUID
  * @param name 想要生成贴合块的骨骼名，也是碰撞体的名称
  */
 class AnimatedCubeBody(
-    override val name: String,
+    boneName: String,
     val level: Level,
-    val holder: IAnimatable<*>,
+    val animatable: IAnimatable<*>,
 ): AttachedBody {
 
-    val uuid = UUID.randomUUID()
-    val entity = holder.animatable
-    override val body: DBody = OdeHelper.createBody(name, holder, false, level.getPhysWorld().world)
+    override val name: String = boneName
+    override val body: DBody = OdeHelper.createBody(name, animatable, false, level.getPhysWorld().world)
     val geoms = mutableListOf<DBox>()
+    val bone = animatable.animData.model.getBone(boneName)
 
     init {
-        val bone = holder.animData.model.getBone(name)
         repeat(bone.cubes.size) { geoms.add(OdeHelper.laterCreateBox(body, level.getPhysWorld(), DVector3())) }
 
         body.onTick {
-            body.position = holder.getBonePivot(name).toDVector3()
-            body.quaternion = holder.getBoneMatrix(name).getUnnormalizedRotation(Quaterniond()).toDQuaternion()
+            body.position = animatable.getBonePivot(name).toDVector3()
+            body.quaternion = animatable.getBoneMatrix(name).getUnnormalizedRotation(Quaterniond()).toDQuaternion()
 
             bone.cubes.forEachIndexed { index, cube ->
                 val box = geoms[index]
                 box.lengths = cube.size.toDVector3()
+                box.offsetRotation = cube.rotation.toRadians().toRotationMatrix().toDMatrix3()
                 box.offsetPosition = cube.getTransformedCenter(Matrix4f()).sub(bone.pivot.toVector3f()).toDVector3()
-                if (level.isClientSide) SparkVisualEffects.GEOM.getRenderableBox("$uuid: Bounding Box $name").refresh(box)
+                if (level.isClientSide) SparkVisualEffects.GEOM.getRenderableBox(box.uuid.toString()).refresh(box)
             }
         }
     }

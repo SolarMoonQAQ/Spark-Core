@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer.Companion.ALL_
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.ClientTickEvent
 
-class VisualEffectTicker {
+object VisualEffectTicker {
 
     @SubscribeEvent
     private fun tick(event: ClientTickEvent.Pre) {

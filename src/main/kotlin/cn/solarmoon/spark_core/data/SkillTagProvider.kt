@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.data
 
-import cn.solarmoon.spark_core.entity.skill.Skill
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.skill.SkillType
 import net.minecraft.core.HolderLookup
 import net.minecraft.data.PackOutput
 import net.minecraft.data.tags.IntrinsicHolderTagsProvider
@@ -15,11 +15,11 @@ abstract class SkillTagProvider(
     lookupProvider: CompletableFuture<HolderLookup.Provider>,
     modId: String,
     existingFileHelper: ExistingFileHelper
-): IntrinsicHolderTagsProvider<Skill<*>>(output, SparkRegistries.SKILL.key(), lookupProvider, { it.resourceKey }, modId, existingFileHelper) {
+): IntrinsicHolderTagsProvider<SkillType<*, *>>(output, SparkRegistries.SKILL_TYPE.key(), lookupProvider, { SparkRegistries.SKILL_TYPE.getResourceKey(it).get() }, modId, existingFileHelper) {
 
     companion object {
         @JvmStatic
-        fun createTag(location: ResourceLocation) = TagKey.create(SparkRegistries.SKILL.key(), location)
+        fun createTag(location: ResourceLocation) = TagKey.create(SparkRegistries.SKILL_TYPE.key(), location)
     }
 
 }

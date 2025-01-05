@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.mixin.animation.humanoid.first_person;
 
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelper;
+import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -15,7 +16,7 @@ public class ItemInHandRendererMixin {
 
     @Inject(method = "renderHandsWithItems", at = @At("HEAD"), cancellable = true)
     private void disableRenderItemWhenInFirstPersonAnim(float f, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, LocalPlayer localPlayer, int i, CallbackInfo ci) {
-        if (PlayerAnimHelper.shouldRenderArmAnimInFirstPerson(localPlayer)) {
+        if (PlayerAnimHelperKt.shouldRenderArmAnimInFirstPerson(localPlayer)) {
             ci.cancel();
         }
     }

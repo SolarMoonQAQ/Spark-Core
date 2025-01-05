@@ -40,6 +40,7 @@ import org.ode4j.ode.internal.cpp4j.java.Ref;
 import org.ode4j.ode.internal.cpp4j.java.RefInt;
 import org.ode4j.ode.internal.DxQuadTreeSpace.Block;
 
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import static org.ode4j.ode.internal.CollisionLibccd.*;
@@ -53,6 +54,7 @@ public abstract class DxGeom extends DBase implements DGeom {
 
 	private BiConsumer<DGeom, DContactBuffer> collide = (a, b) -> {};
 	private boolean passFromCollide = false;
+	private final UUID uuid = UUID.randomUUID();
 
 	@Override
 	public void onCollide(BiConsumer<DGeom, DContactBuffer> collide) {
@@ -77,6 +79,11 @@ public abstract class DxGeom extends DBase implements DGeom {
 	@Override
 	public boolean collisionDetectable() {
 		return body != null && body.isEnabled();
+	}
+
+	@Override
+	public UUID getUUID() {
+		return uuid;
 	}
 
 	//****************************************************************************

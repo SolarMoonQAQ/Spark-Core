@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.anim.AnimationSet
 import cn.solarmoon.spark_core.animation.anim.part.Animation
 import cn.solarmoon.spark_core.animation.anim.part.Loop
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.phys.thread.PhysLevel
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.RegistryFriendlyByteBuf
@@ -46,7 +45,7 @@ data class MixedAnimation(
             if (value > MAX_TRANS_PROCESS) transTick = MAX_TRANS_PROCESS
             else if (transTick >= MAX_TRANS_PROCESS) transTick = 0.0
         }
-    val animation get() = AnimationSet.get(modelPath).getAnimation(name) ?: Animation(name, Loop.TRUE, 0.0, arrayListOf())
+    val animation get() = AnimationSet.get(modelPath).getAnimation(name) ?: Animation(Loop.ONCE, 0.0, linkedMapOf())
     var tick = 0.0
     var transTick = 0.0
     var isCancelled = false
@@ -54,6 +53,7 @@ data class MixedAnimation(
      * 不参与混合的骨骼，存在在此列表的骨骼将不会应用该动画的变换
      */
     var boneBlacklist = mutableSetOf<String>()
+    var shouldTurnBody = false
 
     var freeze = 1f
 
@@ -61,7 +61,7 @@ data class MixedAnimation(
         if (startTransSpeed > MAX_TRANS_PROCESS) transTick = MAX_TRANS_PROCESS
     }
 
-    val maxTick get() = animation.baseLifeTime * TICKS_PRE_SECOND
+    val maxTick get() = animation.animationLength * TICKS_PRE_SECOND
     var speed
         get() = _speed * freeze.toFloat()
         set(value) { _speed = value }
@@ -108,6 +108,7 @@ data class MixedAnimation(
         anim.transTick = transTick
         anim.isCancelled = isCancelled
         anim.boneBlacklist = boneBlacklist
+        anim.shouldTurnBody = shouldTurnBody
         return anim
     }
 
@@ -137,7 +138,8 @@ data class MixedAnimation(
                 Codec.DOUBLE.fieldOf("transtick").forGetter { it.transTick },
                 Codec.BOOL.fieldOf("cancelled").forGetter { it.isCancelled },
                 Codec.STRING.listOf().fieldOf("blacklist_bones").forGetter { it.boneBlacklist.toList() },
-            ).apply(it) { w,a,b,c,d,e, ha, f,g,h,i -> MixedAnimation(w, a, b, c, d, e, ha).apply { tick = f; transTick = g; isCancelled = h; boneBlacklist = i.toMutableSet()} }
+                Codec.BOOL.fieldOf("turn_body").forGetter { it.shouldTurnBody }
+            ).apply(it) { w,a,b,c,d,e, ha, f,g,h,i, j -> MixedAnimation(w, a, b, c, d, e, ha).apply { tick = f; transTick = g; isCancelled = h; boneBlacklist = i.toMutableSet(); shouldTurnBody = j} }
         }
 
         @JvmStatic
@@ -154,7 +156,8 @@ data class MixedAnimation(
                 val transTick = buffer.readDouble()
                 val enabled = buffer.readBoolean()
                 val targetBones = SerializeHelper.STRING_SET_STREAM_CODEC.decode(buffer)
-                return MixedAnimation(path, name, weight, speed, startTransSpeed, endTransSpeed, level).apply { this.tick = tick; this.transTick = transTick; isCancelled = enabled; boneBlacklist = targetBones}
+                val turnBody = buffer.readBoolean()
+                return MixedAnimation(path, name, weight, speed, startTransSpeed, endTransSpeed, level).apply { this.tick = tick; this.transTick = transTick; isCancelled = enabled; boneBlacklist = targetBones; shouldTurnBody = turnBody}
             }
 
             override fun encode(buffer: RegistryFriendlyByteBuf, value: MixedAnimation) {
@@ -169,6 +172,7 @@ data class MixedAnimation(
                 buffer.writeDouble(value.transTick)
                 buffer.writeBoolean(value.isCancelled)
                 SerializeHelper.STRING_SET_STREAM_CODEC.encode(buffer, value.boneBlacklist)
+                buffer.writeBoolean(value.shouldTurnBody)
             }
         }
 
