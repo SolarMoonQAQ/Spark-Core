@@ -63,12 +63,25 @@ public class DxBody extends DObject implements DBody {
 
 	private String name = "body";
 	private Object owner = null;
+	private Runnable physTickFunction = () -> {};
 	private Runnable tickFunction = () -> {};
 
+	@Override
+	public void onPhysTick(Runnable function) {
+		physTickFunction = function;
+	}
+
+	@Override
+	public void physTick() {
+		physTickFunction.run();
+	}
+
+	@Override
 	public void onTick(Runnable function) {
 		tickFunction = function;
 	}
 
+	@Override
 	public void tick() {
 		tickFunction.run();
 	}

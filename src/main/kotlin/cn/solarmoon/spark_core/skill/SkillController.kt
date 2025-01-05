@@ -25,6 +25,7 @@ abstract class SkillController<T> {
      * *注意：必须将所有技能添加到此列表中，否则一些方法可能不会返回期望的结果*
      */
     val allSkills = mutableListOf<Skill<*>>()
+    val allActiveSkills get() = allSkills.filter { it.isActive() }
 
     private var loadMoment by Delegates.observable(false) { _, old, new ->
         if (old != new) {

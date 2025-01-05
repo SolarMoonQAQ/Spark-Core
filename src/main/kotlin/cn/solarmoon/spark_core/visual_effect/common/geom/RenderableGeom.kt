@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.visual_effect.common.geom
 
-import cn.solarmoon.spark_core.phys.baseCopy
 import cn.solarmoon.spark_core.phys.toDQuaternion
 import cn.solarmoon.spark_core.phys.toDVector3
 import cn.solarmoon.spark_core.phys.toQuaterniond
@@ -45,12 +44,16 @@ class RenderableGeom {
         }
     }
 
-    fun refresh(box: DGeom, straight: Boolean = false) {//将缓存数据正式存入OBB对象
-        currentBox = box
+    /**
+     * @param straight 如果在客户端高刷渲染侧调用则将此值设为true，会取消掉和上一个geom的lerp环节
+     */
+    fun refresh(geom: DGeom, straight: Boolean = false) {//将缓存数据正式存入OBB对象
+        currentBox = geom
         tick = 0
-        if (straight) lastBox = box
+        if (straight) lastBox = geom
+
         if (this.box != null) this.lastBox = (this.box as DBox).baseCopy()
-        this.box = (box as DBox).baseCopy()
+        this.box = (geom as DBox).baseCopy()
     }
 
     fun getBox(partialTicks: Float): DGeom? {

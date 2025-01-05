@@ -1,18 +1,12 @@
 package cn.solarmoon.spark_core.phys.attached_body
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
-import cn.solarmoon.spark_core.entity.attack.AttackedData
-import cn.solarmoon.spark_core.entity.attack.setAttackedData
-import cn.solarmoon.spark_core.phys.baseCopy
-import cn.solarmoon.spark_core.phys.getOwner
+import cn.solarmoon.spark_core.phys.thread.PhysLevel
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.Level
-import org.ode4j.math.DVector3
 import org.ode4j.ode.DContactBuffer
 import org.ode4j.ode.DGeom
 import java.awt.Color

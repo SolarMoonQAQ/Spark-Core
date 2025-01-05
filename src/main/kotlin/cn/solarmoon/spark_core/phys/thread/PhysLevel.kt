@@ -10,22 +10,19 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
 import net.minecraft.world.level.Level
-import org.ode4j.ode.OdeHelper
 
 abstract class PhysLevel(
-    open val level: Level
+    val id: String,
+    val name: String,
+    open val level: Level,
+    val tickStep: Long,
+    val customApply: Boolean
 ) {
 
-    companion object {
-        @JvmStatic
-        val TICK_STEP = 20L
-        @JvmStatic
-        val TICKS_PRE_SECOND = (1000 / TICK_STEP).toInt()
-    }
-
+    val tickPreSecond = (1000 / tickStep).toInt()
     @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-    val scope = CoroutineScope(newSingleThreadContext("Phys${level}"))
-    val physWorld = PhysWorld(TICK_STEP)
+    val scope = CoroutineScope(newSingleThreadContext(name))
+    val physWorld = PhysWorld(tickStep)
     protected var lastTickTime = System.nanoTime()
     protected val actions = mutableListOf<() -> Unit>()
 
@@ -40,7 +37,7 @@ abstract class PhysLevel(
                 val endTime = System.nanoTime()
                 lastTickTime = endTime
                 val executionTime = (endTime - startTime) / 1_000_000
-                val remainingDelay = TICK_STEP - executionTime
+                val remainingDelay = tickStep - executionTime
                 if (remainingDelay > 0) {
                     delay(remainingDelay)
                 }

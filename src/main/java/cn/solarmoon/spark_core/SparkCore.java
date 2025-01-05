@@ -1,9 +1,7 @@
 package cn.solarmoon.spark_core;
 
-import cn.solarmoon.spark_core.local_control.LocalControlApplier;
 import cn.solarmoon.spark_core.registry.common.SparkRegistries;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
-import cn.solarmoon.spark_core.phys.DxHelper;
 import cn.solarmoon.spark_core.registry.client.SparkClientEvents;
 import cn.solarmoon.spark_core.registry.common.*;
 import net.neoforged.bus.api.IEventBus;
@@ -37,6 +35,7 @@ public class SparkCore {
         SparkDatas.register();
         SparkAnimRegister.register();
         SparkEntityTypes.register();
+        SparkPhysLevelRegister.register();
 
         OdeHelper.initODE();
     }

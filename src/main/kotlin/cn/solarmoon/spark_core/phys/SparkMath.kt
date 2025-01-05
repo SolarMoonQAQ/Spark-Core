@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.phys
 
+import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3d
 import org.joml.Matrix3f
@@ -12,6 +13,11 @@ import org.ode4j.math.DQuaternion
 import org.ode4j.math.DQuaternionC
 import org.ode4j.math.DVector3
 import org.ode4j.math.DVector3C
+import org.ode4j.ode.DAABB
+import org.ode4j.ode.DAABBC
+import org.ode4j.ode.DSpace
+import org.ode4j.ode.OdeHelper
+import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3f
 
 fun Vec3.toRadians(): Vec3 {
     return Vec3(Math.toRadians(x), Math.toRadians(y), Math.toRadians(z))
@@ -56,6 +62,8 @@ fun Vector3f.toDVector3() = DVector3(x.toDouble(), y.toDouble(), z.toDouble())
 
 fun Quaterniond.toDQuaternion() = DQuaternion(w, x, y, z)
 
+fun DQuaternionC.toQuaternionf() = Quaternionf(get1(), get2(), get3(), get0())
+
 fun DQuaternionC.toQuaterniond() = Quaterniond(get1(), get2(), get3(), get0())
 
 fun Matrix3d.toDMatrix3() = DMatrix3(m00, m01, m02, m10, m11, m12, m20, m21, m22)
@@ -64,6 +72,12 @@ fun DVector3C.toVector3d() = Vector3d(get0(), get1(), get2())
 
 fun DVector3C.toVec3() = Vec3(get0(), get1(), get2())
 
+fun DVector3C.toVector3f() = toVector3d().toVector3f()
+
 fun Vector3d.toRotationMatrix() = Matrix3d().rotateXYZ(x, y, z)
 
 fun Vec3.toRotationMatrix() = Matrix3d().rotateXYZ(x, y, z)
+
+fun AABB.toDAABB() = DAABB(minX, maxX, minY, maxY, minZ, maxZ)
+
+fun DAABBC.toDBox(space: DSpace) = OdeHelper.createBox(space, lengths).apply { position = center }
