@@ -1,7 +1,8 @@
 package cn.solarmoon.spark_core.util
 
-class CycleIndex(private val max: Int) {
-    private var index = 0
+class CycleIndex(private val max: Int, defaultValue: Int = 0) {
+
+    private var index = defaultValue
 
     fun get(): Int {
         return index
@@ -16,6 +17,7 @@ class CycleIndex(private val max: Int) {
     }
 
     fun set(index: Int) {
-        this.index = (index % max + max) % max
+        this.index = index.coerceIn(0, max - 1)
     }
+
 }

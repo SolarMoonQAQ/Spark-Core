@@ -1,5 +1,8 @@
 package cn.solarmoon.spark_core.visual_effect.common.trail
 
+import cn.solarmoon.spark_core.phys.copy
+import cn.solarmoon.spark_core.phys.toQuaternionf
+import cn.solarmoon.spark_core.phys.toVector3f
 import net.minecraft.client.Minecraft
 import net.minecraft.core.Direction
 import net.minecraft.core.registries.BuiltInRegistries
@@ -10,6 +13,7 @@ import org.joml.Quaterniond
 import org.joml.Quaternionf
 import org.joml.Vector3d
 import org.joml.Vector3f
+import org.ode4j.ode.DBox
 import org.ode4j.ode.DGeom
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3f
 import java.awt.Color
@@ -19,18 +23,32 @@ class Trail(
     val length: Float,
     val center: Vector3f,
     val rotation: Quaternionf,
+    val axis: Direction.Axis,
     val color: Color = Color.WHITE
 ) {
-
-    val start get() = Matrix4f().translate(center.add(0f, 0f, length / 2, Vector3f())).rotate(rotation).getTranslation(Vector3f())
-    val end get() = Matrix4f().translate(center.sub(0f, 0f, length / 2, Vector3f())).rotate(rotation).getTranslation(Vector3f())
-
-    fun lerp(target: Trail, progress: Float) = Trail(
-        length,
-        center.lerp(target.center, progress, Vector3f()),
-        rotation.slerp(target.rotation, progress, Quaternionf()),
+    constructor(box: DBox, axis: Direction.Axis, color: Color = Color.WHITE): this(
+        when(axis) {
+            Direction.Axis.X -> box.lengths.get0()
+            Direction.Axis.Y -> box.lengths.get1()
+            Direction.Axis.Z -> box.lengths.get2()
+        }.toFloat(),
+        box.position.toVector3f(),
+        box.quaternion.toQuaternionf(),
+        axis,
         color
     )
+
+    val direction = when(axis) {
+        Direction.Axis.X -> Vector3f(1f, 0f, 0f)
+        Direction.Axis.Y -> Vector3f(0f, 1f, 0f)
+        Direction.Axis.Z -> Vector3f(0f, 0f, 1f)
+    }
+    // 计算旋转向量
+    private val rotatedDirection = direction.rotate(rotation)
+
+    val start get() = center.sub(rotatedDirection.mul(length / 2, Vector3f()), Vector3f())
+
+    val end get() = center.add(rotatedDirection.mul(length / 2, Vector3f()), Vector3f())
 
     private var textureLocation = DEFAULT_TEXTURE
 

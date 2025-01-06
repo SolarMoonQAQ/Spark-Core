@@ -16,10 +16,8 @@ class TrailRenderer: VisualEffectRenderer() {
 
     private val trails = hashMapOf<String, MutableList<Trail>>()
     private val trailTemplate = mutableMapOf<String, (Float) -> Trail>()
-    private val trailCache = mutableMapOf<String, (Float) -> Trail>()
 
     fun refresh(id: String, trail: (Float) -> Trail) {
-        trailTemplate[id]?.let { trailCache[id] = it }
         trailTemplate[id] = trail
     }
 
@@ -42,10 +40,7 @@ class TrailRenderer: VisualEffectRenderer() {
         partialTicks: Float
     ) {
         trailTemplate.forEach { (id, trail) ->
-            val oTrail = trailCache[id] ?: trail
-            val ot = oTrail.invoke(partialTicks)
-            val t = trail.invoke(partialTicks)
-            trails.getOrPut(id) { mutableListOf() }.add(ot.lerp(t, partialTicks))
+            trails.getOrPut(id) { mutableListOf() }.add(trail.invoke(partialTicks))
         }
 
         // 对缓存的拖影进行渲染，显然，越新的拖影越在列表之后，因此可用当前序列和下一个序列的拖影组成单位长方形，如此混合便可以遍历全部轨迹（也就是分成了微元）
