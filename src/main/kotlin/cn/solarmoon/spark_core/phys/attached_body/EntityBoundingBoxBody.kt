@@ -1,16 +1,14 @@
 package cn.solarmoon.spark_core.phys.attached_body
 
-import cn.solarmoon.spark_core.phys.thread.getPhysWorld
+import cn.solarmoon.spark_core.phys.thread.PhysLevel
+import cn.solarmoon.spark_core.phys.thread.getPhysLevel
 import cn.solarmoon.spark_core.phys.toDVector3
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 import org.ode4j.math.DVector3
 import org.ode4j.ode.DBody
-import org.ode4j.ode.DContactBuffer
-import org.ode4j.ode.DGeom
 import org.ode4j.ode.OdeHelper
-import java.awt.Color
 
 /**
  * ### 原版碰撞箱Body
@@ -22,8 +20,9 @@ class EntityBoundingBoxBody(
 ): AttachedBody {
 
     override val name: String = "body"
-    override val body: DBody = OdeHelper.createBody(name, entity, false, level.getPhysWorld().world)
-    val geom = OdeHelper.laterCreateBox(body, level.getPhysWorld(), DVector3())
+    override val physLevel: PhysLevel = level.getPhysLevel()
+    override val body: DBody = OdeHelper.createBody(name, entity, false, physLevel.physWorld.world)
+    val geom = OdeHelper.laterCreateBox(body, physLevel.physWorld, DVector3())
 
     init {
         body.onTick {

@@ -68,6 +68,10 @@ import java.util.Iterator;
  */
 public interface DBody {
 
+	void onPhysTick(Runnable function);
+
+	void physTick();
+
 	void onTick(Runnable function);
 
 	void tick();

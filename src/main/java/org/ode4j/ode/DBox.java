@@ -24,11 +24,78 @@
  *************************************************************************/
 package org.ode4j.ode;
 
+import cn.solarmoon.spark_core.phys.SparkMathKt;
+import kotlin.Pair;
+import net.minecraft.core.Direction;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public interface DBox extends DGeom {
 
+	/**
+	 * 复制一个只留存基本几何数据的Box
+	 */
+	default DBox baseCopy() {
+		var box = OdeHelper.createBox(getLengths().copy());
+		box.setPosition(getPosition().copy());
+		box.setRotation(getRotation().copy());
+		return box;
+	}
+
+	/**
+	 * @return 获取当前box的八个顶点
+	 */
+	default List<Vector3d> getVertexes() {
+		List<Vector3d> vertices = new ArrayList<>(8);
+		var halfLengths = SparkMathKt.toVector3d(getLengths()).div(2.0);
+
+		// 初始化 vertices
+		for (int i = 0; i < 8; i++) {
+			vertices.add(new Vector3d());
+		}
+
+		// 计算每个顶点的相对位置
+		for (int i = 0; i < 8; i++) {
+			Vector3d relativePos = new Vector3d(
+					(i & 1) == 1 ? halfLengths.x : -halfLengths.x,
+					(i & 2) == 2 ? halfLengths.y : -halfLengths.y,
+					(i & 4) == 4 ? halfLengths.z : -halfLengths.z
+			);
+
+			DVector3 realPos = new DVector3();
+			getRelPointPos(relativePos.x, relativePos.y, relativePos.z, realPos);
+			vertices.set(i, SparkMathKt.toVector3d(realPos));
+		}
+
+		return vertices;
+	}
+
+	/**
+	 * @return 以每边为单位按顺序获取定点组（也就是十二条边对应的十二组顶点）
+	 */
+	default List<Vector3d> getOrderedVertexes() {
+		var vertices = getVertexes();
+		// 按照指定顺序重排顶点
+		return List.of(
+                vertices.get(0), vertices.get(1),
+                vertices.get(0), vertices.get(2),
+                vertices.get(0), vertices.get(4),
+                vertices.get(6), vertices.get(2),
+                vertices.get(6), vertices.get(4),
+                vertices.get(6), vertices.get(7),
+                vertices.get(3), vertices.get(1),
+                vertices.get(3), vertices.get(2),
+                vertices.get(3), vertices.get(7),
+                vertices.get(5), vertices.get(1),
+                vertices.get(5), vertices.get(4),
+                vertices.get(5), vertices.get(7)
+		);
+	}
 	
 	/**
 	 * Set the side lengths of the given box.

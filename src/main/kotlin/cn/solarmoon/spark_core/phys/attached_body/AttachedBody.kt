@@ -1,10 +1,13 @@
 package cn.solarmoon.spark_core.phys.attached_body
 
+import cn.solarmoon.spark_core.phys.thread.PhysLevel
 import org.ode4j.ode.DBody
 
 interface AttachedBody {
 
     val name: String
+
+    val physLevel: PhysLevel
 
     val body: DBody
 

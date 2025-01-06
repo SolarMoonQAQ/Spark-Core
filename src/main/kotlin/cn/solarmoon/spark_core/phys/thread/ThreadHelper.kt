@@ -1,13 +1,11 @@
 package cn.solarmoon.spark_core.phys.thread
 
-import cn.solarmoon.spark_core.phys.IPhysWorldHolder
-import cn.solarmoon.spark_core.registry.common.SparkAttachments
-import net.minecraft.world.entity.Entity
+import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.phys.IPhysLevelHolder
 import net.minecraft.world.level.Level
-import net.neoforged.neoforge.attachment.IAttachmentHolder
-import java.util.Optional
-import kotlin.jvm.optionals.getOrNull
 
-fun Level.getPhysWorld() = (this as IPhysWorldHolder).physWorld
+fun Level.getPhysLevelById(id: String) = getAllPhysLevel()[id] ?: throw NullPointerException("未能找到名为 $id 的物理线程")
 
-fun Entity.getPhysWorld() = level().getPhysWorld()
+fun Level.getPhysLevel() = getPhysLevelById(SparkCore.MOD_ID)
+
+fun Level.getAllPhysLevel() = (this as IPhysLevelHolder).allPhysLevel

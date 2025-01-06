@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.phys.attached_body
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.model.part.BonePart
-import cn.solarmoon.spark_core.phys.thread.getPhysWorld
+import cn.solarmoon.spark_core.phys.thread.PhysLevel
+import cn.solarmoon.spark_core.phys.thread.getPhysLevel
 import cn.solarmoon.spark_core.phys.toDMatrix3
 import cn.solarmoon.spark_core.phys.toDQuaternion
 import cn.solarmoon.spark_core.phys.toDVector3
@@ -10,18 +10,12 @@ import cn.solarmoon.spark_core.phys.toRadians
 import cn.solarmoon.spark_core.phys.toRotationMatrix
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.world.level.Level
-import org.joml.Matrix3d
 import org.joml.Matrix4f
 import org.joml.Quaterniond
 import org.ode4j.math.DVector3
 import org.ode4j.ode.DBody
 import org.ode4j.ode.DBox
-import org.ode4j.ode.DContactBuffer
-import org.ode4j.ode.DGeom
 import org.ode4j.ode.OdeHelper
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3d
-import java.awt.Color
-import java.util.UUID
 
 /**
  * ### 贴合动画块Body
@@ -38,13 +32,14 @@ class AnimatedCubeBody(
     val animatable: IAnimatable<*>,
 ): AttachedBody {
 
+    override val physLevel: PhysLevel = level.getPhysLevel()
     override val name: String = boneName
-    override val body: DBody = OdeHelper.createBody(name, animatable, false, level.getPhysWorld().world)
+    override val body: DBody = OdeHelper.createBody(name, animatable, false, physLevel.physWorld.world)
     val geoms = mutableListOf<DBox>()
     val bone = animatable.animData.model.getBone(boneName)
 
     init {
-        repeat(bone.cubes.size) { geoms.add(OdeHelper.laterCreateBox(body, level.getPhysWorld(), DVector3())) }
+        repeat(bone.cubes.size) { geoms.add(OdeHelper.laterCreateBox(body, physLevel.physWorld, DVector3())) }
 
         body.onTick {
             body.position = animatable.getBonePivot(name).toDVector3()
