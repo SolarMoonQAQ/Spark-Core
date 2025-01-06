@@ -30,7 +30,12 @@ public interface DCylinder extends DGeom {
 	void setParams (double radius, double length);
 	double getRadius ();
 	double getLength ();
-	
+	/**
+	 * 复制一个只留存形状、位置、姿态数据的圆柱体
+	 * @param c 样本圆柱体
+	 * @return 复制的圆柱体
+	 */
+	DCylinder baseCopy(DCylinder c);
 
 //	  // intentionally undefined, don't use these
 //	  dCylinder (dCylinder &);

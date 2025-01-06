@@ -24,14 +24,10 @@
  *************************************************************************/
 package org.ode4j.ode.internal;
 
-import org.ode4j.ode.DColliderFn;
+import org.ode4j.ode.*;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
-import org.ode4j.ode.DCapsule;
-import org.ode4j.ode.DContactGeom;
-import org.ode4j.ode.DContactGeomBuffer;
-import org.ode4j.ode.DGeom;
 import org.ode4j.ode.internal.cpp4j.java.RefDouble;
 import org.ode4j.ode.internal.cpp4j.java.RefInt;
 
@@ -531,5 +527,13 @@ public class DxCapsule extends DxGeom implements DCapsule {
 		return dGeomCapsulePointDepth(p.get0(), p.get1(), p.get2());
 	}
 
-	
+	@Override
+	public DCapsule baseCopy(DCapsule c) {
+		var capsule = OdeHelper.createCapsule(c.getRadius(),c.getLength());
+		capsule.setPosition(c.getPosition().copy());
+		capsule.setRotation(c.getRotation().copy());
+		return capsule;
+	}
+
+
 }

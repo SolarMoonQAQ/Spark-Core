@@ -33,6 +33,12 @@ public interface DCapsule extends DGeom {
 	double getLength();
 	double getPointDepth(DVector3C a);
 
+	/**
+	 * 复制一个只留存形状、位置、姿态数据的胶囊体
+	 * @param c 样本胶囊体
+	 * @return 复制的胶囊体
+	 */
+	DCapsule baseCopy(DCapsule c);
 //	 // intentionally undefined, don't use these
 //	  dCapsule (dCapsule &);
 //	  void operator= (dCapsule &);
