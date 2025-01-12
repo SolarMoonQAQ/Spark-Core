@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
+import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -36,13 +37,13 @@ public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends Ent
     private void render(LivingEntity livingEntity, ItemStack itemStack, ItemDisplayContext displayContext, HumanoidArm arm, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
         if (livingEntity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable)) {
             var boneName = arm.getSerializedName() + "Item";
-            if (!itemStack.isEmpty() && animatable.getAnimData().getModel().hasBone(boneName)) {
+            if (!itemStack.isEmpty() && animatable.getModelData().getModel().hasBone(boneName)) {
                 var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 var p = new PoseStack();
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
                 p.translate(-cam.x, -cam.y, -cam.z);
-                var ma = animatable.getBoneMatrix(boneName, partialTicks);
-                var pivot = animatable.getAnimData().getModel().getBone(boneName).getPivot();
+                var ma = animatable.getWorldBoneMatrix(boneName, partialTicks);
+                var pivot = animatable.getModelData().getModel().getBone(boneName).getPivot();
                 p.mulPose(ma);
                 p.translate(pivot.x, pivot.y - 1/16f, pivot.z - 1.75/16f);
                 p.mulPose(Axis.XP.rotationDegrees(-80.0F));

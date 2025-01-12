@@ -46,6 +46,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val dataComponentDeferredRegister = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, modId)
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
     val skillTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SKILL_TYPE, modId) }
+    val stateTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.STATE, modId) }
 
     fun register(bus: IEventBus) {
         modBus = bus
@@ -117,6 +118,13 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
             skillTypeDeferredRegister.value.register(modBus!!)
         }
         return SkillTypeBuilder(modId, skillTypeDeferredRegister.value)
+    }
+
+    fun <T> state(): ObjectStateBuilder<T> {
+        if (!stateTypeDeferredRegister.isInitialized()) {
+            stateTypeDeferredRegister.value.register(modBus!!)
+        }
+        return ObjectStateBuilder(modId, stateTypeDeferredRegister.value)
     }
 
 }

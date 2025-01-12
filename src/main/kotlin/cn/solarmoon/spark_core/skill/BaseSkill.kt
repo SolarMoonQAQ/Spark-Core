@@ -6,6 +6,9 @@ abstract class BaseSkill<T>(
 ): Skill<T> {
 
     protected var active = false
+    protected var time = 0
+    override val runTime: Int
+        get() = time
 
     override fun activate() {
         if (!active) {
@@ -16,12 +19,14 @@ abstract class BaseSkill<T>(
 
     override fun update() {
         if (active) {
+            time++
             onUpdate()
         }
     }
 
     override fun end() {
         if (active) {
+            time = 0
             active = false
             onEnd()
         }

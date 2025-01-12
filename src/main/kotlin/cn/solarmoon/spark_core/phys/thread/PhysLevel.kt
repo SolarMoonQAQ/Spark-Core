@@ -9,10 +9,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newSingleThreadContext
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.level.Level
 
 abstract class PhysLevel(
-    val id: String,
+    val id: ResourceLocation,
     val name: String,
     open val level: Level,
     val tickStep: Long,

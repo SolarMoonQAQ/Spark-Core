@@ -1,8 +1,6 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.auto_anim.EntityAutoAnim;
-import cn.solarmoon.spark_core.animation.anim.play.MixedAnimation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,8 +28,8 @@ public abstract class LivingEntityMixin extends Entity {
     private void tick(CallbackInfo ci) {
         if (entity instanceof IEntityAnimatable<?> animatable) {
             // 播放指定动画时将身体转到目视方向
-            if (animatable.getAnimData().getPlayData().getMixedAnims().stream().anyMatch(MixedAnimation::getShouldTurnBody)
-            || animatable.getAutoAnims().stream().anyMatch(i -> i instanceof EntityAutoAnim e && e.getShouldTurnBody() && e.isPlaying(0, wi -> true))) {
+            var anim = animatable.getAnimController().getPlayingAnim();
+            if (anim != null && anim.getShouldTurnBody()) {
                 tickHeadTurn(getYRot(), 100);
             }
         }

@@ -1,32 +1,18 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
 import com.mojang.serialization.Codec
-import net.minecraft.network.FriendlyByteBuf
-import net.minecraft.network.codec.StreamCodec
-import kotlin.text.uppercase
+import net.minecraft.network.codec.ByteBufCodecs
 
-enum class ModelType {
-    ENTITY, BLOCK_ENTITY, ITEM;
-
-    val id = toString().lowercase()
+data class ModelType(
+    val id: String
+) {
 
     companion object {
         @JvmStatic
-        val CODEC: Codec<ModelType> = Codec.STRING.xmap(
-            { ModelType.valueOf(it.uppercase()) },
-            { it.name }
-        )
+        val CODEC = Codec.STRING.xmap({ ModelType(it) }, { it.id })
 
         @JvmStatic
-        val STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, ModelType> {
-            override fun decode(buffer: FriendlyByteBuf): ModelType {
-                return buffer.readEnum(ModelType::class.java)
-            }
-
-            override fun encode(buffer: FriendlyByteBuf, value: ModelType) {
-                buffer.writeEnum(value)
-            }
-        }
+        val STREAM_CODEC = ByteBufCodecs.STRING_UTF8.map({ ModelType(it) }, { it.id })
     }
 
 }

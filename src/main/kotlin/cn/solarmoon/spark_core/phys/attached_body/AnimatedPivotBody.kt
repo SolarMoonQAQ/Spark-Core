@@ -3,10 +3,12 @@ package cn.solarmoon.spark_core.phys.attached_body
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.phys.thread.PhysLevel
 import cn.solarmoon.spark_core.phys.thread.getPhysLevel
+import cn.solarmoon.spark_core.phys.toDMatrix3
 import cn.solarmoon.spark_core.phys.toDQuaternion
 import cn.solarmoon.spark_core.phys.toDVector3
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.world.level.Level
+import org.joml.Matrix3f
 import org.joml.Quaterniond
 import org.ode4j.math.DVector3
 import org.ode4j.ode.DBody
@@ -33,8 +35,8 @@ open class AnimatedPivotBody(
 
     init {
         body.onTick {
-            body.position = animatable.getBonePivot(boneName).toDVector3()
-            body.quaternion = animatable.getBoneMatrix(boneName).getUnnormalizedRotation(Quaterniond()).toDQuaternion()
+            body.position = animatable.getWorldBonePivot(boneName).toDVector3()
+            body.quaternion = animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaterniond()).toDQuaternion()
             tick()
             if (level.isClientSide) SparkVisualEffects.GEOM.getRenderableBox(geom.uuid.toString()).refresh(geom)
         }

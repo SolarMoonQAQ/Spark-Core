@@ -24,6 +24,8 @@ interface Skill<T> {
 
     val builtInRegistryHolder get() = SparkRegistries.SKILL_TYPE.getHolder(resourceKey).get()
 
+    val runTime: Int
+
     fun activate()
 
     fun update()

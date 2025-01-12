@@ -21,8 +21,7 @@ inline fun <reified B> IAttachmentHolder.getBody(name: String): B? {
 
 fun Entity.getBoundingBoxBody() = getBody<EntityBoundingBoxBody>("body")
 
-fun Entity.removeBoundingBoxBody() {
-    getBoundingBoxBody()?.let {
-        getBodies().remove("body")
-    }
+fun IAttachmentHolder.removeBody(name: String) {
+    getBody(name)?.destroy()
+    getBodies().remove(name)
 }

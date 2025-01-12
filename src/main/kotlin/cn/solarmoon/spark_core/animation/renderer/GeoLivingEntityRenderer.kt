@@ -31,13 +31,13 @@ open class GeoLivingEntityRenderer<T>(context: EntityRendererProvider.Context, s
         super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight)
         if (entity.isInvisible) return
         val buffer = bufferSource.getBuffer(getRenderType(entity))
-        val animData = entity.animData
+        val animData = entity.modelData
         val model = animData.model
         poseStack.pushPose()
         val overlay = getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTick))
-        val matrix = entity.getPositionMatrix(partialTick)
+        val matrix = Matrix4f().translate(entity.getPosition(partialTick).toVector3f()).rotateY(entity.getRootYRot(partialTick))
         preRender(entity, entityYaw, matrix, partialTick, poseStack, bufferSource, packedLight)
-        model.renderBones(animData.playData, matrix, entity.getExtraTransform(partialTick), poseStack.last().normal(), buffer, packedLight, overlay, getColor(entity), partialTick)
+        model.renderBones(entity, matrix, poseStack.last().normal(), buffer, packedLight, overlay, getColor(entity), partialTick)
         postRender(entity, entityYaw, matrix, partialTick, poseStack, bufferSource, packedLight)
         poseStack.popPose()
 
@@ -51,7 +51,7 @@ open class GeoLivingEntityRenderer<T>(context: EntityRendererProvider.Context, s
     }
 
     override fun getTextureLocation(entity: T): ResourceLocation {
-        return entity.animData.textureLocation
+        return entity.modelData.textureLocation
     }
 
     /**

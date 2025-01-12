@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.phys
 
+import net.minecraft.util.Mth
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3d
@@ -68,6 +69,8 @@ fun DQuaternionC.toQuaterniond() = Quaterniond(get1(), get2(), get3(), get0())
 
 fun Matrix3d.toDMatrix3() = DMatrix3(m00, m01, m02, m10, m11, m12, m20, m21, m22)
 
+fun Matrix3f.toDMatrix3() = Matrix3d(this).toDMatrix3()
+
 fun DVector3C.toVector3d() = Vector3d(get0(), get1(), get2())
 
 fun DVector3C.toVec3() = Vec3(get0(), get1(), get2())
@@ -81,3 +84,17 @@ fun Vec3.toRotationMatrix() = Matrix3d().rotateXYZ(x, y, z)
 fun AABB.toDAABB() = DAABB(minX, maxX, minY, maxY, minZ, maxZ)
 
 fun DAABBC.toDBox(space: DSpace) = OdeHelper.createBox(space, lengths).apply { position = center }
+
+fun Vec3.rotLerp(target: Vec3, progress: Double) = Vec3(
+    Mth.rotLerp(progress, x, target.x),
+    Mth.rotLerp(progress, y, target.y),
+    Mth.rotLerp(progress, z, target.z)
+)
+
+fun Double.toDegrees() = Math.toDegrees(this)
+
+fun Vec3.toDegrees() = Vec3(
+    x.toDegrees(),
+    y.toDegrees(),
+    z.toDegrees()
+)

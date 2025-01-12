@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.AnimationSet
-import cn.solarmoon.spark_core.animation.model.CommonModel
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
+import cn.solarmoon.spark_core.animation.model.origin.OModel
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.StreamCodec
@@ -11,8 +11,8 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 data class ModelDataPayload(
-    val models: LinkedHashMap<ResourceLocation, CommonModel>,
-    val animationSets: LinkedHashMap<ResourceLocation, AnimationSet>
+    val models: LinkedHashMap<ResourceLocation, OModel>,
+    val animationSets: LinkedHashMap<ResourceLocation, OAnimationSet>
 ): CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -23,13 +23,13 @@ data class ModelDataPayload(
         @JvmStatic
         fun handleInClient(payload: ModelDataPayload, context: IPayloadContext) {
             context.enqueueWork {
-                CommonModel.ORIGINS.clear()
-                AnimationSet.ORIGINS.clear()
+                OModel.ORIGINS.clear()
+                OAnimationSet.ORIGINS.clear()
                 payload.models.forEach { id, model ->
-                    CommonModel.ORIGINS[id] = model
+                    OModel.ORIGINS[id] = model
                 }
                 payload.animationSets.forEach { id, anim ->
-                    AnimationSet.ORIGINS[id] = anim
+                    OAnimationSet.ORIGINS[id] = anim
                 }
                 SparkCore.LOGGER.info("已从服务器接收所有模型动画数据")
             }.exceptionally {
@@ -45,8 +45,8 @@ data class ModelDataPayload(
 
         @JvmStatic
         val STREAM_CODEC: StreamCodec<FriendlyByteBuf, ModelDataPayload> = StreamCodec.composite(
-            CommonModel.ORIGIN_MAP_STREAM_CODEC, ModelDataPayload::models,
-            AnimationSet.ORIGIN_MAP_STREAM_CODEC, ModelDataPayload::animationSets,
+            OModel.ORIGIN_MAP_STREAM_CODEC, ModelDataPayload::models,
+            OAnimationSet.ORIGIN_MAP_STREAM_CODEC, ModelDataPayload::animationSets,
             ::ModelDataPayload
         )
     }

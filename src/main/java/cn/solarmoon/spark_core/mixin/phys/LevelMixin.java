@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.phys.thread.PhysLevel;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.WritableLevelData;
 import net.neoforged.neoforge.common.NeoForge;
@@ -22,7 +23,7 @@ import java.util.function.Supplier;
 @Mixin(Level.class)
 public abstract class LevelMixin implements IPhysLevelHolder {
 
-    private LinkedHashMap<String, PhysLevel> levelMap = new LinkedHashMap<>();
+    private LinkedHashMap<ResourceLocation, PhysLevel> levelMap = new LinkedHashMap<>();
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(WritableLevelData levelData, ResourceKey dimension, RegistryAccess registryAccess, Holder dimensionTypeRegistration, Supplier profiler, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates, CallbackInfo ci) {
@@ -30,7 +31,7 @@ public abstract class LevelMixin implements IPhysLevelHolder {
     }
 
     @Override
-    public @NotNull LinkedHashMap<@NotNull String, @NotNull PhysLevel> getAllPhysLevel() {
+    public @NotNull LinkedHashMap<@NotNull ResourceLocation, @NotNull PhysLevel> getAllPhysLevel() {
         return levelMap;
     }
 

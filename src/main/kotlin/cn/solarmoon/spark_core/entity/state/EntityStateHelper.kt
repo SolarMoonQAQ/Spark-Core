@@ -1,12 +1,15 @@
 package cn.solarmoon.spark_core.entity.state
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.phys.toRadians
+import cn.solarmoon.spark_core.state_control.getStateMachine
 import cn.solarmoon.spark_core.util.Side
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.network.syncher.EntityDataAccessor
 import net.minecraft.network.syncher.EntityDataSerializers
 import net.minecraft.network.syncher.SynchedEntityData
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
@@ -31,10 +34,12 @@ object EntityStateHelper {
 
 }
 
+fun Entity.getCommonAnimStateMachine() = getStateMachine(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "common")) as EntityAnimStateMachine
+
 fun Entity.moveCheck(): Boolean {
     val v = knownMovement
     val avgV = (abs(v.x) + abs(v.z)) / 2f
-    return avgV >= 0.015
+    return avgV >= if (isCrouching) 0.0075 else 0.015
 }
 
 fun Entity.getMoveSpeed(): Double {
@@ -53,7 +58,7 @@ fun Entity.moveBackCheck(): Boolean {
     val forward = Vec3.directionFromRotation(0f, getPreciseBodyRotation(1f))
     // 计算移动的标量与 身体forward 方向的点积，如果乘数大于150度值则代表方向基本相反
     val dotProduct = v.normalize().x * forward.normalize().x + v.normalize().z * forward.normalize().z
-    return dotProduct < cos(120f.toRadians()) && (abs(v.x) + abs(v.z)) >= 0.015
+    return dotProduct < cos(120f.toRadians()) && moveCheck()
 }
 
 fun Entity.isMoving(): Boolean {
@@ -96,8 +101,6 @@ fun Entity.get(flag: Int): Boolean {
 fun Entity.isFalling(): Boolean {
     return !onGround() && deltaMovement.y != 0.0
 }
-
-fun Entity.getState(): EntityState = EntityState.get(this)
 
 /**
  * 判断输入坐标是否在当前实体朝向的一个扇形角度范围内（输入量都是角度制）

@@ -33,9 +33,10 @@ public class SparkCore {
         SparkCommonEvents.register();
         SparkPayloads.register(modEventBus);
         SparkDatas.register();
-        SparkAnimRegister.register();
         SparkEntityTypes.register();
         SparkPhysLevelRegister.register();
+        SparkEntityStates.register();
+        SparkStateMachineRegister.register();
 
         OdeHelper.initODE();
     }

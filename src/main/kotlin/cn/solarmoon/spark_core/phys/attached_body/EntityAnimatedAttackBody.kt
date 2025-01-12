@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.phys.attached_body
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
-import cn.solarmoon.spark_core.phys.thread.PhysLevel
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
@@ -42,7 +41,7 @@ open class EntityAnimatedAttackBody(
     override fun onCollide(o2: DGeom, buffer: DContactBuffer) {
         super.onCollide(o2, buffer)
 
-        if (getAttackAction(o2, buffer)) {
+        doAttack(o2, buffer) {
             whenAttacked(o2, buffer)
         }
     }
@@ -54,7 +53,7 @@ open class EntityAnimatedAttackBody(
         }
     }
 
-    open fun getAttackAction(o2: DGeom, buffer: DContactBuffer) = attackSystem.commonGeomAttack(geom, o2)
+    open fun doAttack(o2: DGeom, buffer: DContactBuffer, actionBeforeAttack: () -> Unit = {}) = attackSystem.commonGeomAttack(geom, o2, actionBeforeAttack)
 
     /**
      * 启用该攻击的碰撞检测（默认禁用）并重置攻击到的目标以忽略无敌时间

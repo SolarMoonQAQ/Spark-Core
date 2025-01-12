@@ -27,7 +27,7 @@ public class HumanoidArmorLayerMixin<
                 VanillaModelHelper.setRoot(humanoidModel.leftArm, humanoidModel.body);
                 VanillaModelHelper.setRoot(humanoidModel.rightArm, humanoidModel.body);
                 VanillaModelHelper.setRoot(humanoidModel.head, humanoidModel.body);
-                VanillaModelHelper.setPivot(animatable.getAnimData(), "waist", humanoidModel.body);
+                VanillaModelHelper.setPivot(animatable, "waist", humanoidModel.body);
             }
         }
     }

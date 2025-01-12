@@ -3,10 +3,11 @@ package cn.solarmoon.spark_core.phys.thread
 import cn.solarmoon.spark_core.event.PhysLevelTickEvent
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.common.NeoForge
 
 class ClientPhysLevel(
-    id: String,
+    id: ResourceLocation,
     name: String,
     override val level: ClientLevel,
     tickStep: Long,

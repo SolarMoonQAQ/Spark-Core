@@ -1,12 +1,13 @@
 package cn.solarmoon.spark_core.event
 
 import cn.solarmoon.spark_core.phys.thread.PhysLevel
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.Event
 
 class PhysLevelRegisterEvent(
     val level: Level,
-    private val map: LinkedHashMap<String, PhysLevel>
+    private val map: LinkedHashMap<ResourceLocation, PhysLevel>
 ): Event() {
 
     fun register(pl: PhysLevel) {

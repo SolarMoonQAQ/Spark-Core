@@ -19,4 +19,8 @@ interface AttachedBody {
         body.disable()
     }
 
+    fun destroy() {
+        body.destroy()
+    }
+
 }

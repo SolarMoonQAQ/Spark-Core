@@ -51,7 +51,7 @@ abstract class SkillController<T> {
     /**
      * 是否正在播放任意技能
      */
-    fun isPlaying(): Boolean = allSkills.any { it.isActive() }
+    fun isPlaying(): Boolean = allActiveSkills.isNotEmpty()
 
     fun addSkill(skill: Skill<*>) { allSkills.add(skill) }
 

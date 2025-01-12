@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.animation.vanilla
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.AnimData
 import net.minecraft.client.Minecraft
 import net.minecraft.client.model.HumanoidModel
 import net.minecraft.client.model.geom.ModelPart
@@ -19,7 +18,7 @@ object VanillaModelHelper {
      * @return 正在播放默认的任意自定义动画则为true
      */
     @JvmStatic
-    fun shouldSwitchToAnim(animatable: IAnimatable<*>) = !animatable.animController.isPlaying(null)
+    fun shouldSwitchToAnim(animatable: IAnimatable<*>) = !animatable.animController.isPlaying(null) || animatable.animController.isInTransition
 
     @JvmStatic
     fun setRoot(child: ModelPart, root: ModelPart) {
@@ -33,8 +32,8 @@ object VanillaModelHelper {
     }
 
     @JvmStatic
-    fun setPivot(animData: AnimData, boneName: String, model: ModelPart) {
-        (model as ITransformModelPart).pivot.set(animData.model.getBone(boneName).pivot.toVector3f())
+    fun setPivot(animatable: IAnimatable<*>, boneName: String, model: ModelPart) {
+        (model as ITransformModelPart).pivot.set(animatable.model.getBone(boneName).pivot.toVector3f())
     }
 
     @JvmStatic
@@ -43,13 +42,14 @@ object VanillaModelHelper {
     }
 
     @JvmStatic
-    fun applyTransform(animData: AnimData, boneName: String, part: ModelPart, partialTicks: Float) {
+    fun applyTransform(animatable: IAnimatable<*>, boneName: String, part: ModelPart, partialTicks: Float) {
         if (part !is ITransformModelPart) return
-        val pos = animData.playData.getMixedBoneAnimPosition(boneName, partialTicks).mul(16f).apply { x = -x; y = -y }
-        val rot = animData.playData.getMixedBoneAnimRotation(boneName, partialTicks).apply { x = -x; y = -y }
-        val scale = animData.playData.getMixedBoneAnimScale(boneName, partialTicks)
+        val bone = animatable.getBone(boneName)
+        val pos = bone.getPosition(partialTicks).toVector3f().mul(16f).apply { x = -x; y = -y }
+        val rot = bone.getRotation(partialTicks).toVector3f().apply { x = -x; y = -y }
+        val scale = bone.getScale(partialTicks).toVector3f()
         part.offsetPos(pos)
-        if (boneName == "head") part.offsetRotation(rot) else part.setRotation(rot.x, rot.y, rot.z)
+        part.setRotation(rot.x, rot.y, rot.z)
         part.xScale = scale.x; part.yScale = scale.y; part.zScale = scale.z
     }
 

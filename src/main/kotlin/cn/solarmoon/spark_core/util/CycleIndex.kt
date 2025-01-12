@@ -17,7 +17,7 @@ class CycleIndex(private val max: Int, defaultValue: Int = 0) {
     }
 
     fun set(index: Int) {
-        this.index = index.coerceIn(0, max - 1)
+        this.index = (index % max + max) % max
     }
 
 }

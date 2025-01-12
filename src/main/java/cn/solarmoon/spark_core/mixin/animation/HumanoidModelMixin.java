@@ -38,18 +38,17 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable)) {
             setDefault();
             if (shouldTransform()) {
-                var animData = animatable.getAnimData();
                 var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 VanillaModelHelper.setRoot(leftArm, body);
                 VanillaModelHelper.setRoot(rightArm, body);
                 VanillaModelHelper.setRoot(head, body);
-                VanillaModelHelper.setPivot(animatable.getAnimData(), "waist", body);
-                VanillaModelHelper.applyTransform(animData, "leftArm", leftArm, partialTicks);
-                VanillaModelHelper.applyTransform(animData, "rightArm", rightArm, partialTicks);
-                VanillaModelHelper.applyTransform(animData, "leftLeg", leftLeg, partialTicks);
-                VanillaModelHelper.applyTransform(animData, "rightLeg", rightLeg, partialTicks);
-                VanillaModelHelper.applyTransform(animData, "waist", body, partialTicks);
-                VanillaModelHelper.applyTransform(animData, "head", head, partialTicks);
+                VanillaModelHelper.setPivot(animatable, "waist", body);
+                VanillaModelHelper.applyTransform(animatable, "leftArm", leftArm, partialTicks);
+                VanillaModelHelper.applyTransform(animatable, "rightArm", rightArm, partialTicks);
+                VanillaModelHelper.applyTransform(animatable, "leftLeg", leftLeg, partialTicks);
+                VanillaModelHelper.applyTransform(animatable, "rightLeg", rightLeg, partialTicks);
+                VanillaModelHelper.applyTransform(animatable, "waist", body, partialTicks);
+                VanillaModelHelper.applyTransform(animatable, "head", head, partialTicks);
             } else {
                 setShouldTransform(true);
             }

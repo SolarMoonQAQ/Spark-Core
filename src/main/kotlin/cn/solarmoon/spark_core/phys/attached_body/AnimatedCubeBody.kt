@@ -10,6 +10,7 @@ import cn.solarmoon.spark_core.phys.toRadians
 import cn.solarmoon.spark_core.phys.toRotationMatrix
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.world.level.Level
+import org.joml.Matrix3f
 import org.joml.Matrix4f
 import org.joml.Quaterniond
 import org.ode4j.math.DVector3
@@ -36,14 +37,14 @@ class AnimatedCubeBody(
     override val name: String = boneName
     override val body: DBody = OdeHelper.createBody(name, animatable, false, physLevel.physWorld.world)
     val geoms = mutableListOf<DBox>()
-    val bone = animatable.animData.model.getBone(boneName)
+    val bone = animatable.modelData.model.getBone(boneName)
 
     init {
         repeat(bone.cubes.size) { geoms.add(OdeHelper.laterCreateBox(body, physLevel.physWorld, DVector3())) }
 
         body.onTick {
-            body.position = animatable.getBonePivot(name).toDVector3()
-            body.quaternion = animatable.getBoneMatrix(name).getUnnormalizedRotation(Quaterniond()).toDQuaternion()
+            body.position = animatable.getWorldBonePivot(boneName).toDVector3()
+            body.quaternion = animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaterniond()).toDQuaternion()
 
             bone.cubes.forEachIndexed { index, cube ->
                 val box = geoms[index]

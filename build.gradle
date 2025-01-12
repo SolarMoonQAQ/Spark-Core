@@ -115,4 +115,7 @@ if (rootProject.file('repositories.gradle').exists()) {
 
 kotlin {
     jvmToolchain(21)
+    compilerOptions {
+        getFreeCompilerArgs().add("-Xjvm-default=all")
+    }
 }

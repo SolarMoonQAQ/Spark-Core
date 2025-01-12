@@ -12,7 +12,7 @@ import net.neoforged.neoforge.attachment.IAttachmentHolder
 class GlowingTextureLayer<T: IAttachmentHolder>(renderer: IGeoRenderer<T>): RenderLayer<T>(renderer) {
 
     override fun getTextureLocation(sth: IAnimatable<T>): ResourceLocation {
-        val id = sth.animData.textureLocation
+        val id = sth.modelData.textureLocation
         val path = id.path
         val basePath = path.substringBeforeLast(".")
         val newPath = "${basePath}_glow.png"
@@ -32,12 +32,12 @@ class GlowingTextureLayer<T: IAttachmentHolder>(renderer: IGeoRenderer<T>): Rend
         packedOverlay: Int
     ) {
         val buffer = bufferSource.getBuffer(getRenderType(sth))
-        val animData = sth.animData
+        val animData = sth.modelData
         val model = animData.model
         poseStack.pushPose()
         val overlay = OverlayTexture.NO_OVERLAY
-        val matrix = sth.getPositionMatrix(partialTick)
-        model.renderBones(animData.playData, matrix, sth.getExtraTransform(partialTick), poseStack.last().normal(), buffer, packedLight, overlay, -1, partialTick)
+//        val matrix = sth.getPositionMatrix(partialTick)
+//        model.renderBones(animData.playData, matrix, sth.getExtraTransform(partialTick), poseStack.last().normal(), buffer, packedLight, overlay, -1, partialTick)
         poseStack.popPose()
     }
 

@@ -46,18 +46,19 @@ class AttackSystem(
 
     /**
      * 同[customAttack]，但会设置碰撞相关的受击数据
+     * @param customAction 在设置受击数据之后，攻击进行前插入自定义指令
      */
-    fun customGeomAttack(o1: DGeom, o2: DGeom, extraData: CompoundTag = CompoundTag(), customAction: () -> Unit): Boolean {
+    fun customGeomAttack(o1: DGeom, o2: DGeom, customAction: () -> Unit): Boolean {
         val target = (o2.body.owner as? Entity) ?: return false
         return customAttack(target) {
-            target.setAttackedData(AttackedData(entity.id, o1, o2.body, extraData))
+            target.setAttackedData(AttackedData(entity.id, o1, o2.body))
             customAction.invoke()
         }
     }
 
     /**
      * 常规攻击，玩家会调用[net.minecraft.world.entity.player.Player.attack]，活体则调用[net.minecraft.world.entity.LivingEntity.doHurtTarget]
-     * @param actionBeforeAttack 在攻击确定将要触发之前可插入一条自定义指令
+     * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
      * @return 是否成功触发攻击指令
      */
     fun commonAttack(target: Entity, actionBeforeAttack: () -> Unit = {}): Boolean {
@@ -72,12 +73,13 @@ class AttackSystem(
 
     /**
      * 同[commonAttack]，但会设置碰撞相关的受击数据
+     * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
      * @return 是否成功触发攻击指令
      */
-    fun commonGeomAttack(o1: DGeom, o2: DGeom, extraData: CompoundTag = CompoundTag(), actionBeforeAttack: () -> Unit = {}): Boolean {
+    fun commonGeomAttack(o1: DGeom, o2: DGeom, actionBeforeAttack: () -> Unit = {}): Boolean {
         val target = (o2.body.owner as? Entity) ?: return false
         return commonAttack(target) {
-            target.setAttackedData(AttackedData(entity.id, o1, o2.body, extraData))
+            target.setAttackedData(AttackedData(entity.id, o1, o2.body))
             actionBeforeAttack.invoke()
         }
     }
