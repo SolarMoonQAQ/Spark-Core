@@ -71,7 +71,7 @@ data class OBoneAnimation(
     fun getKeyAnimDataAt(time: Double): KeyAnimData {
         return KeyAnimData(
             getAnimPosAt(time).toVec3(),
-            getAnimRotAt(time).toVec3().toDegrees(),
+            getAnimRotAt(time).toVec3(),
             getAnimScaleAt(time).toVec3()
         )
     }

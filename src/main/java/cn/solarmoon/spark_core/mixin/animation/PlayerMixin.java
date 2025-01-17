@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import cn.solarmoon.spark_core.event.BoneUpdateEvent;
+import cn.solarmoon.spark_core.phys.SparkMathKt;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -48,7 +49,7 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
                 var old = event.getNewData();
                 event.setNewData(new KeyAnimData(
                         old.getPosition(),
-                        new Vec3(-getXRot(), -yHeadRot + yBodyRot, 0.0).add(old.getRotation()),
+                        SparkMathKt.toRadians(new Vec3(-getXRot(), -yHeadRot + yBodyRot, 0.0).add(old.getRotation())),
                         old.getScale()
                 ));
             }

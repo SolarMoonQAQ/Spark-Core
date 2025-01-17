@@ -30,7 +30,7 @@ class Bone(
 
     fun getPosition(partialTicks: Number = 1.0) = oData.position.lerp(data.position, partialTicks.toDouble())
 
-    fun getRotation(partialTicks: Number = 1.0) = oData.rotation.rotLerp(data.rotation, partialTicks.toDouble()).toRadians()
+    fun getRotation(partialTicks: Number = 1.0) = oData.rotation.rotLerp(data.rotation, partialTicks.toDouble())
 
     fun getScale(partialTicks: Number = 1.0) = oData.scale.lerp(data.scale, partialTicks.toDouble())
 

@@ -39,7 +39,7 @@ class BlendSpace: ConcurrentHashMap<String, BlendAnimation>() {
             rot.add(boneData.getAnimRotAt(time).mul(pt))
             scale.add(boneData.getAnimScaleAt(time).mul(pt)).sub(Vector3f(pt))
         }
-        return KeyAnimData(pos.toVec3(), rot.toVec3().toDegrees().wrapDegrees(), scale.toVec3())
+        return KeyAnimData(pos.toVec3(), rot.toVec3(), scale.toVec3())
     }
 
     fun animTick(overallSpeed: Double = 1.0) {
