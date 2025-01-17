@@ -9,8 +9,6 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // core
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    //eyelib
-    implementation "io.github.tt432:eyelib:${eyelib_version}"
     // 其它mod
     runtimeOnly files(fileTree(dir: 'lib', includes: ['*.jar']))
 

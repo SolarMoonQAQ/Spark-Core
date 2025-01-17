@@ -1,22 +1,22 @@
 package cn.solarmoon.spark_core.animation.renderer.layer
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.renderer.IGeoRenderer
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.attachment.IAttachmentHolder
+import org.checkerframework.checker.units.qual.t
 
 /**
  * 附加渲染
  */
-abstract class RenderLayer<T: IAttachmentHolder>(protected val renderer: IGeoRenderer<T>) {
+abstract class RenderLayer<T, A: IAnimatable<T>>() {
 
-    abstract fun getTextureLocation(sth: IAnimatable<T>): ResourceLocation
+    abstract fun getTextureLocation(sth: A): ResourceLocation
 
-    abstract fun getRenderType(sth: IAnimatable<T>): RenderType
+    abstract fun getRenderType(sth: A): RenderType
 
-    abstract fun render(sth: IAnimatable<T>, partialTick: Float, poseStack: PoseStack, bufferSource: MultiBufferSource, packedLight: Int, packedOverlay: Int)
+    abstract fun render(sth: A, partialTick: Float, poseStack: PoseStack, bufferSource: MultiBufferSource, packedLight: Int, packedOverlay: Int)
 
 }

@@ -40,4 +40,12 @@ abstract class BaseSkill<T>(
 
     protected abstract fun onEnd()
 
+    override fun equals(other: Any?): Boolean {
+        return (other as? Skill<*>)?.skillType == skillType
+    }
+
+    override fun hashCode(): Int {
+        return skillType.hashCode()
+    }
+
 }

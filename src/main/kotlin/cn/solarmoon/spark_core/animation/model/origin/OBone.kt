@@ -2,6 +2,8 @@ package cn.solarmoon.spark_core.animation.model.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.Bone
+import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
+import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.phys.toRadians
 import com.mojang.blaze3d.vertex.VertexConsumer
@@ -14,6 +16,7 @@ import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
 import org.joml.Matrix3f
 import org.joml.Matrix4f
+import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 import java.util.Optional
 import kotlin.collections.LinkedHashMap
 
@@ -31,9 +34,13 @@ data class OBone(
      */
     var rootModel: OModel? = null
 
+    val originKeyData = KeyAnimData(rotation = rotation)
+
     init {
         cubes.forEach { it.rootBone = this }
     }
+
+    fun createDefaultBone(animatable: IAnimatable<*>) = Bone(animatable, name).apply { set(originKeyData) }
 
     /**
      * 获取当前骨骼组的父组，没有就返回null
@@ -44,7 +51,7 @@ data class OBone(
      * 应用当前骨骼的变换到传入的矩阵中
      */
     fun applyTransform(
-        bones: Map<String, Bone>,
+        bones: BoneGroup,
         ma: Matrix4f,
         partialTick: Float = 0f,
     ): Matrix4f {
@@ -61,7 +68,7 @@ data class OBone(
      * 应用当前以及所有父类的骨骼的变换到传入的矩阵中
      */
     fun applyTransformWithParents(
-        bones: Map<String, Bone>,
+        bones: BoneGroup,
         ma: Matrix4f,
         partialTick: Float = 0f
     ): Matrix4f {
@@ -76,26 +83,6 @@ data class OBone(
             i.applyTransform(bones, ma, partialTick)
         }
         return ma
-    }
-
-    /**
-     * @param normal3f 法线的矩阵，从当前poseStack获取
-     */
-    @OnlyIn(Dist.CLIENT)
-    fun renderCubes(
-        bones: Map<String, Bone>,
-        ma: Matrix4f,
-        normal3f: Matrix3f,
-        buffer: VertexConsumer,
-        packedLight: Int,
-        packedOverlay: Int,
-        color: Int,
-        partialTick: Float = 0f
-    ) {
-        applyTransformWithParents(bones, ma, partialTick)
-        cubes.forEach {
-            it.renderVertexes(Matrix4f(ma), normal3f, buffer, packedLight, packedOverlay, color)
-        }
     }
 
     companion object {

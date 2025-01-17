@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.mixin.animation;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
+import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import cn.solarmoon.spark_core.event.BoneUpdateEvent;
@@ -18,6 +19,7 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
 
     private Player player = (Player) (Object) this;
     private final AnimController animController = new AnimController(PlayerAnimHelperKt.asAnimatable(player));
+    private final BoneGroup boneGroup = new BoneGroup(PlayerAnimHelperKt.asAnimatable(player));
 
     protected PlayerMixin(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
@@ -32,6 +34,11 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     @NotNull
     public AnimController getAnimController() {
         return animController;
+    }
+
+    @Override
+    public @NotNull BoneGroup getBones() {
+        return boneGroup;
     }
 
     @Override

@@ -84,6 +84,7 @@ data class OCube(
 
         for (polygon in polygonSet) {
             val normal = normal3f.transform(polygon.normal, Vector3f())
+            if (listOf(polygon.u1, polygon.u2, polygon.v1, polygon.v2).all { it == 0f }) continue
             fixInvertedFlatCube(normal)
 
             for (vertex in polygon.vertexes) {

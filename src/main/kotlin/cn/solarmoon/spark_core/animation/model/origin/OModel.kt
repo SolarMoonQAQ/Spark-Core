@@ -33,25 +33,6 @@ data class OModel(
 
     fun hasBone(name: String) = bones[name] != null
 
-    /**
-     * @param normal3f 法线的矩阵，从当前poseStack获取
-     */
-    @OnlyIn(Dist.CLIENT)
-    fun renderBones(
-        animatable: IAnimatable<*>,
-        matrix4f: Matrix4f,
-        normal3f: Matrix3f,
-        buffer: VertexConsumer,
-        packedLight: Int,
-        packedOverlay: Int,
-        color: Int,
-        partialTick: Float = 0f
-    ) {
-        bones.values.forEach {
-            it.renderCubes(animatable.modelData.bones, Matrix4f(matrix4f), normal3f, buffer, packedLight, packedOverlay, color, partialTick)
-        }
-    }
-
     companion object {
         @JvmStatic
         fun get(id: ResourceLocation) = ORIGINS[id] ?: EMPTY

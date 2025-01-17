@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
-import cn.solarmoon.spark_core.animation.sync.SetAnimPayload
+import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
 import cn.solarmoon.spark_core.visual_effect.common.geom.RenderableGeomPayload
 import cn.solarmoon.spark_core.visual_effect.common.camera_shake.CameraShakePayload
 import cn.solarmoon.spark_core.visual_effect.common.shadow.ShadowPayload
@@ -17,7 +17,7 @@ object SparkPayloads {
         val anim = event.registrar("animation")
         anim.configurationToClient(ModelDataPayload.TYPE, ModelDataPayload.STREAM_CODEC, ModelDataPayload::handleInClient)
         anim.configurationToServer(ModelDataSendingTask.Return.TYPE, ModelDataSendingTask.Return.STREAM_CODEC, ModelDataSendingTask.Return::onAct)
-        anim.playToClient(SetAnimPayload.TYPE, SetAnimPayload.STREAM_CODEC, SetAnimPayload::handleInClient)
+        anim.playBidirectional(TypedAnimPayload.TYPE, TypedAnimPayload.STREAM_CODEC, TypedAnimPayload::handleBothSide)
 
         val box = event.registrar("box")
         box.playToClient(RenderableGeomPayload.TYPE, RenderableGeomPayload.STREAM_CODEC, RenderableGeomPayload::handleInClient)

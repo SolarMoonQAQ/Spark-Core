@@ -1,10 +1,9 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.entity.state.isJumping
-import cn.solarmoon.spark_core.entity.state.isMoving
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
-import net.minecraft.world.entity.Entity
+import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
@@ -15,6 +14,11 @@ object AnimTicker {
         val entity = event.entity
         if (entity is IEntityAnimatable<*>) {
             entity.animController.tick()
+
+            if (Minecraft.getInstance().options.keyAttack.isDown) {
+                SparkCore.LOGGER.info(entity.getBone("rightLeg").data.rotation.toString())
+                entity.animController.setAnimation("hammer:attack_3", 0)
+            }
         }
     }
 

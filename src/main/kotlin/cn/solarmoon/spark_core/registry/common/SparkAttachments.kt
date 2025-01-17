@@ -1,10 +1,11 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.play.ModelData
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.entity.attack.AttackedData
 import cn.solarmoon.spark_core.skill.SkillController
 import cn.solarmoon.spark_core.phys.attached_body.AttachedBody
+import ru.nsk.kstatemachine.statemachine.StateMachine
 import java.util.Optional
 
 
@@ -13,10 +14,10 @@ object SparkAttachments {
     fun register() {}
 
     @JvmStatic
-    val ANIM_DATA = SparkCore.REGISTER.attachment<ModelData>()
-        .id("anim_data")
-        .defaultValue { ModelData.EMPTY }
-        .serializer { it.serialize(ModelData.CODEC) }
+    val MODEL_INDEX = SparkCore.REGISTER.attachment<ModelIndex>()
+        .id("model_index")
+        .defaultValue { ModelIndex.EMPTY }
+        .serializer { it.serialize(ModelIndex.CODEC) }
         .build()
 
     @JvmStatic

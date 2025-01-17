@@ -1,12 +1,12 @@
 package cn.solarmoon.spark_core.animation
 
 import cn.solarmoon.spark_core.animation.anim.play.AnimController
-import cn.solarmoon.spark_core.animation.anim.play.ModelData
+import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
+import cn.solarmoon.spark_core.animation.anim.play.Bone
+import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
-import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
-import net.neoforged.neoforge.network.PacketDistributor
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
@@ -26,19 +26,24 @@ interface IAnimatable<T> {
     val animController: AnimController
 
     /**
-     * 存储动画体指向的模型动画骨骼等数据，可以通过改变data里的指向路径以改变模型和动画
+     * 存储动画体指向的模型动画骨骼等索引数据，可以通过改变data里的指向路径以改变模型和动画
      */
-    var modelData: ModelData
+    var modelIndex: ModelIndex
+
+    /**
+     * 实际可用的骨骼组
+     */
+    val bones: BoneGroup
 
     /**
      * 该动画体的原始模型
      */
-    val model get() = modelData.model
+    val model get() = modelIndex.model
 
     /**
      * 该动画体的原始动画列表
      */
-    val animations get() = modelData.animationSet
+    val animations get() = modelIndex.animationSet
 
     /**
      * 动画体所在的世界坐标
@@ -51,9 +56,9 @@ interface IAnimatable<T> {
     fun getRootYRot(partialTick: Float = 1f): Float
 
     /**
-     * 获取指定的骨骼
+     * 获取指定的骨骼，没有时会创建一个新的
      */
-    fun getBone(name: String) = modelData.getBone(name, this)
+    fun getBone(name: String) = bones.getOrPut(name) { Bone(this, name) }
 
     /**
      * 获取动画体到其当前世界位置的变换矩阵
@@ -66,7 +71,7 @@ interface IAnimatable<T> {
     fun getWorldBonePivot(name: String, partialTick: Float = 1f): Vector3f {
         val ma = getWorldPositionMatrix(partialTick)
         val bone = model.getBone(name)
-        bone.applyTransformWithParents(modelData.bones, ma, partialTick)
+        bone.applyTransformWithParents(bones, ma, partialTick)
         val pivot = bone.pivot.toVector3f()
         return ma.transformPosition(pivot)
     }
@@ -77,9 +82,14 @@ interface IAnimatable<T> {
     fun getWorldBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f {
         val ma = getWorldPositionMatrix(partialTick)
         val bone = model.getBone(name)
-        bone.applyTransformWithParents(modelData.bones, ma, partialTick)
+        bone.applyTransformWithParents(bones, ma, partialTick)
         return ma
     }
+
+    /**
+     * 根据name索引创建一个新的动画实例
+     */
+    fun newAnimInstance(name: String) = AnimInstance(this, name)
 
     /**
      * 当任意骨骼被更新后调用，可以在此基础上对骨骼的位移旋转等参数进行调整

@@ -17,6 +17,9 @@ class CameraShaker: VisualEffectRenderer() {
     private var strength = 0f
     private var frequency = 0f
 
+    /**
+     * 注意此方法很容易被所有人一起调用，如果不是想一起震动最好限定目标为此客户端的本地玩家
+     */
     fun shake(time: Int, strength: Float, frequency: Float = 3f) {
         // 保证不被低震度覆盖高震度产生违和感
         if(strength > this.strength) {

@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.skill.SkillType
-import cn.solarmoon.spark_core.state_control.ObjectState
 
 object SparkRegistries {
 
@@ -12,8 +12,8 @@ object SparkRegistries {
         .build { it.sync(true).create() }
 
     @JvmStatic
-    val STATE = SparkCore.REGISTER.registry<ObjectState<*>>()
-        .id("state")
+    val TYPED_ANIMATION = SparkCore.REGISTER.registry<TypedAnimation>()
+        .id("typed_animation")
         .build { it.sync(true).create() }
 
     @JvmStatic

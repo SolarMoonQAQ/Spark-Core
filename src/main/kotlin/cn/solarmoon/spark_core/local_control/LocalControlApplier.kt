@@ -37,13 +37,4 @@ object LocalControlApplier {
         }
     }
 
-    @SubscribeEvent
-    private fun sendPackage(event: ClientTickEvent.Post) {
-        allControllers.forEach {
-            while (it.packages.isNotEmpty()) {
-                PacketDistributor.sendToServer(it.packages.removeLast())
-            }
-        }
-    }
-
 }

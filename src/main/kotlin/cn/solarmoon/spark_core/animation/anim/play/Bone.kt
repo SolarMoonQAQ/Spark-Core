@@ -22,10 +22,21 @@ class Bone(
         data = event.newData
     }
 
+    fun set(newData: KeyAnimData) {
+        val event = NeoForge.EVENT_BUS.post(BoneUpdateEvent(holder, this, data, newData))
+        oData = event.newData
+        data = event.newData
+    }
+
     fun getPosition(partialTicks: Number = 1.0) = oData.position.lerp(data.position, partialTicks.toDouble())
 
     fun getRotation(partialTicks: Number = 1.0) = oData.rotation.rotLerp(data.rotation, partialTicks.toDouble()).toRadians()
 
     fun getScale(partialTicks: Number = 1.0) = oData.scale.lerp(data.scale, partialTicks.toDouble())
+
+    fun copy() = Bone(holder, name).apply {
+        this@apply.data = this@Bone.data
+        this@apply.oData = this@Bone.data
+    }
 
 }

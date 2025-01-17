@@ -41,7 +41,7 @@ public class GeoArmorRendererMixin<T extends Item & GeoItem> {
     private void setArmorPivot(PoseStack poseStack, T animatable0, BakedGeoModel model, @Nullable MultiBufferSource bufferSource, @Nullable VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour, CallbackInfo ci) {
         if (currentEntity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable)) {
             if (body != null) {
-                var pivot = animatable.getModelData().getModel().getBone("waist").getPivot().toVector3f().mul(16f);
+                var pivot = animatable.getModelIndex().getModel().getBone("waist").getPivot().toVector3f().mul(16f);
                 body.updatePivot(pivot.x, pivot.y, pivot.z);
             }
         }

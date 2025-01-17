@@ -1,38 +1,50 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.phys.toDegrees
+import cn.solarmoon.spark_core.phys.wrapDegrees
 import org.joml.Vector3f
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
+import java.util.concurrent.ConcurrentHashMap
 
-class BlendSpace: HashMap<String, BlendAnimation>() {
+class BlendSpace: ConcurrentHashMap<String, BlendAnimation>() {
 
     fun put(animation: BlendAnimation) {
-        put(animation.name, animation)
+        put(animation.anim.name, animation)
+    }
+
+    fun putIfAbsent(animation: BlendAnimation) {
+        putIfAbsent(animation.anim.name, animation)
     }
 
     /**
      * 按当前空间权重混合指定骨骼的动画，并输出新的混合结果
      */
-    fun blendBone(boneName: String, time: Double): KeyAnimData {
-        val totalWeight = values.filter { boneName !in it.boneBlackList && boneName in it.anim.bones }.sumOf { it.weight }
+    fun blendBone(boneName: String): KeyAnimData {
+        val totalWeight = values.filter { boneName !in it.boneBlackList && boneName in it.anim.origin.bones }.sumOf { it.weight }
         val pos = Vector3f()
         val rot = Vector3f()
         val scale = Vector3f(1f)
         values.forEach {
             if (boneName in it.boneBlackList) return@forEach
-            val boneData = it.anim.getBoneAnimation(boneName) ?: return@forEach
+            val boneData = it.anim.origin.getBoneAnimation(boneName) ?: return@forEach
             val pt = (it.weight / totalWeight).toFloat()
-            val time = when(it.anim.loop) {
-                Loop.TRUE -> (time * it.speed) % it.anim.animationLength
-                Loop.ONCE -> time * it.speed
-                Loop.HOLD_ON_LAST_FRAME -> time * it.speed
+            val time = when(it.anim.origin.loop) {
+                Loop.TRUE -> (it.anim.time * it.anim.speed) % it.anim.origin.animationLength
+                Loop.ONCE -> it.anim.time * it.anim.speed
+                Loop.HOLD_ON_LAST_FRAME -> it.anim.time * it.anim.speed
             }
             pos.add(boneData.getAnimPosAt(time).mul(pt))
             rot.add(boneData.getAnimRotAt(time).mul(pt))
             scale.add(boneData.getAnimScaleAt(time).mul(pt)).sub(Vector3f(pt))
         }
-        return KeyAnimData(pos.toVec3(), rot.toVec3().toDegrees(), scale.toVec3())
+        return KeyAnimData(pos.toVec3(), rot.toVec3().toDegrees().wrapDegrees(), scale.toVec3())
+    }
+
+    fun animTick(overallSpeed: Double = 1.0) {
+        values.forEach { it.anim.tick(overallSpeed) }
+        filter { it.key != "main" && it.value.anim.isCancelled }.map { it.key }.forEach { remove(it) }
     }
 
 }

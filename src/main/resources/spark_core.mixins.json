@@ -31,7 +31,8 @@
     "compat.azurelib.GeoArmorRendererMixin",
     "compat.geckolib.GeoArmorRendererMixin",
     "event.KeyboardInputMixin",
-    "extension.DebugRendererMixin"
+    "extension.DebugRendererMixin",
+    "extension.LocalPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

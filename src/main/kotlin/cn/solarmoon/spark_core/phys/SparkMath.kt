@@ -91,10 +91,27 @@ fun Vec3.rotLerp(target: Vec3, progress: Double) = Vec3(
     Mth.rotLerp(progress, z, target.z)
 )
 
+fun angleDifference(angle1: Double, angle2: Double): Double {
+    val diff = ( angle2 - angle1 + 180 ) % 360 - 180
+    return if (diff < -180) diff + 360 else diff
+}
+
 fun Double.toDegrees() = Math.toDegrees(this)
 
 fun Vec3.toDegrees() = Vec3(
     x.toDegrees(),
     y.toDegrees(),
     z.toDegrees()
+)
+
+fun Vector3f.toDegrees() = Vector3f(
+    x.toDegrees(),
+    y.toDegrees(),
+    z.toDegrees()
+)
+
+fun Vec3.wrapDegrees() = Vec3(
+    Mth.wrapDegrees(x),
+    Mth.wrapDegrees(y),
+    Mth.wrapDegrees(z)
 )

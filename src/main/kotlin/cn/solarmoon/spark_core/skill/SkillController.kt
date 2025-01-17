@@ -26,6 +26,7 @@ abstract class SkillController<T> {
      */
     val allSkills = mutableListOf<Skill<*>>()
     val allActiveSkills get() = allSkills.filter { it.isActive() }
+    val firstActiveSkill get() = allSkills.firstOrNull { it.isActive() }
 
     private var loadMoment by Delegates.observable(false) { _, old, new ->
         if (old != new) {
@@ -51,7 +52,7 @@ abstract class SkillController<T> {
     /**
      * 是否正在播放任意技能
      */
-    fun isPlaying(): Boolean = allActiveSkills.isNotEmpty()
+    fun isPlaying(): Boolean = allSkills.any { it.isActive() }
 
     fun addSkill(skill: Skill<*>) { allSkills.add(skill) }
 

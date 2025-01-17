@@ -41,17 +41,20 @@ open class EntityAnimatedAttackBody(
     override fun onCollide(o2: DGeom, buffer: DContactBuffer) {
         super.onCollide(o2, buffer)
 
-        doAttack(o2, buffer) {
-            whenAttacked(o2, buffer)
+        val fistAttack = doAttack(o2, buffer) {
+            whenAboutToAttack(o2, buffer)
         }
+        whenAttacked(fistAttack, o2, buffer)
     }
 
-    open fun whenAttacked(o2: DGeom, buffer: DContactBuffer) {
+    open fun whenAboutToAttack(o2: DGeom, buffer: DContactBuffer) {
         if (level.isClientSide) {
             SparkVisualEffects.GEOM.getRenderableBox(geom.uuid.toString()).setColor(Color.RED)
             SparkVisualEffects.GEOM.getRenderableBox(o2.uuid.toString()).setColor(Color.RED)
         }
     }
+
+    open fun whenAttacked(firstAttacked: Boolean, o2: DGeom, buffer: DContactBuffer) {}
 
     open fun doAttack(o2: DGeom, buffer: DContactBuffer, actionBeforeAttack: () -> Unit = {}) = attackSystem.commonGeomAttack(geom, o2, actionBeforeAttack)
 

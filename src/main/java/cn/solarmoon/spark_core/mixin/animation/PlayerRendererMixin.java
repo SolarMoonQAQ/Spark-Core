@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
-import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.PlayerModel;
@@ -29,13 +29,11 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
     @Inject(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
     private void render(AbstractClientPlayer entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
         var animatable = PlayerAnimHelperKt.asAnimatable(entity);
-        var animData = animatable.getModelData();
+        var animData = animatable.getModelIndex();
         var path = animData.getModelPath();
         if (!path.equals(ResourceLocation.withDefaultNamespace("player"))) {
             var vb = buffer.getBuffer(RenderType.entityTranslucent(animData.getTextureLocation()));
-            var model = OModel.get(path);
-            var matrix = animatable.getWorldPositionMatrix(partialTicks);
-            model.renderBones(animatable, matrix, poseStack.last().normal(), vb, packedLight, LivingEntityRenderer.getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks)), -1, partialTicks);
+            ModelRenderHelperKt.render(animatable, poseStack, vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks)), -1, partialTicks);
             ci.cancel();
         }
     }

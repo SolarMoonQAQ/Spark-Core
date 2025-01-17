@@ -7,11 +7,11 @@ import net.minecraft.client.player.LocalPlayer
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.neoforged.neoforge.client.event.InputEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
+import net.neoforged.neoforge.network.PacketDistributor
 import kotlin.properties.Delegates
 
 abstract class LocalInputController {
 
-    val packages = ArrayDeque<CustomPacketPayload>()
     private var initChecker: Boolean by Delegates.observable(false) { _, old, new -> if (old != new && new) laterInit() }
     private val keyRecorder = hashMapOf<KeyMapping, Boolean>()
     private val keyPressTimer = hashMapOf<KeyMapping, Int>()
@@ -51,8 +51,8 @@ abstract class LocalInputController {
     /**
      * 添加网络包以待在tick末尾一起整合发送
      */
-    fun addPackage(pack: CustomPacketPayload) {
-        packages.add(pack)
+    fun sendPackage(pack: CustomPacketPayload) {
+        PacketDistributor.sendToServer(pack)
     }
 
     /**

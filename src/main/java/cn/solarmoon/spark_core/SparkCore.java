@@ -24,6 +24,7 @@ public class SparkCore {
 
         if (FMLEnvironment.dist.isClient()) {
             SparkClientEvents.register();
+            modEventBus.addListener(SparkClientEvents::test);
         }
 
         SparkRegistries.register();
@@ -36,7 +37,8 @@ public class SparkCore {
         SparkEntityTypes.register();
         SparkPhysLevelRegister.register();
         SparkEntityStates.register();
-        SparkStateMachineRegister.register();
+        SparkTypedAnimations.register();
+        modEventBus.addListener(SparkEntityStates::at);
 
         OdeHelper.initODE();
     }

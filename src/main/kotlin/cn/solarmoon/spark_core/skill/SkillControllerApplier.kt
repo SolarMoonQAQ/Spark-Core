@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.phys.attached_body.getBody
 import cn.solarmoon.spark_core.phys.toDMatrix3
 import cn.solarmoon.spark_core.phys.toDVector3
