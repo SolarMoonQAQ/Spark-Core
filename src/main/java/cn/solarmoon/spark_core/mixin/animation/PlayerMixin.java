@@ -49,7 +49,7 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
                 var old = event.getNewData();
                 event.setNewData(new KeyAnimData(
                         old.getPosition(),
-                        SparkMathKt.toRadians(new Vec3(-getXRot(), -yHeadRot + yBodyRot, 0.0).add(old.getRotation())),
+                        SparkMathKt.toRadians(new Vec3(-getXRot(), -yHeadRot + yBodyRot, 0.0)).add(old.getRotation()),
                         old.getScale()
                 ));
             }

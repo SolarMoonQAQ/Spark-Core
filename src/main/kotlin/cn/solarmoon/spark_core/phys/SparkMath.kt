@@ -6,6 +6,7 @@ import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3d
 import org.joml.Matrix3f
 import org.joml.Quaterniond
+import org.joml.Quaterniondc
 import org.joml.Quaternionf
 import org.joml.Vector3d
 import org.joml.Vector3f
@@ -89,10 +90,33 @@ fun AABB.toDAABB() = DAABB(minX, maxX, minY, maxY, minZ, maxZ)
 fun DAABBC.toDBox(space: DSpace) = OdeHelper.createBox(space, lengths).apply { position = center }
 
 fun Vec3.rotLerp(target: Vec3, progress: Double): Vec3 {
-    val start = Quaterniond().rotateXYZ(x, y, z)
-    val end = Quaterniond().rotateXYZ(target.x, target.y, target.z)
+    val start = Quaterniond().rotateZYX(z, y, x)
+    val end = Quaterniond().rotateZYX(target.z, target.y, target.x)
     val result = start.slerp(end, progress)
-    return result.getEulerAnglesXYZ(Vector3d()).toVec3()
+    return result.toEuler().toVec3()
+}
+
+fun Quaterniond.toEuler(): Vector3d {
+    val angles = Vector3d()
+    val q = Quaterniond(this)
+    q.normalize()
+
+    // roll (x-axis rotation)
+    val sinr_cosp = 2 * (q.w * q.x + q.y * q.z)
+    val cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y)
+    angles.apply { x = atan2(sinr_cosp, cosr_cosp) }
+
+    // pitch (y-axis rotation)
+    val sinp = sqrt(1 + 2 * (q.w * q.y - q.x * q.z))
+    val cosp = sqrt(1 - 2 * (q.w * q.y - q.x * q.z))
+    angles.apply { y = 2 * atan2(sinp, cosp) - PI / 2 }
+
+    // yaw (z-axis rotation)
+    val siny_cosp = 2 * (q.w * q.z + q.x * q.y)
+    val cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
+    angles.apply { z = atan2(siny_cosp, cosy_cosp) }
+
+    return angles;
 }
 
 fun Double.toDegrees() = Math.toDegrees(this)
