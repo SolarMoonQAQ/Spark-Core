@@ -36,9 +36,9 @@ class EntityModelListener: SimpleJsonListener("geo/model") {
                 val locators = it.locators.mapValues { (_, value) -> OLocator(value.offset.div(16.0), value.rotation.div(16.0)) }
                 OBone(it.name, it.parentName, it.pivot.multiply(-1.0, 1.0, 1.0).div(16.0), it.rotation.multiply(-1.0, -1.0, 1.0).toRadians(), LinkedHashMap(locators), ArrayList(cubes))
             }
-            OModel.Companion.ORIGINS[id] = OModel(coord.x, coord.y, LinkedHashMap(bones))
+            OModel.ORIGINS[id] = OModel(coord.x, coord.y, LinkedHashMap(bones))
         }
-        SparkCore.LOGGER.info("已加载 ${OModel.Companion.ORIGINS.size} 种类型的模型")
+        SparkCore.LOGGER.info("已加载 ${OModel.ORIGINS.size} 种类型的模型")
     }
 
 }

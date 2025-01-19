@@ -18,13 +18,7 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
     @Inject(method = "setupRotations", at = @At("RETURN"))
     private void offset(T entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.isHumanoidModel(entity)) {
-            var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
-            var pos = animatable.getBone("root").getPosition(partialTicks);
-            var rot = animatable.getBone("body").getRotation(partialTicks);
-            poseStack.translate(pos.x, pos.y, pos.z);
-            poseStack.translate(0, 1, 0);
-            poseStack.mulPose(new Matrix4f().rotateZYX((float) rot.z, (float) rot.y, (float) rot.x));
-            poseStack.translate(0, -1, 0);
+            poseStack.mulPose(animatable.getSpaceBoneMatrix("body", partialTick));
         }
     }
 

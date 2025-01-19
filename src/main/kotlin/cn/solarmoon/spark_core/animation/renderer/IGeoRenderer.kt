@@ -13,33 +13,31 @@ interface IGeoRenderer<T, S: IAnimatable<T>> {
     val layers: MutableList<RenderLayer<T, S>>
 
     fun render(
-        entity: S,
-        entityYaw: Float,
+        animatable: S,
+        yaw: Float,
         partialTick: Float,
         poseStack: PoseStack,
         bufferSource: MultiBufferSource,
         packedLight: Int
     ) {
-        val buffer = bufferSource.getBuffer(getRenderType(entity))
+        val buffer = bufferSource.getBuffer(getRenderType(animatable))
 
-        poseStack.pushPose()
-        val overlay = getOverlay(entity, partialTick)
-        entity.render(poseStack, buffer, packedLight, overlay, getColor(entity, partialTick), partialTick)
-        poseStack.popPose()
+        val overlay = getOverlay(animatable, partialTick)
+        animatable.render(poseStack.last().normal(), buffer, packedLight, overlay, getColor(animatable, partialTick), partialTick)
 
-        layers.forEach { it.render(entity, partialTick, poseStack, bufferSource, packedLight, -1) }
+        layers.forEach { it.render(animatable, partialTick, poseStack, bufferSource, packedLight, -1) }
     }
 
-    fun getColor(entity: S, partialTick: Float): Int = -1
+    fun getColor(animatable: S, partialTick: Float): Int = -1
 
-    fun getOverlay(entity: S, partialTick: Float) = OverlayTexture.NO_OVERLAY
+    fun getOverlay(animatable: S, partialTick: Float) = OverlayTexture.NO_OVERLAY
 
-    fun getRenderType(entity: S): RenderType {
-        return RenderType.entityTranslucent(getGeoTextureLocation(entity))
+    fun getRenderType(animatable: S): RenderType {
+        return RenderType.entityTranslucent(getGeoTextureLocation(animatable))
     }
 
-    fun getGeoTextureLocation(entity: S): ResourceLocation {
-        return entity.modelIndex.textureLocation
+    fun getGeoTextureLocation(animatable: S): ResourceLocation {
+        return animatable.modelIndex.textureLocation
     }
 
 }

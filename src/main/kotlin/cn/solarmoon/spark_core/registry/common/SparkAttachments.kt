@@ -3,9 +3,8 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.entity.attack.AttackedData
-import cn.solarmoon.spark_core.skill.SkillController
-import cn.solarmoon.spark_core.phys.attached_body.AttachedBody
-import ru.nsk.kstatemachine.statemachine.StateMachine
+import cn.solarmoon.spark_core.phys.BodyType
+import org.ode4j.ode.DBody
 import java.util.Optional
 
 
@@ -20,21 +19,12 @@ object SparkAttachments {
         .serializer { it.serialize(ModelIndex.CODEC) }
         .build()
 
+    /**
+     * 保证每种bodyType只对应唯一的DBody
+     */
     @JvmStatic
-    val ATTACKED_DATA = SparkCore.REGISTER.attachment<Optional<AttackedData>>()
-        .id("attacked_data")
-        .defaultValue { Optional.empty() }
-        .build()
-
-    @JvmStatic
-    val BODY = SparkCore.REGISTER.attachment<LinkedHashMap<String, AttachedBody>>()
-        .id("attached_body")
-        .defaultValue { linkedMapOf() }
-        .build()
-
-    @JvmStatic
-    val SKILL_CONTROLLER = SparkCore.REGISTER.attachment<MutableList<SkillController<*>>>()
-        .id("skill_controller")
+    val BODIES = SparkCore.REGISTER.attachment<MutableList<DBody>>()
+        .id("body")
         .defaultValue { mutableListOf() }
         .build()
 

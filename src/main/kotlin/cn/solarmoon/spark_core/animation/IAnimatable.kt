@@ -6,9 +6,12 @@ import cn.solarmoon.spark_core.animation.anim.play.Bone
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
+import cn.solarmoon.spark_core.phys.toEuler
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
+import org.joml.Quaterniond
 import org.joml.Vector3f
+import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3f
 
 /**
  * ### 动画体
@@ -66,12 +69,11 @@ interface IAnimatable<T> {
     fun getWorldPositionMatrix(partialTick: Float = 1f) = Matrix4f().translate(getWorldPosition(partialTick).toVector3f()).rotateY(getRootYRot(partialTick))
 
     /**
-     * 获取动画体指定骨骼的枢轴点在世界位置的变换矩阵
+     * 获取动画体指定骨骼的枢轴点在世界位置上的坐标
      */
     fun getWorldBonePivot(name: String, partialTick: Float = 1f): Vector3f {
-        val ma = getWorldPositionMatrix(partialTick)
+        val ma = getWorldBoneMatrix(name, partialTick)
         val bone = model.getBone(name)
-        bone.applyTransformWithParents(bones, ma, partialTick)
         val pivot = bone.pivot.toVector3f()
         return ma.transformPosition(pivot)
     }
@@ -81,6 +83,16 @@ interface IAnimatable<T> {
      */
     fun getWorldBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f {
         val ma = getWorldPositionMatrix(partialTick)
+        val bone = model.getBone(name)
+        bone.applyTransformWithParents(bones, ma, partialTick)
+        return ma
+    }
+
+    /**
+     * 获取动画体指定骨骼在模型空间的变换矩阵
+     */
+    fun getSpaceBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f {
+        val ma = Matrix4f()
         val bone = model.getBone(name)
         bone.applyTransformWithParents(bones, ma, partialTick)
         return ma

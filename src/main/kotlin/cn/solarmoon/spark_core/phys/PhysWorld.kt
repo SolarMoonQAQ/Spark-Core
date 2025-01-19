@@ -5,40 +5,39 @@ import org.ode4j.ode.DGeom
 import org.ode4j.ode.OdeHelper
 import org.ode4j.ode.internal.DxWorld
 
-class PhysWorld(val stepSize: Long) {
+class PhysWorld(val stepSize: Long): DxWorld() {
 
     companion object {
         const val MAX_CONTACT_AMOUNT = 64
     }
 
     private val lateConsumer = ArrayDeque<() -> Unit>()
-    val world = OdeHelper.createWorld() as DxWorld
     val space = OdeHelper.createHashSpace()
     val contactGroup = OdeHelper.createJointGroup()
 
     init {
-        world.setGravity(0.0, -9.81, 0.0) //设置重力
-        world.contactSurfaceLayer = 0.01 //最大陷入深度，有助于防止抖振(虽然本来似乎也没)
-        world.erp = 0.25
-        world.cfm = 0.00005
-        world.autoDisableFlag = true //设置静止物体自动休眠以节约性能
-        world.autoDisableSteps = 5
-        world.quickStepNumIterations = 40 //设定迭代次数以提高物理计算精度
-        world.quickStepW = 1.3
-        world.contactMaxCorrectingVel = 20.0
+        setGravity(0.0, -9.81, 0.0) //设置重力
+        contactSurfaceLayer = 0.01 //最大陷入深度，有助于防止抖振(虽然本来似乎也没)
+        erp = 0.25
+        cfm = 0.00005
+        autoDisableFlag = true //设置静止物体自动休眠以节约性能
+        autoDisableSteps = 5
+        quickStepNumIterations = 40 //设定迭代次数以提高物理计算精度
+        quickStepW = 1.3
+        contactMaxCorrectingVel = 20.0
     }
 
     fun physTick() {
-        while (lateConsumer.isNotEmpty()) lateConsumer.removeLast().invoke()
-        world.bodyIteration.forEach { it.physTick() }
+        while (lateConsumer.isNotEmpty()) lateConsumer.removeLastOrNull()?.invoke()
+        bodyIteration.forEach { it.physTick() }
         contactGroup.empty()
         space.collide(Any(), ::nearCallback)
-        world.quickStep(stepSize / 1000.0)
+        quickStep(stepSize / 1000.0)
     }
 
     fun nearCallback(data: Any, o1: DGeom, o2: DGeom) {
         if (!o1.collisionDetectable() || !o2.collisionDetectable()) return
-        if (o1.body.owner == o2.body.owner) return
+        if (o1.body?.owner == o2.body?.owner) return
 
         val bufferSize = MAX_CONTACT_AMOUNT
         val contactBuffer = DContactBuffer(bufferSize)
@@ -50,7 +49,7 @@ class PhysWorld(val stepSize: Long) {
 
                 if (contactBuffer.shouldCreateJoint()) {
                     repeat(it) { index ->
-                        OdeHelper.createContactJoint(world, contactGroup, contactBuffer[index])
+                        OdeHelper.createContactJoint(this, contactGroup, contactBuffer[index])
                             .attach(o1.body, o2.body)
                     }
                 }

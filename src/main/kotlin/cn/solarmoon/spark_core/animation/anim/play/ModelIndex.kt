@@ -10,6 +10,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.item.Item
 
 /**
  * 保存了客户端渲染完整动画和模型所需的必要数据
@@ -29,6 +30,19 @@ class ModelIndex (
 
     val model get() = OModel.get(modelPath)
     val animationSet get() = OAnimationSet.get(animPath)
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is ModelIndex) return false
+        return other.modelPath == modelPath && other.animPath == animPath && other.textureLocation == textureLocation
+    }
+
+    override fun hashCode(): Int {
+        var result = 1
+        result = 31 * result + modelPath.hashCode()
+        result = 31 * result + animPath.hashCode()
+        result = 31 * result + textureLocation.hashCode()
+        return result
+    }
 
     companion object {
         @JvmStatic
@@ -55,6 +69,12 @@ class ModelIndex (
         fun of(entity: Entity): ModelIndex {
             val key = BuiltInRegistries.ENTITY_TYPE.getKey(entity.type)
             return ModelIndex(key, ResourceLocation.fromNamespaceAndPath(key.namespace, "textures/entity/${key.path}.png"))
+        }
+
+        @JvmStatic
+        fun of(item: Item): ModelIndex {
+            val key = BuiltInRegistries.ITEM.getKey(item)
+            return ModelIndex(key, ResourceLocation.fromNamespaceAndPath(key.namespace, "textures/item/${key.path}.png"))
         }
     }
 

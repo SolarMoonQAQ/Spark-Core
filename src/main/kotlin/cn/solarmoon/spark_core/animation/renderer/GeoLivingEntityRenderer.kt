@@ -1,20 +1,16 @@
 package cn.solarmoon.spark_core.animation.renderer
 
-import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
 import net.minecraft.client.model.EntityModel
 import net.minecraft.client.renderer.MultiBufferSource
-import net.minecraft.client.renderer.RenderType
-import net.minecraft.client.renderer.entity.EntityRenderer
 import net.minecraft.client.renderer.entity.EntityRendererProvider
 import net.minecraft.client.renderer.entity.LivingEntityRenderer
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
-import org.joml.Matrix4f
 
 open class GeoLivingEntityRenderer<T>(context: EntityRendererProvider.Context, shadowRadius: Float):
     LivingEntityRenderer<T, EntityModel<T>>(context, EmptyModel(), shadowRadius), IGeoRenderer<T, T> where T : LivingEntity, T : IEntityAnimatable<T> {
@@ -22,15 +18,15 @@ open class GeoLivingEntityRenderer<T>(context: EntityRendererProvider.Context, s
     override val layers: MutableList<RenderLayer<T, T>> = mutableListOf()
 
     override fun render(
-        entity: T,
-        entityYaw: Float,
+        animatable: T,
+        yaw: Float,
         partialTick: Float,
         poseStack: PoseStack,
         bufferSource: MultiBufferSource,
         packedLight: Int
     ) {
-        super<LivingEntityRenderer>.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight)
-        super<IGeoRenderer>.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight)
+        super<LivingEntityRenderer>.render(animatable, yaw, partialTick, poseStack, bufferSource, packedLight)
+        super<IGeoRenderer>.render(animatable, yaw, partialTick, poseStack, bufferSource, packedLight)
     }
 
     override fun getTextureLocation(entity: T): ResourceLocation {

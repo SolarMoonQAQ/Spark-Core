@@ -27,6 +27,7 @@ package org.ode4j.ode;
 import java.io.File;
 import java.util.List;
 
+import cn.solarmoon.spark_core.phys.BodyType;
 import cn.solarmoon.spark_core.phys.PhysWorld;
 import kotlin.Unit;
 import org.ode4j.math.DVector3;
@@ -528,21 +529,20 @@ public abstract class OdeHelper {
 	
 	/**
 	 * Create a body in given world.
-	 * 
-	 * <p>REMARK: 
+	 *
+	 * <p>REMARK:
 	 * Default mass parameters are at position (0,0,0).
 	 * @param w world
 	 * @return new body
 	 */
 	//ODE_API
-	public static DBody createBody (DWorld w){
-		return DxBody.dBodyCreate((DxWorld) w);
+	public static DBody createBody (BodyType type, Object owner, DWorld w){
+		return DxBody.dBodyCreate(type, owner, (DxWorld) w);
 	}
 
-	public static DBody createBody (String name, Object owner, boolean gravity, DWorld w){
-		var box = DxBody.dBodyCreate((DxWorld) w);
+	public static DBody createBody (BodyType type, Object owner, String name, boolean gravity, DWorld w){
+		var box = DxBody.dBodyCreate(type, owner, (DxWorld) w);
 		box.setName(name);
-		box.setOwner(owner);
 		box.setGravityMode(gravity);
 		return box;
 	}
@@ -776,11 +776,11 @@ public abstract class OdeHelper {
 		return DxPlane.dCreatePlane((DxSpace) space, a, b, c, d);
 	}
 
-	public static DRagdoll createRagdoll(DWorld world, DRagdollConfig skeleton) {
-		return DxRagdoll.create(world, null, skeleton);
+	public static DRagdoll createRagdoll(BodyType type, Object owner, DWorld world, DRagdollConfig skeleton) {
+		return DxRagdoll.create(type, owner, world, null, skeleton);
 	}
-	public static DRagdoll createRagdoll(DWorld world, DSpace space, DRagdollConfig skeleton) {
-		return DxRagdoll.create(world, space, skeleton);
+	public static DRagdoll createRagdoll(BodyType type, Object owner, DWorld world, DSpace space, DRagdollConfig skeleton) {
+		return DxRagdoll.create(type, owner, world, space, skeleton);
 	}
 
 	public static DRay createRay(int length) {

@@ -25,7 +25,3 @@ import org.ode4j.ode.OdeHelper
 import org.ode4j.ode.internal.DxBody
 import org.ode4j.ode.internal.DxGeom
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
-
-inline fun <reified T> DBody.getOwner(): T? {
-    return owner as? T
-}

@@ -45,12 +45,12 @@ fun OModel.render(
 }
 
 fun IAnimatable<*>.render(
-    poseStack: PoseStack,
+    normal: Matrix3f,
     buffer: VertexConsumer,
     packedLight: Int,
     packedOverlay: Int,
     color: Int,
     partialTick: Float
 ) {
-    model.render(bones, getWorldPositionMatrix(partialTick), poseStack.last().normal(), buffer, packedLight, packedOverlay, color, partialTick)
+    model.render(bones, getWorldPositionMatrix(partialTick), normal, buffer, packedLight, packedOverlay, color, partialTick)
 }

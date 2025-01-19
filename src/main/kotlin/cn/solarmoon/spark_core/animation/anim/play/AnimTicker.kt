@@ -1,9 +1,14 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.IAnimatableItem
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
+import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
+import cn.solarmoon.spark_core.registry.common.SparkDataComponents
 import net.minecraft.client.Minecraft
+import net.minecraft.world.item.ItemStack
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
@@ -14,6 +19,20 @@ object AnimTicker {
         val entity = event.entity
         if (entity is IEntityAnimatable<*>) {
             entity.animController.tick()
+        }
+    }
+
+    @SubscribeEvent
+    private fun itemTick(event: ItemStackInventoryTickEvent) {
+        val stack = event.stack
+        val item = stack.item
+        if (item is IAnimatableItem) {
+            stack.update(SparkDataComponents.ANIMATABLE, ItemAnimatable(ModelIndex.of(item))) { old ->
+                item.onUpdate(old, event)
+                old.updatePos(item.getPosition(event))
+                old.animController.tick()
+                old
+            }
         }
     }
 

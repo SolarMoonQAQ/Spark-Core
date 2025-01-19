@@ -1,10 +1,5 @@
 package cn.solarmoon.spark_core.phys.thread
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.PhysLevelRegisterEvent
-import cn.solarmoon.spark_core.event.PhysLevelTickEvent
-import net.minecraft.client.multiplayer.ClientLevel
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.level.LevelEvent
@@ -32,7 +27,7 @@ object PhysThreadApplier {
     private fun levelTicker(event: LevelTickEvent.Pre) {
         val level = event.level
         level.getAllPhysLevel().values.forEach {
-            it.physWorld.world.bodyIteration.forEach {
+            it.world.bodyIteration.forEach {
                 it.tick()
             }
         }

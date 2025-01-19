@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import cn.solarmoon.spark_core.phys.BodyType;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DQuaternion;
 import org.ode4j.math.DQuaternionC;
@@ -96,18 +97,18 @@ public class DxRagdoll implements DRagdoll {
     private int autoDisableBufferIndex;
     private boolean autoDisableBufferReady;
 
-    public static DRagdoll create(DWorld world, DSpace space, DRagdollConfig skeleton) {
-        return new DxRagdoll(world, space, skeleton);
+    public static DRagdoll create(BodyType type, Object owner, DWorld world, DSpace space, DRagdollConfig skeleton) {
+        return new DxRagdoll(type, owner, world, space, skeleton);
     }
 
     @Deprecated // This will be made private in 0.6.0. Please use OdeHelper.createRagdoll() instead
-    public DxRagdoll(DWorld world, DSpace space, DRagdollConfig skeleton) {
+    public DxRagdoll(BodyType type, Object owner, DWorld world, DSpace space, DRagdollConfig skeleton) {
         this.world = world;
         this.space = space;
         autoDisableLinearAverageThreshold = 0.1;
         autoDisableAngularAverageThreshold = 0.1;
         for (DRagdollBoneConfig bone : skeleton.getBones()) {
-            addBody(bone.getStart(), bone.getEnd(), bone.getRadius());
+            addBody(type, owner, bone.getStart(), bone.getEnd(), bone.getRadius());
         }
         adjustMass(skeleton);
         for (DRagdollJointConfig joint : skeleton.getJoints()) {
@@ -130,11 +131,11 @@ public class DxRagdoll implements DRagdoll {
         }
     }
 
-    private DxRagdollBody addBody(DVector3 p1, DVector3 p2, double radius) {
+    private DxRagdollBody addBody(BodyType type, Object owner, DVector3 p1, DVector3 p2, double radius) {
         p1 = new DVector3(p1);
         p2 = new DVector3(p2);
         double cyllen = p1.distance(p2) - radius;
-        DBody body = OdeHelper.createBody(world);
+        DBody body = OdeHelper.createBody(type, owner, world);
         DMass m = OdeHelper.createMass();
         m.setCapsule(1, 3, radius, cyllen);
         body.setMass(m);

@@ -6,7 +6,7 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.registries.DeferredRegister
 import java.util.function.Supplier
 
-class SkillTypeBuilder<T, S: Skill<T>>(private val modId: String, private val skillTypeRegister: DeferredRegister<SkillType<*, *>>) {
+class SkillTypeBuilder<T, S: Skill<T>>(private val skillTypeRegister: DeferredRegister<SkillType<*, *>>) {
 
     private var id: String = ""
     private var skill: ((T, SkillType<T, S>) -> S)? = null
@@ -14,6 +14,6 @@ class SkillTypeBuilder<T, S: Skill<T>>(private val modId: String, private val sk
     fun id(id: String) = apply { this.id = id }
     fun bound(skill: (T, SkillType<T, S>) -> S) = apply { this.skill = skill }
 
-    fun build() = skillTypeRegister.register(id, Supplier { SkillType(ResourceLocation.fromNamespaceAndPath(modId, id), skill!!) })
+    fun build() = skillTypeRegister.register(id, Supplier { SkillType(skill!!) })
 
 }

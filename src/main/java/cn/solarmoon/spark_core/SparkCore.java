@@ -1,8 +1,9 @@
 package cn.solarmoon.spark_core;
 
+import cn.solarmoon.spark_core.registry.client.SparkModelRegister;
 import cn.solarmoon.spark_core.registry.common.SparkRegistries;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
-import cn.solarmoon.spark_core.registry.client.SparkClientEvents;
+import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
 import cn.solarmoon.spark_core.registry.common.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -23,22 +24,21 @@ public class SparkCore {
         REGISTER.register(modEventBus);
 
         if (FMLEnvironment.dist.isClient()) {
-            SparkClientEvents.register();
-            modEventBus.addListener(SparkClientEvents::test);
+            SparkClientEventRegister.register();
+            SparkModelRegister.register(modEventBus);
         }
 
         SparkRegistries.register();
 
         SparkVisualEffects.register();
         SparkAttachments.register();
-        SparkCommonEvents.register();
-        SparkPayloads.register(modEventBus);
-        SparkDatas.register();
-        SparkEntityTypes.register();
+        SparkCommonEventRegister.register();
+        SparkPayloadRegister.register(modEventBus);
+        SparkDataRegister.register();
         SparkPhysLevelRegister.register();
-        SparkEntityStates.register();
         SparkTypedAnimations.register();
-        modEventBus.addListener(SparkEntityStates::at);
+        SparkDataComponents.register();
+        SparkBodyTypes.register();
 
         OdeHelper.initODE();
     }

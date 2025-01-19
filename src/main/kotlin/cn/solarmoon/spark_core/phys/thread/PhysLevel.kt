@@ -23,9 +23,8 @@ abstract class PhysLevel(
     val tickPreSecond = (1000 / tickStep).toInt()
     @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
     val scope = CoroutineScope(newSingleThreadContext(name))
-    val physWorld = PhysWorld(tickStep)
+    val world = PhysWorld(tickStep)
     protected var lastTickTime = System.nanoTime()
-    protected val actions = mutableListOf<() -> Unit>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun load() {
@@ -51,12 +50,8 @@ abstract class PhysLevel(
         scope.cancel()
     }
 
-    fun launch(action: () -> Unit) = actions.add(action)
-
     open fun physTick() {
-        actions.forEach { it.invoke() }
-        actions.clear()
-        physWorld.physTick()
+        world.physTick()
     }
 
 }

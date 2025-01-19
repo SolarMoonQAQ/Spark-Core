@@ -9,8 +9,11 @@
     "animation.PlayerMixin",
     "event.ClientHooksMixin",
     "event.EntityMixin",
+    "event.ItemStackMixin",
     "event.PlayerMixin",
+    "extension.DamageSourceMixin",
     "extension.EntityMixin",
+    "extension.LivingEntityMixin",
     "phys.LevelMixin"
   ],
   "client": [

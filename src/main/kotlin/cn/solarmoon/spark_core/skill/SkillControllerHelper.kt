@@ -1,22 +1,55 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
+import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.attachment.IAttachmentHolder
+import net.neoforged.neoforge.network.PacketDistributor
+import ru.nsk.kstatemachine.event.Event
+import ru.nsk.kstatemachine.state.initialChoiceState
+import ru.nsk.kstatemachine.state.state
+import ru.nsk.kstatemachine.state.transition
+import ru.nsk.kstatemachine.statemachine.StateMachine
+import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
+import ru.nsk.kstatemachine.statemachine.onStateEntry
+import ru.nsk.kstatemachine.statemachine.onStateExit
+import ru.nsk.kstatemachine.statemachine.onTransitionTriggered
 
-object SkillControllerHelper {}
+fun Entity.getAllSkillControllers() = (this as ISkillControllerHolder<Entity>).allSkillControllers
 
-fun IAttachmentHolder.getAllSkillControllers() = getData(SparkAttachments.SKILL_CONTROLLER)
+fun Entity.getSkillController() = (this as ISkillControllerHolder<Entity>).skillController.takeIf { it?.isAvailable() == true }
 
-/**
- * 获取第一个符合条件的技能控制器
- */
-fun IAttachmentHolder.getSkillController() = getAllSkillControllers()
-    .filter { it.isAvailable() }
-    .sortedByDescending { it.priority } // 按照优先级降序排序
-    .firstOrNull() // 选择优先级最高的一个
-
-inline fun <reified T: SkillController<*>> IAttachmentHolder.getTypedSkillController(): T? {
+inline fun <reified T: SkillController<*>> Entity.getTypedSkillController(): T? {
     return getSkillController() as? T
 }
 
-fun IAttachmentHolder.addSkillController(controller: SkillController<*>) = getAllSkillControllers().add(controller)
+fun Entity.getSkillControllerStateMachine() = (this as ISkillControllerStateMachineHolder).stateMachine
+
+fun Entity.setSkillControllerStateMachine(stateMachine: StateMachine) { (this as ISkillControllerStateMachineHolder).stateMachine = stateMachine }
+
+fun createSkillControllerStateMachine(holder: ISkillControllerHolder<*>) = createStdLibStateMachine {
+    val none = state("none")
+    holder.allSkillControllers.values.forEach { addState(it) }
+
+    val choice = initialChoiceState("choice") {
+        holder.allSkillControllers.values
+            .sortedByDescending { it.priority } // 按照优先级降序排序
+            .firstOrNull { it.isAvailable() } ?: none
+    }
+
+    onStateEntry { state, trans ->
+        if (holder is Entity) PacketDistributor.sendToAllPlayers(SkillControllerStatePayload(holder.id, state.name.toString()))
+        holder.switchTo(state.name)
+    }
+
+    onStateExit { state, trans ->
+        if (holder is Entity) PacketDistributor.sendToAllPlayers(SkillControllerStatePayload(holder.id, "null"))
+        holder.switchTo(null)
+    }
+
+    transition<SkillControllerSwitchEvent> {
+        targetState = choice
+    }
+}
+
+class SkillControllerSwitchEvent: Event

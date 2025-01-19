@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
 
@@ -10,12 +11,19 @@ import net.minecraft.resources.ResourceLocation
  * 同时技能也需要通过此类进行包装后注册，注册后可以使用原版的诸如tag等功能（注册可用[cn.solarmoon.spark_core.entry_builder.ObjectRegister.skillType]）
  */
 class SkillType<T, S: Skill<T>>(
-    val registryKey: ResourceLocation,
     private val skillInstance: (T, SkillType<T, S>) -> S
 ) {
 
+    val registryKey get() = SparkRegistries.SKILL_TYPE.getKey(this)
+
     fun create(holder: T): S {
         return skillInstance.invoke(holder, this)
+    }
+
+    fun create(holder: T, controller: SkillController<*>): S {
+        val skill = create(holder)
+        controller.allSkills.add(skill)
+        return skill
     }
 
     override fun equals(other: Any?): Boolean {

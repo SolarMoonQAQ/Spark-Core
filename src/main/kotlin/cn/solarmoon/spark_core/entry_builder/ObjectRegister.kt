@@ -47,6 +47,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
     val skillTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SKILL_TYPE, modId) }
     val typedAnimationDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.TYPED_ANIMATION, modId) }
+    val bodyTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.BODY_TYPE, modId) }
 
     fun register(bus: IEventBus) {
         modBus = bus
@@ -117,7 +118,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
         if (!skillTypeDeferredRegister.isInitialized()) {
             skillTypeDeferredRegister.value.register(modBus!!)
         }
-        return SkillTypeBuilder(modId, skillTypeDeferredRegister.value)
+        return SkillTypeBuilder(skillTypeDeferredRegister.value)
     }
 
     fun typedAnimation(): TypedAnimationBuilder {
@@ -125,6 +126,13 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
             typedAnimationDeferredRegister.value.register(modBus!!)
         }
         return TypedAnimationBuilder(typedAnimationDeferredRegister.value)
+    }
+
+    fun bodyType(): BodyTypeBuilder {
+        if (!bodyTypeDeferredRegister.isInitialized()) {
+            bodyTypeDeferredRegister.value.register(modBus!!)
+        }
+        return BodyTypeBuilder(bodyTypeDeferredRegister.value)
     }
 
 }

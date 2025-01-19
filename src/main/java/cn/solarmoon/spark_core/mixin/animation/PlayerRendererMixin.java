@@ -33,7 +33,7 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
         var path = animData.getModelPath();
         if (!path.equals(ResourceLocation.withDefaultNamespace("player"))) {
             var vb = buffer.getBuffer(RenderType.entityTranslucent(animData.getTextureLocation()));
-            ModelRenderHelperKt.render(animatable, poseStack, vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks)), -1, partialTicks);
+            ModelRenderHelperKt.render(animatable, poseStack.last().normal(), vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks)), -1, partialTicks);
             ci.cancel();
         }
     }

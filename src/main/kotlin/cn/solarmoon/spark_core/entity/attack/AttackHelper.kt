@@ -1,22 +1,21 @@
 package cn.solarmoon.spark_core.entity.attack
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.registry.common.SparkAttachments
-import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
-import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.Entity
-import java.awt.Color
-import java.util.Optional
 
 
-fun Entity.setAttackedData(data: AttackedData) {
-    setData(SparkAttachments.ATTACKED_DATA, Optional.of(data))
+fun Entity.pushAttackedData(data: AttackedData) {
+    (this as IAttackedDataPusher).data = data
 }
 
-fun Entity.getAttackedData(): AttackedData? {
-    return getData(SparkAttachments.ATTACKED_DATA).orElse(null)
+fun Entity.updateAttackedData(updater: AttackedData.() -> Unit) {
+    (this as IAttackedDataPusher).data?.let { updater.invoke(it) }
 }
 
-fun Entity.clearAttackedData() {
-    setData(SparkAttachments.ATTACKED_DATA, Optional.empty())
+fun Entity.getAttackedData() = (this as IAttackedDataPusher).data
+
+fun Entity.resetAttackedData() {
+    (this as IAttackedDataPusher).data = null
 }
+
+fun DamageSource.getExtraData() = (this as IExtraDamageDataHolder).data

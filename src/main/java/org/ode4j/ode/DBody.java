@@ -24,7 +24,7 @@
  *************************************************************************/
 package org.ode4j.ode;
 
-import org.jetbrains.annotations.Nullable;
+import cn.solarmoon.spark_core.phys.BodyType;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.math.DQuaternionC;
 import org.ode4j.math.DVector3;
@@ -68,11 +68,39 @@ import java.util.Iterator;
  */
 public interface DBody {
 
-	void onPhysTick(Runnable function);
+	/**
+	 * @param function 添加自定义指令到该body的物理线程tick循环中，该指令不会自动清空（因此最好在初始化中回调）
+	 * @param clear 如果需要清空之前设置的指令，将此值设为true
+	 */
+	void onPhysTick(boolean clear, Runnable function);
+
+	default void onPhysTick(Runnable function) {
+		onPhysTick(false, function);
+	}
 
 	void physTick();
 
-	void onTick(Runnable function);
+	/**
+	 * @param function 添加自定义指令到该body的mc level tick循环中，该指令不会自动清空（因此最好在初始化中回调）
+	 * @param clear 如果需要清空之前设置的指令，将此值设为true
+	 */
+	void onTick(boolean clear, Runnable function);
+
+	default void onTick(Runnable function) {
+		onTick(false, function);
+	}
+
+	void onEnable(boolean clear, Runnable function);
+
+	void onDisable(boolean clear, Runnable function);
+
+	default void onEnable(Runnable function) {
+		onEnable(false, function);
+	}
+
+	default void onDisable(Runnable function) {
+		onDisable(false, function);
+	}
 
 	void tick();
 
@@ -80,10 +108,9 @@ public interface DBody {
 
 	String getName();
 
-	void setOwner(Object ob);
-
-	@Nullable
 	Object getOwner();
+
+	BodyType getType();
 
 	 /**
 	  * Whenever a body has its position or rotation changed during the
@@ -94,7 +121,6 @@ public interface DBody {
 	 interface BodyMoveCallBack {
 		 void run(DBody b);
 	 }
-
 	
 	//~dBody()
 	void DESTRUCTOR();

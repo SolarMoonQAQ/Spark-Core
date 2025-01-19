@@ -24,6 +24,7 @@
  *************************************************************************/
 package org.ode4j.ode;
 
+import org.jetbrains.annotations.Nullable;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.math.DQuaternion;
@@ -40,14 +41,18 @@ import java.util.function.BiConsumer;
  */
 public interface DGeom {
 
-	void onCollide(BiConsumer<DGeom, DContactBuffer> collide);
+	void onCollide(boolean clear, BiConsumer<DGeom, DContactBuffer> collide);
+
+	default void onCollide(BiConsumer<DGeom, DContactBuffer> collide) {
+		onCollide(false, collide);
+	}
 
 	void collide(DGeom o2, DContactBuffer buffer);
 
 	void setPassFromCollide(boolean value);
 
 	/**
-	 * @return 此值为true时，将在检测到碰撞后不调用<b>被碰撞到</b>的geom的 {@link #onCollide(BiConsumer)} 方法
+	 * @return 此值为true时，将在检测到碰撞后不调用<b>被碰撞到</b>的geom的 {@link #onCollide(boolean, BiConsumer)} 方法
 	 */
 	boolean isPassFromCollide();
 
@@ -188,6 +193,7 @@ public interface DGeom {
 	
 	/**
 	 * Get the body associated with a placeable geom.
+	 *
 	 * @return body object
 	 * @see #setBody(DBody)
 	 */

@@ -260,7 +260,7 @@ public class OdeFactoryImpl extends OdeJointsFactoryImpl {
 		for (int round = 0; round < 1000; ++round) {
 			if (nb < NUM && dRandReal() > 0.5) {
 				DO_printf ("creating body\n");
-				body[nb] = DxBody.dBodyCreate (w);
+				body[nb] = DxBody.dBodyCreate (null, null, w);
 				DO_printf ("\t--> %s\n",body[nb].toString());
 				nb++;
 				checkWorld (w);

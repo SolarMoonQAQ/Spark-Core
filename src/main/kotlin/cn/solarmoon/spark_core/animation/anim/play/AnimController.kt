@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.registry.common.SparkEntityStates
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 
 class AnimController(

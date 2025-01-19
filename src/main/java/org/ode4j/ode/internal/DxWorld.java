@@ -138,7 +138,7 @@ public class DxWorld extends DBase implements DWorld {
 
     //****************************************************************************
 	// world
-	private DxWorld() {
+	public DxWorld() {
 		//private
 		super();
 		firstbody.set( null );

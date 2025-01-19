@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.animation.model.EntityModelListener
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.AddReloadListenerEvent
 
-object SparkDatas {
+object SparkDataRegister {
 
     private fun reg(event: AddReloadListenerEvent) {
         event.addListener(EntityModelListener())

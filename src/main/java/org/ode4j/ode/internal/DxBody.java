@@ -38,6 +38,9 @@ import static org.ode4j.ode.internal.Rotation.dQMultiply0;
 import static org.ode4j.ode.internal.Rotation.dQfromR;
 import static org.ode4j.ode.internal.Rotation.dRfromQ;
 
+import cn.solarmoon.spark_core.event.OnBodyCreateEvent;
+import cn.solarmoon.spark_core.phys.BodyType;
+import net.neoforged.neoforge.common.NeoForge;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.math.DQuaternion;
@@ -54,6 +57,7 @@ import org.ode4j.ode.internal.joints.DxJoint;
 import org.ode4j.ode.internal.joints.DxJointNode;
 import org.ode4j.ode.internal.processmem.DxWorldProcessContext;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
@@ -61,29 +65,46 @@ import java.util.Iterator;
  */
 public class DxBody extends DObject implements DBody {
 
+	private final BodyType type;
 	private String name = "body";
-	private Object owner = null;
-	private Runnable physTickFunction = () -> {};
-	private Runnable tickFunction = () -> {};
+	private Object owner;
+	private ArrayList<Runnable> physTickFunctions = new ArrayList<>();
+	private ArrayList<Runnable> tickFunctions = new ArrayList<>();
+	private ArrayList<Runnable> enableFunctions = new ArrayList<>();
+	private ArrayList<Runnable> disableFunctions = new ArrayList<>();
 
 	@Override
-	public void onPhysTick(Runnable function) {
-		physTickFunction = function;
+	public void onPhysTick(boolean clear, Runnable function) {
+		if (clear) physTickFunctions.clear();
+		physTickFunctions.add(function);
+	}
+
+	@Override
+	public void onEnable(boolean clear, Runnable function) {
+		if (clear) enableFunctions.clear();
+		enableFunctions.add(function);
+	}
+
+	@Override
+	public void onDisable(boolean clear, Runnable function) {
+		if (clear) disableFunctions.clear();
+		disableFunctions.add(function);
 	}
 
 	@Override
 	public void physTick() {
-		physTickFunction.run();
+		physTickFunctions.forEach(Runnable::run);
 	}
 
 	@Override
-	public void onTick(Runnable function) {
-		tickFunction = function;
+	public void onTick(boolean clear, Runnable function) {
+		if (clear) tickFunctions.clear();
+		tickFunctions.add(function);
 	}
 
 	@Override
 	public void tick() {
-		tickFunction.run();
+		tickFunctions.forEach(Runnable::run);
 	}
 
 	@Override
@@ -97,13 +118,13 @@ public class DxBody extends DObject implements DBody {
 	}
 
 	@Override
-	public void setOwner(Object ob) {
-		owner = ob;
+	public Object getOwner() {
+		return owner;
 	}
 
 	@Override
-	public Object getOwner() {
-		return owner;
+	public BodyType getType() {
+		return type;
 	}
 
 	// some body flags
@@ -167,9 +188,11 @@ public class DxBody extends DObject implements DBody {
 	private final dxDampingParameters dampingp = new dxDampingParameters(); // damping parameters, depends on flags
 	double max_angular_speed;      // limit the angular velocity to this magnitude
 
-	protected DxBody(DxWorld w)
+	protected DxBody(BodyType type, Object owner, DxWorld w)
 	{
 		super(w);
+		this.type = type;
+		this.owner = owner;
 	}
 
 
@@ -178,10 +201,10 @@ public class DxBody extends DObject implements DBody {
 		return world;
 	}
 
-	public static DxBody dBodyCreate (DxWorld w)
+	public static DxBody dBodyCreate (BodyType type, Object owner, DxWorld w)
 	{
 		dAASSERT (w);
-		DxBody b = new DxBody(w);
+		DxBody b = new DxBody(type, owner, w);
 		b.firstjoint.set(null);
 		b.flags = 0;
 		b.geom = null;
@@ -233,6 +256,8 @@ public class DxBody extends DObject implements DBody {
 		b.max_angular_speed = w.max_angular_speed;
 
 		b.flags |= dxBodyGyroscopic;
+
+		NeoForge.EVENT_BUS.post(new OnBodyCreateEvent(b));
 
 		return b;
 	}
@@ -768,6 +793,7 @@ public class DxBody extends DObject implements DBody {
 	//	void dBodyEnable (dxBody b)
     public void dBodyEnable ()
     {
+		enableFunctions.forEach(Runnable::run);
         flags &= ~dxBodyDisabled;
         adis_stepsleft = adis.idle_steps;
         adis_timeleft = adis.idle_time;
@@ -791,6 +817,7 @@ public class DxBody extends DObject implements DBody {
 	//	void dBodyDisable (dxBody b)
 	public void dBodyDisable ()
 	{
+		disableFunctions.forEach(Runnable::run);
 		flags |= dxBodyDisabled;
 		var i = getGeomIterator();
 		while (i.hasNext()) {

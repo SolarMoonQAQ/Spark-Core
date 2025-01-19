@@ -20,7 +20,7 @@ class EntityAnimListener: SimpleJsonListener("geo/animation") {
     ) {
         reads.forEach { id, json ->
             val root = ResourceLocation.parse(id.toString().substringBefore("/"))
-            val originSet = OAnimationSet.Companion.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+            val originSet = OAnimationSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
 
             originSet.animations.values.forEach { it.bones.forEach {
                 it.value.rotation.values.forEach {
@@ -33,9 +33,9 @@ class EntityAnimListener: SimpleJsonListener("geo/animation") {
                 }
             } }
 
-            OAnimationSet.Companion.ORIGINS.compute(root) { key, value -> value?.apply { this.animations.putAll(originSet.animations) } ?: originSet }
+            OAnimationSet.ORIGINS.compute(root) { key, value -> value?.apply { this.animations.putAll(originSet.animations) } ?: originSet }
         }
-        SparkCore.LOGGER.info("已加载 ${OAnimationSet.Companion.ORIGINS.size} 种类型的动画文件，并在其中加载了 ${OAnimationSet.Companion.get(ResourceLocation.withDefaultNamespace("player")).animations.size} 个玩家动画")
+        SparkCore.LOGGER.info("已加载 ${OAnimationSet.ORIGINS.size} 种类型的动画文件，并在其中加载了 ${OAnimationSet.get(ResourceLocation.withDefaultNamespace("player")).animations.size} 个玩家动画")
     }
 
 }
