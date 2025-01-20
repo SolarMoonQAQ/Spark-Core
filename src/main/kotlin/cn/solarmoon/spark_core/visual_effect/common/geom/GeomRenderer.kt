@@ -1,5 +1,8 @@
 package cn.solarmoon.spark_core.visual_effect.common.geom
 
+import cn.solarmoon.spark_core.phys.thread.ClientPhysLevel
+import cn.solarmoon.spark_core.phys.thread.PhysLevel
+import cn.solarmoon.spark_core.phys.thread.getPhysLevel
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
@@ -34,10 +37,9 @@ class GeomRenderer(): VisualEffectRenderer() {
         PacketDistributor.sendToAllPlayers(RenderableGeomPayload(id, color?.rgb, box))
     }
 
-    /**
-     * 客户端每tick更新要渲染的box
-     */
-    override fun tick() {
+    override fun tick() {}
+
+    override fun physTick(physLevel: PhysLevel) {
         val iterator = renderableBoxes.entries.iterator()
         while (iterator.hasNext()) {
             val (_, value) = iterator.next()
@@ -49,11 +51,13 @@ class GeomRenderer(): VisualEffectRenderer() {
     }
 
     override fun render(mc: Minecraft, camPos: Vec3, poseStack: PoseStack, bufferSource: MultiBufferSource, partialTicks: Float) {
+        val partialTicks = (mc.level?.getPhysLevel() as? ClientPhysLevel)?.partialTicks ?: return
         val buffer = bufferSource.getBuffer(RenderType.LINES)
         if (!mc.entityRenderDispatcher.shouldRenderHitBoxes()) {
             renderableBoxes.clear()
             return
         }
+
         renderableBoxes.forEach { id, manager ->
             if (manager.currentBox?.isEnabled == false) return@forEach
             val box = manager.getBox(partialTicks) ?: return@forEach

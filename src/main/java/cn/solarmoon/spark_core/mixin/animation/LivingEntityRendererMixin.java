@@ -2,6 +2,8 @@ package cn.solarmoon.spark_core.mixin.animation;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
+import cn.solarmoon.spark_core.phys.thread.ClientPhysLevel;
+import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -18,7 +20,8 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
     @Inject(method = "setupRotations", at = @At("RETURN"))
     private void offset(T entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.isHumanoidModel(entity)) {
-            poseStack.mulPose(animatable.getSpaceBoneMatrix("body", partialTick));
+            var partialTicks = ((ClientPhysLevel) ThreadHelperKt.getPhysLevel(entity.level())).getPartialTicks();
+            poseStack.mulPose(animatable.getSpaceBoneMatrix("body", partialTicks));
         }
     }
 

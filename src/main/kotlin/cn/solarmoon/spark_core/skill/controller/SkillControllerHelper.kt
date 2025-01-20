@@ -1,9 +1,6 @@
-package cn.solarmoon.spark_core.skill
+package cn.solarmoon.spark_core.skill.controller
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import net.minecraft.world.entity.Entity
-import net.neoforged.neoforge.attachment.IAttachmentHolder
 import net.neoforged.neoforge.network.PacketDistributor
 import ru.nsk.kstatemachine.event.Event
 import ru.nsk.kstatemachine.state.initialChoiceState
@@ -13,9 +10,8 @@ import ru.nsk.kstatemachine.statemachine.StateMachine
 import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
 import ru.nsk.kstatemachine.statemachine.onStateEntry
 import ru.nsk.kstatemachine.statemachine.onStateExit
-import ru.nsk.kstatemachine.statemachine.onTransitionTriggered
 
-fun Entity.getAllSkillControllers() = (this as ISkillControllerHolder<Entity>).allSkillControllers
+fun Entity.getAllSkillControllers(): MutableMap<String, SkillController<out Entity>> = (this as ISkillControllerHolder<Entity>).allSkillControllers
 
 fun Entity.getSkillController() = (this as ISkillControllerHolder<Entity>).skillController.takeIf { it?.isAvailable() == true }
 

@@ -6,6 +6,10 @@ data class BlendAnimation(
     val boneBlackList: List<String> = listOf()
 ) {
 
+    init {
+        anim.enable()
+    }
+
     var shouldClearWhenResetAnim = true
 
 }

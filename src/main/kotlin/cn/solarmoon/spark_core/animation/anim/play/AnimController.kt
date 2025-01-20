@@ -1,8 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
 
 class AnimController(
     val animatable: IAnimatable<*>
@@ -28,7 +26,9 @@ class AnimController(
 
     fun setAnimation(anim: AnimInstance?, transTime: Int) {
         if (mainAnim?.rejectNewAnim?.invoke(anim) == true && mainAnim?.isCancelled != true) return
-        mainAnim?.switch(anim)
+        anim?.enable()
+        mainAnim?.let { if (!it.isCancelled) it.cancel() }
+        mainAnim?.switchInvoke(anim)
         lastAnim = mainAnim
         mainAnim = anim
         lastBlendResult = animatable.model.bones.mapValues { blendSpace.blendBone(it.key) }
@@ -47,8 +47,7 @@ class AnimController(
      */
     fun setAnimation(name: String, transTime: Int, modifier: AnimInstance.() -> Unit = {}) {
         animatable.animations.getAnimation(name)?.let {
-            val anim = AnimInstance(animatable, name, it)
-            modifier.invoke(anim)
+            val anim = AnimInstance.create(animatable, name, it, modifier)
             setAnimation(anim, transTime)
         }
     }
@@ -58,7 +57,7 @@ class AnimController(
     }
 
     fun stopAnimation() {
-        mainAnim?.isCancelled = true
+        mainAnim?.cancel()
     }
 
     fun isPlaying(name: String): Boolean {
@@ -87,7 +86,7 @@ class AnimController(
         speedChangeTime = time
     }
 
-    fun tick() {
+    fun physTick() {
         if (transitionTick > 0) {
             val progress = (1 - transitionTick.toDouble() / maxTransitionTick.toDouble()).coerceIn(0.0, 1.0)
             animatable.model.bones.forEach {
@@ -99,7 +98,7 @@ class AnimController(
         }
 
         else {
-            blendSpace.animTick(overallSpeed)
+            blendSpace.physTick(overallSpeed)
 
             animatable.model.bones.forEach { entry ->
                 val bone = animatable.getBone(entry.key)
@@ -109,6 +108,13 @@ class AnimController(
 
         if (speedChangeTime > 0) speedChangeTime--
         else overallSpeed = 1.0
+    }
+
+    fun tick() {
+        if (!isInTransition) {
+            val anim = mainAnim ?: return
+            if (!anim.isCancelled) anim.tick()
+        }
     }
 
 }

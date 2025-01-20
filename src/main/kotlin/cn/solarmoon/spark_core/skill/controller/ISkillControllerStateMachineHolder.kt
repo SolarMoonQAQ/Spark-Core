@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.skill
+package cn.solarmoon.spark_core.skill.controller
 
 import ru.nsk.kstatemachine.statemachine.StateMachine
 

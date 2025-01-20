@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.visual_effect.common.trail
 
+import cn.solarmoon.spark_core.phys.thread.PhysLevel
 import cn.solarmoon.spark_core.util.RenderTypeUtil
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.mojang.blaze3d.vertex.PoseStack
@@ -20,6 +21,8 @@ class TrailRenderer: VisualEffectRenderer() {
     fun refresh(id: String, trail: (Float) -> Trail) {
         trailTemplate[id] = trail
     }
+
+    override fun physTick(physLevel: PhysLevel) {}
 
     override fun tick() {
         trails.values.forEach {

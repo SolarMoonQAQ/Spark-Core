@@ -10,3 +10,7 @@ fun Level.getPhysLevelById(id: ResourceLocation) = getAllPhysLevel()[id] ?: thro
 fun Level.getPhysLevel() = getPhysLevelById(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "main"))
 
 fun Level.getAllPhysLevel() = (this as IPhysLevelHolder).allPhysLevel
+
+fun Level.laterConsume(action: () -> Unit) {
+    (this as ILaterConsumerHolder).consumers.add(action)
+}

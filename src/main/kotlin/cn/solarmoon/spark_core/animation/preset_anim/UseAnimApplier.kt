@@ -22,7 +22,7 @@ object UseAnimApplier {
         val id = "UseAnimMix"
         val origin = entity.animations.getAnimation(animName) ?: return
         entity.animController.blendSpace.putIfAbsent(id,
-            BlendAnimation(AnimInstance(entity, animName, origin), 1000000.0).apply { shouldClearWhenResetAnim = false }
+            BlendAnimation(AnimInstance.create(entity, animName, origin), 1000000.0).apply { shouldClearWhenResetAnim = false }
         )
     }
 

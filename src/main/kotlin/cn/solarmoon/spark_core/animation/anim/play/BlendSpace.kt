@@ -1,9 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
-import cn.solarmoon.spark_core.phys.toDegrees
-import cn.solarmoon.spark_core.phys.wrapDegrees
 import org.joml.Vector3f
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
 import java.util.concurrent.ConcurrentHashMap
@@ -42,8 +39,8 @@ class BlendSpace: ConcurrentHashMap<String, BlendAnimation>() {
         return KeyAnimData(pos.toVec3(), rot.toVec3(), scale.toVec3())
     }
 
-    fun animTick(overallSpeed: Double = 1.0) {
-        values.forEach { it.anim.tick(overallSpeed) }
+    fun physTick(overallSpeed: Double = 1.0) {
+        values.forEach { it.anim.physTick(overallSpeed) }
         filter { it.key != "main" && it.value.anim.isCancelled }.map { it.key }.forEach { remove(it) }
     }
 

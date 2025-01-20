@@ -28,11 +28,11 @@ class Bone(
         data = event.newData
     }
 
-    fun getPosition(partialTicks: Number = 1.0) = oData.position.lerp(data.position, partialTicks.toDouble())
+    fun getPosition(physPartialTicks: Number = 1.0) = oData.position.lerp(data.position, physPartialTicks.toDouble())
 
-    fun getRotation(partialTicks: Number = 1.0) = oData.rotation.rotLerp(data.rotation, partialTicks.toDouble())
+    fun getRotation(physPartialTicks: Number = 1.0) = oData.rotation.rotLerp(data.rotation, physPartialTicks.toDouble())
 
-    fun getScale(partialTicks: Number = 1.0) = oData.scale.lerp(data.scale, partialTicks.toDouble())
+    fun getScale(physPartialTicks: Number = 1.0) = oData.scale.lerp(data.scale, physPartialTicks.toDouble())
 
     fun copy() = Bone(holder, name).apply {
         this@apply.data = this@Bone.data

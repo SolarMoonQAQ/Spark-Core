@@ -124,3 +124,17 @@ fun Entity.getAttackAnimSpeed(baseSpeedValue: Float): Float {
         return ((sp.value.toFloat() - baseSpeedValue) / 2 + 1f).coerceAtLeast(0.05f)
     } else return 1f
 }
+
+/**
+ * 朝着[attacker]目视方向后退
+ */
+fun LivingEntity.knockBackRelativeView(attacker: Entity, strength: Double) {
+    knockback(strength, sin(attacker.yRot * (PI / 180.0)), -cos(attacker.yRot * (PI / 180.0)))
+}
+
+/**
+ * 朝着与目标位置连线方向击退
+ */
+fun LivingEntity.knockBackRelative(relative: Vec3, strength: Double) {
+    knockback(strength, relative.x - x, relative.z - z)
+}

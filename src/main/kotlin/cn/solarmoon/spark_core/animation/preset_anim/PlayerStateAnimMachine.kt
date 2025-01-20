@@ -12,6 +12,7 @@ import net.minecraft.client.player.LocalPlayer
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.common.NeoForge
 import ru.nsk.kstatemachine.event.DataEvent
+import ru.nsk.kstatemachine.event.Event
 import ru.nsk.kstatemachine.state.initialChoiceState
 import ru.nsk.kstatemachine.state.pseudo.UndoState
 import ru.nsk.kstatemachine.state.state
@@ -24,6 +25,8 @@ import ru.nsk.kstatemachine.statemachine.onStateExit
 object PlayerStateAnimMachine {
 
     class SwitchEvent: DataEvent<Boolean> { override var data = true }
+
+    object ResetEvent: Event
 
     @JvmStatic
     fun create(player: LocalPlayer) = createStdLibStateMachine(creationArguments = buildCreationArguments { isUndoEnabled = true }) {
@@ -63,8 +66,8 @@ object PlayerStateAnimMachine {
             SparkRegistries.TYPED_ANIMATION.get(ResourceLocation.parse(sName))?.let {
                 val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, s))
                 val anim = event.newAnim ?: event.originAnim
-                anim.play(player.asAnimatable(), 3)
-                anim.syncToServer(player.id, 3)
+                anim.play(player.asAnimatable(), 7)
+                anim.syncToServer(player.id, 7)
             }
         }
 
@@ -76,6 +79,10 @@ object PlayerStateAnimMachine {
 
         transition<SwitchEvent> {
             targetState = choice
+        }
+
+        transition<ResetEvent> {
+            targetState = none
         }
     }
 

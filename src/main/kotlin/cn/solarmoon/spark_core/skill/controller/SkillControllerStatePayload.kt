@@ -1,19 +1,12 @@
-package cn.solarmoon.spark_core.skill
+package cn.solarmoon.spark_core.skill.controller
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.animation.model.origin.OModel
-import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
-import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
-import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
 import net.minecraft.network.FriendlyByteBuf
-import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
-import kotlin.collections.set
 
 class SkillControllerStatePayload(
     val id: Int,

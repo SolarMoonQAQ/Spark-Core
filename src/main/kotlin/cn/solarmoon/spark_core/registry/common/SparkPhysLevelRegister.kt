@@ -14,9 +14,9 @@ object SparkPhysLevelRegister {
     private fun reg(event: PhysLevelRegisterEvent) {
         val level = event.level
         if (!level.isClientSide)
-            event.register(ServerPhysLevel(id("main"), "Physical Thread - Server", level as ServerLevel, 20, true))
+            event.register(ServerPhysLevel(id("main"), "Physical Thread - Server", level as ServerLevel, 20, false))
         else
-            event.register(ClientPhysLevel(id("main"), "Physical Thread - Client", level as ClientLevel, 20, true))
+            event.register(ClientPhysLevel(id("main"), "Physical Thread - Client", level as ClientLevel, 20, false))
     }
 
     private fun id(id: String) = ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, id)

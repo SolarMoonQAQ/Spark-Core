@@ -26,13 +26,16 @@ object PhysThreadApplier {
     @SubscribeEvent
     private fun levelTicker(event: LevelTickEvent.Pre) {
         val level = event.level
+
+        val laterConsumers = (level as ILaterConsumerHolder).consumers
+        while (laterConsumers.isNotEmpty()) { laterConsumers.removeLastOrNull()?.invoke() }
+
         level.getAllPhysLevel().values.forEach {
             it.world.bodyIteration.forEach {
                 it.tick()
             }
         }
 
-        level.getPhysLevel().physTick()
     }
 
 }

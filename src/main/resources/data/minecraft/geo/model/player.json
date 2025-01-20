@@ -60,11 +60,7 @@
 				{
 					"name": "rightItem",
 					"parent": "rightArm",
-					"pivot": [-5.5, 14, 0],
-					"cubes": [
-						{"origin": [-6.5, 14, -18], "size": [1, 2, 25], "uv": [0, 0]},
-						{"origin": [-7.25, 12, -20.75], "size": [2.5, 6, 3], "uv": [0, 16]}
-					]
+					"pivot": [-5.5, 14, 0]
 				},
 				{
 					"name": "leftLeg",

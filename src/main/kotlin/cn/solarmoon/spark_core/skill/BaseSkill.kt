@@ -1,14 +1,18 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spirit_of_fight.feature.fight_skill.skill.PersistentSkillComponent
+import cn.solarmoon.spirit_of_fight.feature.fight_skill.skill.SkillComponent
+import cn.solarmoon.spirit_of_fight.feature.fight_skill.skill.TriggeredSkillComponent
+
 abstract class BaseSkill<T>(
-    override val holder: T,
-    override val skillType: SkillType<T, out Skill<T>>
+    override val holder: T
 ): Skill<T> {
 
     protected var active = false
     protected var time = 0
     override val runTime: Int
         get() = time
+    override val components: MutableList<SkillComponent> = mutableListOf()
 
     override fun activate() {
         if (!active) {
@@ -34,18 +38,22 @@ abstract class BaseSkill<T>(
 
     override fun isActive(): Boolean = active
 
-    protected abstract fun onActivate()
-
-    protected abstract fun onUpdate()
-
-    protected abstract fun onEnd()
-
-    override fun equals(other: Any?): Boolean {
-        return (other as? Skill<*>)?.skillType == skillType
+    protected open fun onActivate() {
+        components.forEach {
+            if (it is TriggeredSkillComponent) it.start()
+        }
     }
 
-    override fun hashCode(): Int {
-        return skillType.hashCode()
+    protected open fun onUpdate() {
+        components.forEach {
+            if (it is PersistentSkillComponent) it.tick()
+        }
+    }
+
+    protected open fun onEnd() {
+        components.forEach {
+            if (it is TriggeredSkillComponent) it.stop()
+        }
     }
 
 }

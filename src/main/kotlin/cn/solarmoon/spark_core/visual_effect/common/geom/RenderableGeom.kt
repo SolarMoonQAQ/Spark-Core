@@ -14,11 +14,11 @@ import java.awt.Color
  */
 class RenderableGeom {
 
-    var maxTime: Int = 10
+    var maxTime: Int = 25
     var defaultColor: Color = Color.WHITE
     var tick = 0
     var colorTick = 0
-    var maxColorTick = 5
+    var maxColorTick = 15
     var color: Color = defaultColor
         private set
     var box: DGeom? = null
@@ -56,11 +56,11 @@ class RenderableGeom {
         this.box = (geom as DBox).baseCopy()
     }
 
-    fun getBox(partialTicks: Float): DGeom? {
+    fun getBox(physPartialTicks: Float): DGeom? {
         if (box == null) return null
         if (lastBox == null) return box
         if (lastBox is DBox && box is DBox) {
-            return lerp(lastBox as DBox, box as DBox, partialTicks.toDouble())
+            return lerp(lastBox as DBox, box as DBox, physPartialTicks.toDouble())
         }
         return box
     }

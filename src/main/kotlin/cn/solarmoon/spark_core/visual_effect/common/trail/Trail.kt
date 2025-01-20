@@ -53,7 +53,7 @@ class Trail(
     private var textureLocation = DEFAULT_TEXTURE
 
     var tick = 0
-    var maxTick = 5
+    var maxTick = 7
     var isRemoved = false
         private set
 

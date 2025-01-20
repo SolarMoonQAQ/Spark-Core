@@ -45,7 +45,6 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val soundDeferredRegister = DeferredRegister.create(Registries.SOUND_EVENT, modId)
     val dataComponentDeferredRegister = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, modId)
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
-    val skillTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SKILL_TYPE, modId) }
     val typedAnimationDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.TYPED_ANIMATION, modId) }
     val bodyTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.BODY_TYPE, modId) }
 
@@ -113,13 +112,6 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     fun <D> entityData() = EntityDataBuilder<D>(entityDataDeferredRegister)
     fun layer() = LayerBuilder(modId, modBus!!)
     fun keyMapping() = KeyMappingBuilder(modId, modBus!!)
-
-    fun <T, S: Skill<T>> skillType(): SkillTypeBuilder<T, S> {
-        if (!skillTypeDeferredRegister.isInitialized()) {
-            skillTypeDeferredRegister.value.register(modBus!!)
-        }
-        return SkillTypeBuilder(skillTypeDeferredRegister.value)
-    }
 
     fun typedAnimation(): TypedAnimationBuilder {
         if (!typedAnimationDeferredRegister.isInitialized()) {

@@ -5,9 +5,9 @@ import cn.solarmoon.spark_core.entity.attack.IAttackedDataPusher;
 import cn.solarmoon.spark_core.entity.preinput.IPreInputHolder;
 import cn.solarmoon.spark_core.entity.preinput.PreInput;
 import cn.solarmoon.spark_core.event.SkillControllerRegisterEvent;
-import cn.solarmoon.spark_core.skill.ISkillControllerHolder;
-import cn.solarmoon.spark_core.skill.ISkillControllerStateMachineHolder;
-import cn.solarmoon.spark_core.skill.SkillController;
+import cn.solarmoon.spark_core.skill.controller.ISkillControllerHolder;
+import cn.solarmoon.spark_core.skill.controller.ISkillControllerStateMachineHolder;
+import cn.solarmoon.spark_core.skill.controller.SkillController;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
@@ -27,15 +27,10 @@ public class EntityMixin implements IPreInputHolder, ISkillControllerStateMachin
 
     private Entity entity = (Entity) (Object) this;
     private final PreInput preInput = new PreInput(entity);
-    private final LinkedHashMap<String, SkillController<Entity>> skillControllers = new LinkedHashMap<>();
-    private SkillController<Entity> controller;
+    private final LinkedHashMap<String, SkillController<? extends Entity>> skillControllers = new LinkedHashMap<>();
+    private SkillController<? extends Entity> controller;
     private StateMachine sm;
     private AttackedData data = null;
-
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void init(EntityType entityType, Level level, CallbackInfo ci) {
-        NeoForge.EVENT_BUS.post(new SkillControllerRegisterEvent.Entity(entity, skillControllers));
-    }
 
     @Override
     public @NotNull PreInput getPreInput() {
@@ -48,13 +43,13 @@ public class EntityMixin implements IPreInputHolder, ISkillControllerStateMachin
     }
 
     @Override
-    public SkillController<Entity> getSkillController() {
+    public @Nullable SkillController<? extends Entity> getSkillController() {
         return controller;
     }
 
     @Override
-    public void setSkillController(SkillController<Entity> entitySkillController) {
-        controller = entitySkillController;
+    public void setSkillController(@Nullable SkillController<? extends Entity> skillController) {
+        controller = skillController;
     }
 
     @Override
@@ -63,7 +58,7 @@ public class EntityMixin implements IPreInputHolder, ISkillControllerStateMachin
     }
 
     @Override
-    public @NotNull Map<@NotNull String, @NotNull SkillController<Entity>> getAllSkillControllers() {
+    public @NotNull Map<@NotNull String, @NotNull SkillController<? extends Entity>> getAllSkillControllers() {
         return skillControllers;
     }
 

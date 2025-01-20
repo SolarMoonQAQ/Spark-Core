@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.phys.thread
 
-import cn.solarmoon.spark_core.event.PhysLevelTickEvent
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.event.PhysTickEvent
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
 import net.neoforged.neoforge.common.NeoForge
@@ -15,7 +16,9 @@ class ServerPhysLevel(
 
     override fun physTick() {
         super.physTick()
-        NeoForge.EVENT_BUS.post(PhysLevelTickEvent(this))
+        NeoForge.EVENT_BUS.post(PhysTickEvent.Level(this))
+
+        level.allEntities.forEach { NeoForge.EVENT_BUS.post(PhysTickEvent.Entity(it, this)) }
     }
 
 }

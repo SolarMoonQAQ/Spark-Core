@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
-import cn.solarmoon.spark_core.skill.SkillControllerStatePayload
+import cn.solarmoon.spark_core.skill.controller.SkillControllerStatePayload
 import cn.solarmoon.spark_core.visual_effect.common.geom.RenderableGeomPayload
 import cn.solarmoon.spark_core.visual_effect.common.camera_shake.CameraShakePayload
 import cn.solarmoon.spark_core.visual_effect.common.shadow.ShadowPayload

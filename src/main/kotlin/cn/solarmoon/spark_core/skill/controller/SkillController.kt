@@ -1,5 +1,6 @@
-package cn.solarmoon.spark_core.skill
+package cn.solarmoon.spark_core.skill.controller
 
+import cn.solarmoon.spark_core.skill.Skill
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import ru.nsk.kstatemachine.state.DefaultState
 
@@ -35,6 +36,8 @@ abstract class SkillController<T>(override val name: String): DefaultState(name)
      */
     open val priority = 0
 
+    fun <T: Skill<*>> addSkill(skill: T) = skill.apply { allSkills.add(this) }
+
     /**
      * 控制器是否可用（影响控制器的获取以及[tick]方法的调用）
      */
@@ -56,6 +59,11 @@ abstract class SkillController<T>(override val name: String): DefaultState(name)
     open fun baseTick() {
         allSkills.forEach { it.update() }
     }
+
+    /**
+     * 执行在物理线程，如果需要修改碰撞体则通过此方法
+     */
+    open fun physTick() {}
 
     /**
      * 当此技能控制器有效的一瞬间调用此方法

@@ -50,11 +50,13 @@ interface IAnimatable<T> {
 
     /**
      * 动画体所在的世界坐标
+     * @param partialTick 主线程客户端的tick时间
      */
     fun getWorldPosition(partialTick: Float = 1f): Vec3
 
     /**
      * 动画体的yRot（弧度制）
+     * @param partialTick 主线程客户端的tick时间
      */
     fun getRootYRot(partialTick: Float = 1f): Float
 
@@ -65,43 +67,49 @@ interface IAnimatable<T> {
 
     /**
      * 获取动画体到其当前世界位置的变换矩阵
+     * @param partialTick 主线程客户端的tick时间
      */
     fun getWorldPositionMatrix(partialTick: Float = 1f) = Matrix4f().translate(getWorldPosition(partialTick).toVector3f()).rotateY(getRootYRot(partialTick))
 
     /**
-     * 获取动画体指定骨骼的枢轴点在世界位置上的坐标
+     * 获取动画体指定骨骼在世界位置的变换矩阵
+     * @param physPartialTick 物理线程客户端的tick时间
+     * @param partialTick 主线程客户端的tick时间
      */
-    fun getWorldBonePivot(name: String, partialTick: Float = 1f): Vector3f {
-        val ma = getWorldBoneMatrix(name, partialTick)
+    fun getWorldBoneMatrix(name: String, physPartialTick: Float = 1f, partialTick: Float = 1f): Matrix4f {
+        val ma = getWorldPositionMatrix(partialTick)
+        val bone = model.getBone(name)
+        bone.applyTransformWithParents(bones, ma, physPartialTick)
+        return ma
+    }
+
+    /**
+     * 获取动画体指定骨骼的枢轴点在世界位置上的坐标
+     * @param physPartialTick 物理线程客户端的tick时间
+     * @param partialTick 主线程客户端的tick时间
+     */
+    fun getWorldBonePivot(name: String, physPartialTick: Float = 1f, partialTick: Float = 1f): Vector3f {
+        val ma = getWorldBoneMatrix(name, physPartialTick, partialTick)
         val bone = model.getBone(name)
         val pivot = bone.pivot.toVector3f()
         return ma.transformPosition(pivot)
     }
 
     /**
-     * 获取动画体指定骨骼在世界位置的变换矩阵
-     */
-    fun getWorldBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f {
-        val ma = getWorldPositionMatrix(partialTick)
-        val bone = model.getBone(name)
-        bone.applyTransformWithParents(bones, ma, partialTick)
-        return ma
-    }
-
-    /**
      * 获取动画体指定骨骼在模型空间的变换矩阵
+     * @param physPartialTick 物理线程客户端的tick时间
      */
-    fun getSpaceBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f {
+    fun getSpaceBoneMatrix(name: String, physPartialTick: Float = 1f): Matrix4f {
         val ma = Matrix4f()
         val bone = model.getBone(name)
-        bone.applyTransformWithParents(bones, ma, partialTick)
+        bone.applyTransformWithParents(bones, ma, physPartialTick)
         return ma
     }
 
     /**
      * 根据name索引创建一个新的动画实例
      */
-    fun newAnimInstance(name: String) = AnimInstance(this, name)
+    fun newAnimInstance(name: String, provider: (AnimInstance).() -> Unit = {}) = AnimInstance.create(this, name, provider = provider)
 
     /**
      * 当任意骨骼被更新后调用，可以在此基础上对骨骼的位移旋转等参数进行调整

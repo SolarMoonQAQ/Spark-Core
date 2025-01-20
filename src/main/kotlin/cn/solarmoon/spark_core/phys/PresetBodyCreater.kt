@@ -22,7 +22,7 @@ fun createEntityBoundingBoxBody(type: BodyType, owner: Entity, level: Level, pro
 
         val geom = OdeHelper.laterCreateBox(this, level.getPhysLevel().world, DVector3())
 
-        onTick {
+        onPhysTick {
             val bb = owner.boundingBox
             geom.lengths = DVector3(bb.xsize, bb.ysize, bb.zsize)
             position = bb.center.toDVector3()
@@ -37,7 +37,7 @@ fun createAnimatedPivotBody(boneName: String, type: BodyType, owner: IAnimatable
 
         val geom = OdeHelper.laterCreateBox(this, level.getPhysLevel().world, DVector3())
 
-        onTick {
+        onPhysTick {
             position = owner.getWorldBonePivot(boneName).toDVector3()
             quaternion = owner.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaterniond()).toDQuaternion()
             if (level.isClientSide) SparkVisualEffects.GEOM.getRenderableBox(geom.uuid.toString()).refresh(geom)
@@ -53,7 +53,7 @@ fun createAnimatedCubeBody(boneName: String, type: BodyType, owner: IAnimatable<
         val bone = owner.modelIndex.model.getBone(boneName)
         repeat(bone.cubes.size) { geoms.add(OdeHelper.laterCreateBox(this, level.getPhysLevel().world, DVector3())) }
 
-        onTick {
+        onPhysTick {
             position = owner.getWorldBonePivot(boneName).toDVector3()
             quaternion = owner.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaterniond()).toDQuaternion()
 
@@ -76,7 +76,7 @@ fun createEntityAnimatedAttackBody(boneName: String, type: BodyType, owner: IEnt
         disable()
 
         firstGeom.onCollide { o2, buffer ->
-            val fistAttack = attackCallBack.doAttack(firstGeom, o2, buffer) {
+            val successAttack = attackCallBack.doAttack(firstGeom, o2, buffer) {
                 attackCallBack.whenAboutToAttack(firstGeom, o2, buffer)
 
                 if (level.isClientSide) {
@@ -84,7 +84,7 @@ fun createEntityAnimatedAttackBody(boneName: String, type: BodyType, owner: IEnt
                     SparkVisualEffects.GEOM.getRenderableBox(o2.uuid.toString()).setColor(Color.RED)
                 }
             }
-            attackCallBack.whenAttacked(fistAttack, firstGeom, o2, buffer)
+            if (successAttack) attackCallBack.whenTargetAttacked(firstGeom, o2, buffer)
         }
 
         onEnable {
@@ -100,8 +100,15 @@ fun createEntityAnimatedAttackBody(boneName: String, type: BodyType, owner: IEnt
 
 open class AttackCallBack(val attackSystem: AttackSystem) {
     open fun doAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, actionBeforeAttack: (AttackSystem) -> Unit = {}) = attackSystem.commonGeomAttack(o1, o2, actionBeforeAttack)
+    /**
+     * 确定攻击将要发起但还没真正执行前
+     */
     open fun whenAboutToAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer) {}
-    open fun whenAttacked(firstAttack: Boolean, o1: DGeom, o2: DGeom, buffer: DContactBuffer) {}
+
+    /**
+     * 当已经攻击到目标后
+     */
+    open fun whenTargetAttacked(o1: DGeom, o2: DGeom, buffer: DContactBuffer) {}
 }
 
 
