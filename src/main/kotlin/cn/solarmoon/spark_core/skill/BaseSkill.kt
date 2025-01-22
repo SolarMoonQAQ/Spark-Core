@@ -8,6 +8,8 @@ abstract class BaseSkill<T>(
     override val holder: T
 ): Skill<T> {
 
+    override val name: String get() = this::class.java.simpleName
+
     protected var active = false
     protected var time = 0
     override val runTime: Int

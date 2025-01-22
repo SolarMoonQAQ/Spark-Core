@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.skill.controller
 import cn.solarmoon.spark_core.skill.Skill
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import ru.nsk.kstatemachine.state.DefaultState
+import kotlin.properties.Delegates
 
 /**
  * ### 技能控制器
@@ -16,27 +17,36 @@ import ru.nsk.kstatemachine.state.DefaultState
  * 当无法避免重复时，可以配合[priority]参数进行权重管理，当多个控制器满足时会优先选择权重值更大的。
  * @param T 该控制器的持有者类型
  */
-abstract class SkillController<T>(override val name: String): DefaultState(name) {
+abstract class SkillController<T>(val name: String) {
 
     abstract val holder: T
+
+    private var loadMoment by Delegates.observable(false) { _, old, new ->
+        if (old != new) {
+            if (new) onEntry() else onExit()
+        }
+    }
 
     /**
      * 所有控制器可用的技能
      *
      * *注意：必须将所有技能添加到此列表中，否则一些方法可能不会返回期望的结果*
      */
-    val allSkills = mutableListOf<Skill<*>>()
+    val allSkills = mutableMapOf<String, Skill<*>>()
 
-    val allActiveSkills get() = allSkills.filter { it.isActive() }
+    val allActiveSkills get() = allSkills.values.filter { it.isActive() }
 
-    val firstActiveSkill get() = allSkills.firstOrNull { it.isActive() }
+    val firstActiveSkill get() = allSkills.values.firstOrNull { it.isActive() }
 
     /**
      * 技能控制器的优先级，当多个控制器满足时会优先选择权重值更大的。
      */
     open val priority = 0
 
-    fun <T: Skill<*>> addSkill(skill: T) = skill.apply { allSkills.add(this) }
+    fun <T: Skill<*>> addSkill(skill: T) = skill.apply {
+        if (allSkills.contains(this.name)) throw Exception("名为 $name 的技能已存在于此控制器，请换一个名称")
+        allSkills.put(this.name, this)
+    }
 
     /**
      * 控制器是否可用（影响控制器的获取以及[tick]方法的调用）
@@ -51,13 +61,14 @@ abstract class SkillController<T>(override val name: String): DefaultState(name)
     /**
      * 是否正在播放任意技能
      */
-    fun isPlaying(): Boolean = allSkills.any { it.isActive() }
+    fun isPlaying(): Boolean = allSkills.values.any { it.isActive() }
 
     /**
      * 只要技能控制器存在，就会不断执行
      */
     open fun baseTick() {
-        allSkills.forEach { it.update() }
+        loadMoment = isAvailable()
+        allSkills.values.forEach { it.update() }
     }
 
     /**

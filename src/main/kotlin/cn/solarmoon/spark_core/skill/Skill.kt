@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.skill
 
-import cn.solarmoon.spark_core.skill.controller.SkillController
 import cn.solarmoon.spirit_of_fight.feature.fight_skill.skill.SkillComponent
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.world.entity.Entity
+import net.neoforged.neoforge.network.handling.IPayloadContext
 
 /**
  * ### 技能
@@ -13,6 +15,11 @@ import cn.solarmoon.spirit_of_fight.feature.fight_skill.skill.SkillComponent
  * @see cn.solarmoon.spark_core.skill.controller.SkillController
  */
 interface Skill<T> {
+
+    /**
+     * 技能名称，必须保证其在每个技能控制器中的唯一性
+     */
+    val name: String
 
     val holder: T
 
@@ -29,5 +36,10 @@ interface Skill<T> {
     fun end()
 
     fun <T: SkillComponent> addComponent(component: T) = component.apply { components.add(this) }
+
+    /**
+     * 发送[SkillPayload]数据包后可在此进行双端操作
+     */
+    fun sync(entity: Entity, data: CompoundTag, context: IPayloadContext) {}
 
 }

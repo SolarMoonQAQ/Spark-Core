@@ -64,37 +64,43 @@ abstract class LocalInputController {
      * 当该按键释放的一瞬间，将执行输入的指令[action]
      * @param key 监测的按键
      * @param action 其中Int值为该按键按下的总tick时长
+     * @return 是否视为操作成功
      */
-    fun onRelease(key: KeyMapping, action: (Int) -> Unit) {
+    fun onRelease(key: KeyMapping, action: (Int) -> Boolean): Boolean {
         val isDownLast = keyRecorder.getOrDefault(key, false)
         val isDownNow = key.isDown
         if (isDownLast && !isDownNow) {
-            action.invoke(getPressTick(key))
+            return action.invoke(getPressTick(key))
         }
+        return false
     }
 
     /**
      * 当该按键按下时，将不断执行输入的指令[action]
      * @param key 监测的按键
      * @param action 其中Int值为该按键按下的总tick时长
+     * @return 是否视为操作成功
      */
-    fun onPress(key: KeyMapping, action: (Int) -> Unit) {
+    fun onPress(key: KeyMapping, action: (Int) -> Boolean): Boolean {
         if (key.isDown) {
-            action.invoke(getPressTick(key))
+            return action.invoke(getPressTick(key))
         }
+        return false
     }
 
     /**
      * 当该按键按下的一瞬间将执行输入的指令[action]
      * @param key 监测的按键
      * @param action 要执行的指令
+     * @return 是否视为操作成功
      */
-    fun onPressOnce(key: KeyMapping, action: () -> Unit) {
+    fun onPressOnce(key: KeyMapping, action: () -> Boolean): Boolean {
         val isDownLast = keyRecorder.getOrDefault(key, false)
         val isDownNow = key.isDown
         if (!isDownLast && isDownNow) {
-            action.invoke()
+            return action.invoke()
         }
+        return false
     }
 
 }

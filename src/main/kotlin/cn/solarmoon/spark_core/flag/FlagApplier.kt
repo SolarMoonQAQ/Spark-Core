@@ -24,7 +24,7 @@ object FlagApplier {
     private fun entityTick(event: EntityTickEvent.Pre) {
         val entity = event.entity
         if (entity.getFlag(SparkFlags.MOVE_INPUT_FREEZE) && entity is LivingEntity && entity !is Player) {
-            entity.addEffect(MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 1, 255, false, false))
+            entity.addEffect(MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 2, 255, false, false))
         }
     }
 
@@ -45,8 +45,13 @@ object FlagApplier {
     }
 
     @SubscribeEvent
-    private fun entityUseItem(event: LivingEntityUseItemEvent.Tick) {
+    private fun entityUseItem(event: LivingEntityUseItemEvent.Start) {
         if (event.entity.getFlag(SparkFlags.SILENCE)) event.isCanceled = true
+    }
+
+    @SubscribeEvent
+    private fun entityUseItem(event: LivingEntityUseItemEvent.Tick) {
+        if (event.entity.getFlag(SparkFlags.SILENCE)) event.entity.stopUsingItem()
     }
 
     @JvmStatic
