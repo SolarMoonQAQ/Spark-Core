@@ -20,6 +20,7 @@ public class LivingEntityMixin {
 
     @Inject(method = "hurt", at = @At("HEAD"))
     private void hurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        if (entity.level().isClientSide) return;
         var data = ((IAttackedDataPusher)entity).getData();
         if (data != null) {
             ((IExtraDamageDataHolder) source).setData(data);

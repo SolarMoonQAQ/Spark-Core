@@ -16,7 +16,7 @@ version = mod_version
 group = "${mod_group_id}.${mod_id}"
 
 base {
-    archivesName = "${mod_id}-${minecraft_version}"
+    archivesName = "${build_name}-${minecraft_version}"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
