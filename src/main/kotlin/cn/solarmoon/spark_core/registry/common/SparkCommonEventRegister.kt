@@ -1,7 +1,8 @@
 package cn.solarmoon.spark_core.registry.common
 
-import cn.solarmoon.spark_core.animation.anim.play.AnimTicker
+import cn.solarmoon.spark_core.animation.anim.play.AnimApplier
 import cn.solarmoon.spark_core.animation.preset_anim.CommonAnimApplier
+import cn.solarmoon.spark_core.animation.preset_anim.PoseAnimApplier
 import cn.solarmoon.spark_core.animation.preset_anim.UseAnimApplier
 import cn.solarmoon.spark_core.entity.preinput.PreInputApplier
 import cn.solarmoon.spark_core.flag.FlagApplier
@@ -14,7 +15,7 @@ object SparkCommonEventRegister {
 
     @JvmStatic
     fun register() {
-        add(AnimTicker)
+        add(AnimApplier)
         add(PreInputApplier)
         add(PhysThreadApplier)
         add(PresetBodyApplier)
@@ -22,6 +23,7 @@ object SparkCommonEventRegister {
         add(CommonAnimApplier)
         add(UseAnimApplier)
         add(FlagApplier)
+        add(PoseAnimApplier)
     }
 
     private fun add(event: Any) {

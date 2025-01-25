@@ -31,6 +31,10 @@ object SparkTypedAnimations {
     val FALL = createStateAnim("fall")
     @JvmStatic
     val SIT = createStateAnim("sit")
+    @JvmStatic
+    val FALL_FLYING = createStateAnim("fall_flying")
+    @JvmStatic
+    val SLEEP = createStateAnim("sleep")
 
     fun createStateAnim(name: String, provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
         .id(name)

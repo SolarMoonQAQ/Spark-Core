@@ -15,5 +15,7 @@ sealed class EntityStates {
     object CrouchingMove : DefaultState(SparkTypedAnimations.CROUCHING_MOVE.get().registryKey.toString())
     object Fall : DefaultState(SparkTypedAnimations.FALL.get().registryKey.toString())
     object Sit : DefaultState(SparkTypedAnimations.SIT.get().registryKey.toString())
+    object FallFlying : DefaultState(SparkTypedAnimations.FALL_FLYING.get().registryKey.toString())
+    object Sleep: DefaultState(SparkTypedAnimations.SLEEP.get().registryKey.toString())
     
 }

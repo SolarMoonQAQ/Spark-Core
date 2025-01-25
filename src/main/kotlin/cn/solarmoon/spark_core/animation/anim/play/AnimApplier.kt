@@ -6,12 +6,27 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
 import cn.solarmoon.spark_core.event.PhysTickEvent
+import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
-import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
+import net.neoforged.neoforge.event.entity.player.PlayerEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
-object AnimTicker {
+object AnimApplier {
+
+    @SubscribeEvent
+    private fun entityJoin(event: EntityJoinLevelEvent) {
+        val entity = event.entity
+        entity.setData(SparkAttachments.MODEL_INDEX, ModelIndex.of(entity))
+    }
+
+    @SubscribeEvent
+    private fun playerRespawn(event: PlayerEvent.Clone) {
+        if (event.isWasDeath) {
+            event.entity.setData(SparkAttachments.MODEL_INDEX, event.original.getData(SparkAttachments.MODEL_INDEX))
+        }
+    }
 
     @SubscribeEvent
     private fun physTick(event: PhysTickEvent.Entity) {

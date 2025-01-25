@@ -44,7 +44,7 @@ class PerspectiveBakedModel(private val bakedModel2d: BakedModel, private val ba
     }
 
     override fun applyTransform(type: ItemDisplayContext, mat: PoseStack, applyLeftHandTransform: Boolean): BakedModel {
-        return if (type == ItemDisplayContext.GUI || type == ItemDisplayContext.FIXED) {
+        return if (type == ItemDisplayContext.GUI || type == ItemDisplayContext.FIXED || type == ItemDisplayContext.GROUND) {
             bakedModel2d.applyTransform(type, mat, applyLeftHandTransform)
         } else {
             bakedModel3d.applyTransform(type, mat, applyLeftHandTransform)

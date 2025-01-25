@@ -32,7 +32,7 @@ class AttackSystem(
      * @param customAction 确定可调用攻击后的自定义指令
      * @return 是否成功触发攻击指令
      */
-    fun customAttack(target: Entity, customAction: (AttackSystem) -> Unit): Boolean {
+    fun customAttack(target: Entity, customAction: AttackSystem.() -> Unit): Boolean {
         if (hasAttacked(target)) return false
 
         customAction.invoke(this)
@@ -46,7 +46,7 @@ class AttackSystem(
      * 同[customAttack]，但会设置碰撞相关的受击数据
      * @param customAction 在设置受击数据之后，攻击进行前插入自定义指令
      */
-    fun customGeomAttack(o1: DGeom, o2: DGeom, customAction: (AttackSystem) -> Unit): Boolean {
+    fun customGeomAttack(o1: DGeom, o2: DGeom, customAction: AttackSystem.() -> Boolean): Boolean {
         val target = (o2.body.owner as? Entity) ?: return false
         return customAttack(target) {
             target.pushAttackedData(AttackedData(o1, o2.body))
@@ -59,9 +59,9 @@ class AttackSystem(
      * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
      * @return 是否成功触发攻击指令
      */
-    fun commonAttack(target: Entity, actionBeforeAttack: (AttackSystem) -> Unit = {}): Boolean {
+    fun commonAttack(target: Entity, actionBeforeAttack: AttackSystem.() -> Boolean = { true }): Boolean {
         return customAttack(target) {
-            actionBeforeAttack.invoke(this)
+            if (!actionBeforeAttack.invoke(this)) return@customAttack
             when(entity) {
                 is Player -> entity.attack(target)
                 is LivingEntity -> entity.doHurtTarget(target)
@@ -74,11 +74,12 @@ class AttackSystem(
      * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
      * @return 是否成功触发攻击指令
      */
-    fun commonGeomAttack(o1: DGeom, o2: DGeom, actionBeforeAttack: (AttackSystem) -> Unit = {}): Boolean {
+    fun commonGeomAttack(o1: DGeom, o2: DGeom, actionBeforeAttack: AttackSystem.() -> Boolean = { true }): Boolean {
         val target = (o2.body.owner as? Entity) ?: return false
         return commonAttack(target) {
             target.pushAttackedData(AttackedData(o1, o2.body))
             actionBeforeAttack.invoke(this)
+            true
         }
     }
 

@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.phys
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.event.OnBodyCreateEvent
 import cn.solarmoon.spark_core.phys.thread.getPhysLevel
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
@@ -24,6 +25,11 @@ object PresetBodyApplier {
         val entity = event.entity
         val level = event.level
         createEntityBoundingBoxBody(SparkBodyTypes.ENTITY_BOUNDING_BOX.get(), entity, level)
+
+        val animatable = entity as? IEntityAnimatable<*> ?: return
+        animatable.model.bones.values.filter { it.name !in listOf("rightItem", "leftItem") }.forEach { bone ->
+            createAnimatedCubeBody(bone.name, SparkBodyTypes.CUSTOM.get(), animatable, level)
+        }
     }
 
     @SubscribeEvent

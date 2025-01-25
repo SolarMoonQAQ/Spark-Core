@@ -31,9 +31,7 @@ public abstract class EntityMixin extends AttachmentHolder {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(EntityType entityType, Level level, CallbackInfo ci) {
-        if (entity instanceof IEntityAnimatable<?>) {
-            setData(SparkAttachments.getMODEL_INDEX(), ModelIndex.of(entity));
-        }
+
     }
 
 }

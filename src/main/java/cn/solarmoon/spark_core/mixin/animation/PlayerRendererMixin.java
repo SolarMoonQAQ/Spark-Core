@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
+import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
 import cn.solarmoon.spark_core.phys.thread.ClientPhysLevel;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -37,6 +39,14 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
         if (!path.equals(ResourceLocation.withDefaultNamespace("player"))) {
             var vb = buffer.getBuffer(RenderType.entityTranslucent(animData.getTextureLocation()));
             ModelRenderHelperKt.render(animatable, poseStack.last().normal(), vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks0)), -1, partialTicks0);
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "setupRotations(Lnet/minecraft/client/player/AbstractClientPlayer;Lcom/mojang/blaze3d/vertex/PoseStack;FFFF)V", at = @At("HEAD"), cancellable = true)
+    private void rot(AbstractClientPlayer entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
+        if (VanillaModelHelper.shouldSwitchToAnim((IAnimatable<?>) entity)) {
+            super.setupRotations(entity, poseStack, bob, yBodyRot, partialTick, scale);
             ci.cancel();
         }
     }

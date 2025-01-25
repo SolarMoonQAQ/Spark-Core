@@ -41,7 +41,6 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
             setDefault();
             if (shouldTransform()) {
                 var partialTicks = ((ClientPhysLevel) ThreadHelperKt.getPhysLevel(entity.level())).getPartialTicks();
-//                var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 VanillaModelHelper.setRoot(leftArm, body);
                 VanillaModelHelper.setRoot(rightArm, body);
                 VanillaModelHelper.setRoot(head, body);

@@ -41,12 +41,16 @@ object PlayerStateAnimMachine {
         addState(EntityStates.CrouchingMove)
         addState(EntityStates.Fall)
         addState(EntityStates.Sit)
+        addState(EntityStates.FallFlying)
+        addState(EntityStates.Sleep)
 
         val choice = initialChoiceState("choice") {
             when {
                 Minecraft.getInstance().player == null -> UndoState()
                 checkPlayingOtherAnim(player.asAnimatable()) -> none
                 player.vehicle != null -> EntityStates.Sit
+                player.isSleeping -> EntityStates.Sleep
+                player.isFallFlying -> EntityStates.FallFlying
                 player.abilities.flying && player.moveCheck() -> EntityStates.FlyMove
                 player.abilities.flying -> EntityStates.Fly
                 player.isFalling() -> EntityStates.Fall
