@@ -107,6 +107,18 @@ interface IAnimatable<T> {
     }
 
     /**
+     * 获取动画体指定骨骼的枢轴点在模型空间的变换矩阵
+     * @param physPartialTick 物理线程客户端的tick时间
+     */
+    fun getSpaceBonePivot(name: String, physPartialTick: Float = 1f): Vector3f {
+        val ma = Matrix4f()
+        val bone = model.getBone(name)
+        val pivot = bone.pivot.toVector3f()
+        bone.applyTransformWithParents(bones, ma, physPartialTick)
+        return ma.transformPosition(pivot)
+    }
+
+    /**
      * 根据name索引创建一个新的动画实例
      */
     fun newAnimInstance(name: String, provider: (AnimInstance).() -> Unit = {}) = AnimInstance.create(this, name, provider = provider)
