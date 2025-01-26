@@ -54,4 +54,9 @@ abstract class PhysLevel(
         world.physTick()
     }
 
+    val partialTick: Double get() {
+        val currentTime = System.nanoTime()
+        val deltaTime = (currentTime - lastTickTime) / 1_000_000.0
+        return (deltaTime / tickStep).coerceIn(0.0, 1.0)
+    }
 }

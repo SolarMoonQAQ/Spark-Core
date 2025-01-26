@@ -25,6 +25,11 @@ object PresetBodyApplier {
         val entity = event.entity
         val level = event.level
         createEntityBoundingBoxBody(SparkBodyTypes.ENTITY_BOUNDING_BOX.get(), entity, level)
+
+        val animatable = entity as? IEntityAnimatable<*> ?: return
+        animatable.model.bones.values.filter { it.name !in listOf("rightItem", "leftItem") }.forEach { bone ->
+            createAnimatedCubeBody(bone.name, SparkBodyTypes.CUSTOM.get(), animatable, level)
+        }
     }
 
     @SubscribeEvent
