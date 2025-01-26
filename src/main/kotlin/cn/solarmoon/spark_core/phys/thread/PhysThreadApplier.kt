@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.phys.thread
 
+import cn.solarmoon.spark_core.animation.vanilla.asAnimatable
+import net.minecraft.client.Minecraft
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.level.LevelEvent
