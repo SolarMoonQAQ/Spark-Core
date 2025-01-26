@@ -11,4 +11,9 @@ class BoneUpdateEvent(
     val oldData: KeyAnimData,
     var newData: KeyAnimData
 ): Event() {
+
+    fun updateVanilla(newData: KeyAnimData) {
+
+    }
+
 }

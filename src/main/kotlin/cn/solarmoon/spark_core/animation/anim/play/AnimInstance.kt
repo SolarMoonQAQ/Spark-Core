@@ -37,7 +37,7 @@ class AnimInstance private constructor(
 
     val step get() = speed / 50
 
-    fun getProgress(partialTicks: Float = 0f) = ((time + partialTicks / (speed * 50)) / maxLength).coerceIn(0.0, 1.0)
+    fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / maxLength).coerceIn(0.0, 1.0)
 
     fun step(overallSpeed: Double = 1.0) {
         time += step * overallSpeed

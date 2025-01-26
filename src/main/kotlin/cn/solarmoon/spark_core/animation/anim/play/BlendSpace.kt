@@ -28,9 +28,9 @@ class BlendSpace: ConcurrentHashMap<String, BlendAnimation>() {
             val boneData = it.anim.origin.getBoneAnimation(boneName) ?: return@forEach
             val pt = (it.weight / totalWeight).toFloat()
             val time = when(it.anim.origin.loop) {
-                Loop.TRUE -> (it.anim.time * it.anim.speed) % it.anim.maxLength
-                Loop.ONCE -> it.anim.time * it.anim.speed
-                Loop.HOLD_ON_LAST_FRAME -> it.anim.time * it.anim.speed
+                Loop.TRUE -> it.anim.time % it.anim.maxLength
+                Loop.ONCE -> it.anim.time
+                Loop.HOLD_ON_LAST_FRAME -> it.anim.time
             }
             pos.add(boneData.getAnimPosAt(time).mul(pt))
             rot.add(boneData.getAnimRotAt(time).mul(pt))

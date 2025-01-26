@@ -12,8 +12,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.checkerframework.checker.units.qual.K;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements IEntityAnimatable<Player> {
@@ -42,18 +46,9 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
         return boneGroup;
     }
 
-    @Override
-    public void onBoneUpdate(@NotNull BoneUpdateEvent event) {
-        switch (event.getBone().getName()) {
-            case "head" -> {
-                var old = event.getNewData();
-                event.setNewData(new KeyAnimData(
-                        old.getPosition(),
-                        SparkMathKt.toRadians(new Vec3(-getXRot(), -yHeadRot + yBodyRot, 0.0)).add(old.getRotation()),
-                        old.getScale()
-                ));
-            }
-        }
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void tick(CallbackInfo ci) {
+
     }
 
 }

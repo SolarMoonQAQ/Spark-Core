@@ -42,12 +42,12 @@ object VanillaModelHelper {
     }
 
     @JvmStatic
-    fun applyTransform(animatable: IAnimatable<*>, boneName: String, part: ModelPart, physPartialTicks: Float) {
+    fun applyTransform(animatable: IAnimatable<*>, boneName: String, part: ModelPart, partialTicks: Float, physPartialTicks: Float) {
         if (part !is ITransformModelPart) return
         val bone = animatable.getBone(boneName)
-        val pos = bone.getPosition(physPartialTicks).toVector3f().mul(16f).apply { x = -x; y = -y }
-        val rot = bone.getRotation(physPartialTicks).toVector3f().apply { x = -x; y = -y }
-        val scale = bone.getScale(physPartialTicks).toVector3f()
+        val pos = bone.getPosition(partialTicks, physPartialTicks).toVector3f().mul(16f).apply { x = -x; y = -y }
+        val rot = bone.getRotation(partialTicks, physPartialTicks).toVector3f().apply { x = -x; y = -y }
+        val scale = bone.getScale(partialTicks, physPartialTicks).toVector3f()
         part.offsetPos(pos)
         part.setRotation(rot.x, rot.y, rot.z)
         part.xScale = scale.x; part.yScale = scale.y; part.zScale = scale.z

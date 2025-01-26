@@ -17,6 +17,6 @@ abstract class RenderLayer<T, A: IAnimatable<T>>() {
 
     abstract fun getRenderType(sth: A): RenderType
 
-    abstract fun render(sth: A, partialTick: Float, poseStack: PoseStack, bufferSource: MultiBufferSource, packedLight: Int, packedOverlay: Int)
+    abstract fun render(sth: A, partialTick: Float, physPartialTick: Float, poseStack: PoseStack, bufferSource: MultiBufferSource, packedLight: Int, packedOverlay: Int)
 
 }

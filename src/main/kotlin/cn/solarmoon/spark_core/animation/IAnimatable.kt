@@ -76,10 +76,10 @@ interface IAnimatable<T> {
      * @param physPartialTick 物理线程客户端的tick时间
      * @param partialTick 主线程客户端的tick时间
      */
-    fun getWorldBoneMatrix(name: String, physPartialTick: Float = 1f, partialTick: Float = 1f): Matrix4f {
+    fun getWorldBoneMatrix(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Matrix4f {
         val ma = getWorldPositionMatrix(partialTick)
         val bone = model.getBone(name)
-        bone.applyTransformWithParents(bones, ma, physPartialTick)
+        bone.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
         return ma
     }
 
@@ -88,8 +88,8 @@ interface IAnimatable<T> {
      * @param physPartialTick 物理线程客户端的tick时间
      * @param partialTick 主线程客户端的tick时间
      */
-    fun getWorldBonePivot(name: String, physPartialTick: Float = 1f, partialTick: Float = 1f): Vector3f {
-        val ma = getWorldBoneMatrix(name, physPartialTick, partialTick)
+    fun getWorldBonePivot(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
+        val ma = getWorldBoneMatrix(name, partialTick, physPartialTick)
         val bone = model.getBone(name)
         val pivot = bone.pivot.toVector3f()
         return ma.transformPosition(pivot)
@@ -99,10 +99,10 @@ interface IAnimatable<T> {
      * 获取动画体指定骨骼在模型空间的变换矩阵
      * @param physPartialTick 物理线程客户端的tick时间
      */
-    fun getSpaceBoneMatrix(name: String, physPartialTick: Float = 1f): Matrix4f {
+    fun getSpaceBoneMatrix(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Matrix4f {
         val ma = Matrix4f()
         val bone = model.getBone(name)
-        bone.applyTransformWithParents(bones, ma, physPartialTick)
+        bone.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
         return ma
     }
 
@@ -110,11 +110,11 @@ interface IAnimatable<T> {
      * 获取动画体指定骨骼的枢轴点在模型空间的变换矩阵
      * @param physPartialTick 物理线程客户端的tick时间
      */
-    fun getSpaceBonePivot(name: String, physPartialTick: Float = 1f): Vector3f {
+    fun getSpaceBonePivot(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
         val ma = Matrix4f()
         val bone = model.getBone(name)
         val pivot = bone.pivot.toVector3f()
-        bone.applyTransformWithParents(bones, ma, physPartialTick)
+        bone.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
         return ma.transformPosition(pivot)
     }
 

@@ -11,9 +11,9 @@ abstract class BaseSkill<T>(
     override val name: String get() = this::class.java.simpleName
 
     protected var active = false
-    protected var time = 0
+    protected var _runTime = 0
     override val runTime: Int
-        get() = time
+        get() = _runTime
     override val components: MutableList<SkillComponent> = mutableListOf()
 
     override fun activate() {
@@ -25,14 +25,14 @@ abstract class BaseSkill<T>(
 
     override fun update() {
         if (active) {
-            time++
+            _runTime++
             onUpdate()
         }
     }
 
     override fun end() {
         if (active) {
-            time = 0
+            _runTime = 0
             active = false
             onEnd()
         }

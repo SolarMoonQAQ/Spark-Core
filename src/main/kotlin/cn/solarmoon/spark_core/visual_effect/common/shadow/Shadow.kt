@@ -4,6 +4,8 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.render
+import cn.solarmoon.spark_core.phys.thread.ClientPhysLevel
+import cn.solarmoon.spark_core.phys.thread.getPhysLevel
 import cn.solarmoon.spark_core.util.ColorUtil
 import cn.solarmoon.spark_core.util.RenderTypeUtil
 import com.mojang.blaze3d.vertex.PoseStack
@@ -44,13 +46,14 @@ class Shadow(
     }
 
     fun render(level: Level, poseStack: PoseStack, bufferSource: MultiBufferSource, partialTicks: Float) {
+        val physPartialTicks = (level.getPhysLevel() as ClientPhysLevel).partialTicks
         val buffer = bufferSource.getBuffer(RenderTypeUtil.transparentRepair(textureLocation))
         val posMa = Matrix4f().translate(pos.toVector3f()).rotateY(yRotR)
         val normal = poseStack.last().normal()
         val light = LevelRenderer.getLightColor(level, BlockPos(pos.toVec3i()).above())
         val overlay = OverlayTexture.NO_OVERLAY
         val color = ColorUtil.getColorAndSetAlpha(color.rgb, 1 - getProgress(partialTicks))
-        animatable.model.render(boneCache, posMa, normal, buffer, light, overlay, color, partialTicks)
+        animatable.model.render(boneCache, posMa, normal, buffer, light, overlay, color, partialTicks, physPartialTicks)
     }
 
 }

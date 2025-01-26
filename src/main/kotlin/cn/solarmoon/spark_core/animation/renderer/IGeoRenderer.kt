@@ -16,16 +16,17 @@ interface IGeoRenderer<T, S: IAnimatable<T>> {
         animatable: S,
         yaw: Float,
         partialTick: Float,
+        physPartialTick: Float,
         poseStack: PoseStack,
         bufferSource: MultiBufferSource,
         packedLight: Int
     ) {
         val buffer = bufferSource.getBuffer(getRenderType(animatable))
 
-        val overlay = getOverlay(animatable, partialTick)
-        animatable.render(poseStack.last().normal(), buffer, packedLight, overlay, getColor(animatable, partialTick), partialTick)
+        val overlay = getOverlay(animatable, physPartialTick)
+        animatable.render(poseStack.last().normal(), buffer, packedLight, overlay, getColor(animatable, physPartialTick), partialTick, physPartialTick)
 
-        layers.forEach { it.render(animatable, partialTick, poseStack, bufferSource, packedLight, -1) }
+        layers.forEach { it.render(animatable, partialTick, physPartialTick, poseStack, bufferSource, packedLight, -1) }
     }
 
     fun getColor(animatable: S, partialTick: Float): Int = -1

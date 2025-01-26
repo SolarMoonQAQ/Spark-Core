@@ -5,18 +5,12 @@ import cn.solarmoon.spark_core.animation.anim.play.Bone
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.phys.toRadians
-import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.phys.Vec3
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
-import org.joml.Matrix3f
 import org.joml.Matrix4f
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 import java.util.Optional
 import kotlin.collections.LinkedHashMap
 
@@ -53,13 +47,14 @@ data class OBone(
     fun applyTransform(
         bones: BoneGroup,
         ma: Matrix4f,
-        partialTick: Float = 0f,
+        partialTick: Float = 1f,
+        physPartialTick: Float = 1f,
     ): Matrix4f {
         val bone = bones[name] ?: return ma
         ma.translate(pivot.toVector3f())
-        ma.translate(bone.getPosition(partialTick).toVector3f())
-        ma.rotateZYX(rotation.toVector3f().add(bone.getRotation(partialTick).toVector3f()))
-        ma.scale(bone.getScale(partialTick).toVector3f())
+        ma.translate(bone.getPosition(partialTick, physPartialTick).toVector3f())
+        ma.rotateZYX(rotation.toVector3f().add(bone.getRotation(physPartialTick).toVector3f()))
+        ma.scale(bone.getScale(physPartialTick).toVector3f())
         ma.translate(pivot.toVector3f().negate())
         return ma
     }
@@ -70,7 +65,8 @@ data class OBone(
     fun applyTransformWithParents(
         bones: BoneGroup,
         ma: Matrix4f,
-        partialTick: Float = 0f
+        partialTick: Float = 1f,
+        physPartialTick: Float = 1f
     ): Matrix4f {
         val l = arrayListOf<OBone>(this)
         var parent = getParent()
@@ -80,7 +76,7 @@ data class OBone(
         }
 
         for (i in l.asReversed()) {
-            i.applyTransform(bones, ma, partialTick)
+            i.applyTransform(bones, ma, partialTick, physPartialTick)
         }
         return ma
     }

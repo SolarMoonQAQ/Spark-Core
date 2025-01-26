@@ -40,17 +40,18 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable)) {
             setDefault();
             if (shouldTransform()) {
-                var partialTicks = ((ClientPhysLevel) ThreadHelperKt.getPhysLevel(entity.level())).getPartialTicks();
+                var physPartialTicks = ((ClientPhysLevel) ThreadHelperKt.getPhysLevel(entity.level())).getPartialTicks();
+                var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 VanillaModelHelper.setRoot(leftArm, body);
                 VanillaModelHelper.setRoot(rightArm, body);
                 VanillaModelHelper.setRoot(head, body);
                 VanillaModelHelper.setPivot(animatable, "waist", body);
-                VanillaModelHelper.applyTransform(animatable, "leftArm", leftArm, partialTicks);
-                VanillaModelHelper.applyTransform(animatable, "rightArm", rightArm, partialTicks);
-                VanillaModelHelper.applyTransform(animatable, "leftLeg", leftLeg, partialTicks);
-                VanillaModelHelper.applyTransform(animatable, "rightLeg", rightLeg, partialTicks);
-                VanillaModelHelper.applyTransform(animatable, "waist", body, partialTicks);
-                VanillaModelHelper.applyTransform(animatable, "head", head, partialTicks);
+                VanillaModelHelper.applyTransform(animatable, "leftArm", leftArm, partialTicks, physPartialTicks);
+                VanillaModelHelper.applyTransform(animatable, "rightArm", rightArm, partialTicks, physPartialTicks);
+                VanillaModelHelper.applyTransform(animatable, "leftLeg", leftLeg, partialTicks, physPartialTicks);
+                VanillaModelHelper.applyTransform(animatable, "rightLeg", rightLeg, partialTicks, physPartialTicks);
+                VanillaModelHelper.applyTransform(animatable, "waist", body, partialTicks, physPartialTicks);
+                VanillaModelHelper.applyTransform(animatable, "head", head, partialTicks, physPartialTicks);
             } else {
                 setShouldTransform(true);
             }

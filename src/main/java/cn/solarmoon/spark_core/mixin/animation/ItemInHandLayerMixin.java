@@ -44,7 +44,7 @@ public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends Ent
                 var p = new PoseStack();
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
                 p.translate(-cam.x, -cam.y, -cam.z);
-                var ma = animatable.getWorldBoneMatrix(boneName, physPartialTicks, partialTicks);
+                var ma = animatable.getWorldBoneMatrix(boneName, partialTicks, physPartialTicks);
                 var pivot = animatable.getModelIndex().getModel().getBone(boneName).getPivot();
                 p.mulPose(ma);
                 p.translate(pivot.x, pivot.y - 1/16f, pivot.z - 1.75/16f);
