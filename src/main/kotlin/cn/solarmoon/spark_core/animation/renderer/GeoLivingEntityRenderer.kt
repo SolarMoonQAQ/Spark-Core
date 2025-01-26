@@ -27,7 +27,7 @@ open class GeoLivingEntityRenderer<T>(context: EntityRendererProvider.Context, s
         bufferSource: MultiBufferSource,
         packedLight: Int
     ) {
-        val physPartialTick = (animatable.level().getPhysLevel() as ClientPhysLevel).partialTicks
+        val physPartialTick = (animatable.level().getPhysLevel() as ClientPhysLevel).partialTicks.toFloat()
         super<LivingEntityRenderer>.render(animatable, yaw, partialTick, poseStack, bufferSource, packedLight)
         super<IGeoRenderer>.render(animatable, yaw, partialTick, physPartialTick, poseStack, bufferSource, packedLight)
     }

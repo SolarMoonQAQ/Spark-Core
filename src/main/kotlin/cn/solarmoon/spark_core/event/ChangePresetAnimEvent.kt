@@ -9,7 +9,7 @@ import ru.nsk.kstatemachine.state.IState
 
 abstract class ChangePresetAnimEvent: Event() {
 
-    class PlayerState(val player: Player, val originAnim: TypedAnimation, val state: IState): ChangePresetAnimEvent() {
+    class PlayerState(val player: Player, val originAnim: TypedAnimation, val state: IState, var transitionTime: Int): ChangePresetAnimEvent() {
         var newAnim: TypedAnimation? = null
     }
 

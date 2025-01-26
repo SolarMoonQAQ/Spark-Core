@@ -53,8 +53,8 @@ data class OBone(
         val bone = bones[name] ?: return ma
         ma.translate(pivot.toVector3f())
         ma.translate(bone.getPosition(partialTick, physPartialTick).toVector3f())
-        ma.rotateZYX(rotation.toVector3f().add(bone.getRotation(physPartialTick).toVector3f()))
-        ma.scale(bone.getScale(physPartialTick).toVector3f())
+        ma.rotateZYX(rotation.toVector3f().add(bone.getRotation(partialTick, physPartialTick).toVector3f()))
+        ma.scale(bone.getScale(partialTick, physPartialTick).toVector3f())
         ma.translate(pivot.toVector3f().negate())
         return ma
     }

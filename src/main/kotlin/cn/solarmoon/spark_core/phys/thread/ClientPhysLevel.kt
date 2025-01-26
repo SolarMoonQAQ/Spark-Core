@@ -16,12 +16,6 @@ class ClientPhysLevel(
     customApply: Boolean
 ): PhysLevel(id, name, level, tickStep, customApply) {
 
-    val partialTicks: Float get() {
-        val currentTime = System.nanoTime()
-        val deltaTime = (currentTime - lastTickTime) / 1_000_000.0
-        return (deltaTime / tickStep).toFloat().coerceIn(0f, 1f)
-    }
-
     override fun physTick() {
         super.physTick()
         NeoForge.EVENT_BUS.post(PhysTickEvent.Level(this))

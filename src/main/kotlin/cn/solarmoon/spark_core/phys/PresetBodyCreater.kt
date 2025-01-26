@@ -33,7 +33,7 @@ fun createEntityBoundingBoxBody(type: BodyType, owner: Entity, level: Level, pro
                 val bb = owner.boundingBox
                 geom.lengths = DVector3(bb.xsize, bb.ysize, bb.zsize)
                 //主线程tick时，物理线程尚未tick，此时直接setPosition会导致本应移动的距离被抹为0，因此计算并减掉delta
-                val delta = (owner.deltaMovement).scale(0.4 * level.getPhysLevel().partialTick).toDVector3()
+                val delta = (owner.deltaMovement).scale(0.4 * level.getPhysLevel().partialTicks).toDVector3()
                     .apply { if (owner.verticalCollision) set1(0.0) }
                 position = bb.center.subtract(delta.toVec3()).toDVector3()
                 linearVel =
@@ -70,7 +70,7 @@ fun createAnimatedPivotBody(
                     linearVel =
                         owner.deltaMovement.scale(20.0).toDVector3().apply { if (owner.verticalCollision) set1(0.0) }
                     //主线程tick时，物理线程尚未tick，此时直接setPosition会导致本应移动的距离被抹为0，因此计算并减掉delta
-                    delta = (owner.deltaMovement).scale(0.4 * level.getPhysLevel().partialTick).toDVector3()
+                    delta = (owner.deltaMovement).scale(0.4 * level.getPhysLevel().partialTicks).toDVector3()
                         .apply { if (owner.verticalCollision) set1(0.0) }
                 }
                 position = owner.getWorldBonePivot(boneName).sub(delta.toVector3f()).toDVector3()
@@ -116,7 +116,7 @@ fun createAnimatedCubeBody(
                     linearVel =
                         owner.deltaMovement.scale(20.0).toDVector3().apply { if (owner.verticalCollision) set1(0.0) }
                     //主线程tick时，物理线程尚未tick，此时直接setPosition会导致本应移动的距离被抹为0，因此计算并减掉delta
-                    delta = (owner.deltaMovement).scale(0.4 * level.getPhysLevel().partialTick).toDVector3()
+                    delta = (owner.deltaMovement).scale(0.4 * level.getPhysLevel().partialTicks).toDVector3()
                         .apply { if (owner.verticalCollision) set1(0.0) }
                 }
                 position = owner.getWorldBonePivot(boneName).sub(delta.toVector3f()).toDVector3()

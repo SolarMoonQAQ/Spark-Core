@@ -5,15 +5,13 @@ import cn.solarmoon.spark_core.animation.anim.play.Bone
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import net.neoforged.bus.api.Event
 
-class BoneUpdateEvent(
+open class BoneUpdateEvent(
     val animatable: IAnimatable<*>,
     val bone: Bone,
     val oldData: KeyAnimData,
     var newData: KeyAnimData
 ): Event() {
 
-    fun updateVanilla(newData: KeyAnimData) {
-
-    }
+    class Vanilla(animatable: IAnimatable<*>, bone: Bone, oldData: KeyAnimData, newData: KeyAnimData): BoneUpdateEvent(animatable, bone, oldData, newData)
 
 }

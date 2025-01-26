@@ -29,8 +29,9 @@ class Bone(
     }
 
     fun updateVanilla(newData: KeyAnimData) {
-        oVanillaData = vanillaData
-        vanillaData = newData
+        val event = NeoForge.EVENT_BUS.post(BoneUpdateEvent.Vanilla(holder, this, vanillaData, newData))
+        oVanillaData = event.oldData
+        vanillaData = event.newData
     }
 
     fun set(newData: KeyAnimData) {

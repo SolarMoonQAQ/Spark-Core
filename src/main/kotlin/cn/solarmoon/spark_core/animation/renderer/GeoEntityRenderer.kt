@@ -23,7 +23,7 @@ open class GeoEntityRenderer<T>(context: EntityRendererProvider.Context): Entity
         bufferSource: MultiBufferSource,
         packedLight: Int
     ) {
-        val physPartialTick = (entity.level().getPhysLevel() as ClientPhysLevel).partialTicks
+        val physPartialTick = (entity.level().getPhysLevel() as ClientPhysLevel).partialTicks.toFloat()
         super<EntityRenderer>.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight)
         super<IGeoRenderer>.render(entity, entityYaw, partialTick, physPartialTick, poseStack, bufferSource, packedLight)
     }

@@ -46,7 +46,7 @@ class Shadow(
     }
 
     fun render(level: Level, poseStack: PoseStack, bufferSource: MultiBufferSource, partialTicks: Float) {
-        val physPartialTicks = (level.getPhysLevel() as ClientPhysLevel).partialTicks
+        val physPartialTicks = (level.getPhysLevel() as ClientPhysLevel).partialTicks.toFloat()
         val buffer = bufferSource.getBuffer(RenderTypeUtil.transparentRepair(textureLocation))
         val posMa = Matrix4f().translate(pos.toVector3f()).rotateY(yRotR)
         val normal = poseStack.last().normal()

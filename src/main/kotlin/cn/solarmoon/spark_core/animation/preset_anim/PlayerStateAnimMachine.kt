@@ -68,10 +68,10 @@ object PlayerStateAnimMachine {
             if (s == none) return@onStateEntry
             val sName = s.name ?: return@onStateEntry
             SparkRegistries.TYPED_ANIMATION.get(ResourceLocation.parse(sName))?.let {
-                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, s))
+                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, s, 7))
                 val anim = event.newAnim ?: event.originAnim
-                anim.play(player.asAnimatable(), 7)
-                anim.syncToServer(player.id, 7)
+                anim.play(player.asAnimatable(), event.transitionTime)
+                anim.syncToServer(player.id, event.transitionTime)
             }
         }
 

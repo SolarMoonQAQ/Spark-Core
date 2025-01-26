@@ -51,7 +51,7 @@ class GeomRenderer(): VisualEffectRenderer() {
     }
 
     override fun render(mc: Minecraft, camPos: Vec3, poseStack: PoseStack, bufferSource: MultiBufferSource, partialTicks: Float) {
-        val partialTicks = (mc.level?.getPhysLevel() as? ClientPhysLevel)?.partialTicks ?: return
+        val partialTicks = (mc.level?.getPhysLevel() as? ClientPhysLevel)?.partialTicks?.toFloat() ?: return
         val buffer = bufferSource.getBuffer(RenderType.LINES)
         if (!mc.entityRenderDispatcher.shouldRenderHitBoxes()) {
             renderableBoxes.clear()
