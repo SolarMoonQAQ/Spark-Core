@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
 
@@ -34,7 +33,11 @@ object SparkTypedAnimations {
     @JvmStatic
     val FALL_FLYING = createStateAnim("fall_flying")
     @JvmStatic
-    val SLEEP = createStateAnim("sleep")
+    val SLEEPING = createStateAnim("sleeping")
+    @JvmStatic
+    val SWIMMING_IDLE = createStateAnim("swimming_idle")
+    @JvmStatic
+    val SWIMMING = createMoveStateAnim("swimming")
 
     fun createStateAnim(name: String, provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
         .id(name)

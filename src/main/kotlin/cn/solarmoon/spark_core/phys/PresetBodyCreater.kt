@@ -164,7 +164,7 @@ fun createEntityAnimatedAttackBody(
 
 open class AttackCallBack(val attackSystem: AttackSystem) {
     open fun doAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, actionBeforeAttack: AttackSystem.() -> Boolean) =
-        attackSystem.commonGeomAttack(o1, o2, actionBeforeAttack)
+        attackSystem.commonGeomAttack(o1, o2, buffer, actionBeforeAttack)
 
     /**
      * 确定攻击将要发起但还没真正执行前

@@ -7,6 +7,7 @@ import net.minecraft.util.ExtraCodecs
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.level.Level
 import org.ode4j.ode.DBody
+import org.ode4j.ode.DContactBuffer
 import org.ode4j.ode.DGeom
 import java.util.Optional
 
@@ -19,6 +20,7 @@ import java.util.Optional
 data class AttackedData(
     val damageBox: DGeom,
     val damagedBody: DBody?,
+    val buffer: DContactBuffer,
     val extraData: CompoundTag = CompoundTag()
 ) {
 

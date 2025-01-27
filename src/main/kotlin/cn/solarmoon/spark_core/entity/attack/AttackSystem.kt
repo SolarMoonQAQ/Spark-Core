@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.entity.attack
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
+import org.ode4j.ode.DContactBuffer
 import org.ode4j.ode.DGeom
 
 /**
@@ -46,10 +47,10 @@ class AttackSystem(
      * 同[customAttack]，但会设置碰撞相关的受击数据
      * @param customAction 在设置受击数据之后，攻击进行前插入自定义指令
      */
-    fun customGeomAttack(o1: DGeom, o2: DGeom, customAction: AttackSystem.() -> Boolean): Boolean {
+    fun customGeomAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, customAction: AttackSystem.() -> Boolean): Boolean {
         val target = (o2.body.owner as? Entity) ?: return false
         return customAttack(target) {
-            target.pushAttackedData(AttackedData(o1, o2.body))
+            target.pushAttackedData(AttackedData(o1, o2.body, buffer))
             customAction.invoke(this)
         }
     }
@@ -74,10 +75,10 @@ class AttackSystem(
      * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
      * @return 是否成功触发攻击指令
      */
-    fun commonGeomAttack(o1: DGeom, o2: DGeom, actionBeforeAttack: AttackSystem.() -> Boolean = { true }): Boolean {
+    fun commonGeomAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, actionBeforeAttack: AttackSystem.() -> Boolean = { true }): Boolean {
         val target = (o2.body.owner as? Entity) ?: return false
         return commonAttack(target) {
-            target.pushAttackedData(AttackedData(o1, o2.body))
+            target.pushAttackedData(AttackedData(o1, o2.body, buffer))
             actionBeforeAttack.invoke(this)
             true
         }

@@ -8,8 +8,10 @@ import cn.solarmoon.spark_core.entity.moveCheck
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.client.Minecraft
+import net.minecraft.client.model.ShieldModel
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.item.UseAnim
 import net.neoforged.neoforge.common.NeoForge
 import ru.nsk.kstatemachine.event.DataEvent
 import ru.nsk.kstatemachine.event.Event
@@ -42,17 +44,21 @@ object PlayerStateAnimMachine {
         addState(EntityStates.Fall)
         addState(EntityStates.Sit)
         addState(EntityStates.FallFlying)
-        addState(EntityStates.Sleep)
+        addState(EntityStates.Sleeping)
+        addState(EntityStates.Swimming)
+        addState(EntityStates.SwimmingIdle)
 
         val choice = initialChoiceState("choice") {
             when {
                 Minecraft.getInstance().player == null -> UndoState()
                 checkPlayingOtherAnim(player.asAnimatable()) -> none
                 player.vehicle != null -> EntityStates.Sit
-                player.isSleeping -> EntityStates.Sleep
+                player.isSleeping -> EntityStates.Sleeping
+                player.isSwimming -> EntityStates.Swimming
                 player.isFallFlying -> EntityStates.FallFlying
                 player.abilities.flying && player.moveCheck() -> EntityStates.FlyMove
                 player.abilities.flying -> EntityStates.Fly
+                player.isInWater && player.isFalling() -> EntityStates.SwimmingIdle
                 player.isFalling() -> EntityStates.Fall
                 player.isCrouching && player.moveCheck() -> EntityStates.CrouchingMove
                 player.isCrouching -> EntityStates.Crouching
