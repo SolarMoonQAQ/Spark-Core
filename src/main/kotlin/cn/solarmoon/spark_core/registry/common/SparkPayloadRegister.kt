@@ -4,8 +4,8 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
 import cn.solarmoon.spark_core.skill.SkillPayload
-import cn.solarmoon.spark_core.visual_effect.common.camera_shake.CameraShakePayload
-import cn.solarmoon.spark_core.visual_effect.common.shadow.ShadowPayload
+import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakePayload
+import cn.solarmoon.spark_core.visual_effect.shadow.ShadowPayload
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent

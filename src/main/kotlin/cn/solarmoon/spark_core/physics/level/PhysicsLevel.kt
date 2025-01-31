@@ -4,8 +4,10 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsTickEvent
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import com.jme3.bullet.PhysicsSpace
+import com.jme3.bullet.PhysicsSpace.BroadphaseType
 import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -26,7 +28,7 @@ import kotlin.math.min
 
 abstract class PhysicsLevel(
     val name: String,
-): PhysicsSpace(BroadphaseType.DBVT), PhysicsTickListener, AutoCloseable {
+): PhysicsTickListener, AutoCloseable {
 
     companion object {
         const val TPS = 60
@@ -34,13 +36,6 @@ abstract class PhysicsLevel(
 
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     val previousTime = AtomicLong(System.nanoTime())
-
-    abstract val mcLevel: Level
-
-    init {
-        setGravity(Vector3f(0f, -9.81f, 0f))
-        addTickListener(this)
-    }
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val physicsDispatcher = newSingleThreadContext(name).apply {
@@ -56,6 +51,27 @@ abstract class PhysicsLevel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val scope = CoroutineScope(physicsDispatcher)
+
+    private val lazyWorld = lazy { PhysicsSpace(
+        Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
+        Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
+        BroadphaseType.DBVT
+    ) }
+
+    val world get() = lazyWorld.value
+
+    abstract val mcLevel: Level
+
+    init {
+        // 防止创建log刷屏
+        PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING)
+        scope.launch {
+            lazyWorld.value.apply {
+                setGravity(Vector3f(0f, -9.81f, 0f))
+                addTickListener(this@PhysicsLevel)
+            }
+        }
+    }
 
     /**
      * 物理模拟协程的核心循环流程说明
@@ -84,7 +100,7 @@ abstract class PhysicsLevel(
      * ```
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun load() = scope.launch(context = physicsDispatcher) {
+    fun load() = scope.launch {
         val fixedTimeStep = 1f / TPS // 固定时间步长（秒）
         val maxSubSteps = 10         // 最大允许每帧子步数
         var accumulatedTime = 0f     // 累积时间（秒）
@@ -101,10 +117,10 @@ abstract class PhysicsLevel(
             if (steps > 0) {
                 // 执行物理更新
                 try {
-                    update(steps * fixedTimeStep, steps)
+                    world.update(steps * fixedTimeStep, steps)
                 } catch (e: Exception) {
                     accumulatedTime = 0f // 重置累积时间防止雪崩
-                    SparkCore.LOGGER.error("物理线程更新步长失败，已重置时间累计", e)
+                    SparkCore.LOGGER.error("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理线程 $name 更新步长失败，已重置时间累计", e)
                 }
 
                 // 扣除已处理的时间（保留残余时间）
@@ -129,18 +145,18 @@ abstract class PhysicsLevel(
             // 第二阶段：同步清理物理世界
             withContext(physicsDispatcher) {
                 // 清理物理世界
-                destroy()
-                SparkCore.LOGGER.info("物理世界已清理")
+                world.destroy()
+                SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理世界已清理")
             }
 
             // 第三阶段：关闭线程
             physicsDispatcher.close()
-            SparkCore.LOGGER.info("物理线程已关闭")
+            SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理线程 $name 已关闭")
         }
     }
 
     /**
-     * 提交任务到物理线程执行，不会阻塞线程
+     * 提交任务到物理线程执行
      */
     fun submitTask(block: suspend CoroutineScope.() -> Unit) =
         scope.launch {

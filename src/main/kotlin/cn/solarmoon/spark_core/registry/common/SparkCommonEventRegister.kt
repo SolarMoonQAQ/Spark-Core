@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.preset_anim.UseAnimApplier
 import cn.solarmoon.spark_core.animation.vanilla.PlayerBoneModifier
 import cn.solarmoon.spark_core.entity.preinput.PreInputApplier
 import cn.solarmoon.spark_core.flag.FlagApplier
+import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
 import cn.solarmoon.spark_core.skill.controller.SkillControllerApplier
 import net.neoforged.neoforge.common.NeoForge
@@ -16,6 +17,7 @@ object SparkCommonEventRegister {
     @JvmStatic
     fun register() {
         add(PhysicsLevelApplier)
+        add(PhysicsHostApplier)
         add(AnimApplier)
         add(PreInputApplier)
         add(SkillControllerApplier)

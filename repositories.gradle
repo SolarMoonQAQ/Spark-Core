@@ -29,8 +29,6 @@ dependencies {
     }
     additionalRuntimeClasspath "com.github.stephengold:Libbulletjme-Windows64:22.0.1"
 
-    runtimeOnly("com.github.stephengold:Libbulletjme-Windows64:22.0.1:SpDebug")
-
     jarJar(implementation("io.github.electrostat-lab:snaploader")) {
         version {
             strictly '[0.0.0,)'
@@ -38,6 +36,13 @@ dependencies {
         }
     }
     additionalRuntimeClasspath "io.github.electrostat-lab:snaploader:1.0.0-stable"
+
+    jarJar(implementation("org.lwjgl:lwjgl-assimp")) {
+        version {
+            strictly '[0.0.0,)'
+            prefer '3.3.3'
+        }
+    }
 }
 
 repositories {

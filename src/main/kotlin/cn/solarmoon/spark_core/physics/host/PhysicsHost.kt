@@ -20,6 +20,7 @@ interface PhysicsHost {
     fun <T: PhysicsCollisionObject> bindBody(
         id: String,
         body: T,
+        physicsLevel: PhysicsLevel = this.physicsLevel,
         allowOverride: Boolean = false
     ): T {
         physicsLevel.apply {
@@ -34,11 +35,11 @@ interface PhysicsHost {
                                 return@compute oldBody // 返回旧值，不覆盖
                             }
                             // 允许覆盖时，先移除旧碰撞体
-                            removeCollisionObject(oldBody)
+                            world.removeCollisionObject(oldBody)
                         }
 
                         // 添加新碰撞体到物理世界
-                        addCollisionObject(body)
+                        world.addCollisionObject(body)
                         body // 存储新碰撞体
                     }
             }
@@ -65,15 +66,19 @@ interface PhysicsHost {
      * 删除并销毁对象身上的物理体
      */
     fun removeBody(id: String) {
-        physicsLevel.hostManager[this]?.remove(id)?.let {
-            physicsLevel.removeCollisionObject(it)
+        physicsLevel.submitTask {
+            physicsLevel.hostManager[this@PhysicsHost]?.remove(id)?.let {
+                physicsLevel.world.removeCollisionObject(it)
+            }
         }
     }
 
     fun removeAllBodies() {
-        physicsLevel.hostManager[this]?.apply {
-            values.forEach { physicsLevel.removeCollisionObject(it) }
-            clear()
+        physicsLevel.submitTask {
+            physicsLevel.hostManager[this@PhysicsHost]?.let {
+                it.values.forEach { physicsLevel.world.removeCollisionObject(it) }
+                it.clear()
+            }
         }
     }
 
