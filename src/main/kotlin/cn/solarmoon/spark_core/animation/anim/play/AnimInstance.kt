@@ -15,7 +15,7 @@ class AnimInstance private constructor(
 
     companion object {
         @JvmStatic
-        fun create(holder: IAnimatable<*>, name: String, origin: OAnimation = holder.animations.getAnimation(name)!!, provider: (AnimInstance).() -> Unit = {}): AnimInstance {
+        fun create(holder: IAnimatable<*>, name: String, origin: OAnimation = holder.animations.getAnimation(name) ?: throw NullPointerException("找不到名为 $name 的动画"), provider: (AnimInstance).() -> Unit = {}): AnimInstance {
             val default = AnimInstance(holder, name, origin).apply { provider.invoke(this) }
             return default.apply { defaultValue = default.copy() }
         }

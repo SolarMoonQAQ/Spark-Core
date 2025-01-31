@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsTickEvent
 import com.jme3.bullet.PhysicsSpace
 import net.minecraft.server.level.ServerLevel

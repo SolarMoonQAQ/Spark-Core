@@ -36,11 +36,11 @@ object PoseAnimApplier {
                 entity.animController.blendSpace.remove("poseMixL")
             }
 
-            if (entity.swinging && entity.swingingArm == InteractionHand.MAIN_HAND) {
+            if (entity.swinging && entity.swingingArm == InteractionHand.MAIN_HAND && entity.animations.hasAnimation("Pose/swinging_right")) {
                 entity.animController.blendSpace.putIfAbsent("swingMixR", BlendAnimation(entity.newAnimInstance("Pose/swinging_right") { speed = 2.0 }, 100000.0))
             } else entity.animController.blendSpace.remove("swingMixR")
 
-            if (entity.swinging && entity.swingingArm == InteractionHand.OFF_HAND) {
+            if (entity.swinging && entity.swingingArm == InteractionHand.OFF_HAND && entity.animations.hasAnimation("Pose/swinging_left")) {
                 entity.animController.blendSpace.putIfAbsent("swingMixL", BlendAnimation(entity.newAnimInstance("Pose/swinging_left") { speed = 2.0 }, 100000.0))
             } else entity.animController.blendSpace.remove("swingMixL")
         }

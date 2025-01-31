@@ -1,11 +1,13 @@
 package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.event.PhysicsContactEvent
 import cn.solarmoon.spark_core.event.PhysicsTickEvent
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsSpace.BroadphaseType
 import com.jme3.bullet.PhysicsTickListener
+import com.jme3.bullet.collision.ContactListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
@@ -34,6 +36,8 @@ abstract class PhysicsLevel(
         const val TPS = 60
     }
 
+    var tickCount = 0L
+        private set
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     val previousTime = AtomicLong(System.nanoTime())
 
@@ -43,7 +47,7 @@ abstract class PhysicsLevel(
             Thread.currentThread().apply {
                 priority = Thread.NORM_PRIORITY
                 uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, e ->
-                    SparkCore.LOGGER.error("物理线程 #$name 崩溃了", e)
+                    throw RuntimeException("物理线程 $name 崩溃了", e)
                 }
             }
         }
@@ -52,13 +56,8 @@ abstract class PhysicsLevel(
     @OptIn(ExperimentalCoroutinesApi::class)
     private val scope = CoroutineScope(physicsDispatcher)
 
-    private val lazyWorld = lazy { PhysicsSpace(
-        Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
-        Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
-        BroadphaseType.DBVT
-    ) }
-
-    val world get() = lazyWorld.value
+    lateinit var world: PhysicsWorld
+        private set
 
     abstract val mcLevel: Level
 
@@ -66,10 +65,7 @@ abstract class PhysicsLevel(
         // 防止创建log刷屏
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING)
         scope.launch {
-            lazyWorld.value.apply {
-                setGravity(Vector3f(0f, -9.81f, 0f))
-                addTickListener(this@PhysicsLevel)
-            }
+            world = PhysicsWorld(this@PhysicsLevel)
         }
     }
 
@@ -117,7 +113,7 @@ abstract class PhysicsLevel(
             if (steps > 0) {
                 // 执行物理更新
                 try {
-                    world.update(steps * fixedTimeStep, steps)
+                    world.update(steps * fixedTimeStep, steps, true, true, true)
                 } catch (e: Exception) {
                     accumulatedTime = 0f // 重置累积时间防止雪崩
                     SparkCore.LOGGER.error("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理线程 $name 更新步长失败，已重置时间累计", e)
@@ -168,6 +164,10 @@ abstract class PhysicsLevel(
     }
 
     override fun physicsTick(space: PhysicsSpace, timeStep: Float) {
+        tickCount++
+        world.pcoList.forEach { pco ->
+            pco.tickers.forEach { it.physicsTick(pco) }
+        }
         NeoForge.EVENT_BUS.post(PhysicsTickEvent.Level(this))
     }
 
@@ -178,4 +178,4 @@ abstract class PhysicsLevel(
         return (deltaTimeMs.toFloat() / tickTimeMs).coerceIn(0f, 1f)
     }
 
-}
+ }

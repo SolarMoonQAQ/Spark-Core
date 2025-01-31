@@ -13,25 +13,24 @@ interface PhysicsHost {
 
     /**
      * 绑定物理体到宿主
-     * @param id 唯一标识符
      * @param body 物理体实例
      * @param allowOverride 是否允许覆盖已有Body（默认false）
      */
     fun <T: PhysicsCollisionObject> bindBody(
-        id: String,
         body: T,
         physicsLevel: PhysicsLevel = this.physicsLevel,
-        allowOverride: Boolean = false
+        allowOverride: Boolean = false,
+        apply: T.() -> Unit = {}
     ): T {
         physicsLevel.apply {
             submitTask {
                 hostManager
                     .getOrPut(this@PhysicsHost) { ConcurrentHashMap() }
-                    .compute(id) { _, existing ->
+                    .compute(body.name) { _, existing ->
                         // 处理已存在的碰撞体
                         existing?.let { oldBody ->
                             if (!allowOverride) {
-                                SparkCore.LOGGER.error("Body '$id' 已存在，启用 allowOverride 以覆盖")
+                                SparkCore.LOGGER.error("Body '${body.name}' 已存在，启用 allowOverride 以覆盖")
                                 return@compute oldBody // 返回旧值，不覆盖
                             }
                             // 允许覆盖时，先移除旧碰撞体
@@ -42,6 +41,7 @@ interface PhysicsHost {
                         world.addCollisionObject(body)
                         body // 存储新碰撞体
                     }
+                apply(body)
             }
         }
         return body

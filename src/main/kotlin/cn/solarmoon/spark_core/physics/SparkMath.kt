@@ -95,10 +95,6 @@ fun Vec3.wrapDegrees() = Vec3(
     Mth.wrapDegrees(z)
 )
 
-fun Vec3.toBVector3f() = com.jme3.math.Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
-
-fun Vector3f.toBVector3f() = com.jme3.math.Vector3f(x, y ,z)
-
 fun com.jme3.math.Vector3f.toVector3f() = Vector3f(x, y, z)
 
 fun com.jme3.math.Vector3f.toVec3() = toVector3f().toVec3()

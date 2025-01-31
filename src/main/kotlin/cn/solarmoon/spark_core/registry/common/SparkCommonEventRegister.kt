@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.entity.preinput.PreInputApplier
 import cn.solarmoon.spark_core.flag.FlagApplier
 import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
+import cn.solarmoon.spark_core.physics.presets.PresetBodyApplier
 import cn.solarmoon.spark_core.skill.controller.SkillControllerApplier
 import net.neoforged.neoforge.common.NeoForge
 
@@ -18,6 +19,7 @@ object SparkCommonEventRegister {
     fun register() {
         add(PhysicsLevelApplier)
         add(PhysicsHostApplier)
+        add(PresetBodyApplier)
         add(AnimApplier)
         add(PreInputApplier)
         add(SkillControllerApplier)

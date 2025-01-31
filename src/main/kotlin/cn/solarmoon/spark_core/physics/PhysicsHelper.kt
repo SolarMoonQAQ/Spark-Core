@@ -2,10 +2,13 @@ package cn.solarmoon.spark_core.physics
 
 import cn.solarmoon.spark_core.SparkCore
 import com.google.common.io.Resources
+import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.util.NativeLibrary
+import com.jme3.math.Vector3f
 import com.jme3.system.JmeSystem
 import com.jme3.system.NativeLibraryLoader
 import com.jme3.system.Platform.Os.*
+import net.minecraft.world.phys.Vec3
 import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
 import net.neoforged.fml.loading.FMLPaths
@@ -59,3 +62,9 @@ fun initBullet() {
     NativeLibraryLoader.loadLibbulletjme(true, File(gameDir, "sparkcore"), "Release", "Sp")
     NativeLibrary.countThreads()
 }
+
+fun Vec3.toBVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
+
+fun org.joml.Vector3f.toBVector3f() = Vector3f(x, y ,z)
+
+inline fun <reified T> PhysicsCollisionObject.getOwner() = owner as? T
