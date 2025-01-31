@@ -21,18 +21,13 @@ object PresetBodyApplier {
         val entity = event.entity
         val level = event.level
         entity.apply {
-            val size = Vec3(boundingBox.xsize, boundingBox.ysize, boundingBox.zsize).div(1.0).toBVector3f()
+            val size = Vec3(boundingBox.xsize, boundingBox.ysize, boundingBox.zsize).div(2.0).toBVector3f()
             val body = PhysicsRigidBody("body", this, BoxCollisionShape(size))
             bindBody(body, level.physicsLevel) {
                 setGravity(Vector3f.ZERO)
                 addPhysicsTicker(MoveWithBoundingBoxTicker())
             }
         }
-    }
-
-    @SubscribeEvent
-    private fun on(event: PhysicsContactEvent.Process) {
-        if (event.o1.getOwner<Player>() != null) SparkCore.LOGGER.info("¹þ¹þ¹þ")
     }
 
 }

@@ -26,6 +26,8 @@ class MoveWithBoundingBoxTicker: BodyPhysicsTicker {
                 if (body is PhysicsRigidBody) body.setLinearVelocity(entity.deltaMovement.toBVector3f())
             }
             lastPos = targetPos
+            val pos = body.getPhysicsLocation(Vector3f()).toVector3f().toVec3()
+            entity.level().addParticle(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 0.0, 0.0, 0.0)
         }
     }
 
