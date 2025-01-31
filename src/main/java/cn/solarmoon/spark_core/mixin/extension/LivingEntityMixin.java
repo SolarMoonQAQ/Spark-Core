@@ -3,8 +3,6 @@ package cn.solarmoon.spark_core.mixin.extension;
 import cn.solarmoon.spark_core.entity.attack.IAttackedDataPusher;
 import cn.solarmoon.spark_core.entity.attack.IExtraDamageDataHolder;
 import cn.solarmoon.spark_core.flag.FlagApplier;
-import cn.solarmoon.spark_core.flag.FlagHelperKt;
-import cn.solarmoon.spark_core.flag.SparkFlags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;

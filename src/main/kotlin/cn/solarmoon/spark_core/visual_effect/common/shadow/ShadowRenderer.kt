@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.visual_effect.common.shadow
 
-import cn.solarmoon.spark_core.phys.thread.PhysLevel
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
@@ -33,7 +33,7 @@ class ShadowRenderer: VisualEffectRenderer() {
         }
     }
 
-    override fun physTick(physLevel: PhysLevel) {}
+    override fun physTick(physLevel: PhysicsLevel) {}
 
     override fun render(
         mc: Minecraft,

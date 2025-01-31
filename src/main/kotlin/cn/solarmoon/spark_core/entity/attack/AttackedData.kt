@@ -5,10 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.ExtraCodecs
 import net.minecraft.world.entity.LivingEntity
-import net.minecraft.world.level.Level
-import org.ode4j.ode.DBody
-import org.ode4j.ode.DContactBuffer
-import org.ode4j.ode.DGeom
+
 import java.util.Optional
 
 /**
@@ -18,9 +15,9 @@ import java.util.Optional
  * @param extraData 可以附加额外数据到此次攻击
  */
 data class AttackedData(
-    val damageBox: DGeom,
-    val damagedBody: DBody?,
-    val buffer: DContactBuffer,
+//    val damageBox: DGeom,
+//    val damagedBody: DBody?,
+//    val buffer: DContactBuffer,
     val extraData: CompoundTag = CompoundTag()
 ) {
 

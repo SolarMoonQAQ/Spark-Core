@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.anim.play
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 
 class AnimInstance private constructor(
     val holder: IAnimatable<*>,
@@ -35,7 +36,7 @@ class AnimInstance private constructor(
     private var enableActions = mutableListOf<AnimInstance.() -> Unit>()
     private var endActions = mutableListOf<AnimInstance.() -> Unit>()
 
-    val step get() = speed / 50
+    val step get() = speed / PhysicsLevel.TPS
 
     fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / maxLength).coerceIn(0.0, 1.0)
 

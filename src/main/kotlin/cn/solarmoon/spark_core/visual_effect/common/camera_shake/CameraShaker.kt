@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.visual_effect.common.camera_shake
 
-import cn.solarmoon.spark_core.phys.thread.PhysLevel
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
@@ -46,7 +46,7 @@ class CameraShaker: VisualEffectRenderer() {
         else clear()
     }
 
-    override fun physTick(physLevel: PhysLevel) {}
+    override fun physTick(physLevel: PhysicsLevel) {}
 
     fun setupCamera(event: ViewportEvent.ComputeCameraAngles) {
         val entity = event.camera.entity

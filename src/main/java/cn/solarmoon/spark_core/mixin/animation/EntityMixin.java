@@ -1,8 +1,5 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
-import cn.solarmoon.spark_core.registry.common.SparkAttachments;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;

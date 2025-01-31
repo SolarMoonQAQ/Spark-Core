@@ -6,12 +6,9 @@ import cn.solarmoon.spark_core.animation.anim.play.Bone
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
-import cn.solarmoon.spark_core.phys.toEuler
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
-import org.joml.Quaterniond
 import org.joml.Vector3f
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3f
 
 /**
  * ### 动画体

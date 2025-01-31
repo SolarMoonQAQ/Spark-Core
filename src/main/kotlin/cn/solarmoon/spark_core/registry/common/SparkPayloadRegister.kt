@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
 import cn.solarmoon.spark_core.skill.SkillPayload
-import cn.solarmoon.spark_core.visual_effect.common.geom.RenderableGeomPayload
 import cn.solarmoon.spark_core.visual_effect.common.camera_shake.CameraShakePayload
 import cn.solarmoon.spark_core.visual_effect.common.shadow.ShadowPayload
 import net.neoforged.bus.api.IEventBus
@@ -21,7 +20,6 @@ object SparkPayloadRegister {
         anim.playBidirectional(TypedAnimPayload.TYPE, TypedAnimPayload.STREAM_CODEC, TypedAnimPayload::handleBothSide)
 
         val box = event.registrar("box")
-        box.playToClient(RenderableGeomPayload.TYPE, RenderableGeomPayload.STREAM_CODEC, RenderableGeomPayload::handleInClient)
         val visual = event.registrar("visual_effect")
         visual.playToClient(ShadowPayload.TYPE, ShadowPayload.STREAM_CODEC, ShadowPayload::handleInClient)
         visual.playToClient(CameraShakePayload.TYPE, CameraShakePayload.STREAM_CODEC, CameraShakePayload::handleInClient)

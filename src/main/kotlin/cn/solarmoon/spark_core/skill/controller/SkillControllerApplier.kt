@@ -1,12 +1,9 @@
 package cn.solarmoon.spark_core.skill.controller
 
-import cn.solarmoon.spark_core.event.PhysTickEvent
+import cn.solarmoon.spark_core.event.PhysicsTickEvent
 import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.common.NeoForge
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
-import ru.nsk.kstatemachine.statemachine.processEventBlocking
 
 object SkillControllerApplier {
 
@@ -18,7 +15,7 @@ object SkillControllerApplier {
     }
 
     @SubscribeEvent
-    private fun physTick(event: PhysTickEvent.Entity) {
+    private fun physTick(event: PhysicsTickEvent.Entity) {
         val entity = event.entity
         entity.getSkillController()?.physTick()
     }

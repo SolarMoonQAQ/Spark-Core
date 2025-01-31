@@ -3,14 +3,11 @@ package cn.solarmoon.spark_core.animation.vanilla
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
-import cn.solarmoon.spark_core.phys.toRadians
-import net.minecraft.client.renderer.entity.LivingEntityRenderer
-import net.minecraft.world.entity.Pose
+import cn.solarmoon.spark_core.physics.toRadians
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.tick.PlayerTickEvent
-import kotlin.math.PI
 
 object PlayerBoneModifier {
 

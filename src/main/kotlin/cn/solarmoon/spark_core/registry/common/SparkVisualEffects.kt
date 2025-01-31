@@ -1,14 +1,10 @@
 package cn.solarmoon.spark_core.registry.common
 
-import cn.solarmoon.spark_core.visual_effect.common.geom.GeomRenderer
 import cn.solarmoon.spark_core.visual_effect.common.camera_shake.CameraShaker
 import cn.solarmoon.spark_core.visual_effect.common.shadow.ShadowRenderer
 import cn.solarmoon.spark_core.visual_effect.common.trail.TrailRenderer
 
 object SparkVisualEffects {
-
-    @JvmStatic
-    val GEOM = GeomRenderer()
 
     @JvmStatic
     val TRAIL = TrailRenderer()

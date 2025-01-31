@@ -1,11 +1,10 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
-    id 'org.jreleaser' version '1.15.0'
+    id 'idea'
     id 'net.neoforged.moddev' version '1.0.14'
     id 'org.jetbrains.kotlin.jvm'
     id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.0'
-    id 'org.jetbrains.dokka' version '1.9.20'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -30,6 +29,8 @@ neoForge {
     }
 
     accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
+
+    interfaceInjectionData.from "src/main/resources/interfaces.json"
 
     runs {
         client {

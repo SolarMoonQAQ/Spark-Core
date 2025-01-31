@@ -2,12 +2,8 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
-import cn.solarmoon.spark_core.entity.attack.AttackedData
 import cn.solarmoon.spark_core.flag.Flag
-import cn.solarmoon.spark_core.phys.BodyType
 import cn.solarmoon.spark_core.skill.controller.SkillController
-import org.ode4j.ode.DBody
-import java.util.Optional
 
 
 object SparkAttachments {
@@ -19,12 +15,6 @@ object SparkAttachments {
         .id("model_index")
         .defaultValue { ModelIndex.EMPTY }
         .serializer { it.serialize(ModelIndex.CODEC) }
-        .build()
-
-    @JvmStatic
-    val BODIES = SparkCore.REGISTER.attachment<MutableList<DBody>>()
-        .id("body")
-        .defaultValue { mutableListOf() }
         .build()
 
     @JvmStatic

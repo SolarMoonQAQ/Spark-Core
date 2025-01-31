@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.mixin.event;
 
 import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent;
-import cn.solarmoon.spark_core.registry.common.SparkDataComponents;
 import net.minecraft.core.component.DataComponentHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;

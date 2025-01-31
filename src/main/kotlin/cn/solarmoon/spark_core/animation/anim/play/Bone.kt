@@ -2,8 +2,7 @@ package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
-import cn.solarmoon.spark_core.phys.rotLerp
-import cn.solarmoon.spark_core.phys.toRadians
+import cn.solarmoon.spark_core.physics.rotLerp
 import net.minecraft.world.phys.Vec3
 import net.neoforged.neoforge.common.NeoForge
 

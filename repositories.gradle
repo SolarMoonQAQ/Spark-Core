@@ -7,16 +7,37 @@ dependencies {
     implementation "maven.modrinth:jade:${jade_version}"
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
-    // core
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
     // 其它mod
-    runtimeOnly files(fileTree(dir: 'lib', includes: ['*.jar']))
+    runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
+
+    // 本地lib
+    jarJar(implementation files(fileTree(dir: 'libs', includes: ['*.jar'])))
+    additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
 
     // 兼容
     // geckolib
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     // azurelib
     implementation "mod.azure.azurelib:azurelib-neo-${minecraft_version}:${azurelib_version}"
+
+    jarJar(implementation("com.github.stephengold:Libbulletjme-Windows64")) {
+        version {
+            strictly '[0.0.0,)'
+            prefer '22.0.1'
+        }
+    }
+    additionalRuntimeClasspath "com.github.stephengold:Libbulletjme-Windows64:22.0.1"
+
+    runtimeOnly("com.github.stephengold:Libbulletjme-Windows64:22.0.1:SpDebug")
+
+    jarJar(implementation("io.github.electrostat-lab:snaploader")) {
+        version {
+            strictly '[0.0.0,)'
+            prefer '1.0.0-stable'
+        }
+    }
+    additionalRuntimeClasspath "io.github.electrostat-lab:snaploader:1.0.0-stable"
 }
 
 repositories {
@@ -75,6 +96,6 @@ repositories {
         url = 'https://maven.azuredoom.com/mods'
     }
     flatDir {
-        dir 'lib'
+        dir 'libs'
     }
 }

@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.visual_effect.common.trail
 
-import cn.solarmoon.spark_core.phys.thread.PhysLevel
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.util.RenderTypeUtil
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.mojang.blaze3d.vertex.PoseStack
@@ -11,7 +11,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector3f
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class TrailRenderer: VisualEffectRenderer() {
 
@@ -22,7 +21,7 @@ class TrailRenderer: VisualEffectRenderer() {
         trailTemplate[id] = trail
     }
 
-    override fun physTick(physLevel: PhysLevel) {}
+    override fun physTick(physLevel: PhysicsLevel) {}
 
     override fun tick() {
         trails.values.forEach {

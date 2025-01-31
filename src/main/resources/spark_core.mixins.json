@@ -13,10 +13,10 @@
     "event.PlayerMixin",
     "extension.DamageSourceMixin",
     "extension.EntityMixin",
-    "extension.LevelMixin",
     "extension.LivingEntityMixin",
     "extension.MeleeAttackGoalMixin",
     "extension.MobEntityMixin",
+    "phys.EntityMixin",
     "phys.LevelMixin"
   ],
   "client": [

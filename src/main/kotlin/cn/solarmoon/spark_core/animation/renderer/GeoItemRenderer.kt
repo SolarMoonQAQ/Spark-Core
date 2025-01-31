@@ -1,16 +1,12 @@
 package cn.solarmoon.spark_core.animation.renderer
 
-import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer
-import cn.solarmoon.spark_core.phys.thread.ClientPhysLevel
-import cn.solarmoon.spark_core.phys.thread.getPhysLevel
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.client.renderer.MultiBufferSource
-import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.item.ItemStack
 
@@ -29,7 +25,7 @@ open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstanc
     ) {
         val animatable = stack.get(SparkDataComponents.ANIMATABLE) ?: return
         val partialTicks = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
-        val physPartialTick = (Minecraft.getInstance().level?.getPhysLevel() as? ClientPhysLevel)?.partialTicks?.toFloat() ?: return
+        val physPartialTick = Minecraft.getInstance().level?.physicsLevel?.partialTicks ?: return
         when(displayContext) {
             ItemDisplayContext.GUI -> {  }
             else -> render(animatable, 0f, partialTicks, physPartialTick, poseStack, buffer, packedLight)

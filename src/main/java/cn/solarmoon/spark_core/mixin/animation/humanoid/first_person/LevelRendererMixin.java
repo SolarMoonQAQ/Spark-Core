@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.mixin.animation.humanoid.first_person;
 
-import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelper;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;

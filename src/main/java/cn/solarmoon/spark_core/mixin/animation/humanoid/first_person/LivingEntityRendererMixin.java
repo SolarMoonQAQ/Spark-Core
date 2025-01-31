@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.mixin.animation.humanoid.first_person;
 
-import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelper;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.EntityModel;

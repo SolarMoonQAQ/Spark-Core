@@ -3,8 +3,6 @@ package cn.solarmoon.spark_core.entity.attack
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
-import org.ode4j.ode.DContactBuffer
-import org.ode4j.ode.DGeom
 
 /**
  * 统一的攻击方法，方便对攻击数据进行统一修改
@@ -43,17 +41,17 @@ class AttackSystem(
         return true
     }
 
-    /**
-     * 同[customAttack]，但会设置碰撞相关的受击数据
-     * @param customAction 在设置受击数据之后，攻击进行前插入自定义指令
-     */
-    fun customGeomAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, customAction: AttackSystem.() -> Boolean): Boolean {
-        val target = (o2.body.owner as? Entity) ?: return false
-        return customAttack(target) {
-            target.pushAttackedData(AttackedData(o1, o2.body, buffer))
-            customAction.invoke(this)
-        }
-    }
+//    /**
+//     * 同[customAttack]，但会设置碰撞相关的受击数据
+//     * @param customAction 在设置受击数据之后，攻击进行前插入自定义指令
+//     */
+//    fun customGeomAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, customAction: AttackSystem.() -> Boolean): Boolean {
+//        val target = (o2.body.owner as? Entity) ?: return false
+//        return customAttack(target) {
+//            target.pushAttackedData(AttackedData(o1, o2.body, buffer))
+//            customAction.invoke(this)
+//        }
+//    }
 
     /**
      * 常规攻击，玩家会调用[net.minecraft.world.entity.player.Player.attack]，活体则调用[net.minecraft.world.entity.LivingEntity.doHurtTarget]
@@ -70,19 +68,19 @@ class AttackSystem(
         }
     }
 
-    /**
-     * 同[commonAttack]，但会设置碰撞相关的受击数据
-     * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
-     * @return 是否成功触发攻击指令
-     */
-    fun commonGeomAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, actionBeforeAttack: AttackSystem.() -> Boolean = { true }): Boolean {
-        val target = (o2.body.owner as? Entity) ?: return false
-        return commonAttack(target) {
-            target.pushAttackedData(AttackedData(o1, o2.body, buffer))
-            actionBeforeAttack.invoke(this)
-            true
-        }
-    }
+//    /**
+//     * 同[commonAttack]，但会设置碰撞相关的受击数据
+//     * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
+//     * @return 是否成功触发攻击指令
+//     */
+//    fun commonGeomAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, actionBeforeAttack: AttackSystem.() -> Boolean = { true }): Boolean {
+//        val target = (o2.body.owner as? Entity) ?: return false
+//        return commonAttack(target) {
+//            target.pushAttackedData(AttackedData(o1, o2.body, buffer))
+//            actionBeforeAttack.invoke(this)
+//            true
+//        }
+//    }
 
     /**
      * 重置攻击到的对象等数据

@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.visual_effect
 
-import cn.solarmoon.spark_core.phys.thread.PhysLevel
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
@@ -14,7 +14,7 @@ abstract class VisualEffectRenderer {
 
     abstract fun tick()
 
-    abstract fun physTick(physLevel: PhysLevel)
+    abstract fun physTick(physLevel: PhysicsLevel)
 
     abstract fun render(mc: Minecraft, camPos: Vec3, poseStack: PoseStack, bufferSource: MultiBufferSource, partialTicks: Float)
 

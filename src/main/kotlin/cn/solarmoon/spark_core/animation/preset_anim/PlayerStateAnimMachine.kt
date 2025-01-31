@@ -8,15 +8,12 @@ import cn.solarmoon.spark_core.entity.moveCheck
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.client.Minecraft
-import net.minecraft.client.model.ShieldModel
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.item.UseAnim
 import net.neoforged.neoforge.common.NeoForge
 import ru.nsk.kstatemachine.event.DataEvent
 import ru.nsk.kstatemachine.event.Event
 import ru.nsk.kstatemachine.state.initialChoiceState
-import ru.nsk.kstatemachine.state.pseudo.UndoState
 import ru.nsk.kstatemachine.state.state
 import ru.nsk.kstatemachine.state.transition
 import ru.nsk.kstatemachine.statemachine.buildCreationArguments
@@ -50,7 +47,7 @@ object PlayerStateAnimMachine {
 
         val choice = initialChoiceState("choice") {
             when {
-                Minecraft.getInstance().player == null -> UndoState()
+                Minecraft.getInstance().player == null -> none
                 checkPlayingOtherAnim(player.asAnimatable()) -> none
                 player.vehicle != null -> EntityStates.Sit
                 player.isSleeping -> EntityStates.Sleeping

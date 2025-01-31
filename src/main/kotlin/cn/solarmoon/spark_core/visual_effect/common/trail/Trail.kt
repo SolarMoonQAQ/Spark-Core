@@ -1,21 +1,12 @@
 package cn.solarmoon.spark_core.visual_effect.common.trail
 
-import cn.solarmoon.spark_core.phys.copy
-import cn.solarmoon.spark_core.phys.toQuaternionf
-import cn.solarmoon.spark_core.phys.toVector3f
 import net.minecraft.client.Minecraft
 import net.minecraft.core.Direction
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemStack
-import org.joml.Matrix4f
-import org.joml.Quaterniond
 import org.joml.Quaternionf
-import org.joml.Vector3d
 import org.joml.Vector3f
-import org.ode4j.ode.DBox
-import org.ode4j.ode.DGeom
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3f
 import java.awt.Color
 import java.io.FileNotFoundException
 
@@ -26,17 +17,6 @@ class Trail(
     val axis: Direction.Axis,
     val color: Color = Color.WHITE
 ) {
-    constructor(box: DBox, axis: Direction.Axis, color: Color = Color.WHITE): this(
-        when(axis) {
-            Direction.Axis.X -> box.lengths.get0()
-            Direction.Axis.Y -> box.lengths.get1()
-            Direction.Axis.Z -> box.lengths.get2()
-        }.toFloat(),
-        box.position.toVector3f(),
-        box.quaternion.toQuaternionf(),
-        axis,
-        color
-    )
 
     val direction = when(axis) {
         Direction.Axis.X -> Vector3f(1f, 0f, 0f)

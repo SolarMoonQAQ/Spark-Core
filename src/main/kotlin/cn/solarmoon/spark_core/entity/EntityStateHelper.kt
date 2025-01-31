@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.entity
 
-import cn.solarmoon.spark_core.phys.toRadians
+import cn.solarmoon.spark_core.physics.toRadians
 import cn.solarmoon.spark_core.util.Side
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.commands.arguments.EntityAnchorArgument

@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.animation.anim
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.data.SimpleJsonListener
-import cn.solarmoon.spark_core.phys.toRadians
+import cn.solarmoon.spark_core.physics.toRadians
 import com.google.gson.JsonElement
 import com.mojang.serialization.JsonOps
 import net.minecraft.resources.ResourceLocation

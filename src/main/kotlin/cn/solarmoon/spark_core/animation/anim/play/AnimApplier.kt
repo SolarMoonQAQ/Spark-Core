@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
-import cn.solarmoon.spark_core.event.PhysTickEvent
+import cn.solarmoon.spark_core.event.PhysicsTickEvent
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
 import net.neoforged.bus.api.SubscribeEvent
@@ -29,7 +29,7 @@ object AnimApplier {
     }
 
     @SubscribeEvent
-    private fun physTick(event: PhysTickEvent.Entity) {
+    private fun physTick(event: PhysicsTickEvent.Entity) {
         val entity = event.entity
         if (entity is IEntityAnimatable<*>) {
             entity.animController.physTick()

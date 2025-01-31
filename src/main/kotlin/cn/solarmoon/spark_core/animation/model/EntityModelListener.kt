@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OLocator
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.data.SimpleJsonListener
-import cn.solarmoon.spark_core.phys.toRadians
+import cn.solarmoon.spark_core.physics.toRadians
 import com.google.gson.JsonElement
 import com.mojang.serialization.JsonOps
 import net.minecraft.resources.ResourceLocation

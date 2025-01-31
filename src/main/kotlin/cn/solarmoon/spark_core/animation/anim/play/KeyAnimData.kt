@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
-import cn.solarmoon.spark_core.phys.rotLerp
+import cn.solarmoon.spark_core.physics.rotLerp
 import net.minecraft.world.phys.Vec3
 
 data class KeyAnimData(
