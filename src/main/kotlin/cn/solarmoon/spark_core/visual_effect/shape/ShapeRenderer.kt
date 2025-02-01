@@ -15,6 +15,8 @@ import java.awt.Color
 
 class ShapeRenderer: VisualEffectRenderer() {
 
+    private val visualizers = mutableMapOf<CollisionShape, ShapeVisualizer>()
+
     override fun tick() {
 
     }
@@ -35,7 +37,7 @@ class ShapeRenderer: VisualEffectRenderer() {
         physLevel.world.pcoList.forEach {
             val shape = it.collisionShape
             val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
-            visualizer.render(physLevel, it, shape, mc, camPos, poseStack, bufferSource, partialTicks)
+            visualizers.getOrPut(shape) { visualizer }.render(physLevel, it, shape, mc, camPos, poseStack, bufferSource, partialTicks)
         }
     }
 

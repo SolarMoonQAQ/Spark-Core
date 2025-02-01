@@ -1,15 +1,19 @@
 package cn.solarmoon.spark_core.physics.presets
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker
 import cn.solarmoon.spark_core.physics.getOwner
+import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toVector3f
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.world.entity.Entity
+import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
 
 class MoveWithBoundingBoxTicker: BodyPhysicsTicker {
@@ -22,10 +26,12 @@ class MoveWithBoundingBoxTicker: BodyPhysicsTicker {
             val targetPos = entity.boundingBox.center.toBVector3f()
             if (targetPos != lastPos) {
                 body.setPhysicsLocation(targetPos)
-                if (body is PhysicsRigidBody) body.setLinearVelocity(entity.deltaMovement.toBVector3f())
+                if (body is PhysicsRigidBody) body.setLinearVelocity(entity.deltaMovement.scale(22.0).toBVector3f())
             }
             lastPos = targetPos
+
             val pos = body.getPhysicsLocation(Vector3f()).toVector3f().toVec3()
+            SparkCore.LOGGER.info(pos.toString())
             entity.level().addParticle(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 0.0, 0.0, 0.0)
         }
     }

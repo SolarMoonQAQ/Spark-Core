@@ -32,6 +32,8 @@
 package com.jme3.bullet.collision.shapes;
 
 import com.jme3.math.Vector3f;
+
+import java.lang.reflect.Array;
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;
 import jme3utilities.Validate;
