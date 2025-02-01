@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.preset_anim.UseAnimApplier
 import cn.solarmoon.spark_core.animation.vanilla.PlayerBoneModifier
 import cn.solarmoon.spark_core.entity.preinput.PreInputApplier
 import cn.solarmoon.spark_core.flag.FlagApplier
+import cn.solarmoon.spark_core.physics.collision.CollisionFunctionApplier
 import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
 import cn.solarmoon.spark_core.physics.presets.PresetBodyApplier
@@ -28,6 +29,7 @@ object SparkCommonEventRegister {
         add(FlagApplier)
         add(PoseAnimApplier)
         add(PlayerBoneModifier)
+        add(CollisionFunctionApplier)
     }
 
     private fun add(event: Any) {

@@ -1,15 +1,9 @@
 package cn.solarmoon.spark_core.physics.presets
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.PhysicsContactEvent
-import cn.solarmoon.spark_core.physics.getOwner
 import cn.solarmoon.spark_core.physics.toBVector3f
-import com.jme3.bullet.collision.CollisionFlag
-import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
-import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent

@@ -166,7 +166,7 @@ abstract class PhysicsLevel(
     override fun physicsTick(space: PhysicsSpace, timeStep: Float) {
         tickCount++
         world.pcoList.forEach { pco ->
-            pco.tickers.forEach { it.physicsTick(pco) }
+            pco.tickers.forEach { it.physicsTick(pco, this) }
         }
         NeoForge.EVENT_BUS.post(PhysicsTickEvent.Level(this))
     }
