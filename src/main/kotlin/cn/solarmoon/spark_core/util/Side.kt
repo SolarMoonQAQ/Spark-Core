@@ -5,9 +5,7 @@ import net.minecraft.network.codec.ByteBufCodecs
 enum class Side {
     LEFT, RIGHT, FRONT, BACK;
 
-    override fun toString(): String {
-        return super.toString().lowercase()
-    }
+    val simpleName get() = toString().lowercase()
 
     companion object {
         @JvmStatic

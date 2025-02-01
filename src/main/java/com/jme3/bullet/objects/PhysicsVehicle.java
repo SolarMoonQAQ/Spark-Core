@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.objects;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.objects.infos.RigidBodyMotionState;
@@ -95,7 +96,7 @@ public class PhysicsVehicle extends PhysicsRigidBody {
      *
      * @param shape the desired shape of the chassis (not null, alias created)
      */
-    public PhysicsVehicle(String name, Object owner, CollisionShape shape) {
+    public PhysicsVehicle(String name, PhysicsHost owner, CollisionShape shape) {
         super(name, owner, shape);
     }
 
@@ -106,7 +107,7 @@ public class PhysicsVehicle extends PhysicsRigidBody {
      * @param shape the desired shape of the chassis (not null, alias created)
      * @param mass the desired mass of the chassis (&gt;0, default=1)
      */
-    public PhysicsVehicle(String name, Object owner, CollisionShape shape, float mass) {
+    public PhysicsVehicle(String name, PhysicsHost owner, CollisionShape shape, float mass) {
         super(name, owner, shape, mass);
     }
     // *************************************************************************

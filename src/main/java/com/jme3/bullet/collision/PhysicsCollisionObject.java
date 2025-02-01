@@ -32,6 +32,7 @@
 package com.jme3.bullet.collision;
 
 import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker;
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.CollisionSpace;
 import com.jme3.bullet.NativePhysicsObject;
@@ -170,7 +171,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     public final String name;
 
-    private WeakReference<Object> owner;
+    private WeakReference<PhysicsHost> owner;
 
     public ArrayList<BodyPhysicsTicker> tickers = new ArrayList<>();
 
@@ -181,16 +182,16 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * This no-arg constructor was made explicit to avoid javadoc warnings from
      * JDK 18+.
      */
-    protected PhysicsCollisionObject(String name, Object owner) {
+    protected PhysicsCollisionObject(String name, PhysicsHost owner) {
         this.name = name;
         this.owner = new WeakReference<>(owner);
     }
 
-    public Object getOwner() {
+    public PhysicsHost getOwner() {
         return owner.get();
     }
 
-    public void setOwner(Object owner) {
+    public void setOwner(PhysicsHost owner) {
         this.owner = new WeakReference<>(owner);
     }
 

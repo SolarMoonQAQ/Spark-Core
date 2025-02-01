@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.objects;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bullet.collision.PcoType;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CollisionShape;
@@ -88,7 +89,7 @@ public class PhysicsGhostObject extends PhysicsCollisionObject {
      *
      * @param shape the desired shape (not null, alias created)
      */
-    public PhysicsGhostObject(String name, Object owner, CollisionShape shape) {
+    public PhysicsGhostObject(String name, PhysicsHost owner, CollisionShape shape) {
         super(name, owner);
         super.setCollisionShape(shape);
         buildObject();

@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.objects;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.collision.Activation;
 import com.jme3.bullet.collision.CollisionFlag;
@@ -93,7 +94,7 @@ public class PhysicsRigidBody extends PhysicsBody {
      *
      * @param shape the desired shape (not null, alias created)
      */
-    public PhysicsRigidBody(String name, Object owner, CollisionShape shape) {
+    public PhysicsRigidBody(String name, PhysicsHost owner, CollisionShape shape) {
         super(name, owner);
         Validate.nonNull(shape, "shape");
 
@@ -115,7 +116,7 @@ public class PhysicsRigidBody extends PhysicsBody {
      * @param mass if 0, a static body is created; otherwise a dynamic body is
      * created (&ge;0, default=1)
      */
-    public PhysicsRigidBody(String name, Object owner, CollisionShape shape, float mass) {
+    public PhysicsRigidBody(String name, PhysicsHost owner, CollisionShape shape, float mass) {
         super(name, owner);
         Validate.nonNull(shape, "shape");
         Validate.nonNegative(mass, "mass");

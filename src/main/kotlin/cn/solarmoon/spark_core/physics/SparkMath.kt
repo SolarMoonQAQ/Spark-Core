@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.physics
 
+import com.jme3.math.Matrix4f
+import com.jme3.math.Quaternion
 import net.minecraft.util.Mth
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3f
@@ -98,3 +100,12 @@ fun Vec3.wrapDegrees() = Vec3(
 fun com.jme3.math.Vector3f.toVector3f() = Vector3f(x, y, z)
 
 fun com.jme3.math.Vector3f.toVec3() = toVector3f().toVec3()
+
+fun Matrix4f.toMatrix4f() = org.joml.Matrix4f(
+    m00, m10, m20, m30,
+    m01, m11, m21, m31,
+    m02, m12, m22, m32,
+    m03, m13, m23, m33
+)
+
+fun Quaternion.toQuaternionf() = Quaternionf(x, y, z, w)

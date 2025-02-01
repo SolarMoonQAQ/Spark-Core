@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.objects;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.joints.PhysicsJoint;
 import com.jme3.math.Vector3f;
@@ -66,7 +67,7 @@ abstract public class PhysicsBody extends PhysicsCollisionObject {
      * This no-arg constructor was made explicit to avoid javadoc warnings from
      * JDK 18+.
      */
-    protected PhysicsBody(String name, Object owner) {
+    protected PhysicsBody(String name, PhysicsHost owner) {
         super(name, owner);
     }
     // *************************************************************************

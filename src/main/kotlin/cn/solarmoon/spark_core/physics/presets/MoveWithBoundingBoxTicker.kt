@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.physics.presets
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker
 import cn.solarmoon.spark_core.physics.getOwner
 import cn.solarmoon.spark_core.physics.toBVector3f

@@ -31,6 +31,7 @@
  */
 package com.jme3.math;
 
+import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.util.TempVars;
 
 /**
@@ -193,6 +194,10 @@ public final class Transform implements Cloneable, java.io.Serializable {
         rot.toTransformMatrix(store);
         store.setScale(scale);
         return store;
+    }
+
+    public org.joml.Matrix4f getMatrix() {
+        return new org.joml.Matrix4f().translate(SparkMathKt.toVector3f(translation)).rotate(SparkMathKt.toQuaternionf(rot)).scale(SparkMathKt.toVector3f(scale));
     }
 
     /**

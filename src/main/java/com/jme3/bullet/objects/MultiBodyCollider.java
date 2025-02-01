@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.objects;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bullet.MultiBody;
 import com.jme3.bullet.collision.PcoType;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
@@ -79,7 +80,7 @@ public class MultiBodyCollider extends PhysicsCollisionObject {
      * @param multiBody (not null, alias created)
      * @param linkIndex the link index, or -1 for the base
      */
-    public MultiBodyCollider(String name, Object owner, MultiBody multiBody, int linkIndex) {
+    public MultiBodyCollider(String name, PhysicsHost owner, MultiBody multiBody, int linkIndex) {
         super(name, owner);
         Validate.nonNull(multiBody, "multibody");
         Validate.inRange(linkIndex, "link index", -1, Integer.MAX_VALUE);

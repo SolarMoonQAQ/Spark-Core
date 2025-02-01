@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.objects;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.SoftBodyWorldInfo;
 import com.jme3.bullet.collision.PcoType;
@@ -113,7 +114,7 @@ public class PhysicsSoftBody extends PhysicsBody {
      * Instantiate an empty soft body. The new body is not added to any physics
      * space.
      */
-    public PhysicsSoftBody(String name, Object owner) {
+    public PhysicsSoftBody(String name, PhysicsHost owner) {
         super(name, owner);
 
         this.worldInfo = new SoftBodyWorldInfo();
@@ -139,7 +140,7 @@ public class PhysicsSoftBody extends PhysicsBody {
      *
      * @param unused to distinguish from the no-arg constructor
      */
-    protected PhysicsSoftBody(String name, Object owner, boolean unused) {
+    protected PhysicsSoftBody(String name, PhysicsHost owner, boolean unused) {
         super(name, owner);
         // do nothing
     }

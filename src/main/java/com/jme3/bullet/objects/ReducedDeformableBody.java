@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.objects;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bullet.SoftBodyWorldInfo;
 import com.jme3.bullet.collision.PcoType;
 import com.jme3.bullet.collision.shapes.CollisionShape;
@@ -77,7 +78,7 @@ public class ReducedDeformableBody extends PhysicsSoftBody {
      * @param masses the initial node masses (not null, each &ge;0, alias
      * created)
      */
-    public ReducedDeformableBody(String name, Object owner, Vector3f[] locations, float[] masses) {
+    public ReducedDeformableBody(String name, PhysicsHost owner, Vector3f[] locations, float[] masses) {
         super(name, owner, false);
         Validate.nonNull(locations, "locations");
         int numNodes = masses.length;

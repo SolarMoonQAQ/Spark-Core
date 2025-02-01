@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.event.PhysicsTickEvent
-import com.github.stephengold.sport.physics.AabbGeometry
 import com.jme3.bullet.PhysicsSpace
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel

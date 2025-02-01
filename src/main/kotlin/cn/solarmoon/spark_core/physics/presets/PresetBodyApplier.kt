@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
 import cn.solarmoon.spark_core.physics.getOwner
 import cn.solarmoon.spark_core.physics.toBVector3f
+import com.jme3.bullet.collision.CollisionFlag
 import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
@@ -22,8 +23,9 @@ object PresetBodyApplier {
         val level = event.level
         entity.apply {
             val size = Vec3(boundingBox.xsize, boundingBox.ysize, boundingBox.zsize).div(2.0).toBVector3f()
-            val body = PhysicsRigidBody("body", this, BoxCollisionShape(size))
+            val body = PhysicsRigidBody("body", entity, BoxCollisionShape(size))
             bindBody(body, level.physicsLevel) {
+                isContactResponse = false
                 setGravity(Vector3f.ZERO)
                 addPhysicsTicker(MoveWithBoundingBoxTicker())
             }

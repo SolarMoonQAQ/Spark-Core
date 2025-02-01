@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.objects;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.collision.CollisionFlag;
 import com.jme3.bullet.collision.PcoType;
@@ -101,7 +102,7 @@ public class PhysicsCharacter extends PhysicsCollisionObject {
      * @param stepHeight the maximum amount of vertical movement without jumping
      * or falling (in physics-space units)
      */
-    public PhysicsCharacter(String name, Object owner, ConvexShape shape, float stepHeight) {
+    public PhysicsCharacter(String name, PhysicsHost owner, ConvexShape shape, float stepHeight) {
         super(name, owner);
         Validate.nonNull(shape, "shape");
 
