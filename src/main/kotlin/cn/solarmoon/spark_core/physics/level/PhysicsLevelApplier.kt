@@ -29,4 +29,10 @@ object PhysicsLevelApplier {
         level.processTasks()
     }
 
+    @SubscribeEvent
+    private fun mcLevelTick(event: LevelTickEvent.Pre) {
+        val level = event.level
+        level.physicsLevel.mcTick(event)
+    }
+
 }

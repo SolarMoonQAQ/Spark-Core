@@ -23,11 +23,11 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.common.NeoForge
+import net.neoforged.neoforge.event.tick.LevelTickEvent
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.max
 import kotlin.math.min
-
 abstract class PhysicsLevel(
     val name: String,
 ): PhysicsTickListener, AutoCloseable {
@@ -40,6 +40,7 @@ abstract class PhysicsLevel(
         private set
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     val previousTime = AtomicLong(System.nanoTime())
+    var previousMainThreadTime = System.nanoTime()
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val physicsDispatcher = newSingleThreadContext(name).apply {
@@ -171,11 +172,22 @@ abstract class PhysicsLevel(
         NeoForge.EVENT_BUS.post(PhysicsTickEvent.Level(this))
     }
 
+    fun mcTick(event: LevelTickEvent.Pre) {
+        previousMainThreadTime = System.nanoTime()
+    }
+
     val partialTicks: Float get() {
         val currentTime = System.nanoTime()
         val deltaTimeMs = (currentTime - previousTime.get()) / 1_000_000.0
         val tickTimeMs = 1000f / TPS
         return (deltaTimeMs.toFloat() / tickTimeMs).coerceIn(0f, 1f)
+    }
+
+    val mcPartialTicks: Float get() {
+        val currentTime = System.nanoTime()
+        val deltaTimeMs = (currentTime - previousMainThreadTime) / 1_000_000.0
+        val tickTimeMs = 50f
+        return (deltaTimeMs.toFloat() / tickTimeMs)
     }
 
  }
