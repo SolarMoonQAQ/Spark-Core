@@ -1,14 +1,11 @@
 package cn.solarmoon.spark_core.physics.visualizer
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh
 import cn.solarmoon.spark_core.physics.toMatrix4f
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CollisionShape
-import com.jme3.math.Matrix4f
-import com.jme3.math.Transform
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
@@ -32,7 +29,7 @@ class BoxVisualizer: ShapeVisualizer {
         if (shape is BoxCollisionShape) {
             val mesh = BoxShapeMesh(shape)
             poseStack.pushPose()
-            poseStack.mulPose(body.getTransform(Transform()).toTransformMatrix().toMatrix4f())
+            poseStack.mulPose(body.getTransform(level.partialTicks).toTransformMatrix().toMatrix4f())
             val matrix = poseStack.last().pose()
             val buffer = bufferSource.getBuffer(RenderType.lines())
             val vertices = mesh.vertices

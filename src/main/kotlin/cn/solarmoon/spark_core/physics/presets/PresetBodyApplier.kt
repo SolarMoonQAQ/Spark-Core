@@ -20,7 +20,6 @@ object PresetBodyApplier {
             val body = PhysicsRigidBody("body", entity, BoxCollisionShape(size))
             bindBody(body, level.physicsLevel) {
                 body.isContactResponse = false
-                body.setProtectGravity(true)
                 body.setGravity(Vector3f.ZERO)
                 body.addPhysicsTicker(MoveWithBoundingBoxTicker())
             }

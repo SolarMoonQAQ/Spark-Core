@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import com.google.common.io.Resources
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.util.NativeLibrary
+import com.jme3.math.Transform
 import com.jme3.math.Vector3f
 import com.jme3.system.JmeSystem
 import com.jme3.system.NativeLibraryLoader
@@ -12,6 +13,7 @@ import net.minecraft.world.phys.Vec3
 import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
 import net.neoforged.fml.loading.FMLPaths
+import org.joml.Quaternionf
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream

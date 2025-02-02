@@ -22,19 +22,22 @@ class MoveWithBoundingBoxTicker : BodyPhysicsTicker {
 
     override fun physicsTick(body: PhysicsCollisionObject, level: PhysicsLevel) {
         if (body is PhysicsBody) {
+            val entity = body.getOwner<Entity>() ?: return
+            val targetPos = entity.boundingBox.center.toBVector3f()
 
+            body.setPhysicsLocation(targetPos)
         }
     }
 
     override fun mcTick(body: PhysicsCollisionObject, level: Level) {
         if (body is PhysicsBody) {
             val entity = body.getOwner<Entity>() ?: return
-            val physLevel: PhysicsLevel = level.physicsLevel
+            val physLevel = level.physicsLevel
             val targetPos = entity.boundingBox.center.toBVector3f()
             physLevel.submitTask {
                 val vd = entity.deltaMovement.scale(22.0).toBVector3f()
-                v = targetPos.subtract(lastPos).mult(20f)
-                body.setPhysicsLocation(targetPos.add(v.mult((physLevel.mcPartialTicks) * 0.0f)))
+//                v = targetPos.subtract(lastPos).mult(20f)
+//                body.setPhysicsLocation(targetPos.add(v))
                 if (body is PhysicsRigidBody) {
 //                    body.setLinearVelocity(v)
 //                    SparkCore.LOGGER.info("v: $v vd: $vd pt: ${physLevel.mcPartialTicks}")

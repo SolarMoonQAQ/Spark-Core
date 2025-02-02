@@ -109,3 +109,5 @@ fun Matrix4f.toMatrix4f() = org.joml.Matrix4f(
 )
 
 fun Quaternion.toQuaternionf() = Quaternionf(x, y, z, w)
+
+fun Quaternionf.toBQuaternion() = Quaternion(x, y, z, w)

@@ -31,6 +31,9 @@
  */
 package com.jme3.bullet.collision;
 
+import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bounding.BoundingBox;
@@ -53,8 +56,8 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jme3utilities.Validate;
-import org.openjdk.nashorn.internal.objects.annotations.Getter;
-import org.openjdk.nashorn.internal.objects.annotations.Setter;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 /**
  * The abstract base class for collision objects based on Bullet's
@@ -68,6 +71,50 @@ import org.openjdk.nashorn.internal.objects.annotations.Setter;
 abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     // *************************************************************************
     // constants and loggers
+
+    // 双重缓冲状态存储
+    private final Transform[] renderStates = new Transform[2];
+    private int writeIndex = 0;
+
+    public void saveLastTransform() {
+        // 获取当前物理状态
+        Vector3f location = getPhysicsLocation(null);
+        Quaternion rotation = getPhysicsRotation(null);
+        Vector3f scale = getScale(null);
+
+        // 写入当前缓冲区
+        Transform current = renderStates[writeIndex];
+        current.getTranslation().set(location);
+        current.getRotation().set(rotation);
+        current.getScale().set(scale);
+
+        // 切换缓冲区索引
+        writeIndex = (writeIndex + 1) % 2;
+    }
+
+    // 获取插值后的变换
+    public Transform getTransform(float partialTicks) {
+        int readIndex = (writeIndex + 1) % 2;
+        Transform last = renderStates[readIndex];
+        Transform current = renderStates[writeIndex];
+
+        Transform result = new Transform();
+
+        // 位置插值（线性）
+        result.setTranslation(
+                PhysicsHelperKt.toBVector3f(SparkMathKt.toVector3f(last.getTranslation()).lerp(SparkMathKt.toVector3f(current.getTranslation()), partialTicks, new org.joml.Vector3f()))
+        );
+
+        // 旋转插值（球面线性）
+        result.setRotation(
+                SparkMathKt.toBQuaternion(SparkMathKt.toQuaternionf(last.getRotation()).slerp(SparkMathKt.toQuaternionf(current.getRotation()), partialTicks, new org.joml.Quaternionf()))
+        );
+
+        // 缩放保持当前值（Bullet不支持动态缩放）
+        result.getScale().set(current.getScale());
+
+        return result;
+    }
 
     /**
      * collideWithGroups bitmask that represents "no groups"
@@ -185,6 +232,10 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     protected PhysicsCollisionObject(String name, PhysicsHost owner) {
         this.name = name;
         this.owner = new WeakReference<>(owner);
+
+        // 初始化双重缓冲状态
+        renderStates[0] = new Transform();
+        renderStates[1] = new Transform();
     }
 
     public PhysicsHost getOwner() {

@@ -1,16 +1,12 @@
 package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.PhysicsContactEvent
 import cn.solarmoon.spark_core.event.PhysicsTickEvent
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import com.jme3.bullet.PhysicsSpace
-import com.jme3.bullet.PhysicsSpace.BroadphaseType
 import com.jme3.bullet.PhysicsTickListener
-import com.jme3.bullet.collision.ContactListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
-import com.jme3.math.Vector3f
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -38,9 +34,10 @@ abstract class PhysicsLevel(
 
     var tickCount = 0L
         private set
+    var lastPhysicsTickTime = System.nanoTime()
+        private set
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     val previousTime = AtomicLong(System.nanoTime())
-    var previousMainThreadTime = System.nanoTime()
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val physicsDispatcher = newSingleThreadContext(name).apply {
@@ -101,6 +98,7 @@ abstract class PhysicsLevel(
         val fixedTimeStep = 1f / TPS // 固定时间步长（秒）
         val maxSubSteps = 10         // 最大允许每帧子步数
         var accumulatedTime = 0f     // 累积时间（秒）
+        var debugFrameCount = 0
 
         while (isActive) {
             val currentTime = System.nanoTime()
@@ -166,28 +164,21 @@ abstract class PhysicsLevel(
 
     override fun physicsTick(space: PhysicsSpace, timeStep: Float) {
         tickCount++
+
         world.pcoList.forEach { pco ->
             pco.tickers.forEach { it.physicsTick(pco, this) }
+            pco.saveLastTransform()
         }
-        NeoForge.EVENT_BUS.post(PhysicsTickEvent.Level(this))
-    }
 
-    fun mcTick(event: LevelTickEvent.Pre) {
-        previousMainThreadTime = System.nanoTime()
+        NeoForge.EVENT_BUS.post(PhysicsTickEvent.Level(this))
+
+        lastPhysicsTickTime = System.nanoTime()
     }
 
     val partialTicks: Float get() {
         val currentTime = System.nanoTime()
-        val deltaTimeMs = (currentTime - previousTime.get()) / 1_000_000.0
-        val tickTimeMs = 1000f / TPS
-        return (deltaTimeMs.toFloat() / tickTimeMs).coerceIn(0f, 1f)
-    }
-
-    val mcPartialTicks: Float get() {
-        val currentTime = System.nanoTime()
-        val deltaTimeMs = (currentTime - previousMainThreadTime) / 1_000_000.0
-        val tickTimeMs = 50f
-        return (deltaTimeMs.toFloat() / tickTimeMs)
+        val elapsedSinceLastTick = (currentTime - lastPhysicsTickTime) / 1e9f
+        return (elapsedSinceLastTick * TPS).coerceIn(0f, 1f)
     }
 
  }
