@@ -18,15 +18,9 @@ import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
 class MoveWithBoundingBoxTicker : BodyPhysicsTicker {
 
     var lastPos = Vector3f()
-    var v = Vector3f()
 
     override fun physicsTick(body: PhysicsCollisionObject, level: PhysicsLevel) {
-        if (body is PhysicsBody) {
-            val entity = body.getOwner<Entity>() ?: return
-            val targetPos = entity.boundingBox.center.toBVector3f()
 
-            body.setPhysicsLocation(targetPos)
-        }
     }
 
     override fun mcTick(body: PhysicsCollisionObject, level: Level) {
@@ -35,17 +29,13 @@ class MoveWithBoundingBoxTicker : BodyPhysicsTicker {
             val physLevel = level.physicsLevel
             val targetPos = entity.boundingBox.center.toBVector3f()
             physLevel.submitTask {
-                val vd = entity.deltaMovement.scale(22.0).toBVector3f()
-//                v = targetPos.subtract(lastPos).mult(20f)
-//                body.setPhysicsLocation(targetPos.add(v))
+                val v = targetPos.subtract(lastPos)
+                body.setPhysicsLocation(targetPos)
                 if (body is PhysicsRigidBody) {
-//                    body.setLinearVelocity(v)
-//                    SparkCore.LOGGER.info("v: $v vd: $vd pt: ${physLevel.mcPartialTicks}")
+                    body.setLinearVelocity(v)
                 }
-                lastPos = targetPos
             }
-            val pos = body.getPhysicsLocation(Vector3f()).toVector3f().toVec3()
-            entity.level().addParticle(ParticleTypes.END_ROD, pos.x, pos.y, pos.z, 0.0, 0.0, 0.0)
+            lastPos = targetPos
         }
     }
 

@@ -167,7 +167,6 @@ abstract class PhysicsLevel(
 
         world.pcoList.forEach { pco ->
             pco.tickers.forEach { it.physicsTick(pco, this) }
-            pco.saveLastTransform()
         }
 
         NeoForge.EVENT_BUS.post(PhysicsTickEvent.Level(this))

@@ -6,6 +6,8 @@ import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizer
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.jme3.bullet.collision.shapes.CollisionShape
+import com.jme3.bullet.collision.shapes.CompoundCollisionShape
+import com.jme3.math.Transform
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
@@ -15,7 +17,7 @@ import java.awt.Color
 
 class ShapeRenderer: VisualEffectRenderer() {
 
-    private val visualizers = mutableMapOf<CollisionShape, ShapeVisualizer>()
+    private val visualizers = mutableMapOf<Long, ShapeVisualizer>()
 
     override fun tick() {
 
@@ -34,10 +36,20 @@ class ShapeRenderer: VisualEffectRenderer() {
         val level = mc.level ?: return
         if (!mc.entityRenderDispatcher.shouldRenderHitBoxes()) return
         val physLevel = level.physicsLevel
-        physLevel.world.pcoList.forEach {
-            val shape = it.collisionShape
-            val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
-            visualizers.getOrPut(shape) { visualizer }.render(physLevel, it, shape, mc, camPos, poseStack, bufferSource, partialTicks)
+        physLevel.world.pcoList.forEach { body ->
+            val shape = body.collisionShape
+            if (shape is CompoundCollisionShape) {
+                shape.listChildren().forEach {
+                    val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
+                    val parentTransform = body.getTransform(null).matrix
+                    val childTransform = it.copyTransform(Transform()).matrix
+                    val finalMatrix = parentTransform.mul(childTransform)
+                    visualizer.render(physLevel, body, finalMatrix, it.shape, mc, camPos, poseStack, bufferSource, partialTicks)
+                }
+            } else {
+                val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
+                visualizer.render(physLevel, body, body.getTransform(null).matrix, shape, mc, camPos, poseStack, bufferSource, partialTicks)
+            }
         }
     }
 
