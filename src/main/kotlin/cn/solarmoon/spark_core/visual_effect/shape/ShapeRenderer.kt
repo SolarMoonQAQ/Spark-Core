@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.visual_effect.shape
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.physics.toMatrix4f
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizer
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
@@ -41,14 +42,14 @@ class ShapeRenderer: VisualEffectRenderer() {
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
-                    val parentTransform = body.getTransform(null).matrix
-                    val childTransform = it.copyTransform(Transform()).matrix
+                    val parentTransform = body.getTransform(null).toTransformMatrix().toMatrix4f()
+                    val childTransform = it.copyTransform(Transform()).toTransformMatrix().toMatrix4f()
                     val finalMatrix = parentTransform.mul(childTransform)
                     visualizer.render(physLevel, body, finalMatrix, it.shape, mc, camPos, poseStack, bufferSource, partialTicks)
                 }
             } else {
                 val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
-                visualizer.render(physLevel, body, body.getTransform(null).matrix, shape, mc, camPos, poseStack, bufferSource, partialTicks)
+                visualizer.render(physLevel, body, body.getTransform(null).toTransformMatrix().toMatrix4f(), shape, mc, camPos, poseStack, bufferSource, partialTicks)
             }
         }
     }

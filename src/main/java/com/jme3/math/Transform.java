@@ -196,10 +196,6 @@ public final class Transform implements Cloneable, java.io.Serializable {
         return store;
     }
 
-    public org.joml.Matrix4f getMatrix() {
-        return new org.joml.Matrix4f().translate(SparkMathKt.toVector3f(translation)).rotate(SparkMathKt.toQuaternionf(rot)).scale(SparkMathKt.toVector3f(scale));
-    }
-
     /**
      * Sets the current instance from a transform matrix. Any reflection or shear in the
      * matrix is lost -- in other words, it may not be possible to recreate the

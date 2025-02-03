@@ -27,12 +27,13 @@ object PresetBodyApplier {
             }
 
             if (entity is IEntityAnimatable<*>) {
-                val test = PhysicsRigidBody("test", entity, CompoundCollisionShape())
-                bindBody(test, level.physicsLevel) {
-                    isContactResponse = false
-                    setGravity(Vector3f.ZERO)
-                    entity.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {
+                entity.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {
+                    val test = PhysicsRigidBody(it.name, entity, CompoundCollisionShape())
+                    bindBody(test, level.physicsLevel) {
+                        isContactResponse = false
+                        setGravity(Vector3f.ZERO)
                         addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
+                        addContactListener(AttackContactListener())
                         (collisionShape as CompoundCollisionShape).initWithAnimatedBone(it)
                     }
                 }

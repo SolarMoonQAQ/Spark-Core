@@ -178,6 +178,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     public ArrayList<BodyPhysicsTicker> tickers = new ArrayList<>();
 
+    public ArrayList<ContactListener> contactListeners = new ArrayList<>();
+
     /**
      * Instantiate a collision object with no tracker and no assigned native
      * object.
@@ -200,6 +202,10 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     public void addPhysicsTicker(BodyPhysicsTicker ticker) {
         tickers.add(ticker);
+    }
+
+    public void addContactListener(ContactListener listener) {
+        contactListeners.add(listener);
     }
 
     // *************************************************************************

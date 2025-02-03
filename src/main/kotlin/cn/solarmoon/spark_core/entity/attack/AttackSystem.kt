@@ -7,9 +7,7 @@ import net.minecraft.world.entity.player.Player
 /**
  * 统一的攻击方法，方便对攻击数据进行统一修改
  */
-class AttackSystem(
-    val entity: Entity
-) {
+class AttackSystem {
 
     /**
      * 单次攻击后，攻击过的生物将存入此列表，并不再触发攻击，直到调用[reset]为止
@@ -31,56 +29,19 @@ class AttackSystem(
      * @param customAction 确定可调用攻击后的自定义指令
      * @return 是否成功触发攻击指令
      */
-    fun customAttack(target: Entity, customAction: AttackSystem.() -> Unit): Boolean {
+    fun customAttack(target: Entity, customAction: AttackSystem.() -> Boolean): Boolean {
         if (hasAttacked(target)) return false
 
-        customAction.invoke(this)
+        if (!customAction.invoke(this)) return false
 
         attackedEntities.add(target.id)
         if (ignoreInvulnerableTime) target.invulnerableTime = 0
         return true
     }
 
-//    /**
-//     * 同[customAttack]，但会设置碰撞相关的受击数据
-//     * @param customAction 在设置受击数据之后，攻击进行前插入自定义指令
-//     */
-//    fun customGeomAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, customAction: AttackSystem.() -> Boolean): Boolean {
-//        val target = (o2.body.owner as? Entity) ?: return false
-//        return customAttack(target) {
-//            target.pushAttackedData(AttackedData(o1, o2.body, buffer))
-//            customAction.invoke(this)
-//        }
-//    }
-
-    /**
-     * 常规攻击，玩家会调用[net.minecraft.world.entity.player.Player.attack]，活体则调用[net.minecraft.world.entity.LivingEntity.doHurtTarget]
-     * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
-     * @return 是否成功触发攻击指令
-     */
-    fun commonAttack(target: Entity, actionBeforeAttack: AttackSystem.() -> Boolean = { true }): Boolean {
-        return customAttack(target) {
-            if (!actionBeforeAttack.invoke(this)) return@customAttack
-            when(entity) {
-                is Player -> entity.attack(target)
-                is LivingEntity -> entity.doHurtTarget(target)
-            }
-        }
+    fun pushCollisionData(target: Entity) {
+        //target.pushAttackedData()
     }
-
-//    /**
-//     * 同[commonAttack]，但会设置碰撞相关的受击数据
-//     * @param actionBeforeAttack 在设置受击数据之后，攻击进行前插入自定义指令
-//     * @return 是否成功触发攻击指令
-//     */
-//    fun commonGeomAttack(o1: DGeom, o2: DGeom, buffer: DContactBuffer, actionBeforeAttack: AttackSystem.() -> Boolean = { true }): Boolean {
-//        val target = (o2.body.owner as? Entity) ?: return false
-//        return commonAttack(target) {
-//            target.pushAttackedData(AttackedData(o1, o2.body, buffer))
-//            actionBeforeAttack.invoke(this)
-//            true
-//        }
-//    }
 
     /**
      * 重置攻击到的对象等数据

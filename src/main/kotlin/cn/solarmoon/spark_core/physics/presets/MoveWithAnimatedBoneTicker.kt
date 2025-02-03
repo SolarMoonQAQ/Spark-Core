@@ -30,8 +30,10 @@ class MoveWithAnimatedBoneTicker(
     ) {
         val animatable = body.owner as? IAnimatable<*> ?: return
         if (body is PhysicsRigidBody) {
-            body.setPhysicsLocation(animatable.getWorldBonePivot(boneName).toBVector3f())
-            body.setPhysicsRotation(animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion())
+            body.setPhysicsTransform(Transform(
+                animatable.getWorldBonePivot(boneName).toBVector3f(),
+                animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion()
+            ))
         }
     }
 

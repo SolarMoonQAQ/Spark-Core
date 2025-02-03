@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.entity.attack
 
+import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.nbt.CompoundTag
@@ -15,9 +16,8 @@ import java.util.Optional
  * @param extraData 可以附加额外数据到此次攻击
  */
 data class AttackedData(
-//    val damageBox: DGeom,
-//    val damagedBody: DBody?,
-//    val buffer: DContactBuffer,
+    val attackBody: PhysicsCollisionObject?,
+    val damagedBody: PhysicsCollisionObject?,
     val extraData: CompoundTag = CompoundTag()
 ) {
 
