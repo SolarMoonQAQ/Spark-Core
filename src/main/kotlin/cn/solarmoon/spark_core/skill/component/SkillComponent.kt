@@ -1,11 +1,9 @@
-package cn.solarmoon.spark_core.skill
+package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.skill.SkillInstance
 import com.mojang.serialization.MapCodec
-import net.minecraft.nbt.CompoundTag
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.level.Level
-import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.function.Function
 
 interface SkillComponent {

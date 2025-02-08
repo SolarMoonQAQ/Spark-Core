@@ -1,20 +1,11 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import net.minecraft.nbt.CompoundTag
-import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.entity.Entity
-import net.minecraft.world.level.Level
+import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
+import cn.solarmoon.spark_core.skill.component.SkillComponent
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.tick.LevelTickEvent
-import net.neoforged.neoforge.network.PacketDistributor
-import net.neoforged.neoforge.network.handling.IPayloadContext
 
 class SkillInstance internal constructor(
     val type: SkillType,
@@ -22,6 +13,7 @@ class SkillInstance internal constructor(
     val components: List<SkillComponent> = listOf<SkillComponent>()
 ) {
 
+    val context = Context()
     var isActive = false
         private set
     var runTime: Int = 0
@@ -72,6 +64,10 @@ class SkillInstance internal constructor(
             holder.activeSkills.remove(this)
             NeoForge.EVENT_BUS.unregister(this)
         }
+    }
+
+    class Context {
+        var animation: AnimInstance? = null
     }
 
 }

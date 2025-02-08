@@ -22,11 +22,17 @@ class PhysicsWorld(
         addTickListener(physicsLevel)
     }
 
+    override fun needsCollision(pcoA: PhysicsCollisionObject?, pcoB: PhysicsCollisionObject?): Boolean {
+        if (pcoA != null && pcoB != null && pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner) return false
+        return super.needsCollision(pcoA, pcoB)
+    }
+
     override fun onContactStarted(manifoldId: Long) {
         super.onContactStarted(manifoldId)
 
         val a = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
         val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
+
         a.contactListeners.forEach { it.onContactStarted(manifoldId) }
         b.contactListeners.forEach { it.onContactStarted(manifoldId) }
 
@@ -39,6 +45,9 @@ class PhysicsWorld(
         manifoldPointId: Long
     ) {
         super.onContactProcessed(pcoA, pcoB, manifoldPointId)
+
+        pcoA.isColliding = true
+        pcoB.isColliding = true
 
         pcoA.contactListeners.forEach { it.onContactProcessed(pcoA, pcoB, manifoldPointId) }
         pcoB.contactListeners.forEach { it.onContactProcessed(pcoB, pcoA, manifoldPointId) }
@@ -53,6 +62,9 @@ class PhysicsWorld(
         val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
         a.contactListeners.forEach { it.onContactEnded(manifoldId) }
         b.contactListeners.forEach { it.onContactEnded(manifoldId) }
+
+        a.isColliding = false
+        b.isColliding = false
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.End(manifoldId))
     }

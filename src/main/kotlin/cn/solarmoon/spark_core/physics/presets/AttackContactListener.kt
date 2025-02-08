@@ -22,13 +22,11 @@ interface AttackContactListener: ContactListener {
         val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
         val attacker = a.owner as? Entity ?: return
         (b.owner as? Entity)?.apply {
-            level().submitImmediateTask {
-                attackSystem.customAttack(this) {
-                    preAttack(attacker, this@apply, a, b, manifoldId)
-                    if (!doAttack(attacker, this@apply, a, b, manifoldId)) return@customAttack false
-                    postAttack(attacker, this@apply, a, b, manifoldId)
-                    true
-                }
+            attackSystem.customAttack(this) {
+                preAttack(attacker, this@apply, a, b, manifoldId)
+                if (!doAttack(attacker, this@apply, a, b, manifoldId)) return@customAttack false
+                postAttack(attacker, this@apply, a, b, manifoldId)
+                true
             }
         }
     }

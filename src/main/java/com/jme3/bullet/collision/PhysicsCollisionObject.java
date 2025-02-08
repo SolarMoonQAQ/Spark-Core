@@ -72,6 +72,10 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     // *************************************************************************
     // constants and loggers
 
+    public boolean collideWithOwner = false;
+
+    public boolean isColliding = false;
+
     /**
      * collideWithGroups bitmask that represents "no groups"
      */

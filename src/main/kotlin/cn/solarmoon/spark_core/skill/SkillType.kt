@@ -1,15 +1,10 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.skill.component.SkillComponent
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.core.RegistryAccess
-import net.minecraft.resources.ResourceLocation
-import net.minecraft.server.level.ServerLevel
-import net.minecraft.world.level.Level
-import net.neoforged.neoforge.network.PacketDistributor
-import java.util.concurrent.atomic.AtomicInteger
 
 class SkillType(
     val components: List<SkillComponent>
@@ -25,7 +20,7 @@ class SkillType(
     companion object {
         val CODEC: Codec<SkillType> = RecordCodecBuilder.create {
             it.group(
-                SkillComponent.CODEC.listOf().fieldOf("components").forGetter { it.components }
+                SkillComponent.Companion.CODEC.listOf().fieldOf("components").forGetter { it.components }
             ).apply(it, ::SkillType)
         }
     }
