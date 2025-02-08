@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
-import cn.solarmoon.spark_core.entity.attack.IAttackedDataPusher;
-import cn.solarmoon.spark_core.entity.attack.IExtraDamageDataHolder;
+import cn.solarmoon.spark_core.entity.attack.IDamageSourceExtraData;
 import cn.solarmoon.spark_core.flag.FlagApplier;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -19,10 +18,10 @@ public class LivingEntityMixin {
     @Inject(method = "hurt", at = @At("HEAD"))
     private void hurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (entity.level().isClientSide) return;
-        var data = ((IAttackedDataPusher)entity).getData();
+        var data = entity.getHurtData();
         if (data != null) {
-            ((IExtraDamageDataHolder) source).setData(data);
-            ((IAttackedDataPusher)entity).setData(null);
+            ((IDamageSourceExtraData)source).setExtraData(data);
+            entity.pushHurtData(null);
         }
     }
 

@@ -29,7 +29,7 @@ class MoveWithBoundingBoxTicker : BodyPhysicsTicker {
             val physLevel = level.physicsLevel
             val targetPos = entity.boundingBox.center.toBVector3f()
             physLevel.submitTask {
-                val v = targetPos.subtract(lastPos)
+                val v = targetPos.subtract(lastPos).mult(20f)
                 body.setPhysicsLocation(targetPos)
                 if (body is PhysicsRigidBody) {
                     body.setLinearVelocity(v)

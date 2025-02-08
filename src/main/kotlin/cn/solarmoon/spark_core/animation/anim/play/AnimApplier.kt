@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatableItem
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.ItemAnimatable
@@ -8,10 +9,12 @@ import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
 import cn.solarmoon.spark_core.event.PhysicsTickEvent
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.player.PlayerEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
+import kotlin.collections.map
 
 object AnimApplier {
 

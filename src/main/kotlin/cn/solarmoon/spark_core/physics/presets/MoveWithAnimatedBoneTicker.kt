@@ -14,6 +14,8 @@ import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
+import com.jme3.math.Vector3f
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 import org.joml.Matrix4f
 import org.joml.Quaterniond
@@ -23,6 +25,8 @@ import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 class MoveWithAnimatedBoneTicker(
     val boneName: String
 ): BodyPhysicsTicker {
+
+    var lastPos = Vector3f()
 
     override fun physicsTick(
         body: PhysicsCollisionObject,
@@ -41,7 +45,15 @@ class MoveWithAnimatedBoneTicker(
         body: PhysicsCollisionObject,
         level: Level
     ) {
-
+        val entity = body.owner as? Entity ?: return
+        if (body is PhysicsRigidBody) {
+            val targetPos = entity.position().toBVector3f()
+            level.physicsLevel.submitTask {
+                val v = targetPos.subtract(lastPos).mult(20f)
+                body.setLinearVelocity(v)
+            }
+            lastPos = targetPos
+        }
     }
 
 }

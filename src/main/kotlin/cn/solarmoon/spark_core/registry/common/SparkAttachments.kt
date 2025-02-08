@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.flag.Flag
-import cn.solarmoon.spark_core.skill.controller.SkillController
 
 
 object SparkAttachments {
@@ -22,12 +21,6 @@ object SparkAttachments {
         .id("flag")
         .defaultValue { linkedMapOf() }
         .serializer { it.serialize(Flag.MAP_CODEC) }
-        .build()
-
-    @JvmStatic
-    val SKILL_CONTROLLER = SparkCore.REGISTER.attachment<MutableList<SkillController<*>>>()
-        .id("skill_controller")
-        .defaultValue { mutableListOf() }
         .build()
 
 }

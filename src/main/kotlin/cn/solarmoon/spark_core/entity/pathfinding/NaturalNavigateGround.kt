@@ -11,6 +11,7 @@ import kotlin.math.floor
 
 /**
  * Credit: [Mowzie的生物](https://github.com/BobMowzie/MowziesMobs/blob/master/src/main/java/com/bobmowzie/mowziesmobs/server/ai/MMPathNavigateGround.java)
+ *
  * 解决了大碰撞箱情况下寻路在正轴来回碰撞的问题
  */
 class NaturalNavigateGround(mob: Mob, level: Level): GroundPathNavigation(mob, level) {

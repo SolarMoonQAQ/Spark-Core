@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.entry_builder.client.KeyMappingBuilder
 import cn.solarmoon.spark_core.entry_builder.client.LayerBuilder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.entry_builder.common.fluid.FluidBuilder
-import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.util.RegisterUtil
 import net.minecraft.core.RegistrySetBuilder
 import net.minecraft.core.particles.ParticleType
@@ -46,6 +45,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val dataComponentDeferredRegister = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, modId)
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
     val typedAnimationDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.TYPED_ANIMATION, modId) }
+    val syncerTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SYNCER_TYPE, modId) }
 
     fun register(bus: IEventBus) {
         modBus = bus
@@ -117,6 +117,13 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
             typedAnimationDeferredRegister.value.register(modBus!!)
         }
         return TypedAnimationBuilder(typedAnimationDeferredRegister.value)
+    }
+
+    fun syncerType(): SyncerTypeBuilder {
+        if (!syncerTypeDeferredRegister.isInitialized()) {
+            syncerTypeDeferredRegister.value.register(modBus!!)
+        }
+        return SyncerTypeBuilder(syncerTypeDeferredRegister.value)
     }
 
 }

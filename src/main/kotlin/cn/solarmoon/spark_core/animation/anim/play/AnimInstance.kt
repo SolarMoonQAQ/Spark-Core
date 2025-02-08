@@ -15,7 +15,7 @@ class AnimInstance private constructor(
 
     companion object {
         @JvmStatic
-        fun create(holder: IAnimatable<*>, name: String, origin: OAnimation = holder.animations.getAnimation(name) ?: throw NullPointerException("ÕÒ²»µ½ÃûÎª $name µÄ¶¯»­"), provider: (AnimInstance).() -> Unit = {}): AnimInstance {
+        fun create(holder: IAnimatable<*>, name: String, origin: OAnimation = holder.animations.getAnimation(name) ?: throw NullPointerException("æ²¡æœ‰æ‰¾åˆ°åä¸º $name çš„åŠ¨ç”»"), provider: (AnimInstance).() -> Unit = {}): AnimInstance {
             val default = AnimInstance(holder, name, origin).apply { provider.invoke(this) }
             return default.apply { defaultValue = default.copy() }
         }
@@ -35,6 +35,7 @@ class AnimInstance private constructor(
     private var switchActions = mutableListOf<AnimInstance.(AnimInstance?) -> Unit>()
     private var enableActions = mutableListOf<AnimInstance.() -> Unit>()
     private var endActions = mutableListOf<AnimInstance.() -> Unit>()
+    private var eventHandlers = mutableMapOf<String, (Double) -> Unit>()
 
     val step get() = speed / PhysicsLevel.TPS
 
@@ -43,6 +44,20 @@ class AnimInstance private constructor(
     fun step(overallSpeed: Double = 1.0) {
         time += step * overallSpeed
         totalTime += step * overallSpeed
+
+        physTickActions.forEach {
+            it.invoke(this)
+        }
+
+        eventHandlers.values.forEach {
+            it.invoke(time)
+        }
+    }
+
+    fun onEvent(eventName: String, timeRange: ClosedRange<Double>, handler: () -> Unit) {
+        eventHandlers[eventName] = { currentTime ->
+            if (currentTime in timeRange) handler()
+        }
     }
 
     fun onTick(reset: Boolean = false, action: AnimInstance.() -> Unit) {
@@ -77,9 +92,11 @@ class AnimInstance private constructor(
     }
 
     fun cancel() {
-        isCancelled = true
-        endActions.forEach {
-            it.invoke(this)
+        if (!isCancelled) {
+            isCancelled = true
+            endActions.forEach {
+                it.invoke(this)
+            }
         }
     }
 
@@ -105,6 +122,7 @@ class AnimInstance private constructor(
         copy.switchActions = switchActions.toMutableList()
         copy.enableActions = enableActions.toMutableList()
         copy.endActions = endActions.toMutableList()
+        copy.eventHandlers = eventHandlers.toMutableMap()
         return copy
     }
 
@@ -119,8 +137,9 @@ class AnimInstance private constructor(
             physTickActions = default.physTickActions.toMutableList()
             tickActions = default.tickActions.toMutableList()
             switchActions = default.switchActions.toMutableList()
-            enableActions = default.enableActions
+            enableActions = default.enableActions.toMutableList()
             endActions = default.endActions.toMutableList()
+            eventHandlers = default.eventHandlers.toMutableMap()
         }
     }
 
@@ -142,10 +161,6 @@ class AnimInstance private constructor(
             Loop.HOLD_ON_LAST_FRAME -> {
                 if (time < maxLength) step(overallSpeed)
             }
-        }
-
-        physTickActions.forEach {
-            it.invoke(this)
         }
     }
 

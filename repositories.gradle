@@ -20,21 +20,6 @@ dependencies {
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     // azurelib
     implementation "mod.azure.azurelib:azurelib-neo-${minecraft_version}:${azurelib_version}"
-
-    jarJar(implementation("io.github.electrostat-lab:snaploader")) {
-        version {
-            strictly '[0.0.0,)'
-            prefer '1.0.0-stable'
-        }
-    }
-    additionalRuntimeClasspath "io.github.electrostat-lab:snaploader:1.0.0-stable"
-
-    jarJar(implementation("org.lwjgl:lwjgl-assimp")) {
-        version {
-            strictly '[0.0.0,)'
-            prefer '3.3.3'
-        }
-    }
 }
 
 repositories {

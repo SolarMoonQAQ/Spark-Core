@@ -11,7 +11,7 @@ import cn.solarmoon.spark_core.physics.collision.CollisionFunctionApplier
 import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
 import cn.solarmoon.spark_core.physics.presets.PresetBodyApplier
-import cn.solarmoon.spark_core.skill.controller.SkillControllerApplier
+import cn.solarmoon.spark_core.skill.SkillApplier
 import net.neoforged.neoforge.common.NeoForge
 
 object SparkCommonEventRegister {
@@ -23,13 +23,13 @@ object SparkCommonEventRegister {
         add(PresetBodyApplier)
         add(AnimApplier)
         add(PreInputApplier)
-        add(SkillControllerApplier)
         add(CommonAnimApplier)
         add(UseAnimApplier)
         add(FlagApplier)
         add(PoseAnimApplier)
         add(PlayerBoneModifier)
         add(CollisionFunctionApplier)
+        add(SkillApplier)
     }
 
     private fun add(event: Any) {

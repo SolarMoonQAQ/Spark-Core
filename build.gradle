@@ -30,7 +30,10 @@ neoForge {
 
     accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
-    interfaceInjectionData.from "src/main/resources/interfaces.json"
+    interfaceInjectionData {
+        from "src/main/resources/META-INF/interfaces.json"
+        publish file("src/main/resources/META-INF/interfaces.json")
+    }
 
     runs {
         client {

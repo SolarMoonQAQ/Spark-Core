@@ -1,9 +1,11 @@
 package cn.solarmoon.spark_core.physics.mesh
 
+import cn.solarmoon.spark_core.physics.copy
 import cn.solarmoon.spark_core.physics.toMatrix4f
 import cn.solarmoon.spark_core.physics.toVector3f
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.math.Transform
+import org.joml.Matrix4f
 import org.joml.Vector3f
 
 /**
@@ -46,8 +48,8 @@ class BoxShapeMesh {
         )
     }
 
-    fun getWorldVertexPosition(order: Int, transform: Transform): Vector3f {
-        return transform.toTransformMatrix().toMatrix4f().getTranslation(vertices[order])
+    fun getWorldVertexPosition(order: Int, transform: Matrix4f): Vector3f {
+        return transform.transformPosition(vertices[order].copy())
     }
 
 }

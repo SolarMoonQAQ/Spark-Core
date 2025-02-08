@@ -43,7 +43,7 @@ class ShapeRenderer: VisualEffectRenderer() {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
                     val parentTransform = body.getTransform(null).toTransformMatrix().toMatrix4f()
-                    val childTransform = it.copyTransform(Transform()).toTransformMatrix().toMatrix4f()
+                    val childTransform = it.copyTransform(null).toTransformMatrix().toMatrix4f()
                     val finalMatrix = parentTransform.mul(childTransform)
                     visualizer.render(physLevel, body, finalMatrix, it.shape, mc, camPos, poseStack, bufferSource, partialTicks)
                 }

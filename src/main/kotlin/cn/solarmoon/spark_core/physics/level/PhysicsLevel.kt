@@ -98,7 +98,6 @@ abstract class PhysicsLevel(
         val fixedTimeStep = 1f / TPS // 固定时间步长（秒）
         val maxSubSteps = 10         // 最大允许每帧子步数
         var accumulatedTime = 0f     // 累积时间（秒）
-        var debugFrameCount = 0
 
         while (isActive) {
             val currentTime = System.nanoTime()

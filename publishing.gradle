@@ -26,44 +26,14 @@ publishing {
             }
         }
     }
+
     publications {
-        register('mavenJava', MavenPublication) {
+        mavenNeoForge(MavenPublication) {
             groupId = mod_group_id
             artifactId = "${artifact_id}-${mod_loader}"
             version = "${minecraft_version}-${mod_version}"
-            artifact jar
-            artifact sourcesJar
-            pom {
-                name = mod_name
-                description = mod_description
-                url = "https://github.com/SolarMoonQAQ/${githubRepoName}"
 
-                scm {
-                    connection = "scm:git:git://github.com/SolarMoonQAQ/${githubRepoName}.git"
-                    developerConnection = "scm:git:ssh://github.com/SolarMoonQAQ/${githubRepoName}.git"
-                    url = "https://github.com/SolarMoonQAQ/${githubRepoName}"
-                }
-
-                licenses {
-                    license {
-                        name = 'GPL-3.0 licence'
-                        url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
-                    }
-                }
-
-                issueManagement {
-                    system = 'github'
-                    url = 'https://github.com/SolarMoonQAQ/Spark-Core/issues'
-                }
-
-                developers {
-                    developer {
-                        id = 'solarmoonqaq'
-                        name = 'SolarMoon'
-                        email = '3213382746@qq.com'
-                    }
-                }
-            }
+            from components.java
         }
     }
 }

@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import com.google.common.io.Resources
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.util.NativeLibrary
+import com.jme3.math.Matrix3f
 import com.jme3.math.Transform
 import com.jme3.math.Vector3f
 import com.jme3.system.JmeSystem
@@ -68,5 +69,11 @@ fun initBullet() {
 fun Vec3.toBVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
 
 fun org.joml.Vector3f.toBVector3f() = Vector3f(x, y ,z)
+
+fun org.joml.Matrix3f.toBMatrix3f() = Matrix3f(
+    m00, m10, m20,
+    m01, m11, m21,
+    m02, m21, m22
+)
 
 inline fun <reified T> PhysicsCollisionObject.getOwner() = owner as? T

@@ -1,0 +1,15 @@
+{
+  "net/minecraft/world/level/Level": [
+    "cn/solarmoon/spark_core/physics/level/PhysicsLevelHolder",
+    "cn/solarmoon/spark_core/physics/level/TaskSubmitOffice"
+  ],
+  "net/minecraft/world/entity/Entity": [
+    "cn/solarmoon/spark_core/physics/host/PhysicsHost",
+    "cn/solarmoon/spark_core/entity/attack/HurtDataHolder",
+    "cn/solarmoon/spark_core/skill/SkillHost",
+    "cn/solarmoon/spark_core/sync/Syncer"
+  ],
+  "net/minecraft/world/damagesource/DamageSource": [
+    "cn/solarmoon/spark_core/entity/attack/IDamageSourceExtraData"
+  ]
+}

@@ -18,7 +18,6 @@ interface PhysicsHost {
      */
     fun <T: PhysicsCollisionObject> bindBody(
         body: T,
-        physicsLevel: PhysicsLevel = this.physicsLevel,
         allowOverride: Boolean = false,
         apply: T.() -> Unit = {}
     ): T {
@@ -52,8 +51,8 @@ interface PhysicsHost {
      * @param type 指定想获取物理体的Class对象
      * @return 如果类型匹配则返回实例，否则返回null
      */
-    fun <T : PhysicsCollisionObject> getBody(id: String, type: KClass<T>): T? {
-        val body = physicsLevel.hostManager[this]?.get(id)
+    fun <T : PhysicsCollisionObject> getBody(name: String, type: KClass<T>): T? {
+        val body = physicsLevel.hostManager[this]?.get(name)
         return if (type.isInstance(body)) type.cast(body) else null
     }
 
@@ -65,9 +64,9 @@ interface PhysicsHost {
     /**
      * 删除并销毁对象身上的物理体
      */
-    fun removeBody(id: String) {
+    fun removeBody(name: String) {
         physicsLevel.submitTask {
-            physicsLevel.hostManager[this@PhysicsHost]?.remove(id)?.let {
+            physicsLevel.hostManager[this@PhysicsHost]?.remove(name)?.let {
                 physicsLevel.world.removeCollisionObject(it)
             }
         }

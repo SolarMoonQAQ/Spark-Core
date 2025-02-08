@@ -39,10 +39,6 @@ class AttackSystem {
         return true
     }
 
-    fun pushCollisionData(target: Entity) {
-        //target.pushAttackedData()
-    }
-
     /**
      * 重置攻击到的对象等数据
      */

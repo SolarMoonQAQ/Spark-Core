@@ -19,9 +19,11 @@ public class SparkCore {
     public static final String MOD_ID = "spark_core";
     public static final Logger LOGGER = LoggerFactory.getLogger("星火核心");
     public static final ObjectRegister REGISTER = new ObjectRegister(MOD_ID, true);
+    public static final ObjectRegister MC_REGISTER = new ObjectRegister("minecraft", false);
 
     public SparkCore(IEventBus modEventBus, ModContainer modContainer) {
         REGISTER.register(modEventBus);
+        MC_REGISTER.register(modEventBus);
 
         if (FMLEnvironment.dist.isClient()) {
             SparkClientEventRegister.register();
@@ -37,6 +39,9 @@ public class SparkCore {
         SparkDataRegister.register();
         SparkTypedAnimations.register();
         SparkDataComponents.register();
+        SparkDataRegistryRegister.register(modEventBus);
+        SparkCodeRegister.register(modEventBus);
+        SyncerTypes.register();
 
         PhysicsHelperKt.initBullet();
     }
