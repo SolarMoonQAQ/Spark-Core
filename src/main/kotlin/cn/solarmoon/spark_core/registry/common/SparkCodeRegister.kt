@@ -1,8 +1,13 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.skill.component.AnimSpeedModifierComponent
+import cn.solarmoon.spark_core.skill.component.AttackDamageModifierComponent
+import cn.solarmoon.spark_core.skill.component.CameraShakeComponent
 import cn.solarmoon.spark_core.skill.component.PlayAnimationComponent
 import cn.solarmoon.spark_core.skill.component.PreInputReleaseComponent
+import cn.solarmoon.spark_core.skill.component.PreventLocalInputComponent
+import cn.solarmoon.spark_core.skill.component.PreventYRotComponent
 import cn.solarmoon.spark_core.skill.component.collision.BoxAroundHolderComponent
 import cn.solarmoon.spark_core.skill.component.collision.BoxFollowAnimatedBoneComponent
 import cn.solarmoon.spark_core.skill.condition.HoldItemCondition
@@ -23,6 +28,11 @@ object SparkCodeRegister {
         event.register(SparkRegistries.SKILL_COMPONENT_CODEC.key(), id("box_follow_animated_bone")) { BoxFollowAnimatedBoneComponent.CODEC }
         event.register(SparkRegistries.SKILL_COMPONENT_CODEC.key(), id("play_animation")) { PlayAnimationComponent.CODEC }
         event.register(SparkRegistries.SKILL_COMPONENT_CODEC.key(), id("preinput_release")) { PreInputReleaseComponent.CODEC }
+        event.register(SparkRegistries.SKILL_COMPONENT_CODEC.key(), id("attack_damage_modifier")) { AttackDamageModifierComponent.CODEC }
+        event.register(SparkRegistries.SKILL_COMPONENT_CODEC.key(), id("anim_speed_modifier")) { AnimSpeedModifierComponent.CODEC }
+        event.register(SparkRegistries.SKILL_COMPONENT_CODEC.key(), id("camera_shake")) { CameraShakeComponent.CODEC }
+        event.register(SparkRegistries.SKILL_COMPONENT_CODEC.key(), id("prevent_local_input")) { PreventLocalInputComponent.CODEC }
+        event.register(SparkRegistries.SKILL_COMPONENT_CODEC.key(), id("prevent_yrot")) { PreventYRotComponent.CODEC }
 
         event.register(SparkRegistries.SYNC_DATA_STREAM_CODEC.key(), id("int")) { IntSyncData.STREAM_CODEC }
     }

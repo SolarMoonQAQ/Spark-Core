@@ -5,6 +5,8 @@ import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
+import cn.solarmoon.spark_core.sync.SyncData
+import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
@@ -46,6 +48,11 @@ class ItemAnimatable(override var modelIndex: ModelIndex): IAnimatable<ItemAnima
     override fun hashCode(): Int {
         return modelIndex.hashCode()
     }
+
+    override val syncerType: SyncerType
+        get() = TODO("Not yet implemented")
+    override val syncData: SyncData
+        get() = TODO("Not yet implemented")
 
     companion object {
         @JvmStatic

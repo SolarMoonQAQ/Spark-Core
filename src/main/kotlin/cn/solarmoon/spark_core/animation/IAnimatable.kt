@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.anim.play.Bone
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
+import cn.solarmoon.spark_core.sync.Syncer
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 import org.joml.Vector3f
@@ -13,7 +14,7 @@ import org.joml.Vector3f
 /**
  * ### 动画体
  */
-interface IAnimatable<T> {
+interface IAnimatable<T>: Syncer {
 
     /**
      * 一般而言输入this即可，用于调用该动画体的持有者

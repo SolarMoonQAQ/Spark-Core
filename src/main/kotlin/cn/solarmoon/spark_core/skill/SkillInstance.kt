@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.skill.component.SkillComponent
+import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.tick.LevelTickEvent
@@ -9,6 +10,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent
 class SkillInstance internal constructor(
     val type: SkillType,
     val holder: SkillHost,
+    val level: Level,
     val components: List<SkillComponent> = listOf<SkillComponent>()
 ) {
 

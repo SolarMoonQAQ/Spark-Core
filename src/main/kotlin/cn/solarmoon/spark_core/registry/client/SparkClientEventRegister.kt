@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.registry.client
 
+import cn.solarmoon.spark_core.camera.CameraAdjuster
 import cn.solarmoon.spark_core.flag.FlagApplier
 import cn.solarmoon.spark_core.local_control.LocalControlApplier
 import cn.solarmoon.spark_core.visual_effect.VisualEffectTicker
@@ -13,6 +14,7 @@ object SparkClientEventRegister {
         add(VisualEffectTicker)
         add(CameraShakeApplier)
         add(LocalControlApplier)
+        add(CameraAdjuster)
         add(FlagApplier.Client)
     }
 

@@ -1,0 +1,50 @@
+package cn.solarmoon.spark_core.skill.component
+
+import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
+import cn.solarmoon.spark_core.skill.component.SkillComponent
+import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
+import com.mojang.serialization.codecs.RecordCodecBuilder
+import net.neoforged.neoforge.network.PacketDistributor
+
+class AnimSpeedModifierComponent(
+    val time: Int = 7,
+    val speed: Double = 0.05,
+    children: List<SkillComponent> = kotlin.collections.listOf()
+): SkillComponent(children) {
+
+    override val codec: MapCodec<out SkillComponent> = CODEC
+
+    override fun copy(): SkillComponent {
+        return AnimSpeedModifierComponent(time, speed, children)
+    }
+
+    override fun onActive(): Boolean {
+        val animatable = skill.holder as? IAnimatable<*> ?: return false
+        if (!skill.level.isClientSide) {
+            animatable.animController.changeSpeed(time, speed)
+            PacketDistributor.sendToAllPlayers(AnimSpeedChangePayload(animatable, time, speed))
+        }
+        return true
+    }
+
+    override fun onUpdate(): Boolean {
+        return true
+    }
+
+    override fun onEnd(): Boolean {
+        return true
+    }
+
+    companion object {
+        val CODEC: MapCodec<AnimSpeedModifierComponent> = RecordCodecBuilder.mapCodec {
+            it.group(
+                Codec.INT.optionalFieldOf("time", 7).forGetter { it.time },
+                Codec.DOUBLE.optionalFieldOf("speed", 0.05).forGetter { it.speed },
+                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
+            ).apply(it, ::AnimSpeedModifierComponent)
+        }
+    }
+
+}

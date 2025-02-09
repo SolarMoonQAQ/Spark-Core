@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.sync
 
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.world.level.Level
 
 abstract class SyncerType {
@@ -15,6 +16,10 @@ abstract class SyncerType {
 
     override fun hashCode(): Int {
         return registryKey.hashCode()
+    }
+
+    companion object {
+        val STREAM_CODEC = ByteBufCodecs.registry(SparkRegistries.SYNCER_TYPE.key())
     }
 
 }

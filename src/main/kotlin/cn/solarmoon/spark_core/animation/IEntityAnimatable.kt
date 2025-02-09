@@ -3,6 +3,10 @@ package cn.solarmoon.spark_core.animation
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.physics.toRadians
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
+import cn.solarmoon.spark_core.registry.common.SyncerTypes
+import cn.solarmoon.spark_core.sync.IntSyncData
+import cn.solarmoon.spark_core.sync.SyncData
+import cn.solarmoon.spark_core.sync.SyncerType
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec3
 import kotlin.math.PI
@@ -21,5 +25,11 @@ interface IEntityAnimatable<T: Entity>: IAnimatable<T> {
     override fun getRootYRot(partialTick: Float): Float {
         return PI.toFloat() - animatable.getPreciseBodyRotation(partialTick).toRadians()
     }
+
+    override val syncData: SyncData
+        get() = IntSyncData(animatable.id)
+
+    override val syncerType: SyncerType
+        get() = SyncerTypes.ENTITY.get()
 
 }
