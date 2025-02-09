@@ -31,4 +31,8 @@ interface AttackContactListener: ContactListener {
         }
     }
 
+    override fun onContactEnded(manifoldId: Long) {
+        attackSystem.reset()
+    }
+
 }

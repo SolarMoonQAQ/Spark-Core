@@ -35,10 +35,11 @@ abstract class BaseRigidBodyBoundComponent(
         body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
     }
 
-    override fun onActive(skill: SkillInstance): Boolean {
+    override fun onActive(): Boolean {
         val animatable = skill.holder as? IEntityAnimatable<*> ?: return false
         val entity = animatable.animatable
         body = createBody(entity)
+        addContext(body)
 
         if (timeType == "anim") {
             registerContext(AnimInstance::class).apply {
@@ -53,7 +54,7 @@ abstract class BaseRigidBodyBoundComponent(
         return true
     }
 
-    override fun onUpdate(skill: SkillInstance): Boolean {
+    override fun onUpdate(): Boolean {
         if (timeType == "skill") {
             activeTime.forEachIndexed { index, range ->
                 collideEnableCheck = skill.runTime.toDouble() in range.x.toDouble()..range.y.toDouble()
@@ -62,7 +63,7 @@ abstract class BaseRigidBodyBoundComponent(
         return true
     }
 
-    override fun onEnd(skill: SkillInstance): Boolean {
+    override fun onEnd(): Boolean {
         body.name.let { (skill.holder as? PhysicsHost)?.removeBody(it) }
         return true
     }

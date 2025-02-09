@@ -17,22 +17,23 @@ abstract class SkillComponent(
 
     var parent: SkillComponent? = null
 
-    val children: List<SkillComponent> = children.map { it.copy() }
+    lateinit var skill: SkillInstance
 
-    val context: MutableList<Any> = mutableListOf()
+    val children: List<SkillComponent> = children.map { it.copy() }
 
     abstract val codec: MapCodec<out SkillComponent>
 
     abstract fun copy(): SkillComponent
 
-    protected abstract fun onActive(skill: SkillInstance): Boolean
+    protected abstract fun onActive(): Boolean
 
-    protected abstract fun onUpdate(skill: SkillInstance): Boolean
+    protected abstract fun onUpdate(): Boolean
 
-    protected abstract fun onEnd(skill: SkillInstance): Boolean
+    protected abstract fun onEnd(): Boolean
 
     fun active(skill: SkillInstance) {
-        if (onActive(skill) && children.isNotEmpty()) {
+        this.skill = skill
+        if (onActive() && children.isNotEmpty()) {
             children.forEach {
                 it.parent = this
                 it.active(skill)
@@ -41,23 +42,27 @@ abstract class SkillComponent(
     }
 
     fun update(skill: SkillInstance) {
-        if (onUpdate(skill) && children.isNotEmpty()) {
-            children.forEach { it.onUpdate(skill) }
+        if (onUpdate() && children.isNotEmpty()) {
+            children.forEach { it.onUpdate() }
         }
     }
 
     fun end(skill: SkillInstance) {
-        if (onEnd(skill) && children.isNotEmpty()) {
-            children.forEach { it.onEnd(skill) }
+        if (onEnd() && children.isNotEmpty()) {
+            children.forEach { it.onEnd() }
         }
     }
 
     fun addContext(content: Any) {
-        context.add(content)
+        try {
+            skill.context.add(content)
+        } catch (e: Exception) {
+            throw NullPointerException("必须在技能启动之后才能添加上下文参数")
+        }
     }
 
     protected inline fun <reified T: Any> registerContext(type: KClass<T>, ordinal: Int = 0) =
-        parent?.context?.filter { it::class == type }?.getOrNull(ordinal) as? T ?: throw NullPointerException("组件 $registryKey 的父组件必须包含一个 ${type.simpleName} 上下文参数")
+        skill.context.filter { type.isInstance(it) }.getOrNull(ordinal) as? T ?: throw NullPointerException("组件 $registryKey 所属技能必须包含一个 ${type.simpleName} 上下文参数")
 
     companion object {
         val CODEC = SparkRegistries.SKILL_COMPONENT_CODEC.byNameCodec()

@@ -13,7 +13,7 @@ class PlayAnimationComponent(
     val animResource: AnimIndex,
     val transitionTime: Int,
     val shouldTurnBody: Boolean,
-    children: List<SkillComponent>
+    children: List<SkillComponent> = listOf()
 ): SkillComponent(children) {
 
     lateinit var anim: AnimInstance
@@ -24,7 +24,7 @@ class PlayAnimationComponent(
         return PlayAnimationComponent(animResource, transitionTime, shouldTurnBody, children)
     }
 
-    override fun onActive(skill: SkillInstance): Boolean {
+    override fun onActive(): Boolean {
         val animatable = skill.holder as? IEntityAnimatable<*> ?: return false
         anim = AnimInstance.create(animatable, animResource.name, OAnimationSet.get(animResource.index).getAnimation(animResource.name)!!) {
             shouldTurnBody = this@PlayAnimationComponent.shouldTurnBody
@@ -38,11 +38,11 @@ class PlayAnimationComponent(
         return true
     }
 
-    override fun onUpdate(skill: SkillInstance): Boolean {
+    override fun onUpdate(): Boolean {
         return true
     }
 
-    override fun onEnd(skill: SkillInstance): Boolean {
+    override fun onEnd(): Boolean {
         anim.cancel()
         return true
     }

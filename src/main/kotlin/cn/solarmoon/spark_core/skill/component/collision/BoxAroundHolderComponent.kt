@@ -24,7 +24,7 @@ class BoxAroundHolderComponent(
     val offset: Vector3f,
     override val timeType: String,
     override val activeTime: List<Vec2>,
-    children: List<SkillComponent>
+    children: List<SkillComponent> = listOf()
 ): BaseRigidBodyBoundComponent(children) {
 
     val box = CompoundCollisionShape().apply {

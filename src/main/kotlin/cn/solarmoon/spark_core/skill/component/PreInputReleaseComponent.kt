@@ -19,7 +19,7 @@ class PreInputReleaseComponent(
     val timeType: String,
     val nodes: List<Vec2>,
     val conditionList: Either<List<String>, List<String>> = Either.right(listOf()),
-    children: List<SkillComponent>
+    children: List<SkillComponent> = listOf(),
 ): SkillComponent(children) {
 
     override val codec: MapCodec<out SkillComponent> = CODEC
@@ -37,7 +37,7 @@ class PreInputReleaseComponent(
                     return
                 }
                 else if (blacklist.isPresent) {
-                    if (preInput.id in blacklist.get()) preInput.executeIfPresent()
+                    if (preInput.id !in blacklist.get()) preInput.executeIfPresent()
                 }
             }
         }
@@ -47,18 +47,18 @@ class PreInputReleaseComponent(
         return PreInputReleaseComponent(timeType, nodes, conditionList, children)
     }
 
-    override fun onActive(skill: SkillInstance): Boolean {
+    override fun onActive(): Boolean {
         return true
     }
 
-    override fun onUpdate(skill: SkillInstance): Boolean {
+    override fun onUpdate(): Boolean {
         val preInput = (skill.holder as? Entity)?.getPreInput() ?: return false
         val time = if (timeType == "anim") registerContext(AnimInstance::class).time else skill.runTime.toDouble()
         release(preInput, time)
         return true
     }
 
-    override fun onEnd(skill: SkillInstance): Boolean {
+    override fun onEnd(): Boolean {
         return true
     }
 

@@ -24,7 +24,7 @@ class BoxFollowAnimatedBoneComponent(
     val offset: Vector3f,
     override val timeType: String,
     override val activeTime: List<Vec2>,
-    children: List<SkillComponent>
+    children: List<SkillComponent> = listOf()
 ): BaseRigidBodyBoundComponent(children) {
 
     val box = CompoundCollisionShape().apply { addChildShape(BoxCollisionShape(size.div(2f, Vector3f()).toBVector3f()), offset.toBVector3f()) }

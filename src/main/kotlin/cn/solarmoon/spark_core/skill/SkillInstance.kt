@@ -16,6 +16,7 @@ class SkillInstance internal constructor(
         private set
     var runTime: Int = 0
         private set
+    val context: MutableList<Any> = mutableListOf()
 
     fun activate() {
         if (!isActive) {
