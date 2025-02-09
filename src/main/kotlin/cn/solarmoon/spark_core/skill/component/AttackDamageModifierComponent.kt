@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.skill.component
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
@@ -26,7 +27,10 @@ class AttackDamageModifierComponent(
      */
     @SubscribeEvent
     private fun cancelAttackDuration(event: PlayerGetAttackStrengthEvent) {
-        event.attackStrengthScale = 1f
+        val entity = event.entity
+        if (entity == skill.holder) {
+            event.attackStrengthScale = 1f
+        }
     }
 
     /**
@@ -34,7 +38,10 @@ class AttackDamageModifierComponent(
      */
     @SubscribeEvent
     private fun modifyAttackStrength(event: LivingIncomingDamageEvent) {
-        event.container.newDamage *= damageMultiply.toFloat()
+        val entity = event.source.entity ?: return
+        if (entity == skill.holder && skill.isActive) {
+            event.container.newDamage *= damageMultiply.toFloat()
+        }
     }
 
     /**
@@ -42,7 +49,10 @@ class AttackDamageModifierComponent(
      */
     @SubscribeEvent
     private fun playerCriticalHit(event: CriticalHitEvent) {
-        if (event.vanillaMultiplier == 1.5f) event.isCriticalHit = false
+        val entity = event.entity
+        if (entity == skill.holder) {
+            if (event.vanillaMultiplier == 1.5f) event.isCriticalHit = false
+        }
     }
 
     /**
@@ -50,7 +60,10 @@ class AttackDamageModifierComponent(
      */
     @SubscribeEvent
     private fun playerSweep(event: SweepAttackEvent) {
-        event.isSweeping = false
+        val entity = event.entity
+        if (entity == skill.holder) {
+            event.isSweeping = false
+        }
     }
 
     override fun onActive(): Boolean {

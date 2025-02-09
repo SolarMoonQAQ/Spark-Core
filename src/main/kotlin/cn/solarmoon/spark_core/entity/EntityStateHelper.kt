@@ -106,6 +106,14 @@ fun LocalPlayer.getInputVector(): Vec3 {
     return Vec3((f2 * f5 - f3 * f4), deltaMovement.y, (f3 * f5 + f2 * f4))
 }
 
+fun Entity.getRelativeVector(v: Vec3): Vec3 {
+    val f2 = v.x
+    val f3 = v.z
+    val f4 = sin(yRot * (PI / 180.0))
+    val f5 = cos(yRot * (PI / 180.0))
+    return Vec3((f2 * f5 - f3 * f4), v.y, (f3 * f5 + f2 * f4))
+}
+
 /**
  * 获取以生物水平朝向为内容的移动值
  * @param mul 对水平速度进行乘积以调整大小

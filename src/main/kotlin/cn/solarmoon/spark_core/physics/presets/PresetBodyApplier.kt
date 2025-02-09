@@ -27,7 +27,7 @@ object PresetBodyApplier {
         entity.apply {
             val size = Vec3(boundingBox.xsize, boundingBox.ysize, boundingBox.zsize).div(2.0).toBVector3f()
             val body = PhysicsRigidBody("body", entity, BoxCollisionShape(size))
-            bindBody(body) {
+            bindBody(body, event.level.physicsLevel) {
                 isContactResponse = false
                 setGravity(Vector3f.ZERO)
                 addPhysicsTicker(MoveWithBoundingBoxTicker())

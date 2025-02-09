@@ -39,7 +39,7 @@ class PreInput(
         else hasInput && this.id == id
     }
 
-    fun setInput(id: String = "", maxRemainTime: Int = 10, input: () -> Unit) {
+    fun setInput(id: String = "", maxRemainTime: Int = 5, input: () -> Unit) {
         this.input = input
         this.id = id
         this.maxRemainTime = maxRemainTime

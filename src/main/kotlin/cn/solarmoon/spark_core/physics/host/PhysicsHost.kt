@@ -18,6 +18,7 @@ interface PhysicsHost {
      */
     fun <T: PhysicsCollisionObject> bindBody(
         body: T,
+        physicsLevel: PhysicsLevel = this.physicsLevel,
         allowOverride: Boolean = false,
         apply: T.() -> Unit = {}
     ): T {

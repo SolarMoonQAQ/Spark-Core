@@ -9,6 +9,9 @@
     "cn/solarmoon/spark_core/skill/SkillHost",
     "cn/solarmoon/spark_core/sync/Syncer"
   ],
+  "net/minecraft/client/player/LocalPlayer": [
+    "cn/solarmoon/spark_core/entity/player/ILocalPlayerPatch"
+  ],
   "net/minecraft/world/damagesource/DamageSource": [
     "cn/solarmoon/spark_core/entity/attack/IDamageSourceExtraData"
   ]
