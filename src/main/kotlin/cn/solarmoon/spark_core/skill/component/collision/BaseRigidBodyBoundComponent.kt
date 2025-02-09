@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.skill.component.collision
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.skill.SkillInstance
 import cn.solarmoon.spark_core.skill.component.SkillComponent
@@ -9,11 +10,13 @@ import com.jme3.bullet.objects.PhysicsRigidBody
 import net.minecraft.world.phys.Vec2
 import kotlin.properties.Delegates
 
-abstract class BaseBoxBoundComponent: SkillComponent {
+abstract class BaseRigidBodyBoundComponent(
+    children: List<SkillComponent>
+): SkillComponent(children) {
 
     lateinit var body: PhysicsRigidBody
+    abstract val timeType: String
     abstract val activeTime: List<Vec2>
-    abstract val collisionComponents: List<CollisionComponent>
 
     var collideEnableCheck by Delegates.observable(false) { _, old, new ->
         if (old != new) {
@@ -36,12 +39,13 @@ abstract class BaseBoxBoundComponent: SkillComponent {
         val animatable = skill.holder as? IEntityAnimatable<*> ?: return false
         val entity = animatable.animatable
         body = createBody(entity)
-        collisionComponents.forEach { it.apply(skill, body) }
 
-        skill.context.animation?.apply {
-            activeTime.forEachIndexed { index, range ->
-                onPhysTick {
-                    collideEnableCheck = time in range.x.toDouble()..range.y.toDouble()
+        if (timeType == "anim") {
+            registerContext(AnimInstance::class).apply {
+                activeTime.forEachIndexed { index, range ->
+                    onPhysTick {
+                        collideEnableCheck = time in range.x.toDouble()..range.y.toDouble()
+                    }
                 }
             }
         }
@@ -50,7 +54,7 @@ abstract class BaseBoxBoundComponent: SkillComponent {
     }
 
     override fun onUpdate(skill: SkillInstance): Boolean {
-        if (skill.context.animation == null) {
+        if (timeType == "skill") {
             activeTime.forEachIndexed { index, range ->
                 collideEnableCheck = skill.runTime.toDouble() in range.x.toDouble()..range.y.toDouble()
             }
@@ -58,7 +62,7 @@ abstract class BaseBoxBoundComponent: SkillComponent {
         return true
     }
 
-    override fun onStop(skill: SkillInstance): Boolean {
+    override fun onEnd(skill: SkillInstance): Boolean {
         body.name.let { (skill.holder as? PhysicsHost)?.removeBody(it) }
         return true
     }

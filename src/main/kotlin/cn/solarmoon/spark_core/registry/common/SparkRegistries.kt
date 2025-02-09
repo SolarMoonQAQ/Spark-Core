@@ -8,7 +8,6 @@ import cn.solarmoon.spark_core.skill.SkillGroup
 import cn.solarmoon.spark_core.skill.SkillGroupController
 import cn.solarmoon.spark_core.sync.SyncerType
 import cn.solarmoon.spark_core.skill.SkillType
-import cn.solarmoon.spark_core.skill.component.collision.CollisionComponent
 import cn.solarmoon.spark_core.sync.SyncData
 import com.mojang.serialization.MapCodec
 import net.minecraft.network.RegistryFriendlyByteBuf
@@ -26,11 +25,6 @@ object SparkRegistries {
     @JvmStatic
     val SKILL_COMPONENT_CODEC = SparkCore.REGISTER.registry<MapCodec<out SkillComponent>>()
         .id("skill_component_codec")
-        .build { it.sync(true).create() }
-
-    @JvmStatic
-    val COLLISION_COMPONENT_CODEC = SparkCore.REGISTER.registry<MapCodec<out CollisionComponent>>()
-        .id("collision_component_codec")
         .build { it.sync(true).create() }
 
     @JvmStatic

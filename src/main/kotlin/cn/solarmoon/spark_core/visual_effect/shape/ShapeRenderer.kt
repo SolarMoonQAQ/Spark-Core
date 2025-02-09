@@ -18,8 +18,6 @@ import java.awt.Color
 
 class ShapeRenderer: VisualEffectRenderer() {
 
-    private val visualizers = mutableMapOf<Long, ShapeVisualizer>()
-
     override fun tick() {
 
     }

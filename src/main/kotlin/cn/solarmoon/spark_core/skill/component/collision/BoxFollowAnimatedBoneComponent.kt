@@ -1,11 +1,9 @@
 package cn.solarmoon.spark_core.skill.component.collision
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.presets.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.skill.SkillInstance
 import cn.solarmoon.spark_core.skill.component.SkillComponent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
@@ -19,15 +17,15 @@ import net.minecraft.world.phys.Vec2
 import org.joml.Vector3f
 import java.util.UUID
 import kotlin.apply
-import kotlin.properties.Delegates
 
 class BoxFollowAnimatedBoneComponent(
     val boneName: String,
     val size: Vector3f,
     val offset: Vector3f,
+    override val timeType: String,
     override val activeTime: List<Vec2>,
-    override val collisionComponents: List<CollisionComponent>
-): BaseBoxBoundComponent() {
+    children: List<SkillComponent>
+): BaseRigidBodyBoundComponent(children) {
 
     val box = CompoundCollisionShape().apply { addChildShape(BoxCollisionShape(size.div(2f, Vector3f()).toBVector3f()), offset.toBVector3f()) }
 
@@ -44,7 +42,7 @@ class BoxFollowAnimatedBoneComponent(
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return BoxFollowAnimatedBoneComponent(boneName, size, offset, activeTime, collisionComponents)
+        return BoxFollowAnimatedBoneComponent(boneName, size, offset, timeType, activeTime, children)
     }
 
     companion object {
@@ -53,8 +51,9 @@ class BoxFollowAnimatedBoneComponent(
                 Codec.STRING.fieldOf("bone_name").forGetter { it.boneName },
                 ExtraCodecs.VECTOR3F.fieldOf("size").forGetter { it.size },
                 ExtraCodecs.VECTOR3F.fieldOf("offset").forGetter { it.offset },
+                Codec.STRING.fieldOf("time_type").forGetter { it.timeType },
                 SerializeHelper.VEC2_CODEC.listOf().fieldOf("active_time").forGetter { it.activeTime },
-                CollisionComponent.CODEC.listOf().fieldOf("collision_components").forGetter { it.collisionComponents }
+                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
             ).apply(it, ::BoxFollowAnimatedBoneComponent)
         }
     }

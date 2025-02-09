@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.skill.component.SkillComponent
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
@@ -13,7 +12,6 @@ class SkillInstance internal constructor(
     val components: List<SkillComponent> = listOf<SkillComponent>()
 ) {
 
-    val context = Context()
     var isActive = false
         private set
     var runTime: Int = 0
@@ -21,12 +19,7 @@ class SkillInstance internal constructor(
 
     fun activate() {
         if (!isActive) {
-            for (i in 0 until components.size) {
-                if (!components[i].onActive(this)) {
-                    return
-                }
-            }
-
+            components.forEach { it.active(this) }
             holder.activeSkills.add(this)
             isActive = true
             NeoForge.EVENT_BUS.register(this)
@@ -43,11 +36,7 @@ class SkillInstance internal constructor(
     private fun update() {
         if (isActive) {
             runTime++
-            for (i in 0 until components.size) {
-                if (!components[i].onUpdate(this)) {
-                    break
-                }
-            }
+            components.forEach { it.update(this) }
         }
     }
 
@@ -55,19 +44,10 @@ class SkillInstance internal constructor(
         if (isActive) {
             runTime = 0
             isActive = false
-            for (i in 0 until components.size) {
-                if (!components[i].onStop(this)) {
-                    break
-                }
-            }
-
+            components.forEach { it.end(this) }
             holder.activeSkills.remove(this)
             NeoForge.EVENT_BUS.unregister(this)
         }
-    }
-
-    class Context {
-        var animation: AnimInstance? = null
     }
 
 }

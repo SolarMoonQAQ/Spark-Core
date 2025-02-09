@@ -12,15 +12,16 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 class PlayAnimationComponent(
     val animResource: AnimIndex,
     val transitionTime: Int,
-    val shouldTurnBody: Boolean
-): SkillComponent {
+    val shouldTurnBody: Boolean,
+    children: List<SkillComponent>
+): SkillComponent(children) {
 
     lateinit var anim: AnimInstance
 
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return PlayAnimationComponent(animResource, transitionTime, shouldTurnBody)
+        return PlayAnimationComponent(animResource, transitionTime, shouldTurnBody, children)
     }
 
     override fun onActive(skill: SkillInstance): Boolean {
@@ -32,7 +33,7 @@ class PlayAnimationComponent(
                 skill.end()
             }
         }
-        skill.context.animation = anim
+        addContext(anim)
         animatable.animController.setAnimation(anim, transitionTime)
         return true
     }
@@ -41,7 +42,7 @@ class PlayAnimationComponent(
         return true
     }
 
-    override fun onStop(skill: SkillInstance): Boolean {
+    override fun onEnd(skill: SkillInstance): Boolean {
         anim.cancel()
         return true
     }
@@ -51,7 +52,8 @@ class PlayAnimationComponent(
             it.group(
                 AnimIndex.CODEC.fieldOf("anim_index").forGetter { it.animResource },
                 Codec.INT.optionalFieldOf("transition_time", 7).forGetter { it.transitionTime },
-                Codec.BOOL.optionalFieldOf("should_turn_body", true).forGetter { it.shouldTurnBody }
+                Codec.BOOL.optionalFieldOf("should_turn_body", true).forGetter { it.shouldTurnBody },
+                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
             ).apply(it, ::PlayAnimationComponent)
         }
     }
