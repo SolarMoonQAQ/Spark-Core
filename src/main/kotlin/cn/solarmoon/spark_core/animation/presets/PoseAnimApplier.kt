@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.animation.preset_anim
+package cn.solarmoon.spark_core.animation.presets
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance

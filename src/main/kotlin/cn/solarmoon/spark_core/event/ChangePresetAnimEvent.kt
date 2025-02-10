@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.event
 
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
-import cn.solarmoon.spark_core.animation.preset_anim.CommonState
+import cn.solarmoon.spark_core.animation.presets.CommonState
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.Event

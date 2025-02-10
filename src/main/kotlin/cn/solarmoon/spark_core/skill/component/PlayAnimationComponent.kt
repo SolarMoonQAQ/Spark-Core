@@ -24,16 +24,19 @@ class PlayAnimationComponent(
         return PlayAnimationComponent(animResource, transitionTime, shouldTurnBody, children)
     }
 
+    data class DynamicNameContext(val suffix: String)
+
     override fun onActive(): Boolean {
         val animatable = skill.holder as? IEntityAnimatable<*> ?: return false
-        anim = AnimInstance.create(animatable, animResource.name, OAnimationSet.get(animResource.index).getAnimation(animResource.name)!!) {
+        val name = animResource.name
+        anim = AnimInstance.create(animatable, name, OAnimationSet.get(animResource.index).getAnimation(animResource.name)!!) {
             shouldTurnBody = this@PlayAnimationComponent.shouldTurnBody
 
             onEnd {
                 skill.end()
             }
         }
-        addContext(anim)
+        addContext("animation", anim)
         animatable.animController.setAnimation(anim, transitionTime)
         return true
     }

@@ -16,9 +16,8 @@ import kotlin.ranges.contains
 import kotlin.ranges.rangeTo
 
 class PreInputReleaseComponent(
-    val timeType: String,
     val nodes: List<Vec2>,
-    val conditionList: Either<List<String>, List<String>> = Either.right(listOf()),
+    val conditionList: Either<Set<String>, Set<String>> = Either.right(setOf()),
     children: List<SkillComponent> = listOf(),
 ): SkillComponent(children) {
 
@@ -44,7 +43,7 @@ class PreInputReleaseComponent(
     }
 
     override fun copy(): SkillComponent {
-        return PreInputReleaseComponent(timeType, nodes, conditionList, children)
+        return PreInputReleaseComponent(nodes, conditionList, children)
     }
 
     override fun onActive(): Boolean {
@@ -53,7 +52,7 @@ class PreInputReleaseComponent(
 
     override fun onUpdate(): Boolean {
         val preInput = (skill.holder as? Entity)?.getPreInput() ?: return false
-        val time = if (timeType == "anim") registerContext(AnimInstance::class).time else skill.runTime.toDouble()
+        val time = query<AnimInstance>("animation")?.time ?: skill.runTime.toDouble()
         release(preInput, time)
         return true
     }
@@ -65,11 +64,11 @@ class PreInputReleaseComponent(
     companion object {
         val CODEC: MapCodec<PreInputReleaseComponent> = RecordCodecBuilder.mapCodec {
             it.group(
-                Codec.STRING.optionalFieldOf("time_type", "skill").forGetter { it.timeType },
                 SerializeHelper.VEC2_CODEC.listOf().fieldOf("nodes").forGetter { it.nodes },
-                Codec.either(Codec.STRING.listOf().fieldOf("whitelist").codec(), Codec.STRING.listOf().fieldOf("blacklist").codec()).optionalFieldOf("condition", Either.right(
-                    listOf()
-                )).forGetter { it.conditionList },
+                Codec.either(
+                    Codec.STRING.listOf().xmap({it.toSet()}, {it.toList()}).fieldOf("whitelist").codec(),
+                    Codec.STRING.listOf().xmap({it.toSet()}, {it.toList()}).fieldOf("blacklist").codec()
+                ).optionalFieldOf("condition", Either.right(setOf())).forGetter { it.conditionList },
                 SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
             ).apply(it, ::PreInputReleaseComponent)
         }

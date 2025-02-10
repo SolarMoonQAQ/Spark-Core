@@ -1,8 +1,9 @@
-package cn.solarmoon.spark_core.animation.preset_anim
+package cn.solarmoon.spark_core.animation.presets
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.vanilla.asAnimatable
 import cn.solarmoon.spark_core.entity.isFalling
+import cn.solarmoon.spark_core.entity.isMoving
 import cn.solarmoon.spark_core.entity.moveBackCheck
 import cn.solarmoon.spark_core.entity.moveCheck
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
@@ -60,8 +61,8 @@ object PlayerStateAnimMachine {
                 player.isCrouching && player.moveCheck() -> EntityStates.CrouchingMove
                 player.isCrouching -> EntityStates.Crouching
                 player.isSprinting -> EntityStates.Sprinting
-                player.moveBackCheck() -> EntityStates.WalkBack
-                player.moveCheck() -> EntityStates.Walk
+                player.moveBackCheck() && player.isMoving() -> EntityStates.WalkBack
+                player.isMoving() -> EntityStates.Walk
                 else -> EntityStates.Idle
             }
         }

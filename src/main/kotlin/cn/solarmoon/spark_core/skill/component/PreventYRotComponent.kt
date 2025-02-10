@@ -34,7 +34,7 @@ class PreventYRotComponent(
 
     override fun onUpdate(): Boolean {
         if (activeTime.isNotEmpty()) {
-            val time = if (timeType == "anim") registerContext(AnimInstance::class).time else skill.runTime.toDouble()
+            val time = query<AnimInstance>("animation")?.time ?: skill.runTime.toDouble()
             CameraAdjuster.isActive = activeTime.any { time in it.x..it.y }
         }
         return true

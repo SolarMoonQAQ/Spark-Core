@@ -21,6 +21,8 @@ abstract class SkillComponent(
 
     val children: List<SkillComponent> = children.map { it.copy() }
 
+    val context get() = skill.context
+
     abstract val codec: MapCodec<out SkillComponent>
 
     abstract fun copy(): SkillComponent
@@ -53,16 +55,17 @@ abstract class SkillComponent(
         }
     }
 
-    fun addContext(content: Any) {
+    fun addContext(key: String, content: Any) {
         try {
-            skill.context.add(content)
+            skill.context[key] = content
         } catch (e: Exception) {
             throw NullPointerException("必须在技能启动之后才能添加上下文参数")
         }
     }
 
-    protected inline fun <reified T: Any> registerContext(type: KClass<T>, ordinal: Int = 0) =
-        skill.context.filter { type.isInstance(it) }.getOrNull(ordinal) as? T ?: throw NullPointerException("组件 $registryKey 所属技能必须包含一个 ${type.simpleName} 上下文参数")
+    inline fun <reified T> query(path: String): T? = skill.context[path] as? T
+
+    inline fun <reified T> requireQuery(path: String): T = query(path) ?: throw IllegalStateException("组件 $registryKey 所属技能必须包含一个 [$path](${T::class.simpleName}) 上下文参数")
 
     companion object {
         val CODEC = SparkRegistries.SKILL_COMPONENT_CODEC.byNameCodec()

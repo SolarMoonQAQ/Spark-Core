@@ -32,7 +32,7 @@ object SkillApplier {
     @SubscribeEvent
     private fun onEntityLeave(event: EntityLeaveLevelEvent) {
         val entity = event.entity
-        entity.skillGroups.clear()
+        entity.activeSkills.forEach { it.end() }
     }
 
 }

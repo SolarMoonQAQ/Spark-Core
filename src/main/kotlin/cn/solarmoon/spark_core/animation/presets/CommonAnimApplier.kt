@@ -1,6 +1,5 @@
-package cn.solarmoon.spark_core.animation.preset_anim
+package cn.solarmoon.spark_core.animation.presets
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import net.minecraft.client.player.LocalPlayer
@@ -8,7 +7,6 @@ import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.entity.living.LivingEvent
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
 
@@ -19,7 +17,7 @@ object CommonAnimApplier {
         val entity = event.entity
 
         if (entity is Player && entity.isLocalPlayer) {
-            (entity as LocalPlayer).getStateMachine().processEventBlocking(PlayerStateAnimMachine.SwitchEvent())
+            (entity as LocalPlayer).stateMachine.processEventBlocking(PlayerStateAnimMachine.SwitchEvent())
         }
 
     }

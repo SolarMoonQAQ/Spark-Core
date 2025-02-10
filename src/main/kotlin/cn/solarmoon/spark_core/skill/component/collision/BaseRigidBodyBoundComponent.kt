@@ -15,7 +15,6 @@ abstract class BaseRigidBodyBoundComponent(
 ): SkillComponent(children) {
 
     lateinit var body: PhysicsRigidBody
-    abstract val timeType: String
     abstract val activeTime: List<Vec2>
 
     var collideEnableCheck by Delegates.observable(false) { _, old, new ->
@@ -39,23 +38,22 @@ abstract class BaseRigidBodyBoundComponent(
         val animatable = skill.holder as? IEntityAnimatable<*> ?: return false
         val entity = animatable.animatable
         body = createBody(entity)
-        addContext(body)
+        addContext("rigid_body", body)
 
-        if (timeType == "anim") {
-            registerContext(AnimInstance::class).apply {
-                activeTime.forEachIndexed { index, range ->
-                    onPhysTick {
-                        collideEnableCheck = time in range.x.toDouble()..range.y.toDouble()
-                    }
+        query<AnimInstance>("animation")?.apply {
+            activeTime.forEachIndexed { index, range ->
+                onPhysTick {
+                    collideEnableCheck = time in range.x.toDouble()..range.y.toDouble()
                 }
             }
         }
+
 
         return true
     }
 
     override fun onUpdate(): Boolean {
-        if (timeType == "skill") {
+        if (query<AnimInstance>("animation") == null) {
             activeTime.forEachIndexed { index, range ->
                 collideEnableCheck = skill.runTime.toDouble() in range.x.toDouble()..range.y.toDouble()
             }

@@ -22,7 +22,6 @@ class BoxAroundHolderComponent(
     val boneName: String,
     val size: Vector3f,
     val offset: Vector3f,
-    override val timeType: String,
     override val activeTime: List<Vec2>,
     children: List<SkillComponent> = listOf()
 ): BaseRigidBodyBoundComponent(children) {
@@ -43,7 +42,7 @@ class BoxAroundHolderComponent(
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return BoxAroundHolderComponent(boneName, size, offset, timeType, activeTime, children)
+        return BoxAroundHolderComponent(boneName, size, offset, activeTime, children)
     }
 
     companion object {
@@ -52,7 +51,6 @@ class BoxAroundHolderComponent(
                 Codec.STRING.fieldOf("bone_name").forGetter { it.boneName },
                 ExtraCodecs.VECTOR3F.fieldOf("size").forGetter { it.size },
                 ExtraCodecs.VECTOR3F.fieldOf("offset").forGetter { it.offset },
-                Codec.STRING.fieldOf("time_type").forGetter { it.timeType },
                 SerializeHelper.VEC2_CODEC.listOf().fieldOf("active_time").forGetter { it.activeTime },
                 SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
             ).apply(it, ::BoxAroundHolderComponent)

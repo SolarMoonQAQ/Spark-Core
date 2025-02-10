@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.entity
 
 import cn.solarmoon.spark_core.physics.toRadians
 import cn.solarmoon.spark_core.util.Side
+import net.minecraft.client.player.Input
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.util.Mth
@@ -28,7 +29,11 @@ fun Entity.moveBackCheck(): Boolean {
     val forward = Vec3.directionFromRotation(0f, getPreciseBodyRotation(1f))
     // 计算移动的标量与 身体forward 方向的点积，如果乘数大于150度值则代表方向基本相反
     val dotProduct = v.normalize().x * forward.normalize().x + v.normalize().z * forward.normalize().z
-    return dotProduct < cos(120f.toRadians()) && moveCheck()
+    return dotProduct < cos(120f.toRadians())
+}
+
+fun LocalPlayer.isMoving(): Boolean {
+    return input != null && input.moveVector.length() > 0
 }
 
 fun Entity.isFalling(): Boolean {
@@ -145,4 +150,15 @@ fun LivingEntity.knockBackRelativeView(attacker: Entity, strength: Double) {
  */
 fun LivingEntity.knockBackRelative(relative: Vec3, strength: Double) {
     knockback(strength, relative.x - x, relative.z - z)
+}
+
+fun Input.copy() = Input().apply {
+    this.leftImpulse = this@copy.leftImpulse
+    this.forwardImpulse = this@copy.forwardImpulse
+    this.up = this@copy.up
+    this.down = this@copy.down
+    this.left = this@copy.left
+    this.right = this@copy.right
+    this.jumping = this@copy.jumping
+    this.shiftKeyDown = this@copy.shiftKeyDown
 }

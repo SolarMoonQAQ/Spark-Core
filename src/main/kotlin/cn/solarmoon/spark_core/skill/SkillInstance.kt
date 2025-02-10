@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.skill.component.QueryContext
 import cn.solarmoon.spark_core.skill.component.SkillComponent
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
@@ -18,7 +19,7 @@ class SkillInstance internal constructor(
         private set
     var runTime: Int = 0
         private set
-    val context: MutableList<Any> = mutableListOf()
+    val context = QueryContext()
 
     fun activate() {
         if (!isActive) {

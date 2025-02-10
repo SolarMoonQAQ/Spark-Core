@@ -30,7 +30,7 @@ class PreventLocalInputComponent(
     private fun playerMove(event: MovementInputUpdateEvent) {
         val player = event.entity
         val input = event.input
-        val time = if (timeType == "anim") registerContext(AnimInstance::class).time else skill.runTime.toDouble()
+        val time = query<AnimInstance>("animation")?.time ?: skill.runTime.toDouble()
         if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
             input.forwardImpulse = 0f
             input.leftImpulse = 0f
