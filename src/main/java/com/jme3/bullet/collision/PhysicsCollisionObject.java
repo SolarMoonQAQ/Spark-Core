@@ -31,10 +31,8 @@
  */
 package com.jme3.bullet.collision;
 
-import cn.solarmoon.spark_core.SparkCore;
-import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker;
+import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.CollisionSpace;
@@ -56,8 +54,6 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jme3utilities.Validate;
-import net.minecraft.world.phys.Vec3;
-import org.joml.Quaternionf;
 
 /**
  * The abstract base class for collision objects based on Bullet's
@@ -75,6 +71,12 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     public boolean collideWithOwner = false;
 
     public boolean isColliding = false;
+
+    public boolean isCollisionGroupContains(PhysicsCollisionObject other) {
+        var t = getCollideWithGroups();
+        var n = other.getCollisionGroup();
+        return (t & n) != 0;
+    }
 
     /**
      * collideWithGroups bitmask that represents "no groups"
@@ -182,7 +184,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     public ArrayList<BodyPhysicsTicker> tickers = new ArrayList<>();
 
-    public ArrayList<ContactListener> contactListeners = new ArrayList<>();
+    public ArrayList<CollisionCallback> collisionListeners = new ArrayList<>();
 
     /**
      * Instantiate a collision object with no tracker and no assigned native
@@ -208,8 +210,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
         tickers.add(ticker);
     }
 
-    public void addContactListener(ContactListener listener) {
-        contactListeners.add(listener);
+    public void addCollisionCallback(CollisionCallback listener) {
+        collisionListeners.add(listener);
     }
 
     // *************************************************************************

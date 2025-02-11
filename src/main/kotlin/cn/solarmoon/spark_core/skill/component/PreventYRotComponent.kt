@@ -16,41 +16,34 @@ import net.neoforged.neoforge.client.event.ViewportEvent
 import org.joml.Vector2f
 
 class PreventYRotComponent(
-    val timeType: String = "skill",
-    val activeTime: List<Vec2> = listOf(),
-    children: List<SkillComponent> = listOf()
-): SkillComponent(children) {
+    val activeTime: List<Vec2> = listOf()
+): SkillComponent() {
 
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return PreventYRotComponent(timeType, activeTime, children)
+        return PreventYRotComponent(activeTime)
     }
 
-    override fun onActive(): Boolean {
+    override fun onActive() {
         if (skill.level.isClientSide && activeTime.isEmpty()) CameraAdjuster.isActive = true
-        return true
     }
 
-    override fun onUpdate(): Boolean {
+    override fun onUpdate() {
         if (activeTime.isNotEmpty()) {
-            val time = query<AnimInstance>("animation")?.time ?: skill.runTime.toDouble()
+            val time = requireQuery<() -> Double>("time").invoke()
             CameraAdjuster.isActive = activeTime.any { time in it.x..it.y }
         }
-        return true
     }
 
-    override fun onEnd(): Boolean {
+    override fun onEnd() {
         if (skill.level.isClientSide) CameraAdjuster.isActive = false
-        return true
     }
 
     companion object {
         val CODEC: MapCodec<PreventYRotComponent> = RecordCodecBuilder.mapCodec {
             it.group(
-                Codec.STRING.optionalFieldOf("time_type", "skill").forGetter { it.timeType },
-                SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime },
-                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
+                SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime }
             ).apply(it, ::PreventYRotComponent)
         }
     }

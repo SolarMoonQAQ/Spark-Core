@@ -19,12 +19,12 @@ import java.util.UUID
 import kotlin.apply
 
 class BoxAroundHolderComponent(
+    override val flag: String,
     val boneName: String,
     val size: Vector3f,
     val offset: Vector3f,
     override val activeTime: List<Vec2>,
-    children: List<SkillComponent> = listOf()
-): BaseRigidBodyBoundComponent(children) {
+): BaseRigidBodyBoundComponent() {
 
     val box = CompoundCollisionShape().apply {
         addChildShape(BoxCollisionShape(size.div(2f).toBVector3f()), offset.toBVector3f())
@@ -35,24 +35,24 @@ class BoxAroundHolderComponent(
             isContactResponse = false
             setGravity(Vector3f().toBVector3f())
             addPhysicsTicker(RotateAroundHostTicker())
-            removeCollideWithGroup(PhysicsCollisionObject.COLLISION_GROUP_01)
+            collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
         }
     }
 
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return BoxAroundHolderComponent(boneName, size, offset, activeTime, children)
+        return BoxAroundHolderComponent(flag, boneName, size, offset, activeTime)
     }
 
     companion object {
         val CODEC: MapCodec<BoxAroundHolderComponent> = RecordCodecBuilder.mapCodec {
             it.group(
+                Codec.STRING.fieldOf("flag").forGetter { it.flag },
                 Codec.STRING.fieldOf("bone_name").forGetter { it.boneName },
                 ExtraCodecs.VECTOR3F.fieldOf("size").forGetter { it.size },
                 ExtraCodecs.VECTOR3F.fieldOf("offset").forGetter { it.offset },
-                SerializeHelper.VEC2_CODEC.listOf().fieldOf("active_time").forGetter { it.activeTime },
-                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
+                SerializeHelper.VEC2_CODEC.listOf().fieldOf("active_time").forGetter { it.activeTime }
             ).apply(it, ::BoxAroundHolderComponent)
         }
     }

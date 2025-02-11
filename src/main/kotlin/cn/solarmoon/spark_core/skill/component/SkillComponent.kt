@@ -5,11 +5,8 @@ import cn.solarmoon.spark_core.skill.SkillInstance
 import com.mojang.serialization.MapCodec
 import net.minecraft.resources.ResourceLocation
 import java.util.function.Function
-import kotlin.reflect.KClass
 
-abstract class SkillComponent(
-    children: List<SkillComponent>
-) {
+abstract class SkillComponent {
 
     val id get() = SparkRegistries.SKILL_COMPONENT_CODEC.getId(codec)
 
@@ -19,43 +16,43 @@ abstract class SkillComponent(
 
     lateinit var skill: SkillInstance
 
-    val children: List<SkillComponent> = children.map { it.copy() }
-
     val context get() = skill.context
+
+    val level get() = skill.level
+
+    private val children = mutableSetOf<SkillComponent>()
 
     abstract val codec: MapCodec<out SkillComponent>
 
     abstract fun copy(): SkillComponent
 
-    protected abstract fun onActive(): Boolean
+    protected abstract fun onActive()
 
-    protected abstract fun onUpdate(): Boolean
+    protected abstract fun onUpdate()
 
-    protected abstract fun onEnd(): Boolean
+    protected abstract fun onEnd()
 
     fun active(skill: SkillInstance) {
         this.skill = skill
-        if (onActive() && children.isNotEmpty()) {
-            children.forEach {
-                it.parent = this
-                it.active(skill)
-            }
-        }
+        onActive()
     }
 
-    fun update(skill: SkillInstance) {
-        if (onUpdate() && children.isNotEmpty()) {
-            children.forEach { it.onUpdate() }
-        }
+    fun update() {
+        onUpdate()
+        children.forEach { it.update() }
     }
 
-    fun end(skill: SkillInstance) {
-        if (onEnd() && children.isNotEmpty()) {
-            children.forEach { it.onEnd() }
-        }
+    fun end() {
+        onEnd()
+        children.forEach { it.end() }
     }
 
-    fun addContext(key: String, content: Any) {
+    fun setCustomActive(components: List<SkillComponent>) {
+        children.addAll(components)
+        components.forEach { it.active(skill) }
+    }
+
+    fun addOrReplaceContext(key: String, content: Any) {
         try {
             skill.context[key] = content
         } catch (e: Exception) {

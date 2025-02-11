@@ -10,18 +10,17 @@ class CameraShakeComponent(
     val time: Int,
     val strength: Float,
     val frequency: Float,
-    val range: Double = 0.0,
-    children: List<SkillComponent> = listOf()
-): SkillComponent(children) {
+    val range: Double = 0.0
+): SkillComponent() {
 
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return CameraShakeComponent(time, strength, frequency, range, children)
+        return CameraShakeComponent(time, strength, frequency, range)
     }
 
-    override fun onActive(): Boolean {
-        val entity = skill.holder as? Entity ?: return true
+    override fun onActive() {
+        val entity = skill.holder as? Entity ?: return
         if (!skill.level.isClientSide) {
             SparkVisualEffects.CAMERA_SHAKE.shakeToClient(entity, time, strength, frequency)
             if (range > 0) {
@@ -30,15 +29,12 @@ class CameraShakeComponent(
                 }
             }
         }
-        return true
     }
 
-    override fun onUpdate(): Boolean {
-        return true
+    override fun onUpdate() {
     }
 
-    override fun onEnd(): Boolean {
-        return true
+    override fun onEnd() {
     }
 
     companion object {
@@ -47,8 +43,7 @@ class CameraShakeComponent(
                 Codec.INT.fieldOf("time").forGetter { it.time },
                 Codec.FLOAT.fieldOf("strength").forGetter { it.strength },
                 Codec.FLOAT.fieldOf("frequency").forGetter { it.frequency },
-                Codec.DOUBLE.optionalFieldOf("range", 0.0).forGetter { it.range },
-                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
+                Codec.DOUBLE.optionalFieldOf("range", 0.0).forGetter { it.range }
             ).apply(it, ::CameraShakeComponent)
         }
     }

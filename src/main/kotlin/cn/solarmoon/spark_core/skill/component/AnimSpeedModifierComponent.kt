@@ -11,38 +11,31 @@ import net.neoforged.neoforge.network.PacketDistributor
 class AnimSpeedModifierComponent(
     val time: Int = 7,
     val speed: Double = 0.05,
-    children: List<SkillComponent> = kotlin.collections.listOf()
-): SkillComponent(children) {
+): SkillComponent() {
 
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return AnimSpeedModifierComponent(time, speed, children)
+        return AnimSpeedModifierComponent(time, speed)
     }
 
-    override fun onActive(): Boolean {
-        val animatable = skill.holder as? IAnimatable<*> ?: return false
+    override fun onActive() {
+        val animatable = skill.holder as? IAnimatable<*> ?: return
         if (!skill.level.isClientSide) {
             animatable.animController.changeSpeed(time, speed)
             PacketDistributor.sendToAllPlayers(AnimSpeedChangePayload(animatable, time, speed))
         }
-        return true
     }
 
-    override fun onUpdate(): Boolean {
-        return true
-    }
+    override fun onUpdate() {}
 
-    override fun onEnd(): Boolean {
-        return true
-    }
+    override fun onEnd() {}
 
     companion object {
         val CODEC: MapCodec<AnimSpeedModifierComponent> = RecordCodecBuilder.mapCodec {
             it.group(
                 Codec.INT.optionalFieldOf("time", 7).forGetter { it.time },
-                Codec.DOUBLE.optionalFieldOf("speed", 0.05).forGetter { it.speed },
-                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
+                Codec.DOUBLE.optionalFieldOf("speed", 0.05).forGetter { it.speed }
             ).apply(it, ::AnimSpeedModifierComponent)
         }
     }

@@ -18,8 +18,7 @@ import kotlin.ranges.rangeTo
 class PreInputReleaseComponent(
     val nodes: List<Vec2>,
     val conditionList: Either<Set<String>, Set<String>> = Either.right(setOf()),
-    children: List<SkillComponent> = listOf(),
-): SkillComponent(children) {
+): SkillComponent() {
 
     override val codec: MapCodec<out SkillComponent> = CODEC
 
@@ -43,23 +42,18 @@ class PreInputReleaseComponent(
     }
 
     override fun copy(): SkillComponent {
-        return PreInputReleaseComponent(nodes, conditionList, children)
+        return PreInputReleaseComponent(nodes, conditionList)
     }
 
-    override fun onActive(): Boolean {
-        return true
-    }
+    override fun onActive() {}
 
-    override fun onUpdate(): Boolean {
-        val preInput = (skill.holder as? Entity)?.getPreInput() ?: return false
-        val time = query<AnimInstance>("animation")?.time ?: skill.runTime.toDouble()
+    override fun onUpdate() {
+        val preInput = (skill.holder as? Entity)?.getPreInput() ?: return
+        val time = requireQuery<() -> Double>("time").invoke()
         release(preInput, time)
-        return true
     }
 
-    override fun onEnd(): Boolean {
-        return true
-    }
+    override fun onEnd() {}
 
     companion object {
         val CODEC: MapCodec<PreInputReleaseComponent> = RecordCodecBuilder.mapCodec {
@@ -68,8 +62,7 @@ class PreInputReleaseComponent(
                 Codec.either(
                     Codec.STRING.listOf().xmap({it.toSet()}, {it.toList()}).fieldOf("whitelist").codec(),
                     Codec.STRING.listOf().xmap({it.toSet()}, {it.toList()}).fieldOf("blacklist").codec()
-                ).optionalFieldOf("condition", Either.right(setOf())).forGetter { it.conditionList },
-                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
+                ).optionalFieldOf("condition", Either.right(setOf())).forGetter { it.conditionList }
             ).apply(it, ::PreInputReleaseComponent)
         }
     }

@@ -25,7 +25,7 @@ object PlayerBoneModifier {
         val waist = player.getBone("waist")
         waist.updateVanilla(KeyAnimData(
             Vec3.ZERO,
-            Vec3(-player.xRot.toDouble().toRadians() / 3, 0.0, 0.0),
+            Vec3(-player.xRot.toDouble().toRadians() / 4.0, 0.0, 0.0),
             Vec3.ZERO
         ))
     }

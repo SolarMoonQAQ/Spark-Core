@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.skill.component
 
 class QueryContext {
 
-    private val data = mutableMapOf<String, Any>()
+    val data = mutableMapOf<String, Any>()
 
     operator fun get(path: String): Any? {
         return data[path]

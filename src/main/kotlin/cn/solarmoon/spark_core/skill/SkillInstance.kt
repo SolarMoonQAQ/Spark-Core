@@ -23,6 +23,7 @@ class SkillInstance internal constructor(
 
     fun activate() {
         if (!isActive) {
+            context["time"] = { runTime.toDouble() }
             components.forEach { it.active(this) }
             holder.activeSkills.add(this)
             isActive = true
@@ -40,7 +41,7 @@ class SkillInstance internal constructor(
     private fun update() {
         if (isActive) {
             runTime++
-            components.forEach { it.update(this) }
+            components.forEach { it.update() }
         }
     }
 
@@ -48,7 +49,7 @@ class SkillInstance internal constructor(
         if (isActive) {
             runTime = 0
             isActive = false
-            components.forEach { it.end(this) }
+            components.forEach { it.end() }
             holder.activeSkills.remove(this)
             NeoForge.EVENT_BUS.unregister(this)
         }

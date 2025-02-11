@@ -28,7 +28,6 @@ class BoxVisualizer: ShapeVisualizer {
         partialTicks: Float
     ) {
         if (shape is BoxCollisionShape) {
-            if (body.collideWithGroups == 0) return
             val mesh = BoxShapeMesh().update(shape)
             val buffer = bufferSource.getBuffer(RenderType.lines())
             val edges = mesh.edgesOrder

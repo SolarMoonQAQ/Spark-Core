@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsSpace.BroadphaseType
 import com.jme3.bullet.collision.PersistentManifolds
@@ -33,8 +33,8 @@ class PhysicsWorld(
         val a = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
         val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
 
-        a.contactListeners.forEach { it.onContactStarted(manifoldId) }
-        b.contactListeners.forEach { it.onContactStarted(manifoldId) }
+        a.collisionListeners.forEach { if (a.isCollisionGroupContains(b)) it.onStarted(a, b, manifoldId) }
+        b.collisionListeners.forEach { if (b.isCollisionGroupContains(a)) it.onStarted(b, a, manifoldId) }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Start(manifoldId))
     }
@@ -46,11 +46,11 @@ class PhysicsWorld(
     ) {
         super.onContactProcessed(pcoA, pcoB, manifoldPointId)
 
-        pcoA.isColliding = true
-        pcoB.isColliding = true
+        if (pcoA.isCollisionGroupContains(pcoB)) pcoB.isColliding = true
+        if (pcoB.isCollisionGroupContains(pcoA)) pcoA.isColliding = true
 
-        pcoA.contactListeners.forEach { it.onContactProcessed(pcoA, pcoB, manifoldPointId) }
-        pcoB.contactListeners.forEach { it.onContactProcessed(pcoB, pcoA, manifoldPointId) }
+        pcoA.collisionListeners.forEach { if (pcoA.isCollisionGroupContains(pcoB)) it.onProcessed(pcoA, pcoB, manifoldPointId) }
+        pcoB.collisionListeners.forEach { if (pcoB.isCollisionGroupContains(pcoA)) it.onProcessed(pcoB, pcoA, manifoldPointId) }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(manifoldPointId, pcoA, pcoB))
     }
@@ -60,8 +60,8 @@ class PhysicsWorld(
 
         val a = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
         val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
-        a.contactListeners.forEach { it.onContactEnded(manifoldId) }
-        b.contactListeners.forEach { it.onContactEnded(manifoldId) }
+        a.collisionListeners.forEach { if (a.isCollisionGroupContains(b)) it.onEnded(a, b, manifoldId) }
+        b.collisionListeners.forEach { if (b.isCollisionGroupContains(a)) it.onEnded(b, a, manifoldId) }
 
         a.isColliding = false
         b.isColliding = false

@@ -971,6 +971,7 @@ public class PhysicsSpace
      */
     @Override
     public void removeCollisionObject(PhysicsCollisionObject pco) {
+        pco.isColliding = false;
         Validate.nonNull(pco, "collision object");
 
         if (pco instanceof PhysicsRigidBody) {

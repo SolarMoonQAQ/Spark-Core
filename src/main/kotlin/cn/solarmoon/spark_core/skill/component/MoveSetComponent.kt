@@ -19,25 +19,23 @@ import kotlin.math.atan2
 class MoveSetComponent(
     val sets: List<Pair<Vec2, Vec3>>,
     val orientationByInput: Boolean = false,
-    children: List<SkillComponent> = listOf()
-): SkillComponent(children) {
+): SkillComponent() {
 
     var inputCache: Input? = null
 
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return MoveSetComponent(sets, orientationByInput, children)
+        return MoveSetComponent(sets, orientationByInput)
     }
 
-    override fun onActive(): Boolean {
+    override fun onActive() {
         inputCache = null
-        return true
     }
 
-    override fun onUpdate(): Boolean {
-        val entity = skill.holder as? Entity ?: return false
-        val time = query<AnimInstance>("animation")?.time ?: skill.runTime.toDouble()
+    override fun onUpdate() {
+        val entity = skill.holder as? Entity ?: return
+        val time = requireQuery<() -> Double>("time").invoke()
         sets.forEach { pair ->
             val activeTime = pair.first
             val move = pair.second
@@ -55,19 +53,15 @@ class MoveSetComponent(
                 if (skill.level.isClientSide) inputCache = null
             }
         }
-        return true
     }
 
-    override fun onEnd(): Boolean {
-        return true
-    }
+    override fun onEnd() {}
 
     companion object {
         val CODEC: MapCodec<MoveSetComponent> = RecordCodecBuilder.mapCodec {
             it.group(
                 Codec.pair(SerializeHelper.VEC2_CODEC.fieldOf("active_time").codec(), Vec3.CODEC.fieldOf("move").codec()).listOf().fieldOf("sets").forGetter { it.sets },
-                Codec.BOOL.optionalFieldOf("orientation_by_input", false).forGetter { it.orientationByInput },
-                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
+                Codec.BOOL.optionalFieldOf("orientation_by_input", false).forGetter { it.orientationByInput }
             ).apply(it, ::MoveSetComponent)
         }
     }

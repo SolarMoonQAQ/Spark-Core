@@ -36,6 +36,7 @@ class ShapeRenderer: VisualEffectRenderer() {
         if (!mc.entityRenderDispatcher.shouldRenderHitBoxes()) return
         val physLevel = level.physicsLevel
         physLevel.world.pcoList.forEach { body ->
+            if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {

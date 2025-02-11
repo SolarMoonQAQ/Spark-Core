@@ -15,22 +15,20 @@ import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import net.neoforged.neoforge.common.NeoForge
 
 class PreventLocalInputComponent(
-    val timeType: String = "skill",
     val activeTime: List<Vec2> = listOf(),
-    children: List<SkillComponent> = listOf()
-): SkillComponent(children) {
+): SkillComponent() {
 
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     override fun copy(): SkillComponent {
-        return PreventLocalInputComponent(timeType, activeTime, children)
+        return PreventLocalInputComponent(activeTime)
     }
 
     @SubscribeEvent
     private fun playerMove(event: MovementInputUpdateEvent) {
         val player = event.entity
         val input = event.input
-        val time = query<AnimInstance>("animation")?.time ?: skill.runTime.toDouble()
+        val time = requireQuery<() -> Double>("time").invoke()
         if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
             input.forwardImpulse = 0f
             input.leftImpulse = 0f
@@ -45,30 +43,24 @@ class PreventLocalInputComponent(
         }
     }
 
-    override fun onActive(): Boolean {
+    override fun onActive() {
         if (skill.level.isClientSide) {
             NeoForge.EVENT_BUS.register(this)
         }
-        return true
     }
 
-    override fun onUpdate(): Boolean {
-        return true
-    }
+    override fun onUpdate() {}
 
-    override fun onEnd(): Boolean {
+    override fun onEnd() {
         if (skill.level.isClientSide) {
             NeoForge.EVENT_BUS.unregister(this)
         }
-        return true
     }
 
     companion object {
         val CODEC: MapCodec<PreventLocalInputComponent> = RecordCodecBuilder.mapCodec {
             it.group(
-                Codec.STRING.optionalFieldOf("time_type", "skill").forGetter { it.timeType },
-                SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime },
-                SkillComponent.CODEC.listOf().optionalFieldOf("children", listOf()).forGetter { it.children }
+                SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime }
             ).apply(it, ::PreventLocalInputComponent)
         }
     }
