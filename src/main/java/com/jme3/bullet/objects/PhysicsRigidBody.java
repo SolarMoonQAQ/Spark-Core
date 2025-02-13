@@ -458,6 +458,22 @@ public class PhysicsRigidBody extends PhysicsBody {
     }
 
     /**
+     * 复制刚体质心在本地坐标系下的线速度。刚体必须处于动力学模式。
+     * @param storeResult 存储结果（如果为null，则新建）
+     * @return 线速度矢量（物理空间坐标系下的线速度，如果storeResult为null，则新建）
+     */
+    public Vector3f getLinearVelocityLocal(Vector3f storeResult) {
+        assert isDynamic();
+        Vector3f result = (storeResult == null) ? new Vector3f() : storeResult;
+
+        long objectId = nativeId();
+        getLinearVelocity(objectId, result);//获取物体质心在世界坐标系下的线速度
+        Quaternion localToWorld = this.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
+        MyQuaternion.rotate(localToWorld, result, result);//旋转世界坐标系向量到刚体自身坐标系
+        return result;
+    }
+
+    /**
      * Copy the linear velocity of the body's center of mass. The body must be
      * in dynamic mode.
      *
