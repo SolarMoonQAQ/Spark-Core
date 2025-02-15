@@ -21,7 +21,9 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Mixin(Entity.class)
 public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, Syncer {
@@ -31,8 +33,10 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     private final PreInput preInput = new PreInput(entity);
     private CollisionHurtData data;
     private final LinkedHashMap<ResourceLocation, SkillGroup> skillGroups = new LinkedHashMap<>();
-    private final LinkedHashSet<SkillInstance> activeSkills = new LinkedHashSet<>();
+    private final LinkedHashMap<Integer, SkillInstance> allSkills = new LinkedHashMap<>();
+    private final LinkedHashMap<Integer, SkillInstance> predictedSkills = new LinkedHashMap<>();
     private SkillGroup skillGroup;
+    private final AtomicInteger skillCount = new AtomicInteger();
 
     @Override
     public @NotNull PreInput getPreInput() {
@@ -76,8 +80,19 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     }
 
     @Override
-    public @NotNull Set<@NotNull SkillInstance> getActiveSkills() {
-        return activeSkills;
+    @NotNull
+    public LinkedHashMap<Integer, SkillInstance> getAllSkills() {
+        return allSkills;
+    }
+
+    @Override
+    public @NotNull AtomicInteger getSkillCount() {
+        return skillCount;
+    }
+
+    @Override
+    public @NotNull Map<@NotNull Integer, @NotNull SkillInstance> getPredictedSkills() {
+        return predictedSkills;
     }
 
 }

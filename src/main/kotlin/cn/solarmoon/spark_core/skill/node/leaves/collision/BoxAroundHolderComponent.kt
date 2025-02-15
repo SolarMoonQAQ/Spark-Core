@@ -1,10 +1,10 @@
-package cn.solarmoon.spark_core.skill.component.collision
+package cn.solarmoon.spark_core.skill.node.leaves.collision
 
 import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.presets.RotateAroundHostTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.skill.component.SkillComponent
+import cn.solarmoon.spark_core.skill.node.BehaviorNode
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
@@ -23,7 +23,7 @@ class BoxAroundHolderComponent(
     val boneName: String,
     val size: Vector3f,
     val offset: Vector3f,
-    override val activeTime: List<Vec2>,
+    override val activeTime: List<Vec2> = listOf(),
 ): BaseRigidBodyBoundComponent() {
 
     val box = CompoundCollisionShape().apply {
@@ -39,9 +39,9 @@ class BoxAroundHolderComponent(
         }
     }
 
-    override val codec: MapCodec<out SkillComponent> = CODEC
+    override val codec: MapCodec<out BehaviorNode> = CODEC
 
-    override fun copy(): SkillComponent {
+    override fun copy(): BehaviorNode {
         return BoxAroundHolderComponent(flag, boneName, size, offset, activeTime)
     }
 
@@ -52,7 +52,7 @@ class BoxAroundHolderComponent(
                 Codec.STRING.fieldOf("bone_name").forGetter { it.boneName },
                 ExtraCodecs.VECTOR3F.fieldOf("size").forGetter { it.size },
                 ExtraCodecs.VECTOR3F.fieldOf("offset").forGetter { it.offset },
-                SerializeHelper.VEC2_CODEC.listOf().fieldOf("active_time").forGetter { it.activeTime }
+                SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime }
             ).apply(it, ::BoxAroundHolderComponent)
         }
     }

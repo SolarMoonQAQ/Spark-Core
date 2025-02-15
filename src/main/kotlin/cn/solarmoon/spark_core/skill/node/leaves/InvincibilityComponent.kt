@@ -1,6 +1,9 @@
-package cn.solarmoon.spark_core.skill.component
+package cn.solarmoon.spark_core.skill.node.leaves
 
 import cn.solarmoon.spark_core.data.SerializeHelper
+import cn.solarmoon.spark_core.skill.SkillInstance
+import cn.solarmoon.spark_core.skill.node.BehaviorNode
+import cn.solarmoon.spark_core.skill.node.NodeStatus
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.world.phys.Vec2
@@ -10,13 +13,13 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 
 class InvincibilityComponent(
     val activeTime: List<Vec2> = listOf(),
-    val onImmuneToDamage: List<SkillComponent> = listOf(),
-): SkillComponent() {
+    val onImmuneToDamage: BehaviorNode = EmptyNode.Success
+): BehaviorNode() {
 
-    override val codec: MapCodec<out SkillComponent> = CODEC
+    private var status = NodeStatus.RUNNING
 
-    override fun copy(): SkillComponent {
-        return InvincibilityComponent(activeTime, onImmuneToDamage.map { it.copy() })
+    init {
+        dynamicContainer.addChild(onImmuneToDamage)
     }
 
     @SubscribeEvent
@@ -24,30 +27,39 @@ class InvincibilityComponent(
         val victim = event.entity
         if (victim.level().isClientSide) return
         if (victim == skill.holder) {
-            val time = requireQuery<() -> Double>("time").invoke()
+            val time = require<() -> Double>("time").invoke()
             if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
-                addOrReplaceContext("on_hurt.time") { time }
-                setCustomActive(onImmuneToDamage)
+                write("on_hurt.time", time)
+                event.source.directEntity?.let { write("attacker", it) }
+                status = onImmuneToDamage.tick(skill)
                 event.isCanceled = true
             }
         }
     }
 
-    override fun onActive() {
+    override fun onStart(skill: SkillInstance) {
         if (!skill.level.isClientSide) NeoForge.EVENT_BUS.register(this)
     }
 
-    override fun onUpdate() {}
+    override fun onTick(skill: SkillInstance): NodeStatus {
+        return status
+    }
 
-    override fun onEnd() {
+    override fun onEnd(skill: SkillInstance) {
         if (!skill.level.isClientSide) NeoForge.EVENT_BUS.unregister(this)
+    }
+
+    override val codec: MapCodec<out BehaviorNode> = CODEC
+
+    override fun copy(): BehaviorNode {
+        return InvincibilityComponent(activeTime, onImmuneToDamage.copy())
     }
 
     companion object {
         val CODEC: MapCodec<InvincibilityComponent> = RecordCodecBuilder.mapCodec {
             it.group(
                 SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime },
-                SkillComponent.CODEC.listOf().optionalFieldOf("on_immune_to_damage", listOf()).forGetter { it.onImmuneToDamage }
+                BehaviorNode.CODEC.optionalFieldOf("on_immune_to_damage", EmptyNode.Success).forGetter { it.onImmuneToDamage },
             ).apply(it, ::InvincibilityComponent)
         }
     }

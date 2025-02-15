@@ -1,7 +1,9 @@
-package cn.solarmoon.spark_core.skill.component
+package cn.solarmoon.spark_core.skill.node.leaves
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
+import cn.solarmoon.spark_core.skill.SkillInstance
+import cn.solarmoon.spark_core.skill.node.BehaviorNode
+import cn.solarmoon.spark_core.skill.node.NodeStatus
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -13,11 +15,11 @@ import net.neoforged.neoforge.event.entity.player.SweepAttackEvent
 
 class AttackDamageModifierComponent(
     val damageMultiply: Float = 1f
-): SkillComponent() {
+): BehaviorNode() {
 
-    override val codec: MapCodec<out SkillComponent> = CODEC
+    override val codec: MapCodec<out BehaviorNode> = CODEC
 
-    override fun copy(): SkillComponent {
+    override fun copy(): BehaviorNode {
         return AttackDamageModifierComponent(damageMultiply)
     }
 
@@ -65,14 +67,16 @@ class AttackDamageModifierComponent(
         }
     }
 
-    override fun onActive() {
+    override fun onStart(skill: SkillInstance) {
         NeoForge.EVENT_BUS.register(this)
     }
 
-    override fun onUpdate() {
+    override fun onTick(skill: SkillInstance): NodeStatus {
+        return NodeStatus.RUNNING
     }
 
-    override fun onEnd() {
+
+    override fun onEnd(skill: SkillInstance) {
         NeoForge.EVENT_BUS.unregister(this)
     }
 

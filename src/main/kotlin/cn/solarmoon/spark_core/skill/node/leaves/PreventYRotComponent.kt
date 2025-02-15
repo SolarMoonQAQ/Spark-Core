@@ -1,43 +1,39 @@
-package cn.solarmoon.spark_core.skill.component
+package cn.solarmoon.spark_core.skill.node.leaves
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.camera.CameraAdjuster
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.event.EntityTurnEvent
-import com.mojang.serialization.Codec
+import cn.solarmoon.spark_core.skill.SkillInstance
+import cn.solarmoon.spark_core.skill.node.BehaviorNode
+import cn.solarmoon.spark_core.skill.node.NodeStatus
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.client.player.LocalPlayer
-import net.minecraft.util.Mth
 import net.minecraft.world.phys.Vec2
-import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.client.event.ViewportEvent
-import org.joml.Vector2f
 
 class PreventYRotComponent(
     val activeTime: List<Vec2> = listOf()
-): SkillComponent() {
+): BehaviorNode() {
 
-    override val codec: MapCodec<out SkillComponent> = CODEC
-
-    override fun copy(): SkillComponent {
-        return PreventYRotComponent(activeTime)
-    }
-
-    override fun onActive() {
+    override fun onStart(skill: SkillInstance) {
         if (skill.level.isClientSide && activeTime.isEmpty()) CameraAdjuster.isActive = true
     }
 
-    override fun onUpdate() {
+    override fun onTick(skill: SkillInstance): NodeStatus {
         if (activeTime.isNotEmpty()) {
-            val time = requireQuery<() -> Double>("time").invoke()
+            val time = require<() -> Double>("time").invoke()
             CameraAdjuster.isActive = activeTime.any { time in it.x..it.y }
         }
+        return NodeStatus.RUNNING
     }
 
-    override fun onEnd() {
+    override fun onEnd(skill: SkillInstance) {
         if (skill.level.isClientSide) CameraAdjuster.isActive = false
+    }
+
+    override val codec: MapCodec<out BehaviorNode> = CODEC
+
+    override fun copy(): BehaviorNode {
+        return PreventYRotComponent(activeTime)
     }
 
     companion object {

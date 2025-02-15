@@ -1,11 +1,10 @@
-package cn.solarmoon.spark_core.skill.component
+package cn.solarmoon.spark_core.skill.node.leaves
 
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.flag.SparkFlags
-import cn.solarmoon.spark_core.flag.getFlag
-import com.mojang.datafixers.util.Either
-import com.mojang.serialization.Codec
+import cn.solarmoon.spark_core.skill.SkillInstance
+import cn.solarmoon.spark_core.skill.node.BehaviorNode
+import cn.solarmoon.spark_core.skill.node.NodeStatus
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.client.player.LocalPlayer
@@ -16,19 +15,13 @@ import net.neoforged.neoforge.common.NeoForge
 
 class PreventLocalInputComponent(
     val activeTime: List<Vec2> = listOf(),
-): SkillComponent() {
-
-    override val codec: MapCodec<out SkillComponent> = CODEC
-
-    override fun copy(): SkillComponent {
-        return PreventLocalInputComponent(activeTime)
-    }
+): BehaviorNode() {
 
     @SubscribeEvent
     private fun playerMove(event: MovementInputUpdateEvent) {
         val player = event.entity
         val input = event.input
-        val time = requireQuery<() -> Double>("time").invoke()
+        val time = require<() -> Double>("time").invoke()
         if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
             input.forwardImpulse = 0f
             input.leftImpulse = 0f
@@ -43,18 +36,26 @@ class PreventLocalInputComponent(
         }
     }
 
-    override fun onActive() {
+    override fun onStart(skill: SkillInstance) {
         if (skill.level.isClientSide) {
             NeoForge.EVENT_BUS.register(this)
         }
     }
 
-    override fun onUpdate() {}
+    override fun onTick(skill: SkillInstance): NodeStatus {
+        return NodeStatus.SUCCESS
+    }
 
-    override fun onEnd() {
+    override fun onEnd(skill: SkillInstance) {
         if (skill.level.isClientSide) {
             NeoForge.EVENT_BUS.unregister(this)
         }
+    }
+
+    override val codec: MapCodec<out BehaviorNode> = CODEC
+
+    override fun copy(): BehaviorNode {
+        return PreventLocalInputComponent(activeTime)
     }
 
     companion object {

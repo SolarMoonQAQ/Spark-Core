@@ -5,6 +5,11 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
 import cn.solarmoon.spark_core.skill.SkillGroupControlPayload
+import cn.solarmoon.spark_core.skill.SkillInstancePredictPayload
+import cn.solarmoon.spark_core.skill.SkillInstancePredictSyncPayload
+import cn.solarmoon.spark_core.skill.SkillInstanceSyncPayload
+import cn.solarmoon.spark_core.skill.node.BehaviorNode
+import cn.solarmoon.spark_core.skill.node.BehaviorNodePayload
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakePayload
 import cn.solarmoon.spark_core.visual_effect.shadow.ShadowPayload
 import net.neoforged.bus.api.IEventBus
@@ -27,6 +32,10 @@ object SparkPayloadRegister {
 
         val skill = event.registrar("skill")
         skill.playBidirectional(SkillGroupControlPayload.TYPE, SkillGroupControlPayload.STREAM_CODEC, SkillGroupControlPayload::handleInBothSide)
+        skill.playBidirectional(BehaviorNodePayload.TYPE, BehaviorNodePayload.STREAM_CODEC, BehaviorNodePayload::handleInBothSide)
+        skill.playToServer(SkillInstancePredictPayload.TYPE, SkillInstancePredictPayload.STREAM_CODEC, SkillInstancePredictPayload::handleInServer)
+        skill.playToClient(SkillInstancePredictSyncPayload.TYPE, SkillInstancePredictSyncPayload.STREAM_CODEC, SkillInstancePredictSyncPayload::handleInClient)
+        skill.playToClient(SkillInstanceSyncPayload.TYPE, SkillInstanceSyncPayload.STREAM_CODEC, SkillInstanceSyncPayload::handleInClient)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

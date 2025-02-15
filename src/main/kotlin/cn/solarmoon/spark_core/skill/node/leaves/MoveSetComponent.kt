@@ -1,8 +1,10 @@
-package cn.solarmoon.spark_core.skill.component
+package cn.solarmoon.spark_core.skill.node.leaves
 
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.entity.getRelativeVector
+import cn.solarmoon.spark_core.skill.SkillInstance
+import cn.solarmoon.spark_core.skill.node.BehaviorNode
+import cn.solarmoon.spark_core.skill.node.NodeStatus
 import com.mojang.datafixers.util.Pair
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
@@ -19,23 +21,17 @@ import kotlin.math.atan2
 class MoveSetComponent(
     val sets: List<Pair<Vec2, Vec3>>,
     val orientationByInput: Boolean = false,
-): SkillComponent() {
+): BehaviorNode() {
 
     var inputCache: Input? = null
 
-    override val codec: MapCodec<out SkillComponent> = CODEC
-
-    override fun copy(): SkillComponent {
-        return MoveSetComponent(sets, orientationByInput)
-    }
-
-    override fun onActive() {
+    override fun onStart(skill: SkillInstance) {
         inputCache = null
     }
 
-    override fun onUpdate() {
-        val entity = skill.holder as? Entity ?: return
-        val time = requireQuery<() -> Double>("time").invoke()
+    override fun onTick(skill: SkillInstance): NodeStatus {
+        val entity = skill.holder as? Entity ?: return NodeStatus.FAILURE
+        val time = require<() -> Double>("time").invoke()
         sets.forEach { pair ->
             val activeTime = pair.first
             val move = pair.second
@@ -53,9 +49,14 @@ class MoveSetComponent(
                 if (skill.level.isClientSide) inputCache = null
             }
         }
+        return NodeStatus.RUNNING
     }
 
-    override fun onEnd() {}
+    override val codec: MapCodec<out BehaviorNode> = CODEC
+
+    override fun copy(): BehaviorNode {
+        return MoveSetComponent(sets, orientationByInput)
+    }
 
     companion object {
         val CODEC: MapCodec<MoveSetComponent> = RecordCodecBuilder.mapCodec {
