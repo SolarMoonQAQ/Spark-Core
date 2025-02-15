@@ -17,28 +17,29 @@ class PreventLocalInputComponent(
     val activeTime: List<Vec2> = listOf(),
 ): BehaviorNode() {
 
-    @SubscribeEvent
-    private fun playerMove(event: MovementInputUpdateEvent) {
-        val player = event.entity
-        val input = event.input
-        val time = require<() -> Double>("time").invoke()
-        if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
-            input.forwardImpulse = 0f
-            input.leftImpulse = 0f
-            input.up = false
-            input.down = false
-            input.left = false
-            input.right = false
-            input.jumping = false
-            input.shiftKeyDown = false
-            (player as? LocalPlayer)?.sprintTriggerTime = -1
-            player.swinging = false
+    val playerMove = { event: MovementInputUpdateEvent ->
+        run {
+            val player = event.entity
+            val input = event.input
+            val time = require<() -> Double>("time").invoke()
+            if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
+                input.forwardImpulse = 0f
+                input.leftImpulse = 0f
+                input.up = false
+                input.down = false
+                input.left = false
+                input.right = false
+                input.jumping = false
+                input.shiftKeyDown = false
+                (player as? LocalPlayer)?.sprintTriggerTime = -1
+                player.swinging = false
+            }
         }
     }
 
     override fun onStart(skill: SkillInstance) {
         if (skill.level.isClientSide) {
-            NeoForge.EVENT_BUS.register(this)
+            NeoForge.EVENT_BUS.addListener(playerMove)
         }
     }
 
@@ -48,7 +49,7 @@ class PreventLocalInputComponent(
 
     override fun onEnd(skill: SkillInstance) {
         if (skill.level.isClientSide) {
-            NeoForge.EVENT_BUS.unregister(this)
+            NeoForge.EVENT_BUS.unregister(playerMove)
         }
     }
 

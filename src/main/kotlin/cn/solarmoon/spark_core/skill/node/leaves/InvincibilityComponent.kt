@@ -22,23 +22,24 @@ class InvincibilityComponent(
         dynamicContainer.addChild(onImmuneToDamage)
     }
 
-    @SubscribeEvent
-    private fun onHurt(event: LivingIncomingDamageEvent) {
-        val victim = event.entity
-        if (victim.level().isClientSide) return
-        if (victim == skill.holder) {
-            val time = require<() -> Double>("time").invoke()
-            if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
-                write("on_hurt.time", time)
-                event.source.directEntity?.let { write("attacker", it) }
-                status = onImmuneToDamage.tick(skill)
-                event.isCanceled = true
+    val onHurt = { event: LivingIncomingDamageEvent ->
+        run {
+            val victim = event.entity
+            if (victim.level().isClientSide) return@run
+            if (victim == skill.holder) {
+                val time = require<() -> Double>("time").invoke()
+                if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
+                    write("on_hurt.time", time)
+                    event.source.directEntity?.let { write("attacker", it) }
+                    status = onImmuneToDamage.tick(skill)
+                    event.isCanceled = true
+                }
             }
         }
     }
 
     override fun onStart(skill: SkillInstance) {
-        if (!skill.level.isClientSide) NeoForge.EVENT_BUS.register(this)
+        if (!skill.level.isClientSide) NeoForge.EVENT_BUS.addListener(onHurt)
     }
 
     override fun onTick(skill: SkillInstance): NodeStatus {
@@ -46,7 +47,7 @@ class InvincibilityComponent(
     }
 
     override fun onEnd(skill: SkillInstance) {
-        if (!skill.level.isClientSide) NeoForge.EVENT_BUS.unregister(this)
+        if (!skill.level.isClientSide) NeoForge.EVENT_BUS.unregister(onHurt)
     }
 
     override val codec: MapCodec<out BehaviorNode> = CODEC

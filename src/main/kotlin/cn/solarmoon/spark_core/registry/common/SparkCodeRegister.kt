@@ -18,11 +18,11 @@ import cn.solarmoon.spark_core.skill.node.bases.ParallelNode
 import cn.solarmoon.spark_core.skill.node.bases.SelectorNode
 import cn.solarmoon.spark_core.skill.node.bases.SequenceNode
 import cn.solarmoon.spark_core.skill.node.leaves.BehaviorTreeEndNode
-import cn.solarmoon.spark_core.skill.node.leaves.BehaviorTreeRefreshNode
 import cn.solarmoon.spark_core.skill.node.leaves.EmptyNode
 import cn.solarmoon.spark_core.skill.node.leaves.EndChildrenNode
 import cn.solarmoon.spark_core.skill.node.leaves.EndSkillNode
 import cn.solarmoon.spark_core.skill.node.leaves.KnockBackNode
+import cn.solarmoon.spark_core.skill.node.leaves.PlaySkillNode
 import cn.solarmoon.spark_core.sync.IntSyncData
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.bus.api.IEventBus
@@ -41,8 +41,8 @@ object SparkCodeRegister {
         event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("parallel")) { ParallelNode.CODEC }
         event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("end_skill")) { EndSkillNode.CODEC }
         event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("end_children")) { EndChildrenNode.CODEC }
-        event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("refresh_root")) { BehaviorTreeRefreshNode.CODEC }
         event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("ebd_root")) { BehaviorTreeEndNode.CODEC }
+        event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("play_skill")) { PlaySkillNode.CODEC }
         event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("box_around_holder")) { BoxAroundHolderComponent.CODEC }
         event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("box_follow_animated_bone")) { BoxFollowAnimatedBoneComponent.CODEC }
         event.register(SparkRegistries.BEHAVIOR_NODE_CODEC.key(), id("play_animation")) { PlayAnimationNode.CODEC }
