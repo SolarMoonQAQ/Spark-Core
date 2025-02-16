@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.builtin.query;
 
-import cn.solarmoon.spark_core.molang.core.context.IContext;
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.core.function.entity.EntityFunction;
 import cn.solarmoon.spark_core.molang.core.util.MolangUtils;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExecutionContext;
@@ -13,8 +13,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class RelativeBlockHasAllTags extends EntityFunction {
     @Override
-    protected Object eval(ExecutionContext<IContext<Entity>> ctx, ArgumentCollection arguments) {
-        Entity entity = ctx.entity().entity();
+    protected Object eval(ExecutionContext<IAnimatable<Entity>> ctx, ArgumentCollection arguments) {
+        Entity entity = ctx.entity().getAnimatable();
 
         int offsetX = arguments.getAsInt(ctx, 0);
         int offsetY = arguments.getAsInt(ctx, 1);
@@ -23,7 +23,7 @@ public class RelativeBlockHasAllTags extends EntityFunction {
             return false;
         }
 
-        BlockState block = ctx.entity().entity().level().getBlockState(entity.blockPosition());
+        BlockState block = ctx.entity().getAnimatable().level().getBlockState(entity.blockPosition());
 
         for (int i = 3; i < arguments.size(); i++) {
             ResourceLocation tagId = MolangUtils.parseResourceLocation(ctx.entity(), arguments.getAsString(ctx, i));

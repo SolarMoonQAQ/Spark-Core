@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.util;
 
-import cn.solarmoon.spark_core.molang.core.context.IContext;
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 
@@ -24,11 +24,11 @@ public class MolangUtils {
         return ((float) (timestamp + 6000L) / 24000) % 1;
     }
 
-    public static ResourceLocation parseResourceLocation(IContext<?> context, String value) {
+    public static ResourceLocation parseResourceLocation(IAnimatable<?> context, String value) {
         return ResourceLocation.tryParse(value);
     }
 
-    public static EquipmentSlot parseSlotType(IContext<?> context, String value) {
+    public static EquipmentSlot parseSlotType(IAnimatable<?> context, String value) {
         if (value == null) {
             return null;
         }

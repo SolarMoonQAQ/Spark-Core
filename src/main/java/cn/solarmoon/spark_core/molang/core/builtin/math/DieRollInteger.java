@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.builtin.math;
 
-import cn.solarmoon.spark_core.molang.core.context.IContext;
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.core.function.ContextFunction;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExecutionContext;
 
@@ -13,7 +13,7 @@ public class DieRollInteger extends ContextFunction<Object> {
     }
 
     @Override
-    protected Object eval(ExecutionContext<IContext<Object>> context, ArgumentCollection arguments) {
+    protected Object eval(ExecutionContext<IAnimatable<Object>> context, ArgumentCollection arguments) {
         int i = Math.round(arguments.getAsFloat(context, 0));
         int min = arguments.getAsInt(context, 1);
         int range = arguments.getAsInt(context, 2);
@@ -25,7 +25,7 @@ public class DieRollInteger extends ContextFunction<Object> {
             range -= min;
         }
         int total = 0;
-        Random rnd = context.entity().random();
+        Random rnd = context.entity().getRandomSeed();
         while (i-- > 0) {
             total += min + rnd.nextInt(range);
         }

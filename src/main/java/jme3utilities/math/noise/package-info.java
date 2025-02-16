@@ -25,7 +25,7 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * Reusable classes and interfaces for implementing noise and pseudo-random
+ * Reusable classes and interfaces for implementing noise and pseudo-randomSeed
  * number generation in jMonkeyEngine3.
  */
 package jme3utilities.math.noise;

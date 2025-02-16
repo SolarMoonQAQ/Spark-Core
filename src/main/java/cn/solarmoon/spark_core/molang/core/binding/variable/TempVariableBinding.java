@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.binding.variable;
 
-import cn.solarmoon.spark_core.molang.core.context.IContext;
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.engine.runtime.AssignableVariable;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExecutionContext;
 import cn.solarmoon.spark_core.molang.engine.runtime.binding.ObjectBinding;
@@ -26,13 +26,13 @@ public class TempVariableBinding implements ObjectBinding {
         @Override
         @SuppressWarnings("unchecked")
         public Object evaluate(final @NotNull ExecutionContext<?> context) {
-            return ((IContext<Object>) context.entity()).tempStorage().getTemp(address);
+            return ((IAnimatable<Object>) context.entity()).getTempStorage().getTemp(address);
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public void assign(@NotNull ExecutionContext<?> context, Object value) {
-            ((IContext<Object>) context.entity()).tempStorage().setTemp(address, value);
+            ((IAnimatable<Object>) context.entity()).getTempStorage().setTemp(address, value);
         }
     }
 }

@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.molang.core.binding.variable;
 
-import cn.solarmoon.spark_core.molang.core.context.IContext;
+import cn.solarmoon.spark_core.animation.IAnimatable;
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.core.util.StringPool;
 import cn.solarmoon.spark_core.molang.engine.runtime.AssignableVariable;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExecutionContext;
@@ -25,13 +26,13 @@ public class ScopedVariableBinding implements ObjectBinding {
         @Override
         @SuppressWarnings("unchecked")
         public Object evaluate(final @NotNull ExecutionContext<?> context) {
-            return ((IContext<Object>) context.entity()).scopedStorage().getScoped(name);
+            return ((IAnimatable<Object>) context.entity()).getScopedStorage().getScoped(name);
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public void assign(@NotNull ExecutionContext<?> context, Object value) {
-            ((IContext<Object>) context.entity()).scopedStorage().setScoped(name, value);
+            ((IAnimatable<Object>) context.entity()).getScopedStorage().setScoped(name, value);
         }
     }
 }

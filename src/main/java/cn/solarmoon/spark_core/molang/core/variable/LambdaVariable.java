@@ -1,16 +1,17 @@
 package cn.solarmoon.spark_core.molang.core.variable;
 
-import cn.solarmoon.spark_core.molang.core.context.IContext;
+
+import cn.solarmoon.spark_core.animation.IAnimatable;
 
 public class LambdaVariable<TTarget> extends ContextVariable<TTarget> {
-    private final IValueEvaluator<?, IContext<TTarget>> evaluator;
+    private final IValueEvaluator<?, IAnimatable<TTarget>> evaluator;
 
-    public LambdaVariable(IValueEvaluator<?, IContext<TTarget>> evaluator) {
+    public LambdaVariable(IValueEvaluator<?, IAnimatable<TTarget>> evaluator) {
         this.evaluator = evaluator;
     }
 
     @Override
-    public final Object evaluate(IContext<TTarget> entityContext) {
+    public final Object evaluate(IAnimatable<TTarget> entityContext) {
         return evaluator.eval(entityContext);
     }
 }
