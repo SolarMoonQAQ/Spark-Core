@@ -32,7 +32,11 @@ public class QueryBinding extends ContextBinding {
         function("remaining_durability", new ItemRemainingDurability());
 
 //        var("actor_count", ctx -> ctx.getLevel().getEntityCount());
-//        var("anim_time", ctx -> ctx.animationControllerContext().animTime());
+        var("anim_time", ctx -> {
+            var anim = ctx.getAnimController().getPlayingAnim();
+            if (anim == null) return 0.0;
+            else return anim.getTime();
+        });
 //        var("life_time", ctx -> ctx.geoInstance().getSeekTime() / 20.0);
 //        var("head_x_rotation", ctx -> ctx.data().netHeadYaw);
 //        var("head_y_rotation", ctx -> ctx.data().headPitch);
