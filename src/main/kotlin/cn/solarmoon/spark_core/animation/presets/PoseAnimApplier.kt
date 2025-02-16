@@ -15,7 +15,7 @@ object PoseAnimApplier {
     private fun entityTick(event: EntityTickEvent.Pre) {
         val entity = event.entity
         if (entity is LivingEntity && entity is IEntityAnimatable<*>) {
-            if (CrossbowItem.isCharged(entity.mainHandItem)) {
+            if (entity.mainHandItem.item is CrossbowItem && CrossbowItem.isCharged(entity.mainHandItem)) {
                 entity.animController.blendSpace.remove("poseMixL")
                 val animName = "Pose/crossbow_right"
                 val origin = entity.animations.getAnimation(animName) ?: return
@@ -23,7 +23,7 @@ object PoseAnimApplier {
                 entity.animController.blendSpace.putIfAbsent("poseMixR",
                     BlendAnimation(AnimInstance.create(entity, animName, origin), 1000000.0).apply { shouldClearWhenResetAnim = false }
                 )
-            } else if (CrossbowItem.isCharged(entity.offhandItem)) {
+            } else if (entity.mainHandItem.item is CrossbowItem && CrossbowItem.isCharged(entity.offhandItem)) {
                 entity.animController.blendSpace.remove("poseMixR")
                 val animName = "Pose/crossbow_left"
                 val origin = entity.animations.getAnimation(animName) ?: return

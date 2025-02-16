@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.builtin.math;
 
-import cn.solarmoon.spark_core.molang.core.context.IContext;
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.core.function.ContextFunction;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExecutionContext;
 
@@ -11,7 +11,7 @@ public class Random extends ContextFunction<Object> {
     }
 
     @Override
-    protected Object eval(ExecutionContext<IContext<Object>> context, ArgumentCollection arguments) {
+    protected Object eval(ExecutionContext<IAnimatable<Object>> context, ArgumentCollection arguments) {
         double min = arguments.getAsDouble(context, 0);
         double range = arguments.getAsDouble(context, 1);
         if(min > range) {
@@ -21,6 +21,6 @@ public class Random extends ContextFunction<Object> {
         } else {
             range -= min;
         }
-        return min + context.entity().random().nextDouble() * range;
+        return min + context.entity().getRandomSeed().nextDouble() * range;
     }
 }

@@ -4,19 +4,23 @@ import cn.solarmoon.spark_core.animation.anim.play.AnimController
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.registry.common.SparkDataComponents
+import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage
+import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage
+import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage
+import cn.solarmoon.spark_core.molang.core.storage.VariableStorage
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
-import net.minecraft.util.Mth
-import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 
 class ItemAnimatable(override var modelIndex: ModelIndex): IAnimatable<ItemAnimatable> {
-
+    override val level: Level? = null
+    override val tempStorage: ITempVariableStorage = VariableStorage()
+    override val scopedStorage: IScopedVariableStorage = VariableStorage()
+    override val foreignStorage: IForeignVariableStorage = VariableStorage()
     var oPosition = Vec3.ZERO
     var position = Vec3.ZERO
     var oYRot = 0f

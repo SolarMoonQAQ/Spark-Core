@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.binding.variable;
 
-import cn.solarmoon.spark_core.molang.core.context.IContext;
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.util.StringPool;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExecutionContext;
@@ -26,12 +26,8 @@ public class ForeignVariableBinding implements ObjectBinding {
         @Override
         @SuppressWarnings("unchecked")
         public Object evaluate(final @NotNull ExecutionContext<?> context) {
-            IForeignVariableStorage storage = ((IContext<Object>) context.entity()).foreignStorage();
-            if (storage != null) {
-                return storage.getPublic(name);
-            } else {
-                return null;
-            }
+            IForeignVariableStorage storage = ((IAnimatable<Object>) context.entity()).getForeignStorage();
+            return storage.getPublic(name);
         }
     }
 }

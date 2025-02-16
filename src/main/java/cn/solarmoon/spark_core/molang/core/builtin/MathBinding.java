@@ -41,7 +41,7 @@ public class MathBinding extends ContextBinding {
         /* 实用工具 */
         function("lerp", new Lerp());
         function("lerprotate", new LerpRotate());
-        function("random", new Random());
+        function("randomSeed", new Random());
         function("random_integer", new RandomInteger());
         function("die_roll", new DieRoll());
         function("die_roll_integer", new DieRollInteger());
