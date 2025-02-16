@@ -1,61 +1,55 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.skill.node.BehaviorTree
-import cn.solarmoon.spark_core.skill.node.NodeStatus
+import cn.solarmoon.spark_core.skill.component.SkillComponent
 import net.minecraft.world.level.Level
-import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.tick.LevelTickEvent
 
 class SkillInstance internal constructor(
-    internal var id0: Int,
+    var id: Int,
     val type: SkillType,
     val holder: SkillHost,
     val level: Level,
-    val behaviorTree: BehaviorTree
+    val components: List<SkillComponent>
 ) {
 
-    val id get() = id0
     var isActive = false
         private set
     var runTime: Int = 0
         private set
 
+    init {
+        components.forEachIndexed { index, component ->
+            component.ordinal = index
+            component.skill = this
+            component.init()
+        }
+    }
+
     fun activate() {
         if (!isActive) {
             runTime = 0
             isActive = true
-            behaviorTree.blackBoard["time"] = { runTime }
-            NeoForge.EVENT_BUS.register(this)
+            components.forEach { it.onActive() }
         } else {
             SparkCore.LOGGER.warn("技能正在释放中，无法重复启用，请等待该技能释放完毕，或先结束该技能。")
         }
     }
 
-    private fun update() {
+    fun update() {
         if (isActive) {
-            when (behaviorTree.tick(this)) {
-                NodeStatus.SUCCESS -> end()
-                NodeStatus.FAILURE -> end()
-                NodeStatus.RUNNING -> runTime++
-            }
+            components.forEach { it.onUpdate() }
         }
     }
 
     fun end() {
         if (isActive) {
             isActive = false
-            NeoForge.EVENT_BUS.unregister(this)
-            level.submitImmediateTask {
-                behaviorTree.end(this)
-            }
+            if (id < 0) holder.predictedSkills.remove(id)
+            else holder.allSkills.remove(id)
+            components.forEach { it.onEnd() }
         }
-    }
-
-    @SubscribeEvent
-    private fun tick(event: LevelTickEvent.Pre) {
-        update()
     }
 
 }

@@ -2,13 +2,11 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
-import cn.solarmoon.spark_core.skill.condition.SkillCondition
-import cn.solarmoon.spark_core.skill.SkillGroup
-import cn.solarmoon.spark_core.skill.SkillGroupController
-import cn.solarmoon.spark_core.sync.SyncerType
 import cn.solarmoon.spark_core.skill.SkillType
-import cn.solarmoon.spark_core.skill.node.BehaviorNode
+import cn.solarmoon.spark_core.skill.component.SkillComponent
+import cn.solarmoon.spark_core.skill.module.body_binder.RigidBodyBinder
 import cn.solarmoon.spark_core.sync.SyncData
+import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.MapCodec
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
@@ -23,18 +21,13 @@ object SparkRegistries {
         .build { it.sync(true).create() }
 
     @JvmStatic
-    val BEHAVIOR_NODE_CODEC = SparkCore.REGISTER.registry<MapCodec<out BehaviorNode>>()
-        .id("behavior_node_codec")
+    val SKILL_COMPONENT_CODEC = SparkCore.REGISTER.registry<MapCodec<out SkillComponent>>()
+        .id("skill_component_codec")
         .build { it.sync(true).create() }
 
     @JvmStatic
-    val SKILL_CONDITION_CODEC = SparkCore.REGISTER.registry<MapCodec<out SkillCondition>>()
-        .id("skill_condition_codec")
-        .build { it.sync(true).create() }
-
-    @JvmStatic
-    val SKILL_GROUP_CONTROLLER_CODEC = SparkCore.REGISTER.registry<MapCodec<out SkillGroupController>>()
-        .id("skill_group_controller_codec")
+    val RIGID_BODY_BINDER_CODEC = SparkCore.REGISTER.registry<MapCodec<out RigidBodyBinder>>()
+        .id("rigid_body_binder_codec")
         .build { it.sync(true).create() }
 
     @JvmStatic
@@ -49,9 +42,6 @@ object SparkRegistries {
 
     @JvmStatic
     val SKILL_TYPE = ResourceKey.createRegistryKey<SkillType>(ResourceLocation.fromNamespaceAndPath("skill", "type"))
-
-    @JvmStatic
-    val SKILL_GROUP = ResourceKey.createRegistryKey<SkillGroup>(ResourceLocation.fromNamespaceAndPath("skill", "group"))
 
     @JvmStatic
     fun register() {}

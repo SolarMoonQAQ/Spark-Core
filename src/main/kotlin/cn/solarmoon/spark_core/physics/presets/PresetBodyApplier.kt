@@ -1,15 +1,10 @@
 package cn.solarmoon.spark_core.physics.presets
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.entity.attack.AttackSystem
+import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithBoundingBoxTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
-import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
-import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
-import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent

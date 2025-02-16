@@ -1,8 +1,10 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 
 class AnimInstance private constructor(
@@ -19,6 +21,9 @@ class AnimInstance private constructor(
             val default = AnimInstance(holder, name, origin).apply { provider.invoke(this) }
             return default.apply { defaultValue = default.copy() }
         }
+
+        @JvmStatic
+        fun create(holder: IAnimatable<*>, index: AnimIndex, provider: (AnimInstance).() -> Unit = {}) = create(holder, index.name, OAnimationSet.get(index.index).getAnimation(index.name) ?: throw NullPointerException("没有找到索引为 $index 的动画"), provider)
     }
 
     var time = 0.0
