@@ -38,12 +38,13 @@ public class QueryBinding extends ContextBinding {
             else return anim.getTime();
         });
 //        var("life_time", ctx -> ctx.geoInstance().getSeekTime() / 20.0);
-//        var("head_x_rotation", ctx -> ctx.data().netHeadYaw);
-//        var("head_y_rotation", ctx -> ctx.data().headPitch);
+
         var("moon_phase", ctx -> ctx.getLevel().getMoonPhase());
         var("time_of_day", ctx -> MolangUtils.normalizeTime(ctx.getLevel().getDayTime()));
         var("time_stamp", ctx -> ctx.getLevel().getDayTime());
 
+        entityVar("head_x_rotation", ctx -> ctx.getAnimatable().getXRot());
+        entityVar("head_y_rotation", ctx -> ctx.getAnimatable().getYRot());
         entityVar("yaw_speed", ctx -> getYawSpeed(ctx.getAnimatable()));
         entityVar("cardinal_facing_2d", ctx -> ctx.getAnimatable().getDirection().get3DDataValue());
         entityVar("distance_from_camera", ctx -> ctx.getMc().gameRenderer.getMainCamera().getPosition().distanceTo(ctx.getAnimatable().position()));

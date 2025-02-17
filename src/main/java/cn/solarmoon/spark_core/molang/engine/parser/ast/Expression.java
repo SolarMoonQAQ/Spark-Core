@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
  * all the expression types.
  *
  * <p>Expressions are evaluable parts of code, expressions
- * are emitted by the parser.</p>
+ * are emitted by the PARSER.</p>
  *
  * <p>In Molang, almost every expression evaluates to a numerical
  * value</p>

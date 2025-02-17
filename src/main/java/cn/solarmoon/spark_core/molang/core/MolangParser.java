@@ -31,7 +31,7 @@ public class MolangParser {
     }
 
     public IValue parseExpressionUnsafe(String molangExpression) throws ParseException {
-        MolangValue value = new MolangValue(engine.parse(molangExpression));
+        MolangValue value = new MolangValue(engine.parse(molangExpression), molangExpression);
         primaryBinding.popStackFrame();
         return value;
     }

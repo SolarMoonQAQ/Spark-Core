@@ -1,12 +1,18 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
+import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
+import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
+import cn.solarmoon.spark_core.physics.toDegrees
+import cn.solarmoon.spark_core.physics.toRadians
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
+import net.minecraft.world.entity.Entity
 import org.joml.Vector3f
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
+import javax.annotation.Nullable
 
 /**
  * 骨骼动画，是一个完整动画的一部分，是动画的最小单位，受animation制约和控制
@@ -22,7 +28,12 @@ data class OBoneAnimation(
      */
     var rootAnimation: OAnimation? = null
 
-    private fun getPresentAnimValue(valueMap: LinkedHashMap<Double, OKeyFrame>, time: Double, defaultValue: Vector3f): Vector3f {
+    private fun getPresentAnimValue(
+        valueMap: LinkedHashMap<Double, OKeyFrame>,
+        time: Double,
+        animatable: IAnimatable<*>?=null,
+        defaultValue: Vector3f
+    ): Vector3f {
         // 在各个时间内两两遍历，定位到当前间隔进行变换
         valueMap.onEachIndexed { index, entry ->
             val kNow = entry
@@ -32,12 +43,12 @@ data class OBoneAnimation(
             if (time >= tNow && time < tTarget) {
                 val timeInternal = tTarget - tNow
                 val progress = (time - tNow) / timeInternal
-                return kTarget.value.interpolation.lerp(progress.toFloat(), valueMap, index)
+                return kTarget.value.interpolation.lerp(progress.toFloat(), valueMap, index, animatable)
             }
         }
 
         if (valueMap.isNotEmpty() && time >= valueMap.keys.last()) {
-            return valueMap.values.last().post.toVector3f()
+            return valueMap.values.last().post.eval(animatable)
         }
 
         return defaultValue
@@ -47,24 +58,24 @@ data class OBoneAnimation(
      * 获取当前绑定实体在当前动画的当前tick所对应的旋转值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的旋转
      * @return 进行过基础偏移后的旋转弧度角
      */
-    fun getAnimRotAt(time: Double): Vector3f {
-        return getPresentAnimValue(rotation, time, Vector3f())
+    fun getAnimRotAt(time: Double, animatable: IAnimatable<*>?=null): Vector3f {
+        return getPresentAnimValue(rotation, time, animatable, Vector3f()).mul(-1f,-1f,1f).toRadians()
     }
 
     /**
      * 获取当前绑定实体在当前动画的当前tick所对应的位移值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的位移
      * @return 获取指定tick位置的位移数值，如果不在任何区间内，返回第一个位置
      */
-    fun getAnimPosAt(time: Double): Vector3f {
-        return getPresentAnimValue(position, time, Vector3f())
+    fun getAnimPosAt(time: Double, animatable: IAnimatable<*>?=null): Vector3f {
+        return getPresentAnimValue(position, time, animatable, Vector3f()).mul(-1/16f,1/16f,1/16f)
     }
 
     /**
      * 获取当前绑定实体在当前动画的当前tick所对应的缩放值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的缩放
      * @return 获取指定tick位置的缩放数值，如果不在任何区间内，返回第一个位置
      */
-    fun getAnimScaleAt(time: Double): Vector3f {
-        return getPresentAnimValue(scale, time, Vector3f(1f))
+    fun getAnimScaleAt(time: Double, animatable: IAnimatable<*>?=null): Vector3f {
+        return getPresentAnimValue(scale, time, animatable, Vector3f(1f))
     }
 
     fun getKeyAnimDataAt(time: Double): KeyAnimData {
@@ -86,7 +97,7 @@ data class OBoneAnimation(
         }
 
         @JvmStatic
-        val MAP_CODEC = Codec.unboundedMap(Codec.STRING, CODEC).xmap( { LinkedHashMap(it) }, { it } )
+        val MAP_CODEC = Codec.unboundedMap(Codec.STRING, CODEC).xmap({ LinkedHashMap(it) }, { it })
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(

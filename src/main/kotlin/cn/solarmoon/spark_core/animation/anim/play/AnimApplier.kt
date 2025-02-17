@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatableItem
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.ItemAnimatable
@@ -8,6 +9,7 @@ import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
 import cn.solarmoon.spark_core.event.PhysicsTickEvent
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
+import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.player.PlayerEvent
@@ -41,7 +43,14 @@ object AnimApplier {
         val entity = event.entity
         if (entity is IEntityAnimatable<*>) {
             entity.animController.tick()
+//            if (entity is Player){
+//                SparkCore.LOGGER.info("ground speed: "+SparkCore.PARSER.parseExpression("q.ground_speed").evalAsDouble(entity).toString())
+//                SparkCore.LOGGER.info("is_in_water: "+SparkCore.PARSER.parseExpression("q.is_in_water").evalAsDouble(entity).toString())
+//                SparkCore.LOGGER.info("is_on_ground: "+SparkCore.PARSER.parseExpression("q.is_on_ground").evalAsDouble(entity).toString())
+//                SparkCore.LOGGER.info("vertical_speed: "+SparkCore.PARSER.parseExpression("q.vertical_speed").evalAsDouble(entity).toString())
+//            }
         }
+
     }
 
     @SubscribeEvent

@@ -41,10 +41,10 @@ import java.util.List;
 /**
  * Parser for the Molang language.
  *
- * <p>The parser converts token streams to expression
+ * <p>The PARSER converts token streams to expression
  * streams</p>
  *
- * <p>Note that this is a stream-based parser, this means
+ * <p>Note that this is a stream-based PARSER, this means
  * that it will not consume the entire lexer if it doesn't
  * continue having next() calls</p>
  *
@@ -55,13 +55,13 @@ public /* sealed */ interface MolangParser /* permits MolangParserImpl */ extend
     /**
      * Returns the internal lexer being used.
      *
-     * @return The lexer for this parser.
+     * @return The lexer for this PARSER.
      * @since 3.0.0
      */
     @NotNull MolangLexer lexer();
 
     /**
-     * Returns the cursor for this parser, the cursor maintains
+     * Returns the cursor for this PARSER, the cursor maintains
      * track of the current line and column, it is used for
      * error reporting.
      *
@@ -102,7 +102,7 @@ public /* sealed */ interface MolangParser /* permits MolangParserImpl */ extend
     /**
      * Parses all the tokens until it finds a {@link TokenKind#EOF}.
      *
-     * <p>After this method is called, the parser should be
+     * <p>After this method is called, the PARSER should be
      * done and all next expressions will be null</p>
      *
      * @return All the read expressions
@@ -119,7 +119,7 @@ public /* sealed */ interface MolangParser /* permits MolangParserImpl */ extend
     }
 
     /**
-     * Closes this parser and the internal {@link MolangLexer}.
+     * Closes this PARSER and the internal {@link MolangLexer}.
      *
      * @throws IOException If closing fails
      * @since 3.0.0
@@ -128,12 +128,12 @@ public /* sealed */ interface MolangParser /* permits MolangParserImpl */ extend
     void close() throws IOException;
 
     /**
-     * Creates a new parser that will read the tokens from
+     * Creates a new PARSER that will read the tokens from
      * the given lexer.
      *
      * @param lexer The lexer
-     * @return The created parser
-     * @throws IOException If parser initialization fails.
+     * @return The created PARSER
+     * @throws IOException If PARSER initialization fails.
      * @since 3.0.0
      */
     static @NotNull MolangParser parser(final @NotNull MolangLexer lexer, @NotNull ObjectBinding binding) throws IOException {
@@ -141,12 +141,12 @@ public /* sealed */ interface MolangParser /* permits MolangParserImpl */ extend
     }
 
     /**
-     * Creates a new parser that will read the tokens from
+     * Creates a new PARSER that will read the tokens from
      * the given reader.
      *
      * @param reader The reader
-     * @return The created parser
-     * @throws IOException If parser initialization fails.
+     * @return The created PARSER
+     * @throws IOException If PARSER initialization fails.
      * @since 3.0.0
      */
     static @NotNull MolangParser parser(final @NotNull Reader reader, @NotNull ObjectBinding binding) throws IOException {
@@ -155,12 +155,12 @@ public /* sealed */ interface MolangParser /* permits MolangParserImpl */ extend
 
 
     /**
-     * Creates a new parser that will read the tokens from
+     * Creates a new PARSER that will read the tokens from
      * the given string.
      *
      * @param string The string
-     * @return The created parser
-     * @throws IOException If parser initialization fails.
+     * @return The created PARSER
+     * @throws IOException If PARSER initialization fails.
      * @since 3.0.0
      */
     static @NotNull MolangParser parser(final @NotNull String string, @NotNull ObjectBinding binding) throws IOException {

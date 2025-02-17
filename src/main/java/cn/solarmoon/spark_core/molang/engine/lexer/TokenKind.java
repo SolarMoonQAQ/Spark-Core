@@ -35,7 +35,7 @@ import java.util.*;
  * characters, like "??", "->", "!", "true", "1.0", "2.0", ...</p>
  *
  * <p>Tokens do not have an specific behavior, they just group
- * certain characters that can be used by the parser.</p>
+ * certain characters that can be used by the PARSER.</p>
  *
  * @since 3.0.0
  */
