@@ -1,16 +1,12 @@
 package cn.solarmoon.spark_core.local_control
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.LocalControllerRegisterEvent
-import net.minecraft.client.KeyMapping
+import cn.solarmoon.spark_core.client.gui.screen.AnimationDebugScreen
+import cn.solarmoon.spark_core.registry.common.KeyBindings
 import net.minecraft.client.Minecraft
-import net.minecraft.client.player.Input
 import net.minecraft.client.player.LocalPlayer
 import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.client.event.ClientTickEvent
 import net.neoforged.neoforge.client.event.InputEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
-import net.neoforged.neoforge.network.PacketDistributor
 
 object LocalControlApplier {
 
@@ -34,6 +30,11 @@ object LocalControlApplier {
         allControllers.forEach {
             it.onInteract(player, event)
             if (event.isCanceled) return@forEach
+        }
+
+        // 检查是否打开调试界面
+        if (event.keyMapping == KeyBindings.OPEN_ANIMATION_DEBUG) {
+            Minecraft.getInstance().setScreen(AnimationDebugScreen())
         }
     }
 

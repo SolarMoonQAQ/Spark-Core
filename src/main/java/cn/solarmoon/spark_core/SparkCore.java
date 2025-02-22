@@ -13,7 +13,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import cn.solarmoon.spark_core.rpc.WebSocketRpcServer;
 @Mod(SparkCore.MOD_ID)
 public class SparkCore {
 
@@ -29,10 +29,12 @@ public class SparkCore {
         if (FMLEnvironment.dist.isClient()) {
             SparkClientEventRegister.register();
             SparkModelRegister.register(modEventBus);
+            // 启动 WebSocket 服务器
+            WebSocketRpcServer rpcServer = new WebSocketRpcServer();
+            rpcServer.start(8080); // 启动服务器
         }
 
         SparkRegistries.register();
-
         SparkVisualEffects.register();
         SparkAttachments.register();
         SparkCommonEventRegister.register();

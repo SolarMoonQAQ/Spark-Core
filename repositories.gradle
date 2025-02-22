@@ -12,6 +12,9 @@ dependencies {
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
 
     // 本地lib
+    jarJar(implementation("io.ktor:ktor-server-core:2.3.4"))
+    jarJar(implementation("io.ktor:ktor-server-netty:2.3.4"))
+    jarJar(implementation("io.ktor:ktor-server-websockets:2.3.4"))
     jarJar(implementation files(fileTree(dir: 'libs', includes: ['*.jar'])))
     additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
 
@@ -21,7 +24,6 @@ dependencies {
     // azurelib
     implementation "mod.azure.azurelib:azurelib-neo-${minecraft_version}:${azurelib_version}"
 }
-
 repositories {
     mavenLocal()
     mavenCentral()

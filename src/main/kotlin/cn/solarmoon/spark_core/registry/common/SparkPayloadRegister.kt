@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
+import cn.solarmoon.spark_core.rpc.payload.RpcPayload
 import cn.solarmoon.spark_core.skill.SkillGroupControlPayload
 import cn.solarmoon.spark_core.skill.SkillInstancePredictPayload
 import cn.solarmoon.spark_core.skill.SkillInstancePredictSyncPayload
@@ -36,6 +37,10 @@ object SparkPayloadRegister {
         skill.playToServer(SkillInstancePredictPayload.TYPE, SkillInstancePredictPayload.STREAM_CODEC, SkillInstancePredictPayload::handleInServer)
         skill.playToClient(SkillInstancePredictSyncPayload.TYPE, SkillInstancePredictSyncPayload.STREAM_CODEC, SkillInstancePredictSyncPayload::handleInClient)
         skill.playToClient(SkillInstanceSyncPayload.TYPE, SkillInstanceSyncPayload.STREAM_CODEC, SkillInstanceSyncPayload::handleInClient)
+
+        // 注册 RPC Payload 处理器
+        val rpc = event.registrar("rpc")
+        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

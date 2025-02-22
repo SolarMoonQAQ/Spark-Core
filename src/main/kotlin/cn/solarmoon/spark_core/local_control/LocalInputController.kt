@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.local_control
 
+import cn.solarmoon.spark_core.client.gui.screen.AnimationDebugScreen
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
 import net.minecraft.client.player.Input
@@ -101,6 +102,16 @@ abstract class LocalInputController {
             return action.invoke()
         }
         return false
+    }
+
+    fun checkDebugScreenKey(key: KeyMapping) {
+        if (key.isDown) {
+            Minecraft.getInstance().setScreen(AnimationDebugScreen())
+        }
+    }
+
+    open fun shouldOpenDebugScreen(): Boolean {
+        return true
     }
 
 }

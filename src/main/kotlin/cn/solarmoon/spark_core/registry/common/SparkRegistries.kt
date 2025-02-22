@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.AnimationStateDefinition
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.skill.condition.SkillCondition
 import cn.solarmoon.spark_core.skill.SkillGroup
@@ -52,6 +53,11 @@ object SparkRegistries {
 
     @JvmStatic
     val SKILL_GROUP = ResourceKey.createRegistryKey<SkillGroup>(ResourceLocation.fromNamespaceAndPath("skill", "group"))
+
+    @JvmStatic
+    val ANIMATION_STATE = ResourceKey.createRegistryKey<AnimationStateDefinition>(
+        ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "animation_state")
+    )
 
     @JvmStatic
     fun register() {}
