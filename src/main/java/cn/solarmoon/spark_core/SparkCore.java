@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core;
 
+import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.registry.client.SparkModelRegister;
 import cn.solarmoon.spark_core.registry.common.SparkRegistries;
@@ -20,7 +21,7 @@ public class SparkCore {
     public static final Logger LOGGER = LoggerFactory.getLogger("星火核心");
     public static final ObjectRegister REGISTER = new ObjectRegister(MOD_ID, true);
     public static final ObjectRegister MC_REGISTER = new ObjectRegister("minecraft", false);
-
+    public static final MolangParser PARSER = new MolangParser(null);
     public SparkCore(IEventBus modEventBus, ModContainer modContainer) {
         REGISTER.register(modEventBus);
         MC_REGISTER.register(modEventBus);

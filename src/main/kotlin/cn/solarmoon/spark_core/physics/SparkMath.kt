@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.physics
 
+import cn.solarmoon.spark_core.molang.core.value.DoubleValue
+import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import com.jme3.math.Matrix4f
 import com.jme3.math.Quaternion
 import net.minecraft.util.Mth
@@ -91,6 +93,12 @@ fun Vector3f.toDegrees() = Vector3f(
     z.toDegrees()
 )
 
+fun Vector3f.toRadians() = Vector3f(
+    x.toRadians(),
+    y.toRadians(),
+    z.toRadians()
+)
+
 fun Vec3.wrapDegrees() = Vec3(
     Mth.wrapDegrees(x),
     Mth.wrapDegrees(y),
@@ -100,6 +108,18 @@ fun Vec3.wrapDegrees() = Vec3(
 fun com.jme3.math.Vector3f.toVector3f() = Vector3f(x, y, z)
 
 fun com.jme3.math.Vector3f.toVec3() = toVector3f().toVec3()
+
+fun Vec3.toVector3k() = Vector3k(
+    DoubleValue(x),
+    DoubleValue(y),
+    DoubleValue(z)
+)
+
+fun Vector3d.toVector3k() = Vector3k(
+    DoubleValue(x),
+    DoubleValue(y),
+    DoubleValue(z)
+)
 
 fun Matrix4f.toMatrix4f() = org.joml.Matrix4f(
     m00, m10, m20, m30,

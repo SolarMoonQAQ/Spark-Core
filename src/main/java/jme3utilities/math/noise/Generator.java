@@ -36,7 +36,7 @@ import jme3utilities.math.MyQuaternion;
 import jme3utilities.math.MyVector3f;
 
 /**
- * Generate pseudo-random numbers, quaternions, vectors, and selections.
+ * Generate pseudo-randomSeed numbers, quaternions, vectors, and selections.
  *
  * @author Stephen Gold sgold@sonic.net
  */
@@ -57,13 +57,13 @@ public class Generator extends Random {
     // constructors
 
     /**
-     * Instantiate a pseudo-random generator with a seed likely to be unique.
+     * Instantiate a pseudo-randomSeed generator with a seed likely to be unique.
      */
     public Generator() {
     }
 
     /**
-     * Instantiate a pseudo-random generator with the specified seed.
+     * Instantiate a pseudo-randomSeed generator with the specified seed.
      *
      * @param seed initial value for the seed
      */
@@ -79,7 +79,7 @@ public class Generator extends Random {
      *
      * @param e1 the first extreme
      * @param e2 the 2nd extreme
-     * @return a pseudo-random value (&ge;min(e1,e2), &le;max(e1,e2))
+     * @return a pseudo-randomSeed value (&ge;min(e1,e2), &le;max(e1,e2))
      */
     public float nextFloat(float e1, float e2) {
         float result = e1 + nextFloat() * (e2 - e1);
@@ -93,7 +93,7 @@ public class Generator extends Random {
      *
      * @param e1 the first extreme
      * @param e2 the 2nd extreme
-     * @return a pseudo-random value (&ge;min(e1,e2), &le;max(e1,e2))
+     * @return a pseudo-randomSeed value (&ge;min(e1,e2), &le;max(e1,e2))
      */
     public int nextInt(int e1, int e2) {
         int max = Math.max(e1, e2);
@@ -105,7 +105,7 @@ public class Generator extends Random {
     }
 
     /**
-     * Generate a uniformly distributed, pseudo-random unit quaternion.
+     * Generate a uniformly distributed, pseudo-randomSeed unit quaternion.
      *
      * @param storeResult storage for the result (modified if not null)
      * @return a unit quaternion (either storeResult or a new instance)
@@ -130,7 +130,7 @@ public class Generator extends Random {
     }
 
     /**
-     * Generate a uniformly distributed, pseudo-random unit vector.
+     * Generate a uniformly distributed, pseudo-randomSeed unit vector.
      *
      * @param storeResult storage for the result (modified if not null)
      * @return a unit vector (either storeResult or a new instance)
@@ -154,7 +154,7 @@ public class Generator extends Random {
     }
 
     /**
-     * Generate a pseudo-random vector that is uniformly distributed throughout
+     * Generate a pseudo-randomSeed vector that is uniformly distributed throughout
      * the unit sphere centered on the origin.
      *
      * @param storeResult storage for the result (modified if not null)
@@ -176,7 +176,7 @@ public class Generator extends Random {
     }
 
     /**
-     * Pick a pseudo-random element from the specified array.
+     * Pick a pseudo-randomSeed element from the specified array.
      *
      * @param <E> the type of list elements
      * @param array the array to select from (not null, may be empty)

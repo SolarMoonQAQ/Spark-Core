@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
+import cn.solarmoon.spark_core.animation.IAnimatable
 import com.mojang.serialization.Codec
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
@@ -13,28 +14,37 @@ import kotlin.math.min
 enum class InterpolationType {
     LINEAR, CATMULLROM;
 
-    fun lerp(progress: Float, keyFrames: LinkedHashMap<Double, OKeyFrame>, presentIndex: Int): Vector3f {
-        val progress = min(progress.toFloat(), 1f)
+    fun lerp(
+        progress: Float,
+        keyFrames: LinkedHashMap<Double, OKeyFrame>,
+        presentIndex: Int,
+        animatable: IAnimatable<*>? = null,
+    ): Vector3f {
+        val progress = min(progress, 1f)
         val keyFrameGroup = keyFrames.values
-        val kPre = keyFrameGroup.elementAt(max(presentIndex - 1, 0)).pre
-        val kNow = keyFrameGroup.elementAt(presentIndex).post
-        val kTarget = keyFrameGroup.elementAt(min(presentIndex + 1, keyFrameGroup.size - 1)).pre
-        val kPost = keyFrameGroup.elementAt(min(presentIndex + 2, keyFrameGroup.size - 1)).post
+        val kPre = keyFrameGroup.elementAt(max(presentIndex - 1, 0)).pre.eval(animatable)
+        val kNow = keyFrameGroup.elementAt(presentIndex).post.eval(animatable)
+        val kTarget = keyFrameGroup.elementAt(min(presentIndex + 1, keyFrameGroup.size - 1)).pre.eval(animatable)
+        val kPost = keyFrameGroup.elementAt(min(presentIndex + 2, keyFrameGroup.size - 1)).post.eval(animatable)
 
         // 在终点就不lerp了
-        if (presentIndex == keyFrameGroup.size - 1) return kNow.toVector3f()
+        if (presentIndex == keyFrameGroup.size - 1) return kNow
 
-        when(this) {
+        when (this) {
             LINEAR -> {
-                val x = Mth.lerp(progress.toDouble(), kNow.x, kTarget.x)
-                val y = Mth.lerp(progress.toDouble(), kNow.y, kTarget.y)
-                val z = Mth.lerp(progress.toDouble(), kNow.z, kTarget.z)
+                val x = Mth.lerp(progress.toDouble(), kNow.x.toDouble(), kTarget.x.toDouble())
+                val y = Mth.lerp(progress.toDouble(), kNow.y.toDouble(), kTarget.y.toDouble())
+                val z = Mth.lerp(progress.toDouble(), kNow.z.toDouble(), kTarget.z.toDouble())
                 return Vector3d(x, y, z).toVector3f()
             }
+
             CATMULLROM -> {
-                val x = Mth.catmullrom(progress, kPre.x.toFloat(), kNow.x.toFloat(), kTarget.x.toFloat(), kPost.x.toFloat())
-                val y = Mth.catmullrom(progress, kPre.y.toFloat(), kNow.y.toFloat(), kTarget.y.toFloat() , kPost.y.toFloat())
-                val z = Mth.catmullrom(progress, kPre.z.toFloat(), kNow.z.toFloat(), kTarget.z.toFloat(), kPost.z.toFloat())
+                val x =
+                    Mth.catmullrom(progress, kPre.x.toFloat(), kNow.x.toFloat(), kTarget.x.toFloat(), kPost.x.toFloat())
+                val y =
+                    Mth.catmullrom(progress, kPre.y.toFloat(), kNow.y.toFloat(), kTarget.y.toFloat(), kPost.y.toFloat())
+                val z =
+                    Mth.catmullrom(progress, kPre.z.toFloat(), kNow.z.toFloat(), kTarget.z.toFloat(), kPost.z.toFloat())
                 return Vector3f(x, y, z)
             }
         }

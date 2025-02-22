@@ -32,7 +32,7 @@ class AnimController(
         anim?.triggerEvent(AnimEvent.SwitchIn(mainAnim))
         lastAnim = mainAnim
         mainAnim = anim
-        lastBlendResult = animatable.model.bones.mapValues { blendSpace.blendBone(it.key) }
+        lastBlendResult = animatable.model.bones.mapValues { blendSpace.blendBone(it.key, animatable) }
         anim?.let {
             val removeList = blendSpace.filter { it.value.shouldClearWhenResetAnim }.map { it.key }
             removeList.forEach { blendSpace.remove(it) }
@@ -91,7 +91,7 @@ class AnimController(
         if (transitionTick > 0) {
             val progress = (1 - transitionTick.toDouble() / maxTransitionTick.toDouble()).coerceIn(0.0, 1.0)
             animatable.model.bones.forEach {
-                val targetData = blendSpace.blendBone(it.key)
+                val targetData = blendSpace.blendBone(it.key,animatable)
                 val result = (lastBlendResult[it.key] ?: KeyAnimData()).lerp(targetData, progress)
                 animatable.getBone(it.key).update(result)
             }
@@ -103,7 +103,7 @@ class AnimController(
 
             animatable.model.bones.forEach { entry ->
                 val bone = animatable.getBone(entry.key)
-                bone.update(blendSpace.blendBone(entry.key))
+                bone.update(blendSpace.blendBone(entry.key,animatable))
             }
         }
 
