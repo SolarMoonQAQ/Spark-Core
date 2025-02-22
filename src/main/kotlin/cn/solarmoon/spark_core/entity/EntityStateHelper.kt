@@ -10,10 +10,13 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
+import org.joml.Vector2d
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -150,6 +153,13 @@ fun LivingEntity.knockBackRelativeView(attacker: Entity, strength: Double) {
  */
 fun LivingEntity.knockBackRelative(relative: Vec3, strength: Double) {
     knockback(strength, relative.x - x, relative.z - z)
+}
+
+fun Entity.addRelativeMovement(relative: Vec3, move: Vec3) {
+    val r = Vector2d(relative.x - x, relative.z - z)
+    val angle = atan2(r.y, -r.x) + PI.toFloat() / 2
+    val result = move.yRot(angle.toFloat())
+    addDeltaMovement(result)
 }
 
 fun Input.copy() = Input().apply {

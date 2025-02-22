@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.skill.payload
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.skill.SkillHost
-import cn.solarmoon.spark_core.skill.SkillInstance
 import cn.solarmoon.spark_core.skill.SkillType
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
@@ -10,40 +9,43 @@ import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
+import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
-class SkillInstanceSyncPayload private constructor(
+class SkillPredictPayload private constructor(
     val syncerType: SyncerType,
     val syncData: SyncData,
-    val skillType: SkillType,
-    val serverId: Int,
+    val skillType: SkillType<*>,
+    val clientId: Int,
     val active: Boolean
 ): CustomPacketPayload {
-    constructor(host: SkillHost, type: SkillType, serverId: Int, active: Boolean): this(host.syncerType, host.syncData, type, serverId, active)
+    constructor(host: SkillHost, type: SkillType<*>, clientId: Int, active: Boolean): this(host.syncerType, host.syncData, type, clientId, active)
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> = TYPE
 
     companion object {
         @JvmStatic
-        fun handleInClient(payload: SkillInstanceSyncPayload, context: IPayloadContext) {
+        fun handleInServer(payload: SkillPredictPayload, context: IPayloadContext) {
             val level = context.player().level()
             val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return
-            val skill = SkillInstance(payload.serverId, payload.skillType, host, level, payload.skillType.components.map { it.copy() })
+            val type = payload.skillType
+            val skill = type.skill.new(host.skillCount.incrementAndGet(), type, host, level)
             if (payload.active) skill.activate()
             host.allSkills[skill.id] = skill
+            PacketDistributor.sendToAllPlayers(SkillPredictSyncPayload(host, payload.clientId, skill.id))
         }
 
         @JvmStatic
-        val TYPE = CustomPacketPayload.Type<SkillInstanceSyncPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "skill_instance_sync"))
+        val TYPE = CustomPacketPayload.Type<SkillPredictPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "skill_predict"))
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            SyncerType.STREAM_CODEC, SkillInstanceSyncPayload::syncerType,
-            SyncData.STREAM_CODEC, SkillInstanceSyncPayload::syncData,
-            SkillType.Companion.STREAM_CODEC, SkillInstanceSyncPayload::skillType,
-            ByteBufCodecs.INT, SkillInstanceSyncPayload::serverId,
-            ByteBufCodecs.BOOL, SkillInstanceSyncPayload::active,
-            ::SkillInstanceSyncPayload
+            SyncerType.STREAM_CODEC, SkillPredictPayload::syncerType,
+            SyncData.STREAM_CODEC, SkillPredictPayload::syncData,
+            SkillType.STREAM_CODEC, SkillPredictPayload::skillType,
+            ByteBufCodecs.INT, SkillPredictPayload::clientId,
+            ByteBufCodecs.BOOL, SkillPredictPayload::active,
+            ::SkillPredictPayload
         )
     }
 }

@@ -1,19 +1,17 @@
-package cn.solarmoon.spark_core.skill.module
+package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.entity.preinput.PreInput
-import cn.solarmoon.spark_core.entity.preinput.getPreInput
 import com.mojang.datafixers.util.Either
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec2
 import kotlin.collections.forEach
 import kotlin.collections.toList
 import kotlin.collections.toSet
 import kotlin.ranges.contains
 
-data class PreInputReleaseModule(
+data class PreInputReleaseComponent(
     val nodes: List<Vec2> = listOf(),
     val conditionList: Either<Set<String>, Set<String>> = Either.right(setOf()),
 ) {
@@ -43,14 +41,14 @@ data class PreInputReleaseModule(
     }
 
     companion object {
-        val CODEC: Codec<PreInputReleaseModule> = RecordCodecBuilder.create {
+        val CODEC: Codec<PreInputReleaseComponent> = RecordCodecBuilder.create {
             it.group(
                 SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("nodes", listOf()).forGetter { it.nodes },
                 Codec.either(
                     Codec.STRING.listOf().xmap({it.toSet()}, {it.toList()}).fieldOf("whitelist").codec(),
                     Codec.STRING.listOf().xmap({it.toSet()}, {it.toList()}).fieldOf("blacklist").codec()
                 ).optionalFieldOf("condition", Either.right(setOf())).forGetter { it.conditionList }
-            ).apply(it, ::PreInputReleaseModule)
+            ).apply(it, ::PreInputReleaseComponent)
         }
     }
 }

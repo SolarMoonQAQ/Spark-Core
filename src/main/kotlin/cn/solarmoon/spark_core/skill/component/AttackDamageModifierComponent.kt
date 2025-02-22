@@ -1,22 +1,20 @@
-package cn.solarmoon.spark_core.skill.module
+package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
-import cn.solarmoon.spark_core.skill.SkillInstance
+import cn.solarmoon.spark_core.skill.Skill
 import com.mojang.serialization.Codec
-import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.world.entity.Entity
-import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent
 import net.neoforged.neoforge.event.entity.player.SweepAttackEvent
 
-data class AttackDamageModifierModule(
+data class AttackDamageModifierComponent(
     val damageMultiply: Float = 1f
 ) {
 
-    lateinit var skill: SkillInstance
+    lateinit var skill: Skill
 
     /**
      * 攻击时取消原版的攻击间隔对攻击的削弱
@@ -66,7 +64,7 @@ data class AttackDamageModifierModule(
         }
     }
 
-    fun active(skill: SkillInstance) {
+    fun active(skill: Skill) {
         this.skill = skill
         val entity = skill.holder as? Entity ?: return
         if (!skill.level.isClientSide && !entity.persistentData.getBoolean("SOFregistedADM")) {
@@ -90,10 +88,10 @@ data class AttackDamageModifierModule(
     }
 
     companion object {
-        val CODEC: Codec<AttackDamageModifierModule> = RecordCodecBuilder.create {
+        val CODEC: Codec<AttackDamageModifierComponent> = RecordCodecBuilder.create {
             it.group(
                 Codec.FLOAT.optionalFieldOf("damage_multiply", 1f).forGetter { it.damageMultiply }
-            ).apply(it, ::AttackDamageModifierModule)
+            ).apply(it, ::AttackDamageModifierComponent)
         }
     }
 

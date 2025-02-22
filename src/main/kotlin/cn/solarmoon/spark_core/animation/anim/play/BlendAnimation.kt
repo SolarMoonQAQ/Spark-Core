@@ -7,7 +7,7 @@ data class BlendAnimation(
 ) {
 
     init {
-        anim.enable()
+        //anim.enable()
     }
 
     var shouldClearWhenResetAnim = true

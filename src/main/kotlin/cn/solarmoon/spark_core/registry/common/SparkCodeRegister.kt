@@ -1,11 +1,8 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.skill.module.MoveSetModule
-import cn.solarmoon.spark_core.skill.module.PreventLocalInputModule
-import cn.solarmoon.spark_core.skill.module.PreventYRotModule
-import cn.solarmoon.spark_core.skill.module.body_binder.BoxAroundHolderBinder
-import cn.solarmoon.spark_core.skill.module.body_binder.BoxFollowAnimatedBoneBinder
+import cn.solarmoon.spark_core.skill.component.body_binder.BoxAroundHolderBinder
+import cn.solarmoon.spark_core.skill.component.body_binder.BoxFollowAnimatedBoneBinder
 import cn.solarmoon.spark_core.sync.IntSyncData
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.bus.api.IEventBus

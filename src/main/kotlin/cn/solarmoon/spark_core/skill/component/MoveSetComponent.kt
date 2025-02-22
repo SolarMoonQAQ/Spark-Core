@@ -1,10 +1,9 @@
-package cn.solarmoon.spark_core.skill.module
+package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.entity.getRelativeVector
 import com.mojang.datafixers.util.Pair
 import com.mojang.serialization.Codec
-import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.client.player.Input
 import net.minecraft.client.player.LocalPlayer
@@ -15,7 +14,7 @@ import net.minecraft.world.phys.Vec3
 import kotlin.math.PI
 import kotlin.math.atan2
 
-data class MoveSetModule(
+data class MoveSetComponent(
     val sets: List<Pair<Vec2, Vec3>> = listOf(),
     val orientationByInput: Boolean = false,
 ) {
@@ -48,11 +47,11 @@ data class MoveSetModule(
     }
 
     companion object {
-        val CODEC: Codec<MoveSetModule> = RecordCodecBuilder.create {
+        val CODEC: Codec<MoveSetComponent> = RecordCodecBuilder.create {
             it.group(
                 Codec.pair(SerializeHelper.VEC2_CODEC.fieldOf("active_time").codec(), Vec3.CODEC.fieldOf("move").codec()).listOf().fieldOf("sets").forGetter { it.sets },
                 Codec.BOOL.optionalFieldOf("orientation_by_input", false).forGetter { it.orientationByInput }
-            ).apply(it, ::MoveSetModule)
+            ).apply(it, ::MoveSetComponent)
         }
     }
 

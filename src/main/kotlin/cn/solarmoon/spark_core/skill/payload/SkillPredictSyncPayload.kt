@@ -10,7 +10,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
-class SkillInstancePredictSyncPayload private constructor(
+class SkillPredictSyncPayload private constructor(
     val syncerType: SyncerType,
     val syncData: SyncData,
     val clientId: Int,
@@ -22,7 +22,7 @@ class SkillInstancePredictSyncPayload private constructor(
 
     companion object {
         @JvmStatic
-        fun handleInClient(payload: SkillInstancePredictSyncPayload, context: IPayloadContext) {
+        fun handleInClient(payload: SkillPredictSyncPayload, context: IPayloadContext) {
             val level = context.player().level()
             val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return
             val skill = host.predictedSkills.remove(payload.clientId) ?: return
@@ -31,15 +31,15 @@ class SkillInstancePredictSyncPayload private constructor(
         }
 
         @JvmStatic
-        val TYPE = CustomPacketPayload.Type<SkillInstancePredictSyncPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "skill_instance_predict_sync"))
+        val TYPE = CustomPacketPayload.Type<SkillPredictSyncPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "skill_predict_sync"))
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            SyncerType.STREAM_CODEC, SkillInstancePredictSyncPayload::syncerType,
-            SyncData.STREAM_CODEC, SkillInstancePredictSyncPayload::syncData,
-            ByteBufCodecs.INT, SkillInstancePredictSyncPayload::clientId,
-            ByteBufCodecs.INT, SkillInstancePredictSyncPayload::serverId,
-            ::SkillInstancePredictSyncPayload
+            SyncerType.STREAM_CODEC, SkillPredictSyncPayload::syncerType,
+            SyncData.STREAM_CODEC, SkillPredictSyncPayload::syncData,
+            ByteBufCodecs.INT, SkillPredictSyncPayload::clientId,
+            ByteBufCodecs.INT, SkillPredictSyncPayload::serverId,
+            ::SkillPredictSyncPayload
         )
     }
 }

@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsSpace.BroadphaseType
+import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.PersistentManifolds
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.math.Vector3f
@@ -33,8 +34,8 @@ class PhysicsWorld(
         val a = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
         val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
 
-        a.collisionListeners.forEach { if (a.isCollisionGroupContains(b)) it.onStarted(a, b, manifoldId) }
-        b.collisionListeners.forEach { if (b.isCollisionGroupContains(a)) it.onStarted(b, a, manifoldId) }
+        handleContacts(a, b, manifoldId, false)
+        handleContacts(b, a, manifoldId, false)
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Start(manifoldId))
     }
@@ -49,8 +50,8 @@ class PhysicsWorld(
         if (pcoA.isCollisionGroupContains(pcoB)) pcoB.isColliding = true
         if (pcoB.isCollisionGroupContains(pcoA)) pcoA.isColliding = true
 
-        pcoA.collisionListeners.forEach { if (pcoA.isCollisionGroupContains(pcoB)) it.onProcessed(pcoA, pcoB, manifoldPointId) }
-        pcoB.collisionListeners.forEach { if (pcoB.isCollisionGroupContains(pcoA)) it.onProcessed(pcoB, pcoA, manifoldPointId) }
+        handleContacts(pcoA, pcoB, manifoldPointId, false)
+        handleContacts(pcoB, pcoA, manifoldPointId, false)
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(manifoldPointId, pcoA, pcoB))
     }
@@ -60,13 +61,32 @@ class PhysicsWorld(
 
         val a = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
         val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
-        a.collisionListeners.forEach { if (a.isCollisionGroupContains(b)) it.onEnded(a, b, manifoldId) }
-        b.collisionListeners.forEach { if (b.isCollisionGroupContains(a)) it.onEnded(b, a, manifoldId) }
+
+        handleContacts(a, b, manifoldId, true)
+        handleContacts(b, a, manifoldId, true)
 
         a.isColliding = false
         b.isColliding = false
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.End(manifoldId))
+    }
+
+    private fun handleContacts(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long, end: Boolean) {
+        if (!end) {
+            val contacts = o1.allContacts.getOrPut(o2.nativeId()) { mutableSetOf() }
+
+            // 当禁用时，删除当前接触，当删除后列表为空，则触发end
+            if (!o1.isCollisionGroupContains(o2)) {
+                if (contacts.remove(manifoldId) && contacts.isEmpty()) o1.collisionListeners.forEach { it.onEnded(o1, o2, manifoldId) }
+                return
+            }
+
+            if (contacts.isEmpty()) o1.collisionListeners.forEach { it.onStarted(o1, o2, manifoldId) }
+            contacts.add(manifoldId)
+        } else {
+            val contacts = o1.allContacts[o2.nativeId()] ?: return
+            if (contacts.remove(manifoldId) && contacts.isEmpty()) o1.collisionListeners.forEach { it.onEnded(o1, o2, manifoldId) }
+        }
     }
     
 }

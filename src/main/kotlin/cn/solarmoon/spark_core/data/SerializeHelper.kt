@@ -10,6 +10,7 @@ import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
 import org.joml.Quaternionf
+import org.joml.Vector2i
 import org.joml.Vector3f
 
 /**
@@ -23,6 +24,12 @@ object SerializeHelper {
     @JvmStatic
     val VEC2_CODEC: Codec<Vec2> = Codec.FLOAT.listOf().comapFlatMap(
         { Util.fixedSize(it, 2).map { Vec2(it[0], it[1]) } },
+        { listOf(it.x, it.y) }
+    )
+
+    @JvmStatic
+    val VEC2I_CODEC: Codec<Vector2i> = Codec.INT.listOf().comapFlatMap(
+        { Util.fixedSize(it, 2).map { Vector2i(it[0], it[1]) } },
         { listOf(it.x, it.y) }
     )
 

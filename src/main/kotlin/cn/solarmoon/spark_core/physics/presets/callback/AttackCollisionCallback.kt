@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.presets.callback
 
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
+import cn.solarmoon.spark_core.entity.attack.CollisionHurtData
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import net.minecraft.world.entity.Entity
@@ -19,6 +20,7 @@ interface AttackCollisionCallback: CollisionCallback {
         val attacker = o1.owner as? Entity ?: return
         (o2.owner as? Entity)?.apply {
             attackSystem.customAttack(this) {
+                this@apply.pushHurtData(CollisionHurtData(o1, o2, manifoldId))
                 preAttack(attacker, this@apply, o1, o2, manifoldId)
                 if (!doAttack(attacker, this@apply, o1, o2, manifoldId)) return@customAttack false
                 postAttack(attacker, this@apply, o1, o2, manifoldId)

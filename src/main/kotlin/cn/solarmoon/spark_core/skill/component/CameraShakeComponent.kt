@@ -1,12 +1,11 @@
-package cn.solarmoon.spark_core.skill.module
+package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import com.mojang.serialization.Codec
-import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.world.entity.Entity
 
-data class CameraShakeModule(
+data class CameraShakeComponent(
     val time: Int,
     val strength: Float,
     val frequency: Float,
@@ -26,13 +25,13 @@ data class CameraShakeModule(
     }
 
     companion object {
-        val CODEC: Codec<CameraShakeModule> = RecordCodecBuilder.create {
+        val CODEC: Codec<CameraShakeComponent> = RecordCodecBuilder.create {
             it.group(
                 Codec.INT.fieldOf("time").forGetter { it.time },
                 Codec.FLOAT.fieldOf("strength").forGetter { it.strength },
                 Codec.FLOAT.fieldOf("frequency").forGetter { it.frequency },
                 Codec.DOUBLE.optionalFieldOf("range", 0.0).forGetter { it.range }
-            ).apply(it, ::CameraShakeModule)
+            ).apply(it, ::CameraShakeComponent)
         }
     }
 

@@ -26,9 +26,10 @@ class AnimController(
 
     fun setAnimation(anim: AnimInstance?, transTime: Int) {
         if (mainAnim?.rejectNewAnim?.invoke(anim) == true && mainAnim?.isCancelled != true) return
-        anim?.enable()
-        mainAnim?.let { if (!it.isCancelled) it.cancel() }
-        mainAnim?.switchInvoke(anim)
+        mainAnim?.cancel()
+        mainAnim?.triggerEvent(AnimEvent.SwitchOut(anim))
+        anim?.isCancelled = false
+        anim?.triggerEvent(AnimEvent.SwitchIn(mainAnim))
         lastAnim = mainAnim
         mainAnim = anim
         lastBlendResult = animatable.model.bones.mapValues { blendSpace.blendBone(it.key) }

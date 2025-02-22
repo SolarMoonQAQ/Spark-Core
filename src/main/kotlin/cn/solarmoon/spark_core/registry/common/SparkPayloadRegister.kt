@@ -4,10 +4,10 @@ import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
-import cn.solarmoon.spark_core.skill.payload.SkillComponentPayload
-import cn.solarmoon.spark_core.skill.payload.SkillInstancePredictPayload
-import cn.solarmoon.spark_core.skill.payload.SkillInstancePredictSyncPayload
-import cn.solarmoon.spark_core.skill.payload.SkillInstanceSyncPayload
+import cn.solarmoon.spark_core.skill.payload.SkillPayload
+import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
+import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
+import cn.solarmoon.spark_core.skill.payload.SkillSyncPayload
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakePayload
 import cn.solarmoon.spark_core.visual_effect.shadow.ShadowPayload
 import net.neoforged.bus.api.IEventBus
@@ -29,10 +29,10 @@ object SparkPayloadRegister {
         visual.playToClient(CameraShakePayload.TYPE, CameraShakePayload.STREAM_CODEC, CameraShakePayload::handleInClient)
 
         val skill = event.registrar("skill")
-        skill.playToServer(SkillInstancePredictPayload.TYPE, SkillInstancePredictPayload.STREAM_CODEC, SkillInstancePredictPayload::handleInServer)
-        skill.playToClient(SkillInstancePredictSyncPayload.TYPE, SkillInstancePredictSyncPayload.STREAM_CODEC, SkillInstancePredictSyncPayload::handleInClient)
-        skill.playToClient(SkillInstanceSyncPayload.TYPE, SkillInstanceSyncPayload.STREAM_CODEC, SkillInstanceSyncPayload::handleInClient)
-        skill.playBidirectional(SkillComponentPayload.TYPE, SkillComponentPayload.STREAM_CODEC, SkillComponentPayload::handleInBothSide)
+        skill.playToServer(SkillPredictPayload.TYPE, SkillPredictPayload.STREAM_CODEC, SkillPredictPayload::handleInServer)
+        skill.playToClient(SkillPredictSyncPayload.TYPE, SkillPredictSyncPayload.STREAM_CODEC, SkillPredictSyncPayload::handleInClient)
+        skill.playToClient(SkillSyncPayload.TYPE, SkillSyncPayload.STREAM_CODEC, SkillSyncPayload::handleInClient)
+        skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

@@ -7,14 +7,15 @@ import net.minecraft.nbt.CompoundTag
  * 受击信息，不包含伤害源和伤害值，如果想调用这两个以检测直接找Entity的hurt方法插入即可
  * @param attackBody 触发该次攻击的几何体，可以通过几何体大小位置等信息实现想要的效果
  * @param damagedBody 该次攻击的几何体所击中的骨骼
- * @param extraData 可以附加额外数据到此次攻击
+ * @param context 可以附加额外数据到此次攻击
  */
 data class CollisionHurtData(
-    val attackBody: PhysicsCollisionObject?,
-    val damagedBody: PhysicsCollisionObject?,
-    val extraData: CompoundTag = CompoundTag()
+    val attackBody: PhysicsCollisionObject,
+    val damagedBody: PhysicsCollisionObject,
+    val manifoldId: Long,
+    val context: MutableMap<String, Any> = mutableMapOf()
 ) {
 
-
+    inline fun <reified T: Any> read(id: String) = context[id] as? T
 
 }

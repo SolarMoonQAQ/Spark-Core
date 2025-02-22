@@ -2,9 +2,10 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
+import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillType
-import cn.solarmoon.spark_core.skill.component.SkillComponent
-import cn.solarmoon.spark_core.skill.module.body_binder.RigidBodyBinder
+import cn.solarmoon.spark_core.skill.component.body_binder.RigidBodyBinder
+import cn.solarmoon.spark_core.skill.component.particle.ParticleComponent
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.MapCodec
@@ -21,13 +22,18 @@ object SparkRegistries {
         .build { it.sync(true).create() }
 
     @JvmStatic
-    val SKILL_COMPONENT_CODEC = SparkCore.REGISTER.registry<MapCodec<out SkillComponent>>()
-        .id("skill_component_codec")
+    val SKILL_CODEC = SparkCore.REGISTER.registry<MapCodec<out Skill>>()
+        .id("skill_codec")
         .build { it.sync(true).create() }
 
     @JvmStatic
     val RIGID_BODY_BINDER_CODEC = SparkCore.REGISTER.registry<MapCodec<out RigidBodyBinder>>()
         .id("rigid_body_binder_codec")
+        .build { it.sync(true).create() }
+
+    @JvmStatic
+    val PARTICLE_COMPONENT_CODEC = SparkCore.REGISTER.registry<MapCodec<out ParticleComponent>>()
+        .id("particle_component_codec")
         .build { it.sync(true).create() }
 
     @JvmStatic
@@ -41,7 +47,7 @@ object SparkRegistries {
         .build { it.sync(true).create() }
 
     @JvmStatic
-    val SKILL_TYPE = ResourceKey.createRegistryKey<SkillType>(ResourceLocation.fromNamespaceAndPath("skill", "type"))
+    val SKILL_TYPE = ResourceKey.createRegistryKey<SkillType<*>>(ResourceLocation.fromNamespaceAndPath("skill", "type"))
 
     @JvmStatic
     fun register() {}
