@@ -27,7 +27,8 @@ class MoveWithAnimatedBoneTicker(
         if (body is PhysicsRigidBody) {
             body.setPhysicsTransform(Transform(
                 animatable.getWorldBonePivot(boneName).toBVector3f(),
-                animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion()
+                animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion(),
+                animatable.getBone(boneName).getScale().toBVector3f()
             ))
         }
     }

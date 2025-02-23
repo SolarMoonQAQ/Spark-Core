@@ -4,6 +4,8 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.skill.component.SkillComponent
+import com.llamalad7.mixinextras.utils.Blackboard
 import com.mojang.serialization.JsonOps
 import com.mojang.serialization.MapCodec
 import net.minecraft.nbt.CompoundTag
@@ -26,7 +28,8 @@ abstract class Skill {
         private set
     var eventHandlers = mutableMapOf<KClass<out SkillEvent>, MutableList<(SkillEvent) -> Unit>>()
         private set
-    val blackBoard = CompoundTag()
+    val blackBoard = BlackBoard()
+    val components = linkedSetOf<SkillComponent>()
 
     fun activate() {
         if (!isActive) {
@@ -54,6 +57,7 @@ abstract class Skill {
             else holder.allSkills.remove(id)
             onEnd()
             triggerEvent(SkillEvent.End)
+            components.forEach { it.detach() }
         }
     }
 
@@ -86,9 +90,16 @@ abstract class Skill {
 
     protected open fun onEnd() {}
 
+    protected open fun onEvent(event: Event) {}
+
     open fun sync(data: CompoundTag, context: IPayloadContext) {}
 
-    open fun handleEvent(event: Event) {}
+    fun handleEvent(event: Event) {
+        components.forEach {
+            it.handleEvent(event)
+        }
+        onEvent(event)
+    }
 
     companion object {
         val CODEC = SparkRegistries.SKILL_CODEC.byNameCodec()

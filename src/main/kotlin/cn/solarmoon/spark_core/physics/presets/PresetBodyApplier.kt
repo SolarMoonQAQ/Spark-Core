@@ -21,7 +21,7 @@ object PresetBodyApplier {
             bindBody(body, event.level.physicsLevel) {
                 isContactResponse = false
                 setGravity(Vector3f.ZERO)
-                addPhysicsTicker(MoveWithBoundingBoxTicker())
+                addPhysicsTicker(MoveWithBoundingBoxTicker(true))
             }
         }
     }

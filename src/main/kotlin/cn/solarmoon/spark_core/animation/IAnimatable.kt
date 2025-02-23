@@ -48,11 +48,6 @@ interface IAnimatable<T> : Syncer {
     var modelIndex: ModelIndex
 
     /**
-     * Minecraft客户端实例
-     */
-    val mc: Minecraft get() = Minecraft.getInstance()
-
-    /**
      * 临时变量存储，用于存储动画结束后自动销毁的临时变量，格式:t.name或temp.name
      */
     val tempStorage: ITempVariableStorage
@@ -83,14 +78,9 @@ interface IAnimatable<T> : Syncer {
     val animations get() = modelIndex.animationSet
 
     /**
-     * 获取调用时距离物理线程上一次tick的时间与单tick时间的比值
-     */
-    val physicsPartialTicks: Float get() = level?.physicsLevel?.partialTicks ?: 1f
-
-    /**
      * 获取调用时距离主线程上一次tick的时间与单tick时间的比值，服务端永远返回1
      */
-    val partialTicks: Float get() = if(level?.isClientSide == true) mc.timer.getGameTimeDeltaPartialTick(false) else 1f
+    val partialTicks: Float get() = if(level?.isClientSide == true) Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(false) else 1f
 
     /**
      * 动画体所在的世界坐标

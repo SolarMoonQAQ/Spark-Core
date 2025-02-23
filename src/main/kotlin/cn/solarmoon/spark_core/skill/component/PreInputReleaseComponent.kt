@@ -1,24 +1,31 @@
 package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.entity.preinput.PreInput
+import cn.solarmoon.spark_core.entity.preinput.getPreInput
+import cn.solarmoon.spark_core.skill.Skill
+import cn.solarmoon.spark_core.registry.common.SparkSkillContext
 import com.mojang.datafixers.util.Either
 import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec2
 import kotlin.collections.forEach
 import kotlin.collections.toList
 import kotlin.collections.toSet
 import kotlin.ranges.contains
 
-data class PreInputReleaseComponent(
+class PreInputReleaseComponent(
     val nodes: List<Vec2> = listOf(),
     val conditionList: Either<Set<String>, Set<String>> = Either.right(setOf()),
-) {
+): SkillComponent() {
 
-    fun tryRelease(preInput: PreInput, time: Double) {
+    override fun onTick() {
         val whitelist = conditionList.left()
         val blacklist = conditionList.right()
+        val entity = skill.holder as? Entity ?: return
+        val preInput = entity.getPreInput()
+        val time = skill.blackBoard.require(SparkSkillContext.TIME, this)
 
         fun release() {
             if (whitelist.isPresent) {
@@ -40,8 +47,10 @@ data class PreInputReleaseComponent(
         }
     }
 
+    override val codec: MapCodec<out SkillComponent> = CODEC
+
     companion object {
-        val CODEC: Codec<PreInputReleaseComponent> = RecordCodecBuilder.create {
+        val CODEC: MapCodec<PreInputReleaseComponent> = RecordCodecBuilder.mapCodec {
             it.group(
                 SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("nodes", listOf()).forGetter { it.nodes },
                 Codec.either(

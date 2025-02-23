@@ -1,13 +1,17 @@
 package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.data.SerializeHelper
+import cn.solarmoon.spark_core.skill.Skill
+import cn.solarmoon.spark_core.registry.common.SparkSkillContext
 import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.world.phys.Vec2
+import net.neoforged.bus.api.Event
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 
-data class PreventLocalInputComponent(
+class PreventLocalInputComponent(
     val forwardImpulse: Float = 0f,
     val leftImpulse: Float = 0f,
     val up: Boolean = false,
@@ -19,27 +23,32 @@ data class PreventLocalInputComponent(
     val sprintTriggerTime: Int = -1,
     val swinging: Boolean = false,
     val activeTime: List<Vec2> = listOf(),
-) {
+): SkillComponent() {
 
-    fun playerInput(event: MovementInputUpdateEvent, time: Double) {
-        val player = event.entity
-        val input = event.input
-        if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
-            input.forwardImpulse = forwardImpulse
-            input.leftImpulse = leftImpulse
-            input.up = up
-            input.down = down
-            input.left = left
-            input.right = right
-            input.jumping = jumping
-            input.shiftKeyDown = shiftKeyDown
-            (player as? LocalPlayer)?.sprintTriggerTime = sprintTriggerTime
-            player.swinging = swinging
+    override fun onEvent(event: Event) {
+        if (event is MovementInputUpdateEvent) {
+            val time = skill.blackBoard.require(SparkSkillContext.TIME, this)
+            val player = event.entity
+            val input = event.input
+            if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
+                input.forwardImpulse = forwardImpulse
+                input.leftImpulse = leftImpulse
+                input.up = up
+                input.down = down
+                input.left = left
+                input.right = right
+                input.jumping = jumping
+                input.shiftKeyDown = shiftKeyDown
+                (player as? LocalPlayer)?.sprintTriggerTime = sprintTriggerTime
+                player.swinging = swinging
+            }
         }
     }
 
+    override val codec: MapCodec<out SkillComponent> = CODEC
+
     companion object {
-        val CODEC: Codec<PreventLocalInputComponent> = RecordCodecBuilder.create {
+        val CODEC: MapCodec<PreventLocalInputComponent> = RecordCodecBuilder.mapCodec {
             it.group(
                 Codec.FLOAT.optionalFieldOf("forward_impulse", 0f).forGetter { it.forwardImpulse },
                 Codec.FLOAT.optionalFieldOf("left_impulse", 0f).forGetter { it.leftImpulse },

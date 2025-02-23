@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.skill.component.body_binder
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.skill.Skill
+import cn.solarmoon.spark_core.skill.component.SkillComponent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
@@ -12,7 +13,7 @@ import net.minecraft.world.phys.Vec2
 import java.util.function.Function
 import kotlin.properties.Delegates
 
-abstract class RigidBodyBinder {
+abstract class RigidBodyBinder: SkillComponent() {
 
     var body: PhysicsRigidBody? = null
         private set
@@ -33,12 +34,6 @@ abstract class RigidBodyBinder {
     abstract val shape: CollisionShape
 
     protected abstract fun createBody(owner: PhysicsHost): PhysicsRigidBody
-
-    abstract val codec: MapCodec<out RigidBodyBinder>
-
-    fun copy(): RigidBodyBinder {
-        return codec.codec().decode(JsonOps.INSTANCE, CODEC.encodeStart(JsonOps.INSTANCE, this).orThrow).orThrow.first
-    }
 
     protected open fun onBoxEntry() {
         body?.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01
@@ -64,7 +59,7 @@ abstract class RigidBodyBinder {
         }
     }
 
-    open fun remove() {
+    override fun onDetach() {
         collideEnableCheck = false
         body?.name?.let { owner?.removeBody(it) }
     }
@@ -84,11 +79,7 @@ abstract class RigidBodyBinder {
     }
 
     companion object {
-        val CODEC = SparkRegistries.RIGID_BODY_BINDER_CODEC.byNameCodec()
-            .dispatch(
-                RigidBodyBinder::codec,
-                Function.identity()
-            )
+        val CODEC = SkillComponent.CODEC.xmap({ it as RigidBodyBinder }, { it })
     }
 
 }

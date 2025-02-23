@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.molang.core.builtin.query.*;
 import cn.solarmoon.spark_core.molang.core.binding.ContextBinding;
 import cn.solarmoon.spark_core.molang.core.util.MolangUtils;
 import net.minecraft.client.CameraType;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -47,7 +48,7 @@ public class QueryBinding extends ContextBinding {
         entityVar("head_y_rotation", ctx -> ctx.getAnimatable().getYRot());
         entityVar("yaw_speed", ctx -> getYawSpeed(ctx.getAnimatable()));
         entityVar("cardinal_facing_2d", ctx -> ctx.getAnimatable().getDirection().get3DDataValue());
-        entityVar("distance_from_camera", ctx -> ctx.getMc().gameRenderer.getMainCamera().getPosition().distanceTo(ctx.getAnimatable().position()));
+        entityVar("distance_from_camera", ctx -> Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(ctx.getAnimatable().position()));
         entityVar("eye_target_x_rotation", ctx -> ctx.getAnimatable().getViewXRot(ctx.getPartialTicks()));
         entityVar("eye_target_y_rotation", ctx -> ctx.getAnimatable().getViewYRot(ctx.getPartialTicks()));
         entityVar("ground_speed", ctx -> getGroundSpeed(ctx.getAnimatable()));
@@ -55,7 +56,7 @@ public class QueryBinding extends ContextBinding {
         entityVar("vertical_speed", ctx -> getVerticalSpeed(ctx.getAnimatable()));
         entityVar("walk_distance", ctx -> ctx.getAnimatable().moveDist);
         entityVar("has_rider", ctx -> ctx.getAnimatable().isVehicle());
-        entityVar("is_first_person", ctx -> ctx.getMc().options.getCameraType() == CameraType.FIRST_PERSON);
+        entityVar("is_first_person", ctx -> Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON);
         entityVar("is_in_water", ctx -> ctx.getAnimatable().isInWater());
         entityVar("is_in_water_or_rain", ctx -> ctx.getAnimatable().isInWaterRainOrBubble());
         entityVar("is_on_fire", ctx -> ctx.getAnimatable().isOnFire());

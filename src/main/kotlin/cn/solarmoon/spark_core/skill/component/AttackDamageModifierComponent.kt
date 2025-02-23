@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.skill.component
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
 import cn.solarmoon.spark_core.skill.Skill
 import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.common.NeoForge
@@ -10,11 +11,9 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent
 import net.neoforged.neoforge.event.entity.player.SweepAttackEvent
 
-data class AttackDamageModifierComponent(
+class AttackDamageModifierComponent(
     val damageMultiply: Float = 1f
-) {
-
-    lateinit var skill: Skill
+): SkillComponent() {
 
     /**
      * 攻击时取消原版的攻击间隔对攻击的削弱
@@ -64,8 +63,7 @@ data class AttackDamageModifierComponent(
         }
     }
 
-    fun active(skill: Skill) {
-        this.skill = skill
+    override fun onAttach() {
         val entity = skill.holder as? Entity ?: return
         if (!skill.level.isClientSide && !entity.persistentData.getBoolean("SOFregistedADM")) {
             entity.persistentData.putBoolean("SOFregistedADM", true)
@@ -76,7 +74,7 @@ data class AttackDamageModifierComponent(
         }
     }
 
-    fun end() {
+    override fun onDetach() {
         val entity = skill.holder as? Entity ?: return
         if (!skill.level.isClientSide) {
             entity.persistentData.putBoolean("SOFregistedADM", false)
@@ -87,8 +85,10 @@ data class AttackDamageModifierComponent(
         }
     }
 
+    override val codec: MapCodec<out SkillComponent> = CODEC
+
     companion object {
-        val CODEC: Codec<AttackDamageModifierComponent> = RecordCodecBuilder.create {
+        val CODEC: MapCodec<AttackDamageModifierComponent> = RecordCodecBuilder.mapCodec {
             it.group(
                 Codec.FLOAT.optionalFieldOf("damage_multiply", 1f).forGetter { it.damageMultiply }
             ).apply(it, ::AttackDamageModifierComponent)

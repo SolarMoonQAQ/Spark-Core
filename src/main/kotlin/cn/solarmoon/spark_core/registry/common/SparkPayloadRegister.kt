@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
+import cn.solarmoon.spark_core.skill.payload.SkillComponentPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -33,6 +34,7 @@ object SparkPayloadRegister {
         skill.playToClient(SkillPredictSyncPayload.TYPE, SkillPredictSyncPayload.STREAM_CODEC, SkillPredictSyncPayload::handleInClient)
         skill.playToClient(SkillSyncPayload.TYPE, SkillSyncPayload.STREAM_CODEC, SkillSyncPayload::handleInClient)
         skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)
+        skill.playBidirectional(SkillComponentPayload.TYPE, SkillComponentPayload.STREAM_CODEC, SkillComponentPayload::handleInBothSide)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

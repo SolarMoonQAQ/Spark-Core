@@ -2,8 +2,11 @@ package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.entity.getRelativeVector
+import cn.solarmoon.spark_core.skill.Skill
+import cn.solarmoon.spark_core.registry.common.SparkSkillContext
 import com.mojang.datafixers.util.Pair
 import com.mojang.serialization.Codec
+import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.client.player.Input
 import net.minecraft.client.player.LocalPlayer
@@ -13,20 +16,23 @@ import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
 import kotlin.math.PI
 import kotlin.math.atan2
+import kotlin.ranges.contains
 
-data class MoveSetComponent(
+class MoveSetComponent(
     val sets: List<Pair<Vec2, Vec3>> = listOf(),
     val orientationByInput: Boolean = false,
-) {
+): SkillComponent() {
 
     var inputCache: Input? = null
 
-    fun active() {
+    override fun onAttach() {
         inputCache = null
     }
 
-    fun update(time: Double, entity: Entity) {
-        val level = entity.level()
+    override fun onTick() {
+        val entity = skill.holder as? Entity ?: return
+        val level = skill.level
+        val time = skill.blackBoard.require(SparkSkillContext.TIME, this)
         sets.forEach { pair ->
             val activeTime = pair.first
             val move = pair.second
@@ -46,8 +52,10 @@ data class MoveSetComponent(
         }
     }
 
+    override val codec: MapCodec<out SkillComponent> = CODEC
+
     companion object {
-        val CODEC: Codec<MoveSetComponent> = RecordCodecBuilder.create {
+        val CODEC: MapCodec<MoveSetComponent> = RecordCodecBuilder.mapCodec {
             it.group(
                 Codec.pair(SerializeHelper.VEC2_CODEC.fieldOf("active_time").codec(), Vec3.CODEC.fieldOf("move").codec()).listOf().fieldOf("sets").forGetter { it.sets },
                 Codec.BOOL.optionalFieldOf("orientation_by_input", false).forGetter { it.orientationByInput }
