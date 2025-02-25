@@ -17,7 +17,7 @@ import net.minecraft.world.phys.Vec3
 import org.joml.Vector2i
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 
-class EntityModelListener: SimpleJsonListener("geo/model") {
+class EntityModelListener : SimpleJsonListener("geo/model") {
 
     override fun apply(
         reads: Map<ResourceLocation, JsonElement>,
@@ -25,16 +25,44 @@ class EntityModelListener: SimpleJsonListener("geo/model") {
         profiler: ProfilerFiller
     ) {
         reads.forEach { id, json ->
-            val target = json.asJsonObject.getAsJsonArray("minecraft:geometry").first().asJsonObject.getAsJsonArray("bones")
+            val target =
+                json.asJsonObject.getAsJsonArray("minecraft:geometry").first().asJsonObject.getAsJsonArray("bones")
             // 单独读取贴图长宽
-            val texture = json.asJsonObject.getAsJsonArray("minecraft:geometry").first().asJsonObject.getAsJsonObject("description")
-            val coord = Vector2i(GsonHelper.getAsInt(texture, "texture_width"), GsonHelper.getAsInt(texture, "texture_height"))
+            val texture = json.asJsonObject.getAsJsonArray("minecraft:geometry")
+                .first().asJsonObject.getAsJsonObject("description")
+            val coord =
+                Vector2i(GsonHelper.getAsInt(texture, "texture_width"), GsonHelper.getAsInt(texture, "texture_height"))
             val bones = OBone.MAP_CODEC.decode(JsonOps.INSTANCE, target).orThrow.first.mapValues {
                 val it = it.value
                 // 应用长宽和修正到所有方块
-                val cubes = it.cubes.map { OCube(Vec3(- it.originPos.x - it.size.x, it.originPos.y, it.originPos.z).div(16.0), it.size.div(16.0), it.pivot.multiply(-1.0, 1.0, 1.0).div(16.0), it.rotation.multiply(-1.0, -1.0, 1.0).toRadians(), it.inflate.div(16), it.uvUnion, it.mirror, coord.x, coord.y) }.toMutableList()
-                val locators = it.locators.mapValues { (_, value) -> OLocator(value.offset.div(16.0), value.rotation.div(16.0)) }
-                OBone(it.name, it.parentName, it.pivot.multiply(-1.0, 1.0, 1.0).div(16.0), it.rotation.multiply(-1.0, -1.0, 1.0).toRadians(), LinkedHashMap(locators), ArrayList(cubes))
+                val cubes = it.cubes.map {
+                    OCube(
+                        Vec3(-it.originPos.x - it.size.x, it.originPos.y, it.originPos.z).div(16.0),
+                        it.size.div(16.0),
+                        it.pivot.multiply(-1.0, 1.0, 1.0).div(16.0),
+                        it.rotation.multiply(-1.0, -1.0, 1.0).toRadians(),
+                        it.inflate.div(16),
+                        it.uvUnion,
+                        it.mirror,
+                        coord.x,
+                        coord.y
+                    )
+                }.toMutableList()
+                val locators =
+                    it.locators.mapValues { (_, value) ->
+                        OLocator(
+                            value.offset.div(16.0).multiply(-1.0, 1.0, 1.0),
+                            value.rotation.multiply(-1.0, -1.0, 1.0).div(16.0)
+                        )
+                    }
+                OBone(
+                    it.name,
+                    it.parentName,
+                    it.pivot.multiply(-1.0, 1.0, 1.0).div(16.0),
+                    it.rotation.multiply(-1.0, -1.0, 1.0).toRadians(),
+                    LinkedHashMap(locators),
+                    ArrayList(cubes)
+                )
             }
             OModel.ORIGINS[id] = OModel(coord.x, coord.y, LinkedHashMap(bones))
         }
