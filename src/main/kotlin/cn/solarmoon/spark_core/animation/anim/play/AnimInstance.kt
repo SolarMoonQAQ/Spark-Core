@@ -1,9 +1,12 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import kotlin.reflect.KClass
 
 class AnimInstance private constructor(
     val holder: IAnimatable<*>,
@@ -19,6 +22,9 @@ class AnimInstance private constructor(
             val default = AnimInstance(holder, name, origin).apply { provider.invoke(this) }
             return default.apply { defaultValue = default.copy() }
         }
+
+        @JvmStatic
+        fun create(holder: IAnimatable<*>, index: AnimIndex, provider: (AnimInstance).() -> Unit = {}) = create(holder, index.name, OAnimationSet.get(index.index).getAnimation(index.name) ?: throw NullPointerException("没有找到索引为 $index 的动画"), provider)
     }
 
     var time = 0.0
@@ -28,14 +34,9 @@ class AnimInstance private constructor(
     var shouldTurnBody = false
     var rejectNewAnim: (AnimInstance?) -> Boolean = { false }
     var isCancelled = true
+        internal set
+    var eventHandlers = mutableMapOf<KClass<out AnimEvent>, MutableList<AnimInstance.(AnimEvent) -> Unit>>()
         private set
-
-    private var physTickActions = mutableListOf<AnimInstance.() -> Unit>()
-    private var tickActions = mutableListOf<AnimInstance.() -> Unit>()
-    private var switchActions = mutableListOf<AnimInstance.(AnimInstance?) -> Unit>()
-    private var enableActions = mutableListOf<AnimInstance.() -> Unit>()
-    private var endActions = mutableListOf<AnimInstance.() -> Unit>()
-    private var eventHandlers = mutableMapOf<String, (Double) -> Unit>()
 
     val step get() = speed / PhysicsLevel.TPS
 
@@ -44,66 +45,26 @@ class AnimInstance private constructor(
     fun step(overallSpeed: Double = 1.0) {
         time += step * overallSpeed
         totalTime += step * overallSpeed
-
-        physTickActions.forEach {
-            it.invoke(this)
-        }
-
-        eventHandlers.values.forEach {
-            it.invoke(time)
-        }
+        triggerEvent(AnimEvent.PhysicsTick)
     }
 
-    fun onEvent(eventName: String, timeRange: ClosedRange<Double>, handler: () -> Unit) {
-        eventHandlers[eventName] = { currentTime ->
-            if (currentTime in timeRange) handler()
-        }
+    inline fun <reified T : AnimEvent> onEvent(crossinline handler: AnimInstance.(T) -> Unit) {
+        @Suppress("UNCHECKED_CAST")
+        eventHandlers.getOrPut(T::class) { mutableListOf() }.add { handler.invoke(this, it as T) }
     }
 
-    fun onTick(reset: Boolean = false, action: AnimInstance.() -> Unit) {
-        if (reset) tickActions.clear()
-        tickActions.add(action)
-    }
+    fun triggerEvent(event: AnimEvent) {
+        eventHandlers[event::class]?.forEach { it(event) }
 
-    fun onPhysTick(reset: Boolean = false, action: AnimInstance.() -> Unit) {
-        if (reset) physTickActions.clear()
-        physTickActions.add(action)
-    }
-
-    fun onSwitch(reset: Boolean = false, action: AnimInstance.(AnimInstance?) -> Unit) {
-        if (reset) switchActions.clear()
-        switchActions.add(action)
-    }
-
-    fun onEnable(reset: Boolean = false, action: AnimInstance.() -> Unit) {
-        if (reset) enableActions.clear()
-        enableActions.add(action)
-    }
-
-    fun onEnd(reset: Boolean = false, action: AnimInstance.() -> Unit) {
-        if (reset) endActions.clear()
-        endActions.add(action)
-    }
-
-    fun switchInvoke(next: AnimInstance?) {
-        switchActions.forEach {
-            it.invoke(this, next)
+        if (event is AnimEvent.Completed || event is AnimEvent.SwitchOut || event is AnimEvent.Interrupted) {
+            eventHandlers[AnimEvent.End::class]?.forEach { it(AnimEvent.End(event)) }
         }
     }
 
     fun cancel() {
         if (!isCancelled) {
             isCancelled = true
-            endActions.forEach {
-                it.invoke(this)
-            }
-        }
-    }
-
-    fun enable() {
-        isCancelled = false
-        enableActions.forEach {
-            it.invoke(this)
+            triggerEvent(AnimEvent.Interrupted)
         }
     }
 
@@ -117,11 +78,6 @@ class AnimInstance private constructor(
         copy.totalTime = totalTime
         copy.shouldTurnBody = shouldTurnBody
         copy.rejectNewAnim = rejectNewAnim
-        copy.physTickActions = physTickActions.toMutableList()
-        copy.tickActions = tickActions.toMutableList()
-        copy.switchActions = switchActions.toMutableList()
-        copy.enableActions = enableActions.toMutableList()
-        copy.endActions = endActions.toMutableList()
         copy.eventHandlers = eventHandlers.toMutableMap()
         return copy
     }
@@ -133,18 +89,12 @@ class AnimInstance private constructor(
             totalTime = default.totalTime
             shouldTurnBody = default.shouldTurnBody
             rejectNewAnim = default.rejectNewAnim
-
-            physTickActions = default.physTickActions.toMutableList()
-            tickActions = default.tickActions.toMutableList()
-            switchActions = default.switchActions.toMutableList()
-            enableActions = default.enableActions.toMutableList()
-            endActions = default.endActions.toMutableList()
             eventHandlers = default.eventHandlers.toMutableMap()
         }
     }
 
     fun tick() {
-        tickActions.forEach { it.invoke(this) }
+        triggerEvent(AnimEvent.Tick)
     }
     
     fun physTick(overallSpeed: Double = 1.0) {
@@ -155,7 +105,8 @@ class AnimInstance private constructor(
             Loop.ONCE -> {
                 if (time < maxLength) step(overallSpeed)
                 else {
-                    cancel()
+                    isCancelled = true
+                    triggerEvent(AnimEvent.Completed)
                 }
             }
             Loop.HOLD_ON_LAST_FRAME -> {

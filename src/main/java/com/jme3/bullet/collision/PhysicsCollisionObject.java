@@ -48,9 +48,7 @@ import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jme3utilities.Validate;
@@ -71,6 +69,10 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     public boolean collideWithOwner = false;
 
     public boolean isColliding = false;
+
+    public HashMap<Long, Set<Long>> allContacts = new HashMap<>();
+
+    public LinkedHashSet<String> flags = new LinkedHashSet<>();
 
     public boolean isCollisionGroupContains(PhysicsCollisionObject other) {
         var t = getCollideWithGroups();

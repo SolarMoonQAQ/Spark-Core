@@ -28,7 +28,7 @@ data class OBone(
      */
     var rootModel: OModel? = null
 
-    val originKeyData = KeyAnimData(rotation = rotation)
+    val originKeyData = KeyAnimData(rotation = Vec3(0.0,0.0,0.0))
 
     init {
         cubes.forEach { it.rootBone = this }

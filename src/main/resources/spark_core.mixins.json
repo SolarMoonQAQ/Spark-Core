@@ -7,7 +7,6 @@
     "animation.EntityMixin",
     "animation.LivingEntityMixin",
     "animation.PlayerMixin",
-    "event.ClientHooksMixin",
     "event.EntityMixin",
     "event.ItemStackMixin",
     "event.PlayerMixin",

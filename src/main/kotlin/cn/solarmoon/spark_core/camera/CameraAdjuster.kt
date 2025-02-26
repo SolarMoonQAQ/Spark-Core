@@ -2,19 +2,25 @@ package cn.solarmoon.spark_core.camera
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.event.EntityTurnEvent
+import net.minecraft.client.Minecraft
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.util.Mth
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.neoforge.client.event.ClientTickEvent
 import net.neoforged.neoforge.client.event.ViewportEvent
 import org.joml.Vector2f
 
 object CameraAdjuster {
 
-    @JvmStatic
-    val CAMERA_TURN: Vector2f = Vector2f()
+    private val CAMERA_TURN: Vector2f = Vector2f()
 
-    @JvmStatic
-    var isActive = false
+    @SubscribeEvent
+    private fun tick(event: ClientTickEvent.Pre) {
+        val player = Minecraft.getInstance().player ?: return
+        player.setCameraLock(false)
+    }
 
     @SubscribeEvent
     private fun lockHeadTurn(event: EntityTurnEvent) {
@@ -22,8 +28,7 @@ object CameraAdjuster {
         val xRot = event.xRot.toFloat()
         val yRot = event.yRot.toFloat()
         if (entity is IEntityAnimatable<*>) {
-            val flag1 = entity.animController.getPlayingAnim()?.time != 0.0
-            if (flag1 && isActive) {
+            if (entity.isCameraLocked()) {
                 if (entity is LocalPlayer) CAMERA_TURN.add(xRot, yRot)
                 event.isCanceled = true
             } else if (CAMERA_TURN != Vector2f()) {
@@ -47,3 +52,9 @@ object CameraAdjuster {
     }
 
 }
+
+fun Entity.setCameraLock(boolean: Boolean) {
+    persistentData.putBoolean("CameraLock", boolean)
+}
+
+fun Entity.isCameraLocked() = persistentData.getBoolean("CameraLock")

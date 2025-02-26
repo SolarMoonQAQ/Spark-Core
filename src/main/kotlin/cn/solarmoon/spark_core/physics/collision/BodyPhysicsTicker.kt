@@ -6,8 +6,8 @@ import net.minecraft.world.level.Level
 
 interface BodyPhysicsTicker {
 
-    fun physicsTick(body: PhysicsCollisionObject, level: PhysicsLevel)
+    fun physicsTick(body: PhysicsCollisionObject, level: PhysicsLevel) {}
 
-    fun mcTick(body: PhysicsCollisionObject, level: Level)
+    fun mcTick(body: PhysicsCollisionObject, level: Level) {}
 
 }

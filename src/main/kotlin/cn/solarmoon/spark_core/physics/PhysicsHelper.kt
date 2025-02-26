@@ -71,9 +71,9 @@ fun Vec3.toBVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
 fun org.joml.Vector3f.toBVector3f() = Vector3f(x, y ,z)
 
 fun org.joml.Matrix3f.toBMatrix3f() = Matrix3f(
-    m00, m10, m20,
-    m01, m11, m21,
-    m02, m21, m22
+    m00, m01, m02,
+    m10, m11, m12,
+    m20, m21, m22
 )
 
 inline fun <reified T> PhysicsCollisionObject.getOwner() = owner as? T

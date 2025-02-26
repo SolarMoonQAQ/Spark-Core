@@ -11,7 +11,7 @@ data class OPolygon(
     var v1: Float,
     var u2: Float,
     var v2: Float,
-    val textureWith: Float,
+    val textureWidth: Float,
     val textureHeight: Float,
     val mirror: Boolean,
     val direction: Direction,
@@ -31,10 +31,10 @@ data class OPolygon(
                 normal.mul(-1f, 1f, 1f)
             }
 
-            vertexes[0] = vertexes[0].remap(u1 / textureWith, v1 / textureHeight)
-            vertexes[1] = vertexes[1].remap((u1 + u2) / textureWith, v1 / textureHeight)
-            vertexes[2] = vertexes[2].remap((u1 + u2) / textureWith, (v1 + v2) / textureHeight)
-            vertexes[3] = vertexes[3].remap(u1 / textureWith, (v1 + v2) / textureHeight)
+            vertexes[1] = vertexes[1].remap(u1 / textureWidth, v1 / textureHeight)
+            vertexes[0] = vertexes[0].remap((u1 + u2) / textureWidth, v1 / textureHeight)
+            vertexes[3] = vertexes[3].remap((u1 + u2) / textureWidth, (v1 + v2) / textureHeight)
+            vertexes[2] = vertexes[2].remap(u1 / textureWidth, (v1 + v2) / textureHeight)
         } else {
             if (!mirror) {
                 val tempWidth = u2
@@ -44,10 +44,10 @@ data class OPolygon(
                 normal.mul(-1f, 1f, 1f)
             }
 
-            vertexes[0] = vertexes[0].remap(u1 / textureWith, v1 / textureHeight)
-            vertexes[1] = vertexes[1].remap(u2 / textureWith, v1 / textureHeight)
-            vertexes[2] = vertexes[2].remap(u2 / textureWith, v2 / textureHeight)
-            vertexes[3] = vertexes[3].remap(u1 / textureWith, v2 / textureHeight)
+            vertexes[0] = vertexes[0].remap(u1 / textureWidth, v1 / textureHeight)
+            vertexes[1] = vertexes[1].remap(u2 / textureWidth, v1 / textureHeight)
+            vertexes[2] = vertexes[2].remap(u2 / textureWidth, v2 / textureHeight)
+            vertexes[3] = vertexes[3].remap(u1 / textureWidth, v2 / textureHeight)
         }
     }
 
