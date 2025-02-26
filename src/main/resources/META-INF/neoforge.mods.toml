@@ -9,6 +9,7 @@ version="${mod_version}"
 displayName="${mod_name}"
 logoFile="logo.png"
 authors="${mod_authors}"
+credits="${mod_credits}"
 description='''${mod_description}'''
 
 [[mixins]]
