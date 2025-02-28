@@ -1,4 +1,4 @@
-modLoader="javafml"
+modLoader="kotlinforforge"
 
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
@@ -11,6 +11,7 @@ logoFile="logo.png"
 authors="${mod_authors}"
 credits="${mod_credits}"
 description='''${mod_description}'''
+
 
 [[mixins]]
 config="${mod_id}.mixins.json"
