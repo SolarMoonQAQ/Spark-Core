@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
-import cn.solarmoon.spark_core.animation.AnimationStateDefinition
 import cn.solarmoon.spark_core.animation.IAnimatable
 
 class AnimController(
@@ -116,26 +115,6 @@ class AnimController(
         if (!isInTransition) {
             val anim = mainAnim ?: return
             if (!anim.isCancelled) anim.tick()
-        }
-    }
-
-    fun applyStateDefinition(state: String, definition: AnimationStateDefinition) {
-        // 清除现有混合空间
-        blendSpace.clear()
-        
-        // 应用新的混合空间配置
-        definition.blendSpace.forEach { (key, entry) ->
-            val anim = entry.animation?.let { 
-                animatable.newAnimInstance(it)
-            } ?: mainAnim
-            
-            if (anim != null) {
-                blendSpace.put(key, BlendAnimation(
-                    anim = anim,
-                    weight = entry.weight,
-                    boneBlackList = entry.boneBlackList
-                ))
-            }
         }
     }
 

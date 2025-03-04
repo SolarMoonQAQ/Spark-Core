@@ -26,8 +26,9 @@
 
 package org.java_websocket.exceptions;
 
-import java.io.IOException;
 import org.java_websocket.WebSocket;
+
+import java.io.IOException;
 
 /**
  * Exception to wrap an IOException and include information about the websocket which had the
