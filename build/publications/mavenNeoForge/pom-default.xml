@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!-- This module was also published with a richer model, Gradle metadata,  -->
+  <!-- which should be used instead. Do not delete the following line which  -->
+  <!-- is to indicate to Gradle or any Gradle module metadata file consumer  -->
+  <!-- that they should prefer consuming it instead. -->
+  <!-- do_not_remove: published-with-gradle-metadata -->
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>cn.solarmoon</groupId>
+  <artifactId>spark-core-neoforge</artifactId>
+  <version>1.21.1-1.0.607</version>
+  <dependencies>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib</artifactId>
+      <version>2.0.21</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>maven.modrinth</groupId>
+      <artifactId>jade</artifactId>
+      <version>15.1.6+neoforge</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>thedarkcolour</groupId>
+      <artifactId>kotlinforforge-neoforge</artifactId>
+      <version>5.6.0</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>[2.10.1,2.11.0)</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>software.bernie.geckolib</groupId>
+      <artifactId>geckolib-neoforge-1.21.1</artifactId>
+      <version>4.7</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>mod.azure.azurelib</groupId>
+      <artifactId>azurelib-neo-1.21.1</artifactId>
+      <version>2.3.27</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>mezz.jei</groupId>
+      <artifactId>jei-1.21.1-neoforge</artifactId>
+      <version>19.18.8.216</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+</project>

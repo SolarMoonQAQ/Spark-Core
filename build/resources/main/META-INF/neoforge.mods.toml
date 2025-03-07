@@ -1,0 +1,40 @@
+modLoader="javafml"
+
+loaderVersion="[4,)"
+license="GPL-3.0 license"
+
+[[mods]]
+modId="spark_core"
+version="1.0.607"
+displayName="Spark Core"
+logoFile="logo.png"
+authors="æ¦æï¼SolarMoonï¼, çç²½å­ï¼Sweetzonziï¼"
+credits="TartaricAcid & TomatoPuddin for Molang support."
+description='''A lib mod with rigid body physics, bedrock version of animation loader, state machine and other useful content.'''
+
+[[mixins]]
+config="spark_core.mixins.json"
+
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"
+
+[[dependencies.spark_core]]
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.spark_core]]
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21,1.22)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.spark_core]]
+    modId="kotlinforforge"
+    type="required"
+    versionRange="[5.6.0,)"
+    ordering="NONE"
+    side="BOTH"

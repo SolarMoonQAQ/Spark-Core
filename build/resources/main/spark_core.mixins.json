@@ -1,0 +1,45 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "cn.solarmoon.spark_core.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "animation.EntityMixin",
+    "animation.LivingEntityMixin",
+    "animation.animatable.PlayerMixin",
+    "animation.animatable.ZombieMixin",
+    "event.EntityMixin",
+    "event.ItemStackMixin",
+    "event.PlayerMixin",
+    "extension.DamageSourceMixin",
+    "extension.EntityMixin",
+    "extension.LivingEntityMixin",
+    "phys.EntityMixin",
+    "phys.LevelMixin"
+  ],
+  "client": [
+    "animation.CapeLayerMixin",
+    "animation.ElytraModelMixin",
+    "animation.HumanoidArmorLayerMixin",
+    "animation.HumanoidModelMixin",
+    "animation.ItemInHandLayerMixin",
+    "animation.LivingEntityRendererMixin",
+    "animation.ModelPartMixin",
+    "animation.animatable.PlayerModelMixin",
+    "animation.PlayerRendererMixin",
+    "animation.animatable.ZombieModelMixin",
+    "animation.humanoid.first_person.EntityRenderDispatcherMixin",
+    "animation.humanoid.first_person.ItemInHandRendererMixin",
+    "animation.humanoid.first_person.LevelRendererMixin",
+    "animation.humanoid.first_person.LivingEntityRendererMixin",
+    "animation.humanoid.first_person.PlayerRendererMixin",
+    "compat.azurelib.GeoArmorRendererMixin",
+    "compat.geckolib.GeoArmorRendererMixin",
+    "event.KeyboardInputMixin",
+    "extension.DebugRendererMixin",
+    "extension.LocalPlayerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

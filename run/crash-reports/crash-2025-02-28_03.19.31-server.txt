@@ -1,0 +1,116 @@
+---- Minecraft Crash Report ----
+// My bad.
+
+Time: 2025-02-28 03:19:31
+Description: Exception in server tick loop
+
+java.lang.NoClassDefFoundError: cn/solarmoon/spark_core/physics/collision/BodyPhysicsTicker
+	at TRANSFORMER/spark_core@1.0.551/cn.solarmoon.spark_core.physics.collision.CollisionFunctionApplier.mcTick(CollisionFunctionApplier.kt:20) ~[%23185!/:?] {re:classloading}
+	at MC-BOOTSTRAP/net.neoforged.bus/net.neoforged.bus.EventBus.post(EventBus.java:350) ~[bus-8.0.2.jar%23141!/:?] {}
+	at MC-BOOTSTRAP/net.neoforged.bus/net.neoforged.bus.EventBus.post(EventBus.java:315) ~[bus-8.0.2.jar%23141!/:?] {}
+	at TRANSFORMER/neoforge@21.1.95/net.neoforged.neoforge.event.EventHooks.fireLevelTickPost(EventHooks.java:982) ~[neoforge-21.1.95-minecraft-merged.jar%23184!/:?] {re:classloading}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1058) ~[neoforge-21.1.95-minecraft-merged.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:932) ~[neoforge-21.1.95-minecraft-merged.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.server.IntegratedServer.tickServer(IntegratedServer.java:113) ~[neoforge-21.1.95-minecraft-merged.jar%23183!/:?] {re:classloading,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:713) ~[neoforge-21.1.95-minecraft-merged.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:267) ~[neoforge-21.1.95-minecraft-merged.jar%23183!/:?] {re:classloading,pl:accesstransformer:B}
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?] {}
+Caused by: java.lang.ClassNotFoundException: cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker
+	at cpw.mods.securejarhandler/cpw.mods.cl.ModuleClassLoader.loadClass(ModuleClassLoader.java:220) ~[securejarhandler-3.0.8.jar:?] {}
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526) ~[?:?] {}
+	... 10 more
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- System Details --
+Details:
+	Minecraft Version: 1.21.1
+	Minecraft Version ID: 1.21.1
+	Operating System: Windows 11 (amd64) version 10.0
+	Java Version: 21.0.4, Oracle Corporation
+	Java VM Version: Java HotSpot(TM) 64-Bit Server VM (mixed mode, sharing), Oracle Corporation
+	Memory: 515525264 bytes (491 MiB) / 1149239296 bytes (1096 MiB) up to 8363442176 bytes (7976 MiB)
+	CPUs: 16
+	Processor Vendor: AuthenticAMD
+	Processor Name: AMD Ryzen 7 7800X3D 8-Core Processor           
+	Identifier: AuthenticAMD Family 25 Model 97 Stepping 2
+	Microarchitecture: Zen 3
+	Frequency (GHz): 4.20
+	Number of physical packages: 1
+	Number of physical CPUs: 8
+	Number of logical CPUs: 16
+	Graphics card #0 name: AMD Radeon(TM) Graphics
+	Graphics card #0 vendor: Advanced Micro Devices, Inc.
+	Graphics card #0 VRAM (MiB): 512.00
+	Graphics card #0 deviceId: VideoController1
+	Graphics card #0 versionInfo: 31.0.24002.92
+	Graphics card #1 name: NVIDIA GeForce RTX 4070 SUPER
+	Graphics card #1 vendor: NVIDIA
+	Graphics card #1 VRAM (MiB): 12282.00
+	Graphics card #1 deviceId: VideoController2
+	Graphics card #1 versionInfo: 32.0.15.6094
+	Memory slot #0 capacity (MiB): 16384.00
+	Memory slot #0 clockSpeed (GHz): 4.80
+	Memory slot #0 type: Unknown
+	Memory slot #1 capacity (MiB): 16384.00
+	Memory slot #1 clockSpeed (GHz): 4.80
+	Memory slot #1 type: Unknown
+	Virtual memory max (MiB): 38549.47
+	Virtual memory used (MiB): 33909.95
+	Swap memory total (MiB): 6656.00
+	Swap memory used (MiB): 50.30
+	Space in storage for jna.tmpdir (MiB): <path not set>
+	Space in storage for org.lwjgl.system.SharedLibraryExtractPath (MiB): <path not set>
+	Space in storage for io.netty.native.workdir (MiB): <path not set>
+	Space in storage for java.io.tmpdir (MiB): available: 518492.59, total: 1952678.00
+	Space in storage for workdir (MiB): available: 518492.59, total: 1952678.00
+	JVM Flags: 0 total; 
+	Server Running: true
+	Player Count: 0 / 8; []
+	Active Data Packs: vanilla, mod_data, mod/moonlight (incompatible), mod/spark_core (incompatible), mod/jade (incompatible), mod/geckolib, mod/architectury (incompatible), mod/customskinloader (incompatible), mod/lanserverproperties, mod/jei (incompatible), mod/azurelib (incompatible), mod/samurai_dynasty (incompatible), mod/cloth_config (incompatible), mod/kotlinforforge, mod/caelus (incompatible), mod/dummmmmmy (incompatible), mod/curios (incompatible), mod/embeddium (incompatible), mod/neoforge
+	Available Data Packs: bundle, trade_rebalance, vanilla, mod/architectury (incompatible), mod/azurelib (incompatible), mod/caelus (incompatible), mod/cloth_config (incompatible), mod/curios (incompatible), mod/customskinloader (incompatible), mod/dummmmmmy (incompatible), mod/embeddium (incompatible), mod/geckolib, mod/jade (incompatible), mod/jei (incompatible), mod/kotlinforforge, mod/lanserverproperties, mod/moonlight (incompatible), mod/neoforge, mod/samurai_dynasty (incompatible), mod/spark_core (incompatible), mod_data
+	Enabled Feature Flags: minecraft:vanilla
+	World Generation: Stable
+	World Seed: 3273054377195094551
+	Type: Integrated Server (map_client.txt)
+	Is Modded: Definitely; Client brand changed to 'neoforge'; Server brand changed to 'neoforge'
+	Launched Version: 21.1.95
+	ModLauncher: 11.0.4+main.d2e20e43
+	ModLauncher launch target: forgeclientuserdev
+	ModLauncher services: 
+		sponge-mixin-0.15.2+mixin.0.8.7.jar mixin PLUGINSERVICE 
+		loader-4.0.34.jar slf4jfixer PLUGINSERVICE 
+		loader-4.0.34.jar runtime_enum_extender PLUGINSERVICE 
+		at-modlauncher-10.0.1.jar accesstransformer PLUGINSERVICE 
+		loader-4.0.34.jar runtimedistcleaner PLUGINSERVICE 
+		modlauncher-11.0.4.jar mixin TRANSFORMATIONSERVICE 
+		modlauncher-11.0.4.jar fml TRANSFORMATIONSERVICE 
+	FML Language Providers: 
+		kotlinforforge@5.6.0
+		javafml@4.0
+		lowcodefml@4.0
+		minecraft@4.0
+	Mod List: 
+		curios-neoforge-9.1.4+1.21.0.jar                  |Adorned API                   |curios                        |9.1.4+1.21.0        |Manifest: NOSIGNATURE
+		architectury-13.0.8-neoforge.jar                  |Architectury                  |architectury                  |13.0.8              |Manifest: NOSIGNATURE
+		azurelib-neo-1.21.1-2.3.27.jar                    |AzureLib                      |azurelib                      |2.3.27              |Manifest: NOSIGNATURE
+		caelus-neoforge-7.0.1+1.21.1.jar                  |Caelus API                    |caelus                        |7.0.1+1.21.1        |Manifest: NOSIGNATURE
+		cloth-config-15.0.140-neoforge.jar                |Cloth Config v15 API          |cloth_config                  |15.0.140            |Manifest: NOSIGNATURE
+		CustomSkinLoader_ForgeV3-14.21.jar                |CustomSkinLoader              |customskinloader              |14.21               |Manifest: 4a:31:8b:cf:34:eb:d0:13:f3:19:39:d5:d2:b9:12:78:b5:f2:8d:91:3e:6f:8f:ed:97:48:00:69:e1:30:3a:54
+		embeddium-1.0.11+mc1.21.1.jar                     |Embeddium                     |embeddium                     |1.0.11+mc1.21.1     |Manifest: NOSIGNATURE
+		geckolib-neoforge-1.21.1-4.7.jar                  |GeckoLib 4                    |geckolib                      |4.7                 |Manifest: NOSIGNATURE
+		jade-15.1.6+neoforge.jar                          |Jade                          |jade                          |15.1.6+neoforge     |Manifest: NOSIGNATURE
+		jei-1.21.1-neoforge-19.18.8.216.jar               |Just Enough Items             |jei                           |19.18.8.216         |Manifest: NOSIGNATURE
+		kffmod-neoforge-5.6.0.jar                         |Kotlin For Forge              |kotlinforforge                |5.6.0               |Manifest: NOSIGNATURE
+		[自定义局域网联机] lanserverproperties-1.13.1-neoforge.jar|Lan Server Properties         |lanserverproperties           |1.13.1              |Manifest: NOSIGNATURE
+		neoforge-21.1.95-minecraft-merged.jar             |Minecraft                     |minecraft                     |1.21.1              |Manifest: NOSIGNATURE
+		dummmmmmy-1.21-2.0.6-neoforge.jar                 |MmmMmmMmmMmm                  |dummmmmmy                     |1.21-2.0.6          |Manifest: NOSIGNATURE
+		moonlight-1.21-2.16.0-neoforge.jar                |Moonlight Lib                 |moonlight                     |1.21-2.15.14        |Manifest: NOSIGNATURE
+		neoforge-21.1.95-minecraft-merged.jar             |NeoForge                      |neoforge                      |21.1.95             |Manifest: NOSIGNATURE
+		samurai_dynasty-0.1.2-1.21.1.jar                  |Samurai Dynasty               |samurai_dynasty               |0.1.2-1.21.1        |Manifest: NOSIGNATURE
+		main                                              |Spark Core                    |spark_core                    |1.0.551             |Manifest: NOSIGNATURE
+	Crash Report UUID: 87f23ad3-7dab-4099-80ba-9685b434ccfd
+	FML: 4.0.34
+	NeoForge: 21.1.95

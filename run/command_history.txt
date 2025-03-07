@@ -1,0 +1,50 @@
+/effect give @a minecraft:speed infinite 10
+/effect clear @a
+/effect give @a minecraft:speed infinite 10
+/effect give @a minecraft:speed infinite 20
+/effect give @a minecraft:speed infinite 10
+/effect clear @a
+/time set day
+/effect give @a minecraft:speed infinite 10
+/effect clear @a
+/effect give @a minecraft:speed infinite 10
+/effect clear @a
+/summon spark_core:wukong
+/effect give @a minecraft:saturation infinite 255
+/summon spark_core:wukong
+/effect give @a minecraft:speed infinite 10
+/effect clear @a
+/give @a spark_core:hammer
+/time set day
+/time set night
+/kill
+/tp @a 0 0 0
+/summon minecraft:husk
+/kill @e
+/summon minecraft:husk
+/effect give @a minecraft:speed infinite 10
+/effect give @a minecraft:speed infinite 20
+/effect clear
+/kill @e
+/kill
+/summon minecraft:husk
+/summon minecraft:pig
+/kill @e
+/summon minecraft:husk
+/summon minecraft:slime
+/summon minecraft:husk
+/summon minecraft:iron_golem
+/summon minecraft:husk
+/summon minecraft:husks
+/summon minecraft:husk
+/effect give @a minecraft:regeneration infinite 255
+/gamerule doMobSpawning false
+/kill @e
+/difficulty peaceful
+/difficulty hard
+/summon minecraft:husk
+/summon minecraft:slime
+/summon minecraft:iron_golem
+/tick rate 1
+/tick rate 10
+/effect give @e[type=minecraft:iron_golem] minecraft:slowness infinite 255

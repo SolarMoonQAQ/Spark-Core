@@ -1,0 +1,144 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "cn.solarmoon",
+    "module": "spark-core-neoforge",
+    "version": "1.21.1-1.0.607",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.8"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "spark-core-neoforge-1.21.1-1.0.607.jar",
+          "url": "spark-core-neoforge-1.21.1-1.0.607.jar",
+          "size": 6992251,
+          "sha512": "4dd989448b039b039f330def1ce388cd90a20dab7890047e267e058b33b8dd1b44236d7b4ab37d99859c3df389abb8f4cc27c99daa17bb3b6c520288c33d7d12",
+          "sha256": "c689719a258ee7b17bf80023cbf97a8d2b1573bb1db7935e6ebd5335e7ea53c8",
+          "sha1": "d19600b7435c54cc02cab8ec7901a99c1e42b4a5",
+          "md5": "3a75c878b460a5bb4f558bf78089bba9"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "maven.modrinth",
+          "module": "jade",
+          "version": {
+            "requires": "15.1.6+neoforge"
+          }
+        },
+        {
+          "group": "thedarkcolour",
+          "module": "kotlinforforge-neoforge",
+          "version": {
+            "requires": "5.6.0"
+          }
+        },
+        {
+          "group": "com.google.code.gson",
+          "module": "gson",
+          "version": {
+            "requires": "[2.10.1,2.11.0)"
+          }
+        },
+        {
+          "group": "software.bernie.geckolib",
+          "module": "geckolib-neoforge-1.21.1",
+          "version": {
+            "requires": "4.7"
+          }
+        },
+        {
+          "group": "mod.azure.azurelib",
+          "module": "azurelib-neo-1.21.1",
+          "version": {
+            "requires": "2.3.27"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.21"
+          }
+        },
+        {
+          "group": "mezz.jei",
+          "module": "jei-1.21.1-neoforge",
+          "version": {
+            "requires": "19.18.8.216"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "spark-core-neoforge-1.21.1-1.0.607.jar",
+          "url": "spark-core-neoforge-1.21.1-1.0.607.jar",
+          "size": 6992251,
+          "sha512": "4dd989448b039b039f330def1ce388cd90a20dab7890047e267e058b33b8dd1b44236d7b4ab37d99859c3df389abb8f4cc27c99daa17bb3b6c520288c33d7d12",
+          "sha256": "c689719a258ee7b17bf80023cbf97a8d2b1573bb1db7935e6ebd5335e7ea53c8",
+          "sha1": "d19600b7435c54cc02cab8ec7901a99c1e42b4a5",
+          "md5": "3a75c878b460a5bb4f558bf78089bba9"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "spark-core-neoforge-1.21.1-1.0.607-sources.jar",
+          "url": "spark-core-neoforge-1.21.1-1.0.607-sources.jar",
+          "size": 5817835,
+          "sha512": "39b3f2217b6ee8f22ad95c4dfed49120b27771e78aab1b90fcb4e4c2b0cac12a56312b8f646582c8a62293e0475a7139ab7408aec2995544d782f87bb591b7a5",
+          "sha256": "3696f00c7505c30ea9a70e954fe219ed9f871f7a4399d89c38a75cf7f970e754",
+          "sha1": "8fbe82ef0324e8d2a5a0fdd09f0adcb413e65728",
+          "md5": "05597ee43e0985703da804a402b86646"
+        }
+      ]
+    }
+  ]
+}
