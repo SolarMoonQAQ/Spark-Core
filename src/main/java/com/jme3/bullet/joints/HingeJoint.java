@@ -36,8 +36,9 @@ import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.math.MyVector3f;
+
+import java.util.logging.Logger;
 
 /**
  * A single degree-of-freedom joint based on Bullet's btHingeConstraint.

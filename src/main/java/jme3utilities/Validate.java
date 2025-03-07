@@ -31,11 +31,12 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
+import jme3utilities.math.MyQuaternion;
+import jme3utilities.math.MyVector3f;
+
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.math.MyQuaternion;
-import jme3utilities.math.MyVector3f;
 
 /**
  * Utility methods to throw exceptions for invalid method arguments.

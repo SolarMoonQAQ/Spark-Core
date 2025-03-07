@@ -1,17 +1,14 @@
 package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.entity.knockBackRelative
-import cn.solarmoon.spark_core.skill.Skill
-import cn.solarmoon.spark_core.registry.common.SparkSkillContext
 import cn.solarmoon.spark_core.skill.payload.SkillComponentPayload
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.damagesource.DamageSources
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.phys.Vec3
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
@@ -20,10 +17,8 @@ class SelfKnockBackComponent(
     val fly: Boolean = true
 ): SkillComponent() {
 
-    override fun onAttach() {
-        val level = skill.level
-        if (level.isClientSide) return
-        val source = skill.blackBoard.require(SparkSkillContext.DAMAGE_SOURCE, this)
+    override fun onHurt(event: LivingIncomingDamageEvent) {
+        val source = event.source ?: return
         source.sourcePosition?.let {
             PacketDistributor.sendToAllPlayers(SkillComponentPayload(this, CompoundTag().apply {
                 putDouble("x", it.x)

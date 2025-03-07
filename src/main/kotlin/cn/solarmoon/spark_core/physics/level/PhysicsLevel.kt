@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.PhysicsTickEvent
+import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
@@ -19,7 +19,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.common.NeoForge
-import net.neoforged.neoforge.event.tick.LevelTickEvent
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.max
@@ -158,7 +157,7 @@ abstract class PhysicsLevel(
         }
 
     override fun prePhysicsTick(space: PhysicsSpace?, timeStep: Float) {
-        NeoForge.EVENT_BUS.post(PhysicsTickEvent.Level.Pre(this))
+        NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
     }
 
     override fun physicsTick(space: PhysicsSpace, timeStep: Float) {
@@ -168,7 +167,7 @@ abstract class PhysicsLevel(
             pco.tickers.forEach { it.physicsTick(pco, this) }
         }
 
-        NeoForge.EVENT_BUS.post(PhysicsTickEvent.Level(this))
+        NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent(this))
 
         lastPhysicsTickTime = System.nanoTime()
     }

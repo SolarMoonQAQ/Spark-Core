@@ -41,17 +41,12 @@ import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.simsilica.mathd.Vec3d;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
+import jme3utilities.Validate;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * A Bullet-JME collision space with its own {@code btCollisionWorld}.

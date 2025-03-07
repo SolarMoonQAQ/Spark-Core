@@ -35,7 +35,7 @@ interface IAnimatable<T> : Syncer {
     /**
      * 动画提所处的世界
      */
-    val level: Level?
+    val animLevel: Level?
 
     /**
      * 动画控制器，包含了对动画的控制/过渡/混合/获取等控制性操作，在类中新建一个新的即可
@@ -80,7 +80,7 @@ interface IAnimatable<T> : Syncer {
     /**
      * 获取调用时距离主线程上一次tick的时间与单tick时间的比值，服务端永远返回1
      */
-    val partialTicks: Float get() = if(level?.isClientSide == true) Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(false) else 1f
+    val partialTicks: Float get() = if(animLevel?.isClientSide == true) Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(false) else 1f
 
     /**
      * 动画体所在的世界坐标
@@ -123,10 +123,10 @@ interface IAnimatable<T> : Syncer {
      * @param physPartialTick 物理线程客户端的tick时间
      * @param partialTick 主线程客户端的tick时间
      */
-    fun getWorldBonePivot(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
+    fun getWorldBonePivot(name: String, offset: Vec3 = Vec3.ZERO, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
         val ma = getWorldBoneMatrix(name, partialTick, physPartialTick)
         val bone = model.getBone(name)
-        val pivot = bone.pivot.toVector3f()
+        val pivot = bone.pivot.add(offset).toVector3f()
         return ma.transformPosition(pivot)
     }
 

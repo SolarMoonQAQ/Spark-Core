@@ -1,13 +1,10 @@
 package cn.solarmoon.spark_core.skill.component
 
-import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.skill.Skill
-import cn.solarmoon.spark_core.registry.common.SparkSkillContext
+import cn.solarmoon.spark_core.skill.SkillTimeLine
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.client.player.LocalPlayer
-import net.minecraft.world.phys.Vec2
 import net.neoforged.bus.api.Event
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 
@@ -22,15 +19,14 @@ class PreventLocalInputComponent(
     val shiftKeyDown: Boolean = false,
     val sprintTriggerTime: Int = -1,
     val swinging: Boolean = false,
-    val activeTime: List<Vec2> = listOf(),
+    val activeTime: List<SkillTimeLine.Stamp> = listOf(),
 ): SkillComponent() {
 
     override fun onEvent(event: Event) {
         if (event is MovementInputUpdateEvent) {
-            val time = skill.blackBoard.require(SparkSkillContext.TIME, this)
             val player = event.entity
             val input = event.input
-            if (activeTime.isEmpty() || activeTime.any { time in it.x..it.y }) {
+            if (skill.timeline.match(activeTime)) {
                 input.forwardImpulse = forwardImpulse
                 input.leftImpulse = leftImpulse
                 input.up = up
@@ -60,7 +56,7 @@ class PreventLocalInputComponent(
                 Codec.BOOL.optionalFieldOf("shift_key_down", false).forGetter { it.shiftKeyDown },
                 Codec.INT.optionalFieldOf("sprint_trigger_time", -1).forGetter { it.sprintTriggerTime },
                 Codec.BOOL.optionalFieldOf("swinging", false).forGetter { it.swinging },
-                SerializeHelper.VEC2_CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime }
+                SkillTimeLine.Stamp.CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime },
             ).apply(it, ::PreventLocalInputComponent)
         }
     }

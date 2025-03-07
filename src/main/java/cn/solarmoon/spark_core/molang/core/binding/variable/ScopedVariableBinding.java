@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.binding.variable;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.core.util.StringPool;
 import cn.solarmoon.spark_core.molang.engine.runtime.AssignableVariable;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExecutionContext;

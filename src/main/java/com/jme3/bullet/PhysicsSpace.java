@@ -31,7 +31,6 @@
  */
 package com.jme3.bullet;
 
-import cn.solarmoon.spark_core.SparkCore;
 import com.jme3.bullet.collision.ContactListener;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.joints.Constraint;
@@ -42,6 +41,8 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.bullet.objects.PhysicsVehicle;
 import com.jme3.bullet.util.NativeLibrary;
 import com.jme3.math.Vector3f;
+import jme3utilities.Validate;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +50,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * A CollisionSpace to simulate dynamic physics, with its own
@@ -971,7 +971,6 @@ public class PhysicsSpace
      */
     @Override
     public void removeCollisionObject(PhysicsCollisionObject pco) {
-        pco.isColliding = false;
         Validate.nonNull(pco, "collision object");
 
         if (pco instanceof PhysicsRigidBody) {

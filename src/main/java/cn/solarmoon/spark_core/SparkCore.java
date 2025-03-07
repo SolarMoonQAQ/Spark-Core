@@ -1,11 +1,10 @@
 package cn.solarmoon.spark_core;
 
+import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.registry.client.SparkModelRegister;
-import cn.solarmoon.spark_core.registry.common.SparkRegistries;
-import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
+import cn.solarmoon.spark_core.registry.client.SparkModelRegister;
 import cn.solarmoon.spark_core.registry.common.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -13,7 +12,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import cn.solarmoon.spark_core.rpc.WebSocketRpcServer;
+
 @Mod(SparkCore.MOD_ID)
 public class SparkCore {
 
@@ -26,15 +25,16 @@ public class SparkCore {
         REGISTER.register(modEventBus);
         MC_REGISTER.register(modEventBus);
 
+        SparkRegistries.register();
+
         if (FMLEnvironment.dist.isClient()) {
             SparkClientEventRegister.register();
             SparkModelRegister.register(modEventBus);
-            // 启动 WebSocket 服务器
-            WebSocketRpcServer rpcServer = new WebSocketRpcServer();
-            rpcServer.start(8080); // 启动服务器
+//            // 启动 WebSocket 服务器
+//            WebSocketRpcServer rpcServer = new WebSocketRpcServer();
+//            rpcServer.start(8080); // 启动服务器
         }
 
-        SparkRegistries.register();
         SparkVisualEffects.register();
         SparkAttachments.register();
         SparkCommonEventRegister.register();

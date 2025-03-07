@@ -1,15 +1,14 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.EntityType
 import net.minecraft.world.item.Item
 
 /**
@@ -66,8 +65,8 @@ class ModelIndex (
         val EMPTY get() = ModelIndex(ResourceLocation.withDefaultNamespace("player"), ResourceLocation.withDefaultNamespace("player"), ResourceLocation.withDefaultNamespace("player"))
 
         @JvmStatic
-        fun of(entity: Entity): ModelIndex {
-            val key = BuiltInRegistries.ENTITY_TYPE.getKey(entity.type)
+        fun of(type: EntityType<*>): ModelIndex {
+            val key = BuiltInRegistries.ENTITY_TYPE.getKey(type)
             return ModelIndex(key, ResourceLocation.fromNamespaceAndPath(key.namespace, "textures/entity/${key.path}.png"))
         }
 

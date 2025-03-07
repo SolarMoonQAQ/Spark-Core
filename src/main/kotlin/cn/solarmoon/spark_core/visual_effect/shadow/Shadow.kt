@@ -10,7 +10,6 @@ import net.minecraft.client.player.AbstractClientPlayer
 import net.minecraft.client.renderer.LevelRenderer
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.texture.OverlayTexture
-import net.minecraft.client.resources.PlayerSkin
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3

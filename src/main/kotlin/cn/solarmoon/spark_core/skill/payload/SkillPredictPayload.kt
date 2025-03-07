@@ -32,7 +32,7 @@ class SkillPredictPayload private constructor(
             val skill = type.skill.new(host.skillCount.incrementAndGet(), type, host, level)
             if (payload.active) skill.activate()
             host.allSkills[skill.id] = skill
-            PacketDistributor.sendToAllPlayers(SkillPredictSyncPayload(host, payload.clientId, skill.id))
+            PacketDistributor.sendToAllPlayers(SkillPredictSyncPayload(host, type, payload.clientId, skill.id, payload.active))
         }
 
         @JvmStatic

@@ -32,8 +32,9 @@
 package com.jme3.bullet.objects.infos;
 
 import com.jme3.bullet.objects.PhysicsSoftBody;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * Provide access to fields of the native btSoftBody::Config struct. Soft bodies

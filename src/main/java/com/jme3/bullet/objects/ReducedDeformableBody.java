@@ -37,9 +37,10 @@ import com.jme3.bullet.collision.PcoType;
 import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.objects.infos.SoftBodyConfig;
 import com.jme3.math.Vector3f;
+import jme3utilities.Validate;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * A simplified soft body embedded in a rigid frame, based on Bullet's

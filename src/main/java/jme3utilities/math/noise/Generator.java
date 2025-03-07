@@ -28,12 +28,13 @@ package jme3utilities.math.noise;
 
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
-import java.util.Random;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyMath;
 import jme3utilities.math.MyQuaternion;
 import jme3utilities.math.MyVector3f;
+
+import java.util.Random;
+import java.util.logging.Logger;
 
 /**
  * Generate pseudo-randomSeed numbers, quaternions, vectors, and selections.

@@ -41,8 +41,9 @@ import com.jme3.math.FastMath;
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.math.MyMath;
+
+import java.util.logging.Logger;
 
 /**
  * A 3 degree-of-freedom Constraint that mimics ODE's Hinge2 joint, such as

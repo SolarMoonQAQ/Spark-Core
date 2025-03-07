@@ -5,8 +5,6 @@ import cn.solarmoon.spark_core.event.PlayerRenderAnimInFirstPersonEvent
 import net.minecraft.client.Minecraft
 import net.minecraft.client.player.AbstractClientPlayer
 import net.minecraft.world.entity.player.Player
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
 import net.neoforged.neoforge.common.NeoForge
 
 object PlayerAnimHelper {}
@@ -20,6 +18,3 @@ fun AbstractClientPlayer.shouldRenderArmAnimInFirstPerson(): Boolean {
     val renderEvent = NeoForge.EVENT_BUS.post(PlayerRenderAnimInFirstPersonEvent(this))
     return isInFirstPerson && isMainCamera && renderEvent.shouldRender
 }
-
-@Suppress("unchecked_cast")
-fun Player.asAnimatable() = this as IEntityAnimatable<Player>

@@ -1,10 +1,10 @@
 package cn.solarmoon.spark_core.entry_builder
 
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.entry_builder.client.KeyMappingBuilder
 import cn.solarmoon.spark_core.entry_builder.client.LayerBuilder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.entry_builder.common.fluid.FluidBuilder
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.util.RegisterUtil
 import net.minecraft.core.RegistrySetBuilder
 import net.minecraft.core.particles.ParticleType

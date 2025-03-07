@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.entity.attack
 
+import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.LivingEntity
-import net.minecraft.world.entity.player.Player
+import net.minecraft.world.phys.Vec3
 
 /**
  * 统一的攻击方法，方便对攻击数据进行统一修改

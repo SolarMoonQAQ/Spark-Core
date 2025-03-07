@@ -14,18 +14,17 @@ class AnimInstance private constructor(
     val origin: OAnimation
 ) {
 
-    private var defaultValue: AnimInstance? = null
-
     companion object {
         @JvmStatic
-        fun create(holder: IAnimatable<*>, name: String, origin: OAnimation = holder.animations.getAnimation(name) ?: throw NullPointerException("没有找到名为 $name 的动画"), provider: (AnimInstance).() -> Unit = {}): AnimInstance {
-            val default = AnimInstance(holder, name, origin).apply { provider.invoke(this) }
-            return default.apply { defaultValue = default.copy() }
+        fun create(holder: IAnimatable<*>, name: String, origin: OAnimation = holder.animations.getValidAnimation(name), provider: AnimInstance.() -> Unit = {}): AnimInstance {
+            return AnimInstance(holder, name, origin).apply { provider.invoke(this) }
         }
 
         @JvmStatic
-        fun create(holder: IAnimatable<*>, index: AnimIndex, provider: (AnimInstance).() -> Unit = {}) = create(holder, index.name, OAnimationSet.get(index.index).getAnimation(index.name) ?: throw NullPointerException("没有找到索引为 $index 的动画"), provider)
+        fun create(holder: IAnimatable<*>, index: AnimIndex, provider: AnimInstance.() -> Unit = {}) = create(holder, index.name, OAnimationSet.get(index.index).getValidAnimation(index.name), provider)
     }
+
+    val flags = setOf<String>()
 
     var time = 0.0
     var speed = 1.0
@@ -68,11 +67,8 @@ class AnimInstance private constructor(
         }
     }
 
-    fun getDefault() = defaultValue!!
-
     fun copy(): AnimInstance {
         val copy = AnimInstance(holder, name, origin)
-        copy.defaultValue = defaultValue
         copy.time = time
         copy.speed = speed
         copy.totalTime = totalTime
@@ -83,14 +79,8 @@ class AnimInstance private constructor(
     }
 
     fun refresh() {
-        defaultValue?.let { default ->
-            time = default.time
-            speed = default.speed
-            totalTime = default.totalTime
-            shouldTurnBody = default.shouldTurnBody
-            rejectNewAnim = default.rejectNewAnim
-            eventHandlers = default.eventHandlers.toMutableMap()
-        }
+        time = 0.0
+        totalTime = 0.0
     }
 
     fun tick() {

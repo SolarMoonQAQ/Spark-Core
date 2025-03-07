@@ -34,8 +34,9 @@ package com.jme3.bullet.joints;
 import com.jme3.bullet.objects.PhysicsBody;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.bullet.objects.PhysicsSoftBody;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * The abstract base class for joining a PhysicsSoftBody to another body, based

@@ -3,14 +3,11 @@ package cn.solarmoon.spark_core.animation.anim
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.data.SimpleJsonListener
-import cn.solarmoon.spark_core.physics.toRadians
 import com.google.gson.JsonElement
 import com.mojang.serialization.JsonOps
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.packs.resources.ResourceManager
 import net.minecraft.util.profiling.ProfilerFiller
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3d
 
 class EntityAnimListener : SimpleJsonListener("geo/animation") {
     override fun apply(

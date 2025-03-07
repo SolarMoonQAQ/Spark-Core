@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.physics.presets.ticker
 
-import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker
+import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBMatrix3f
 import cn.solarmoon.spark_core.physics.toBVector3f
@@ -13,7 +13,7 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 import org.joml.Matrix3f
 
-class RotateAroundHostTicker: BodyPhysicsTicker {
+class RotateAroundHostTicker: PhysicsCollisionObjectTicker {
 
     var lastPos = Vector3f()
 

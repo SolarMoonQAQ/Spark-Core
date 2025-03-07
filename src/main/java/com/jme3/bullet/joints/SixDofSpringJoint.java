@@ -34,8 +34,9 @@ package com.jme3.bullet.joints;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * A 6 degree-of-freedom joint based on Bullet's btGeneric6DofSpringConstraint.

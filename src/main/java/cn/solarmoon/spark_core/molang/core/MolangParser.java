@@ -1,10 +1,10 @@
 package cn.solarmoon.spark_core.molang.core;
 
 import cn.solarmoon.spark_core.SparkCore;
-import cn.solarmoon.spark_core.molang.core.value.MolangValue;
 import cn.solarmoon.spark_core.molang.core.binding.PrimaryBinding;
 import cn.solarmoon.spark_core.molang.core.value.DoubleValue;
 import cn.solarmoon.spark_core.molang.core.value.IValue;
+import cn.solarmoon.spark_core.molang.core.value.MolangValue;
 import cn.solarmoon.spark_core.molang.engine.MolangEngine;
 import cn.solarmoon.spark_core.molang.engine.parser.ParseException;
 import cn.solarmoon.spark_core.molang.engine.runtime.binding.ObjectBinding;

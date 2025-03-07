@@ -42,9 +42,10 @@ import com.jme3.bullet.objects.infos.CharacterController;
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
 import com.simsilica.mathd.Vec3d;
+import jme3utilities.Validate;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * A collision object for simplified character simulation, based on Bullet's

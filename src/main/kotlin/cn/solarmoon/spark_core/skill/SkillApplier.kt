@@ -1,17 +1,14 @@
 package cn.solarmoon.spark_core.skill
 
-import cn.solarmoon.spark_core.entity.addRelativeMovement
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import cn.solarmoon.spark_core.registry.common.SyncerTypes
-import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.world.phys.Vec3
-import net.neoforged.bus.api.Event
+import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
+import net.minecraft.server.level.ServerLevel
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import net.neoforged.neoforge.event.entity.EntityEvent
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
 object SkillApplier {
@@ -31,8 +28,41 @@ object SkillApplier {
     }
 
     @SubscribeEvent
+    private fun onPhysicsTick(event: PhysicsEntityTickEvent) {
+        event.entity.activeSkills.forEach { it.physicsTick() }
+    }
+
+    @SubscribeEvent
     private fun onHurt(event: LivingIncomingDamageEvent) {
-        handle(event)
+        event.entity.activeSkills.forEach {
+            it.hurt(event)
+        }
+
+        SkillManager.getSkillsByTarget(event.entity).forEach {
+            it.targetHurt(event)
+        }
+    }
+
+    @SubscribeEvent
+    private fun onActualHurt(event: LivingDamageEvent.Pre) {
+        event.entity.activeSkills.forEach {
+            it.damage(event)
+        }
+
+        SkillManager.getSkillsByTarget(event.entity).forEach {
+            it.targetDamage(event)
+        }
+    }
+
+    @SubscribeEvent
+    private fun onActualHurt(event: LivingDamageEvent.Post) {
+        event.entity.activeSkills.forEach {
+            it.damage(event)
+        }
+
+        SkillManager.getSkillsByTarget(event.entity).forEach {
+            it.targetDamage(event)
+        }
     }
 
     @SubscribeEvent

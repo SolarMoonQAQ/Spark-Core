@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.molang.core.value;
 
-import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
 import com.mojang.serialization.Codec;
 

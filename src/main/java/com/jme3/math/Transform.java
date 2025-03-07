@@ -31,7 +31,6 @@
  */
 package com.jme3.math;
 
-import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.util.TempVars;
 
 /**

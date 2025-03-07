@@ -12,8 +12,6 @@ import ru.nsk.kstatemachine.event.EventMatcher
 import ru.nsk.kstatemachine.metainfo.MetaInfo
 import ru.nsk.kstatemachine.state.IState
 import ru.nsk.kstatemachine.statemachine.StateMachine
-import ru.nsk.kstatemachine.transition.TransitionType.EXTERNAL
-import ru.nsk.kstatemachine.transition.TransitionType.LOCAL
 import ru.nsk.kstatemachine.visitors.CoVisitor
 import ru.nsk.kstatemachine.visitors.Visitor
 import ru.nsk.kstatemachine.visitors.VisitorAcceptor

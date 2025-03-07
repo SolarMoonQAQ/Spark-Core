@@ -33,8 +33,9 @@ package com.jme3.bullet.joints.motors;
 
 import com.jme3.bullet.NativePhysicsObject;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * A 3-axis motor based on Bullet's btTranslationalLimitMotor2, used to control

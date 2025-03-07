@@ -1,7 +1,8 @@
 package cn.solarmoon.spark_core.entity.attack
 
+import cn.solarmoon.spark_core.util.BlackBoard
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import net.minecraft.nbt.CompoundTag
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 受击信息，不包含伤害源和伤害值，如果想调用这两个以检测直接找Entity的hurt方法插入即可
@@ -12,10 +13,9 @@ import net.minecraft.nbt.CompoundTag
 data class CollisionHurtData(
     val attackBody: PhysicsCollisionObject,
     val damagedBody: PhysicsCollisionObject,
-    val manifoldId: Long,
-    val context: MutableMap<String, Any> = mutableMapOf()
+    val manifoldId: Long
 ) {
 
-    inline fun <reified T: Any> read(id: String) = context[id] as? T
+    val blackBoard = BlackBoard()
 
 }

@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.skill.payload
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.skill.SkillHost
-import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillType
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType

@@ -1,12 +1,10 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.AnimationStateDefinition
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillType
 import cn.solarmoon.spark_core.skill.component.SkillComponent
-import cn.solarmoon.spark_core.skill.component.body_binder.RigidBodyBinder
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.MapCodec
@@ -44,11 +42,6 @@ object SparkRegistries {
 
     @JvmStatic
     val SKILL_TYPE = ResourceKey.createRegistryKey<SkillType<*>>(ResourceLocation.fromNamespaceAndPath("skill", "type"))
-
-    @JvmStatic
-    val ANIMATION_STATE = ResourceKey.createRegistryKey<AnimationStateDefinition>(
-        ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "animation_state")
-    )
 
     @JvmStatic
     fun register() {}

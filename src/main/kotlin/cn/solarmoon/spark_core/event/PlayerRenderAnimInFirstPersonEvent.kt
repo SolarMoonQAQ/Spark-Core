@@ -13,6 +13,6 @@ class PlayerRenderAnimInFirstPersonEvent(
     /**
      * 当此值返回true时，将在第一人称下渲染玩家动作
      */
-    var shouldRender: Boolean = false
+    var shouldRender = false
 
 }

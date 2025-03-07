@@ -1,16 +1,15 @@
 package cn.solarmoon.spark_core.event
 
-import net.minecraft.world.entity.Entity
+import cn.solarmoon.spark_core.preinput.PreInputData
 import net.neoforged.bus.api.Event
 import net.neoforged.bus.api.ICancellableEvent
-import net.neoforged.neoforge.attachment.IAttachmentHolder
 
 abstract class OnPreInputExecuteEvent(
-    val holder: Entity
+    val data: PreInputData
 ): Event() {
 
-    class Pre(holder: Entity): OnPreInputExecuteEvent(holder), ICancellableEvent
+    class Pre(data: PreInputData): OnPreInputExecuteEvent(data), ICancellableEvent
 
-    class Post(holder: Entity): OnPreInputExecuteEvent(holder)
+    class Post(data: PreInputData): OnPreInputExecuteEvent(data)
 
 }

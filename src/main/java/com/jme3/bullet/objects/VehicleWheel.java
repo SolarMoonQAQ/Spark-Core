@@ -35,8 +35,9 @@ import com.jme3.bullet.objects.infos.VehicleTuning;
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * Information about one wheel of a vehicle, based on Bullet's

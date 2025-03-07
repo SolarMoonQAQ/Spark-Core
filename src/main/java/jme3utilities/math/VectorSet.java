@@ -28,6 +28,7 @@ package jme3utilities.math;
 
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
+
 import java.nio.FloatBuffer;
 
 /**

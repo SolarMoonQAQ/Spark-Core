@@ -18,6 +18,8 @@ data class OAnimationSet(
      */
     fun getAnimation(name: String) = animations[name]
 
+    fun getValidAnimation(name: String) = animations[name] ?: throw NullPointerException("没有找到名为 $name 的动画")
+
     fun hasAnimation(name: String) = animations[name] != null
 
     companion object {

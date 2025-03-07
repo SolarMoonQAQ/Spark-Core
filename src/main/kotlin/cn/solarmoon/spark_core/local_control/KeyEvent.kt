@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.local_control
 import com.mojang.serialization.Codec
 
 enum class KeyEvent {
-    PRESS, PRESS_ONCE, RELEASE;
+    PRESS, PRESS_ONCE, RELEASE, PULSE;
 
     companion object {
         val CODEC: Codec<KeyEvent> = Codec.STRING.xmap(

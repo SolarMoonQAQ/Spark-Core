@@ -34,9 +34,10 @@ package com.jme3.bullet.joints;
 import com.jme3.bullet.NativePhysicsObject;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.objects.PhysicsBody;
+import jme3utilities.Validate;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * The abstract base class for physics joints based on Bullet's

@@ -1,11 +1,10 @@
 package cn.solarmoon.spark_core.physics
 
 import cn.solarmoon.spark_core.SparkCore
-import com.google.common.io.Resources
+import cn.solarmoon.spark_core.physics.collision.PhysicsEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Matrix3f
-import com.jme3.math.Transform
 import com.jme3.math.Vector3f
 import com.jme3.system.JmeSystem
 import com.jme3.system.NativeLibraryLoader
@@ -14,13 +13,8 @@ import net.minecraft.world.phys.Vec3
 import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
 import net.neoforged.fml.loading.FMLPaths
-import org.joml.Quaternionf
 import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.io.InputStream
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 
 fun initBullet() {
@@ -77,3 +71,7 @@ fun org.joml.Matrix3f.toBMatrix3f() = Matrix3f(
 )
 
 inline fun <reified T> PhysicsCollisionObject.getOwner() = owner as? T
+
+inline fun <reified T: PhysicsEvent> PhysicsCollisionObject.onEvent(crossinline handler: PhysicsCollisionObject.(T) -> Unit) {
+    addEventListener(T::class.java) { handler(this, it) }
+}

@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
-import cn.solarmoon.spark_core.skill.Skill
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -13,11 +12,12 @@ data class SummonShadowComponent(
     val color: Int = Color.GRAY.rgb
 ): SkillComponent() {
 
-    override fun onAttach() {
-        val entity = skill.holder as? Entity ?: return
+    override fun onAttach(): Boolean {
+        val entity = skill.holder as? Entity ?: return false
         if (!entity.level().isClientSide) {
             SparkVisualEffects.SHADOW.addToClient(entity.id, maxLifeTime, Color(color))
         }
+        return true
     }
 
     override val codec: MapCodec<out SkillComponent> = CODEC

@@ -40,11 +40,12 @@ import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyMath;
 import jme3utilities.math.MyVector3f;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A 6 degree-of-freedom Constraint based on Bullet's

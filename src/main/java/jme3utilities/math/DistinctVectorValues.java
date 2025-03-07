@@ -27,12 +27,13 @@
 package jme3utilities.math;
 
 import com.jme3.math.Vector3f;
+import jme3utilities.Validate;
+
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * Analyze a FloatBuffer to identify all of its distinct Vector3f values.

@@ -11,6 +11,7 @@ import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
+import kotlin.collections.set
 
 class SkillType<S: Skill>(
     val skill: S,
@@ -34,6 +35,12 @@ class SkillType<S: Skill>(
         }
         if (active) result.activate()
         return result
+    }
+
+    fun createSkillWithoutSync(id: Int, host: SkillHost, level: Level): Skill {
+        return skill.new(id, this, host, level).apply {
+            host.allSkills[id] = this
+        }
     }
 
     companion object {

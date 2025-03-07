@@ -2,11 +2,9 @@ package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
-import cn.solarmoon.spark_core.skill.Skill
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
 
 class AnimSpeedChangeComponent(
@@ -14,13 +12,14 @@ class AnimSpeedChangeComponent(
     val speed: Double = 0.05,
 ): SkillComponent() {
 
-    override fun onAttach() {
+    override fun onAttach(): Boolean {
         val level = skill.level
-        val animatable = skill.holder as? IAnimatable<*> ?: return
+        val animatable = skill.holder as? IAnimatable<*> ?: return false
         if (!level.isClientSide && time > 0) {
             animatable.animController.changeSpeed(time, speed)
             PacketDistributor.sendToAllPlayers(AnimSpeedChangePayload(animatable, time, speed))
         }
+        return true
     }
 
     override val codec: MapCodec<out SkillComponent> = CODEC

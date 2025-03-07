@@ -37,16 +37,13 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.bullet.util.DebugShapeFactory;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Matrix4f;
-import com.jme3.math.Transform;
-import com.jme3.math.Triangle;
-import com.jme3.math.Vector3f;
+import com.jme3.math.*;
+import jme3utilities.Validate;
+
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * A collision shape formed by combining child shapes, based on Bullet's

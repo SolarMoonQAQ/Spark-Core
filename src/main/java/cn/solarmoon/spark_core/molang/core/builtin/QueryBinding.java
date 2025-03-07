@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.molang.core.builtin;
 
-import cn.solarmoon.spark_core.molang.core.builtin.query.*;
 import cn.solarmoon.spark_core.molang.core.binding.ContextBinding;
+import cn.solarmoon.spark_core.molang.core.builtin.query.*;
 import cn.solarmoon.spark_core.molang.core.util.MolangUtils;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
@@ -40,9 +40,9 @@ public class QueryBinding extends ContextBinding {
         });
 //        var("life_time", ctx -> ctx.geoInstance().getSeekTime() / 20.0);
 
-        var("moon_phase", ctx -> ctx.getLevel().getMoonPhase());
-        var("time_of_day", ctx -> MolangUtils.normalizeTime(ctx.getLevel().getDayTime()));
-        var("time_stamp", ctx -> ctx.getLevel().getDayTime());
+        var("moon_phase", ctx -> ctx.getAnimLevel().getMoonPhase());
+        var("time_of_day", ctx -> MolangUtils.normalizeTime(ctx.getAnimLevel().getDayTime()));
+        var("time_stamp", ctx -> ctx.getAnimLevel().getDayTime());
 
         entityVar("head_x_rotation", ctx -> ctx.getAnimatable().getXRot());
         entityVar("head_y_rotation", ctx -> ctx.getAnimatable().getYRot());
@@ -66,6 +66,7 @@ public class QueryBinding extends ContextBinding {
         entityVar("is_spectator", ctx -> ctx.getAnimatable().isSpectator());
         entityVar("is_sprinting", ctx -> ctx.getAnimatable().isSprinting());
         entityVar("is_swimming", ctx -> ctx.getAnimatable().isSwimming());
+        entityVar("charging_time", ctx -> ctx.getAnimatable().getChargingTime());
 
         livingEntityVar("body_x_rotation", ctx -> Mth.lerp(ctx.getPartialTicks(), ctx.getAnimatable().xRotO, ctx.getAnimatable().getXRot()));
         livingEntityVar("body_y_rotation", ctx -> Mth.wrapDegrees(Mth.lerp(ctx.getPartialTicks(), ctx.getAnimatable().yBodyRotO, ctx.getAnimatable().yBodyRot)));

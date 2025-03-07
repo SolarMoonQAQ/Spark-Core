@@ -1,16 +1,10 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
-import cn.solarmoon.spark_core.animation.IAnimatable
-import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
-import org.joml.Matrix3f
-import org.joml.Matrix4f
 
 /**
  * 以服务端为根基的模型数据，客户端只能调用，不可以试图在客户端修改！

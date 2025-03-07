@@ -40,19 +40,16 @@ import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.collision.shapes.HeightfieldCollisionShape;
 import com.jme3.bullet.objects.infos.RigidBodyMotionState;
 import com.jme3.bullet.objects.infos.RigidBodySnapshot;
-import com.jme3.math.FastMath;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Transform;
-import com.jme3.math.Vector3f;
+import com.jme3.math.*;
 import com.simsilica.mathd.Matrix3d;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyQuaternion;
 import jme3utilities.math.MyVector3f;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A collision object to simulate a rigid body, based on Bullet's

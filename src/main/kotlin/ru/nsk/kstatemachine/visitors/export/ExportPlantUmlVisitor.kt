@@ -12,10 +12,10 @@ import ru.nsk.kstatemachine.isNeighbor
 import ru.nsk.kstatemachine.metainfo.EventAndArgumentResolutionHint
 import ru.nsk.kstatemachine.metainfo.ExportMetaInfo
 import ru.nsk.kstatemachine.metainfo.IgnoreUnsafeCallConditionalLambdasMetaInfo
-import ru.nsk.kstatemachine.metainfo.UmlMetaInfo
 import ru.nsk.kstatemachine.metainfo.MetaInfo
 import ru.nsk.kstatemachine.metainfo.ResolutionHint
 import ru.nsk.kstatemachine.metainfo.StateResolutionHint
+import ru.nsk.kstatemachine.metainfo.UmlMetaInfo
 import ru.nsk.kstatemachine.metainfo.findMetaInfo
 import ru.nsk.kstatemachine.state.*
 import ru.nsk.kstatemachine.state.pseudo.UndoState

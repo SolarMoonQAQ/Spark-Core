@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
-import cn.solarmoon.spark_core.skill.Skill
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -63,8 +62,8 @@ class AttackDamageModifierComponent(
         }
     }
 
-    override fun onAttach() {
-        val entity = skill.holder as? Entity ?: return
+    override fun onAttach(): Boolean {
+        val entity = skill.holder as? Entity ?: return false
         if (!skill.level.isClientSide && !entity.persistentData.getBoolean("SOFregistedADM")) {
             entity.persistentData.putBoolean("SOFregistedADM", true)
             NeoForge.EVENT_BUS.addListener(cancelAttackDuration)
@@ -72,6 +71,7 @@ class AttackDamageModifierComponent(
             NeoForge.EVENT_BUS.addListener(playerCriticalHit)
             NeoForge.EVENT_BUS.addListener(playerSweep)
         }
+        return true
     }
 
     override fun onDetach() {

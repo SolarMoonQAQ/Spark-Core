@@ -40,6 +40,15 @@ fun KeyMapping.onEvent(event: KeyEvent, action: (Int) -> Boolean): Boolean {
             }
             return false
         }
+        KeyEvent.PULSE -> {
+            val isDownLast = keyRecorder.getOrDefault(this, false)
+            val isDownNow = isDown
+            if (!isDownLast && isDownNow) {
+                isDown = false
+                return action.invoke(0)
+            }
+            return false
+        }
     }
 }
 

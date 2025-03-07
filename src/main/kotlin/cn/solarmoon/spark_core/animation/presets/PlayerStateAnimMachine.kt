@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.animation.presets
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.vanilla.asAnimatable
+import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.entity.isFalling
 import cn.solarmoon.spark_core.entity.isMoving
 import cn.solarmoon.spark_core.entity.moveBackCheck
@@ -49,7 +49,7 @@ object PlayerStateAnimMachine {
         val choice = initialChoiceState("choice") {
             when {
                 Minecraft.getInstance().player == null -> none
-                checkPlayingOtherAnim(player.asAnimatable()) -> none
+                checkPlayingOtherAnim(player) -> none
                 player.vehicle != null -> EntityStates.Sit
                 player.isSleeping -> EntityStates.Sleeping
                 player.isSwimming -> EntityStates.Swimming
@@ -57,7 +57,7 @@ object PlayerStateAnimMachine {
                 player.abilities.flying && player.moveCheck() -> EntityStates.FlyMove
                 player.abilities.flying -> EntityStates.Fly
                 player.isInWater && player.isFalling() -> EntityStates.SwimmingIdle
-                player.isFalling() -> EntityStates.Fall
+                player.isFalling() && player.isAboveGround(0.75) -> EntityStates.Fall
                 player.isCrouching && player.moveCheck() -> EntityStates.CrouchingMove
                 player.isCrouching -> EntityStates.Crouching
                 player.isSprinting -> EntityStates.Sprinting
@@ -75,7 +75,7 @@ object PlayerStateAnimMachine {
                 val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, s, 7))
                 if (event.isCanceled) return@let
                 val anim = event.newAnim ?: event.originAnim
-                anim.play(player.asAnimatable(), event.transitionTime)
+                anim.play(player, event.transitionTime)
                 anim.syncToServer(player.id, event.transitionTime)
             }
         }
@@ -86,8 +86,16 @@ object PlayerStateAnimMachine {
             }
         }
 
+        var lock: Int = 0
+
         transition<SwitchEvent> {
+            guard = {
+                val check = lock > 0
+                lock++
+                check
+            }
             targetState = choice
+            lock = 0
         }
 
         transition<ResetEvent> {

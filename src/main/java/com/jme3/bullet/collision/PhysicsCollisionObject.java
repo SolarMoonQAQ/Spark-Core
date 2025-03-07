@@ -31,27 +31,25 @@
  */
 package com.jme3.bullet.collision;
 
-import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker;
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
+import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
+import cn.solarmoon.spark_core.physics.collision.PhysicsEvent;
+import cn.solarmoon.spark_core.physics.collision.PhysicsEventListener;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.CollisionSpace;
 import com.jme3.bullet.NativePhysicsObject;
 import com.jme3.bullet.collision.shapes.CollisionShape;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Transform;
-import com.jme3.math.TransformDp;
-import com.jme3.math.Vector3f;
+import com.jme3.math.*;
 import com.simsilica.mathd.Matrix3d;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
+import jme3utilities.Validate;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * The abstract base class for collision objects based on Bullet's
@@ -65,6 +63,29 @@ import jme3utilities.Validate;
 abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     // *************************************************************************
     // constants and loggers
+
+    // 事件处理器存储
+    private final Map<Class<?>, List<PhysicsEventListener<?>>> eventListeners = new HashMap<>();
+
+    // Java端注册方法
+    public <T extends PhysicsEvent> void addEventListener(Class<T> eventType, PhysicsEventListener<? super T> listener) {
+        eventListeners.computeIfAbsent(eventType, k -> new ArrayList<>())
+                .add(listener);
+    }
+
+    // 触发事件方法
+    public <T extends PhysicsEvent> void triggerEvent(T event) {
+        Class<?> eventType = event.getClass();
+        List<PhysicsEventListener<?>> listeners = eventListeners.get(eventType);
+
+        if (listeners != null) {
+            for (PhysicsEventListener<?> listener : listeners) {
+                @SuppressWarnings("unchecked")
+                PhysicsEventListener<T> typedListener = (PhysicsEventListener<T>) listener;
+                typedListener.handle(event);
+            }
+        }
+    }
 
     public boolean collideWithOwner = false;
 
@@ -184,7 +205,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     private WeakReference<PhysicsHost> owner;
 
-    public ArrayList<BodyPhysicsTicker> tickers = new ArrayList<>();
+    public ArrayList<PhysicsCollisionObjectTicker> tickers = new ArrayList<>();
 
     public ArrayList<CollisionCallback> collisionListeners = new ArrayList<>();
 
@@ -208,7 +229,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
         this.owner = new WeakReference<>(owner);
     }
 
-    public void addPhysicsTicker(BodyPhysicsTicker ticker) {
+    public void addPhysicsTicker(PhysicsCollisionObjectTicker ticker) {
         tickers.add(ticker);
     }
 
@@ -1048,6 +1069,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * default=COLLISION_GROUP_01)
      */
     public void setCollideWithGroups(int collisionGroups) {
+        if (this.collideWithGroups != 0 && collisionGroups == 0) triggerEvent(PhysicsEvent.OnCollisionInactive.INSTANCE);
+        if (this.collideWithGroups == 0 && collisionGroups != 0) triggerEvent(PhysicsEvent.OnCollisionActive.INSTANCE);
         long objectId = nativeId();
         this.collideWithGroups = collisionGroups;
         setCollideWithGroups(objectId, collideWithGroups);

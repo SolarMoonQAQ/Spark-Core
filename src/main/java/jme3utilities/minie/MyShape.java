@@ -27,8 +27,9 @@
 package jme3utilities.minie;
 
 import com.jme3.bullet.collision.shapes.CollisionShape;
-import java.util.logging.Logger;
 import jme3utilities.MyString;
+
+import java.util.logging.Logger;
 
 /**
  * Utility methods for physics collision shapes. All methods should be static.

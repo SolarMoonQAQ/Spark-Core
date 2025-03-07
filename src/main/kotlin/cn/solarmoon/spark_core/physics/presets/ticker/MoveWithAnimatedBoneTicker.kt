@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.physics.presets.ticker
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker
+import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBQuaternion
 import cn.solarmoon.spark_core.physics.toBVector3f
@@ -15,7 +15,7 @@ import org.joml.Quaternionf
 
 class MoveWithAnimatedBoneTicker(
     val boneName: String
-): BodyPhysicsTicker {
+): PhysicsCollisionObjectTicker {
 
     var lastPos = Vector3f()
 

@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.molang.core.builtin;
 
-import cn.solarmoon.spark_core.molang.core.builtin.math.*;
 import cn.solarmoon.spark_core.molang.core.binding.ContextBinding;
+import cn.solarmoon.spark_core.molang.core.builtin.math.*;
 
 public class MathBinding extends ContextBinding {
     public static final MathBinding INSTANCE = new MathBinding();

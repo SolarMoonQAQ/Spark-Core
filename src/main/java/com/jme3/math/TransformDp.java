@@ -33,8 +33,9 @@ package com.jme3.math;
 
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * A 3-D coordinate transform composed of translation, rotation, and scaling.

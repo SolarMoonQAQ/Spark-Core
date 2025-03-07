@@ -1,7 +1,5 @@
 package cn.solarmoon.spark_core.local_control
 
-import cn.solarmoon.spark_core.local_control.LocalController.keyPressTimer
-import cn.solarmoon.spark_core.local_control.LocalController.keyRecorder
 import net.minecraft.client.KeyMapping
 import net.neoforged.bus.api.EventPriority
 import net.neoforged.bus.api.SubscribeEvent

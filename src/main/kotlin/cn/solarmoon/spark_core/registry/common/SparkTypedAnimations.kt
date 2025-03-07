@@ -1,8 +1,10 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
 
@@ -40,13 +42,13 @@ object SparkTypedAnimations {
     @JvmStatic
     val SWIMMING = createMoveStateAnim("swimming")
 
-    fun createStateAnim(name: String, provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
+    fun createStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
         .id(name)
-        .animName("EntityState/$name")
+        .animIndex(AnimIndex(index, "EntityState/$name"))
         .provider(provider)
         .build()
 
-    fun createMoveStateAnim(name: String, provider: TypedAnimProvider = {}) = createStateAnim(name) {
+    fun createMoveStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = createStateAnim(name, index) {
         onEvent<AnimEvent.Tick> {
             if (holder is LivingEntity) {
                 speed = holder.getAttributeValue(Attributes.MOVEMENT_SPEED) / (if (holder.isSprinting) 0.13 else 0.1)

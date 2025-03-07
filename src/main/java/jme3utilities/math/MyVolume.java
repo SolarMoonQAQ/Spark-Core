@@ -28,8 +28,9 @@ package jme3utilities.math;
 
 import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * Utility methods for computing volumes of shapes. All methods should be public

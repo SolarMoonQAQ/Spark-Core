@@ -17,7 +17,7 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 
 class ItemAnimatable(override var modelIndex: ModelIndex): IAnimatable<ItemAnimatable> {
-    override val level: Level? = null
+    override val animLevel: Level? = null
     override val tempStorage: ITempVariableStorage = VariableStorage()
     override val scopedStorage: IScopedVariableStorage = VariableStorage()
     override val foreignStorage: IForeignVariableStorage = VariableStorage()

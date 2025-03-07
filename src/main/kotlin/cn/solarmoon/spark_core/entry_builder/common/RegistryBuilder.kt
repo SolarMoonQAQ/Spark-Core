@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.entry_builder.common
 
-import cn.solarmoon.spark_core.SparkCore
 import net.minecraft.core.Registry
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
@@ -14,6 +13,10 @@ class RegistryBuilder<T>(private val modId: String, private val modBus: IEventBu
 
     fun id(id: String) = apply {
         builder = RegistryBuilder(ResourceKey.createRegistryKey<T>(ResourceLocation.fromNamespaceAndPath(modId, id)))
+    }
+
+    fun id(namespace: String, path: String) = apply {
+        builder = RegistryBuilder(ResourceKey.createRegistryKey<T>(ResourceLocation.fromNamespaceAndPath(namespace, path)))
     }
 
     fun build(builder :(RegistryBuilder<T>) -> Registry<T>): Registry<T> {

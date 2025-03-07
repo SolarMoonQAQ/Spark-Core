@@ -47,16 +47,13 @@ import com.jme3.util.BufferUtils;
 import com.simsilica.mathd.Matrix3d;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.lbj.IndexBuffer;
 import jme3utilities.math.MyBuffer;
+
+import java.nio.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A collision object to simulate a soft body, based on Bullet's btSoftBody. It

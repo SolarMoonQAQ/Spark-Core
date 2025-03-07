@@ -5,8 +5,6 @@ import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.resources.ResourceLocation
-import net.neoforged.neoforge.attachment.IAttachmentHolder
-import org.checkerframework.checker.units.qual.t
 
 /**
  * 附加渲染

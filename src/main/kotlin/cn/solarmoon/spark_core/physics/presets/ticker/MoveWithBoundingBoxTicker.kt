@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.physics.presets.ticker
 
-import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker
+import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
 import cn.solarmoon.spark_core.physics.getOwner
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBVector3f
@@ -14,7 +14,7 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 
-class MoveWithBoundingBoxTicker(private val shapeOverride: Boolean = false) : BodyPhysicsTicker {
+class MoveWithBoundingBoxTicker(private val shapeOverride: Boolean = false) : PhysicsCollisionObjectTicker {
 
     var lastPos = Vector3f()
 

@@ -1,20 +1,14 @@
 package cn.solarmoon.spark_core.visual_effect.shape
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toMatrix4f
-import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizer
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
-import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
-import com.jme3.math.Transform
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
-import net.minecraft.client.renderer.RenderType
 import net.minecraft.world.phys.Vec3
-import java.awt.Color
 
 class ShapeRenderer: VisualEffectRenderer() {
 

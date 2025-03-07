@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.sync
 
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 
 class EntitySyncerType: SyncerType() {

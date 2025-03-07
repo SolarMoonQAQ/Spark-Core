@@ -31,8 +31,9 @@
  */
 package com.jme3.bullet;
 
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * Parameters used by the contact-and-constraint solver, based on Bullet's

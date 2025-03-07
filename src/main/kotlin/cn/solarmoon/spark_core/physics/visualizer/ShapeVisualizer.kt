@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.physics.visualizer
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CollisionShape
-import com.jme3.math.Transform
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource

@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.entity.player
 
 import cn.solarmoon.spark_core.entity.copy
-import net.minecraft.client.player.Input
 import net.minecraft.client.player.LocalPlayer
 import net.neoforged.bus.api.EventPriority
 import net.neoforged.bus.api.SubscribeEvent

@@ -3,14 +3,10 @@ package cn.solarmoon.spark_core.registry.client
 import cn.solarmoon.spark_core.event.ItemInHandModelRegisterEvent
 import cn.solarmoon.spark_core.util.PerspectiveBakedModel
 import net.minecraft.client.resources.model.ModelResourceLocation
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
-import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.item.Item
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.fml.ModLoader
 import net.neoforged.neoforge.client.event.ModelEvent
-import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.registries.RegisterEvent
 import kotlin.collections.set
 

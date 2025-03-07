@@ -41,11 +41,12 @@ import com.jme3.math.Plane;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.jme3.util.BufferUtils;
-import java.nio.FloatBuffer;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyBuffer;
 import jme3utilities.math.MyVector3f;
+
+import java.nio.FloatBuffer;
+import java.util.logging.Logger;
 
 /**
  * A utility class to generate debug meshes for Bullet collision shapes.

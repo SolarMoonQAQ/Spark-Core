@@ -1,9 +1,7 @@
 package cn.solarmoon.spark_core.entry_builder.common
 
-import net.minecraft.client.renderer.entity.EntityRendererProvider
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityType
-import net.neoforged.neoforge.client.event.EntityRenderersEvent
 import net.neoforged.neoforge.registries.DeferredHolder
 import net.neoforged.neoforge.registries.DeferredRegister
 import java.util.function.Supplier

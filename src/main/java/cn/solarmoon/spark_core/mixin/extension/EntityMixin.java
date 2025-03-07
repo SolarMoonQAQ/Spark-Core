@@ -1,12 +1,13 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
+import cn.solarmoon.spark_core.entity.IEntityPatch;
 import cn.solarmoon.spark_core.entity.attack.CollisionHurtData;
 import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
-import cn.solarmoon.spark_core.entity.preinput.IPreInputHolder;
-import cn.solarmoon.spark_core.entity.preinput.PreInput;
+import cn.solarmoon.spark_core.preinput.IPreInputHolder;
+import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.registry.common.SyncerTypes;
-import cn.solarmoon.spark_core.skill.SkillHost;
 import cn.solarmoon.spark_core.skill.Skill;
+import cn.solarmoon.spark_core.skill.SkillHost;
 import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.Syncer;
@@ -20,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Mixin(Entity.class)
-public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, Syncer {
+public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, Syncer, IEntityPatch {
 
     @Shadow private int id;
     private Entity entity = (Entity) (Object) this;
@@ -29,6 +30,9 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     private final ConcurrentHashMap<Integer, Skill> allSkills = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Skill> predictedSkills = new ConcurrentHashMap<>();
     private final AtomicInteger skillCount = new AtomicInteger();
+    private boolean canKnockback = true;
+    private boolean jumpingLag = false;
+    private double chargingTime = 0;
 
     @Override
     public @NotNull PreInput getPreInput() {
@@ -72,4 +76,33 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
         return predictedSkills;
     }
 
+    @Override
+    public boolean getCanKnockBack() {
+        return canKnockback;
+    }
+
+    @Override
+    public void setCanKnockBack(boolean b) {
+        this.canKnockback = b;
+    }
+
+    @Override
+    public boolean getJumpingLag() {
+        return jumpingLag;
+    }
+
+    @Override
+    public void setJumpingLag(boolean b) {
+        jumpingLag = b;
+    }
+
+    @Override
+    public double getChargingTime() {
+        return chargingTime;
+    }
+
+    @Override
+    public void setChargingTime(double v) {
+        chargingTime = v;
+    }
 }

@@ -39,11 +39,12 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.simsilica.mathd.Vec3d;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyVector3f;
 import jme3utilities.minie.MyShape;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The abstract base class for collision shapes based on Bullet's

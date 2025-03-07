@@ -36,9 +36,10 @@ import com.jme3.bullet.collision.shapes.infos.CompoundMesh;
 import com.jme3.bullet.collision.shapes.infos.IndexedMesh;
 import com.jme3.math.Triangle;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyVector3f;
+
+import java.util.logging.Logger;
 
 /**
  * A mesh collisions shape based on Bullet's {@code btGImpactMeshShape}.
