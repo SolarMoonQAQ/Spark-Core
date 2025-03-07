@@ -12,7 +12,6 @@ authors="${mod_authors}"
 credits="${mod_credits}"
 description='''${mod_description}'''
 
-
 [[mixins]]
 config="${mod_id}.mixins.json"
 

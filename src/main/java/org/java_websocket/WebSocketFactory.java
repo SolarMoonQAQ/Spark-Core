@@ -25,8 +25,9 @@
 
 package org.java_websocket;
 
-import java.util.List;
 import org.java_websocket.drafts.Draft;
+
+import java.util.List;
 
 public interface WebSocketFactory {
 

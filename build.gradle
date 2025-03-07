@@ -74,7 +74,7 @@ neoForge {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 configurations {
-    runtimeClasspath.extendsFrom configurations.additionalRuntimeClasspath
+    runtimeClasspath.extendsFrom localRuntime
 }
 
 tasks.withType(ProcessResources).configureEach {
@@ -124,5 +124,3 @@ kotlin {
         getFreeCompilerArgs().add("-Xjvm-default=all")
     }
 }
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)

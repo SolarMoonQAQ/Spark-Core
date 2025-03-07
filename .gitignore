@@ -1,8 +1,0 @@
-build/
-dist/
-.idea/
-.kotlin/
-.vscode/
-.coding-aider-plans/
-.gradle/
-run/

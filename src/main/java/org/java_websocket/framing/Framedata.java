@@ -25,8 +25,9 @@
 
 package org.java_websocket.framing;
 
-import java.nio.ByteBuffer;
 import org.java_websocket.enums.Opcode;
+
+import java.nio.ByteBuffer;
 
 /**
  * The interface for the frame

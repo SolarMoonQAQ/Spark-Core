@@ -29,9 +29,9 @@ class AnimController(
         mainAnim?.cancel()
         mainAnim?.triggerEvent(AnimEvent.SwitchOut(anim))
         anim?.isCancelled = false
+        anim?.triggerEvent(AnimEvent.SwitchIn(mainAnim))
         lastAnim = mainAnim
         mainAnim = anim
-        anim?.triggerEvent(AnimEvent.SwitchIn(lastAnim))
         lastBlendResult = animatable.model.bones.mapValues { blendSpace.blendBone(it.key, animatable) }
         anim?.let {
             val removeList = blendSpace.filter { it.value.shouldClearWhenResetAnim }.map { it.key }
@@ -51,6 +51,10 @@ class AnimController(
             val anim = AnimInstance.create(animatable, name, it, modifier)
             setAnimation(anim, transTime)
         }
+    }
+
+    fun setAnimation(typed: TypedAnimation, transTime: Int) {
+        setAnimation(typed.create(animatable), transTime)
     }
 
     fun stopAnimation() {
@@ -113,25 +117,5 @@ class AnimController(
             if (!anim.isCancelled) anim.tick()
         }
     }
-
-//    fun applyStateDefinition(state: String, definition: AnimationStateDefinition) {
-//        // 清除现有混合空间
-//        blendSpace.clear()
-//
-//        // 应用新的混合空间配置
-//        definition.blendSpace.forEach { (key, entry) ->
-//            val anim = entry.animation?.let {
-//                animatable.newAnimInstance(it)
-//            } ?: mainAnim
-//
-//            if (anim != null) {
-//                blendSpace.put(key, BlendAnimation(
-//                    anim = anim,
-//                    weight = entry.weight,
-//                    boneBlackList = entry.boneBlackList
-//                ))
-//            }
-//        }
-//    }
 
 }
