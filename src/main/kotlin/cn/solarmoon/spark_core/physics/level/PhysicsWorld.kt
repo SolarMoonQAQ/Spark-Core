@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.event.NeedsCollisionEvent
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsSpace.BroadphaseType
@@ -21,19 +22,18 @@ class PhysicsWorld(
         addTickListener(physicsLevel)
     }
 
-    override fun needsCollision(pcoA: PhysicsCollisionObject?, pcoB: PhysicsCollisionObject?): Boolean {
-        if (pcoA != null && pcoB != null && pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner) return false
-        return super.needsCollision(pcoA, pcoB)
+    override fun needsCollision(pcoA: PhysicsCollisionObject, pcoB: PhysicsCollisionObject): Boolean {
+        var r = true
+        if (pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner) r = false
+        return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
     override fun onContactStarted(manifoldId: Long) {
-        super.onContactStarted(manifoldId)
+        val pcoA = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
+        val pcoB = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
 
-        val a = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
-        val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
-
-        handleContacts(a, b, manifoldId, false)
-        handleContacts(b, a, manifoldId, false)
+        if (pcoA.isCollisionGroupContains(pcoB)) pcoA.collisionListeners.forEach { it.onStarted(pcoA, pcoB, manifoldId) }
+        if (pcoB.isCollisionGroupContains(pcoA)) pcoB.collisionListeners.forEach { it.onStarted(pcoB, pcoA, manifoldId) }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Start(manifoldId))
     }
@@ -43,48 +43,26 @@ class PhysicsWorld(
         pcoB: PhysicsCollisionObject,
         manifoldPointId: Long
     ) {
-        super.onContactProcessed(pcoA, pcoB, manifoldPointId)
-
-        if (pcoA.isCollisionGroupContains(pcoB)) pcoB.isColliding = true
-        if (pcoB.isCollisionGroupContains(pcoA)) pcoA.isColliding = true
-
-        handleContacts(pcoA, pcoB, manifoldPointId, false)
-        handleContacts(pcoB, pcoA, manifoldPointId, false)
+        if (pcoA.isCollisionGroupContains(pcoB)) {
+            pcoA.isColliding = true
+            pcoA.collisionListeners.forEach { it.onProcessed(pcoA, pcoB, manifoldPointId) }
+        }
+        if (pcoB.isCollisionGroupContains(pcoA)) {
+            pcoB.isColliding = true
+            pcoB.collisionListeners.forEach { it.onProcessed(pcoB, pcoA, manifoldPointId) }
+        }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(manifoldPointId, pcoA, pcoB))
     }
 
     override fun onContactEnded(manifoldId: Long) {
-        super.onContactEnded(manifoldId)
+        val pcoA = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
+        val pcoB = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
 
-        val a = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
-        val b = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
-
-        handleContacts(a, b, manifoldId, true)
-        handleContacts(b, a, manifoldId, true)
-
-        a.isColliding = false
-        b.isColliding = false
+        if (pcoA.isCollisionGroupContains(pcoB)) pcoA.collisionListeners.forEach { it.onEnded(pcoA, pcoB, manifoldId) }
+        if (pcoB.isCollisionGroupContains(pcoA)) pcoB.collisionListeners.forEach { it.onEnded(pcoB, pcoA, manifoldId) }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.End(manifoldId))
-    }
-
-    private fun handleContacts(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long, end: Boolean) {
-        if (!end) {
-            val contacts = o1.allContacts.getOrPut(o2.nativeId()) { mutableSetOf() }
-
-            // 当禁用时，删除当前接触，当删除后列表为空，则触发end
-            if (!o1.isCollisionGroupContains(o2)) {
-                if (contacts.remove(manifoldId) && contacts.isEmpty()) o1.collisionListeners.forEach { it.onEnded(o1, o2, manifoldId) }
-                return
-            }
-
-            if (contacts.isEmpty()) o1.collisionListeners.forEach { it.onStarted(o1, o2, manifoldId) }
-            contacts.add(manifoldId)
-        } else {
-            val contacts = o1.allContacts[o2.nativeId()] ?: return
-            if (contacts.remove(manifoldId) && contacts.isEmpty()) o1.collisionListeners.forEach { it.onEnded(o1, o2, manifoldId) }
-        }
     }
     
 }

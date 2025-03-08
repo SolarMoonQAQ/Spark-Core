@@ -44,6 +44,7 @@ public class SparkCore {
         SparkDataComponents.register();
         SparkDataRegistryRegister.register(modEventBus);
         SparkCodeRegister.register(modEventBus);
+        SparkCommandRegister.register();
         SyncerTypes.register();
 
         PhysicsHelperKt.initBullet();

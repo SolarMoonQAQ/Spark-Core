@@ -7,6 +7,7 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.core.RegistryAccess
 import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.level.Level
@@ -17,8 +18,6 @@ class SkillType<S: Skill>(
     val skill: S,
     val flags: Set<String> = setOf()
 ) {
-
-    fun getRegistryKey(access: RegistryAccess) = access.registryOrThrow(SparkRegistries.SKILL_TYPE).getKey(this) ?: throw NullPointerException("技能类型尚未注册")
 
     fun createSkill(holder: SkillHost, level: Level, active: Boolean = false): Skill {
         var result: Skill
@@ -41,6 +40,18 @@ class SkillType<S: Skill>(
         return skill.new(id, this, host, level).apply {
             host.allSkills[id] = this
         }
+    }
+
+    fun getRegistryKey(access: RegistryAccess) = access.registryOrThrow(SparkRegistries.SKILL_TYPE).getKey(this) ?: throw NullPointerException("技能类型尚未注册")
+
+    fun getName(access: RegistryAccess): Component {
+        val key = getRegistryKey(access)
+        return Component.translatable("skill.${key.namespace}.${key.path}.name")
+    }
+
+    fun getDescription(access: RegistryAccess): Component {
+        val key = getRegistryKey(access)
+        return Component.translatable("skill.${key.namespace}.${key.path}.description")
     }
 
     companion object {

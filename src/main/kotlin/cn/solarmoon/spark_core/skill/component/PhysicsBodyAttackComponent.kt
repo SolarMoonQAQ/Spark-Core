@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.skill.component
 
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
+import cn.solarmoon.spark_core.physics.collision.PhysicsEvent
+import cn.solarmoon.spark_core.physics.onEvent
 import cn.solarmoon.spark_core.physics.presets.callback.AttackCollisionCallback
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.component.body_binder.RigidBodyBinder
@@ -38,6 +40,13 @@ class PhysicsBodyAttackComponent(
         bodyBinders.attachAll()
 
         bodyBinders.map { it.body }.forEach {
+            it.onEvent<PhysicsEvent.OnCollisionInactive> {
+                collisionListeners.forEach {
+                    if (it is AttackCollisionCallback) {
+                        it.attackSystem.reset()
+                    }
+                }
+            }
             it.addCollisionCallback(object : AttackCollisionCallback {
                 override val attackSystem: AttackSystem = AttackSystem()
                 override fun preAttack(

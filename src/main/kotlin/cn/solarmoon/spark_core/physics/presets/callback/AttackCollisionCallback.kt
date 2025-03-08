@@ -19,7 +19,7 @@ interface AttackCollisionCallback: CollisionCallback {
 
     fun postAttack(attacker: Entity, target: Entity, aBody: PhysicsCollisionObject, bBody: PhysicsCollisionObject, manifoldId: Long) {}
 
-    override fun onStarted(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
+    override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
         val attacker = o1.owner as? Entity ?: return
         (o2.owner as? Entity)?.apply {
             attackSystem.customAttack(this) {
@@ -30,10 +30,6 @@ interface AttackCollisionCallback: CollisionCallback {
                 true
             }
         }
-    }
-
-    override fun onEnded(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
-        attackSystem.reset()
     }
 
 }

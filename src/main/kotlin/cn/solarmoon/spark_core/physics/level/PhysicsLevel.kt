@@ -157,6 +157,9 @@ abstract class PhysicsLevel(
         }
 
     override fun prePhysicsTick(space: PhysicsSpace?, timeStep: Float) {
+        world.pcoList.forEach { pco ->
+            pco.isColliding = false
+        }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
     }
 

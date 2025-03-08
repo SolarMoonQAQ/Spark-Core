@@ -28,10 +28,10 @@ class AnimController(
         if (mainAnim?.rejectNewAnim?.invoke(anim) == true && mainAnim?.isCancelled != true) return
         mainAnim?.cancel()
         mainAnim?.triggerEvent(AnimEvent.SwitchOut(anim))
-        anim?.isCancelled = false
-        anim?.triggerEvent(AnimEvent.SwitchIn(mainAnim))
         lastAnim = mainAnim
         mainAnim = anim
+        anim?.isCancelled = false
+        anim?.triggerEvent(AnimEvent.SwitchIn(mainAnim))
         lastBlendResult = animatable.model.bones.mapValues { blendSpace.blendBone(it.key, animatable) }
         anim?.let {
             val removeList = blendSpace.filter { it.value.shouldClearWhenResetAnim }.map { it.key }

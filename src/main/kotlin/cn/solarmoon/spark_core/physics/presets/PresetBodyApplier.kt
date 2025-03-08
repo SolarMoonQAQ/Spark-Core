@@ -31,6 +31,7 @@ object PresetBodyApplier {
                     (collisionShape as CompoundCollisionShape).initWithAnimatedBone(it)
                     isContactResponse = false
                     setGravity(Vector3f.ZERO)
+                    collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
                     addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
                 }
             }
@@ -40,6 +41,7 @@ object PresetBodyApplier {
                 val body = PhysicsRigidBody("body", entity, BoxCollisionShape(size))
                 bindBody(body, event.level.physicsLevel) {
                     isContactResponse = false
+                    collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
                     setGravity(Vector3f.ZERO)
                     addPhysicsTicker(MoveWithBoundingBoxTicker(true))
                 }
