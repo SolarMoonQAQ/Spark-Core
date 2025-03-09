@@ -24,26 +24,33 @@ class TypedAnimation(
 
     val id get() = SparkRegistries.TYPED_ANIMATION.getId(this)
     val registryKey get() = SparkRegistries.TYPED_ANIMATION.getKey(this) ?: throw NullPointerException("类型动画 $index 尚未注册，请在注册后调用此方法。")
-    val exist get() = OAnimationSet.get(index.index).getAnimation(index.name) != null
 
-    fun create(animatable: IAnimatable<*>) = AnimInstance.create(animatable, index) {
-        provider.invoke(this)
-    }
+    fun exist(animatable: IAnimatable<*>? = null) =
+        if (animatable == null) OAnimationSet.get(index.index).getAnimation(index.name) != null
+        else animatable.animations.hasAnimation(index.name)
 
-    fun play(animatable: IAnimatable<*>, transTime: Int) {
-        animatable.animController.setAnimation(create(animatable), transTime)
-    }
-
-    fun syncToClient(id: Int, transTime: Int, exceptPlayer: ServerPlayer? = null) {
-        exceptPlayer?.let {
-            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, TypedAnimPayload(id, this.id, transTime))
-        } ?: run {
-            PacketDistributor.sendToAllPlayers(TypedAnimPayload(id, this.id, transTime))
+    fun create(animatable: IAnimatable<*>, fromAnimatable: Boolean = false): AnimInstance {
+        return if (fromAnimatable) AnimInstance.create(animatable, index.name) {
+            provider.invoke(this)
+        } else AnimInstance.create(animatable, index) {
+            provider.invoke(this)
         }
     }
 
-    fun syncToServer(id: Int, transTime: Int) {
-        PacketDistributor.sendToServer(TypedAnimPayload(id, this.id, transTime))
+    fun play(animatable: IAnimatable<*>, transTime: Int, fromAnimatable: Boolean = false) {
+        animatable.animController.setAnimation(create(animatable, fromAnimatable), transTime)
+    }
+
+    fun syncToClient(id: Int, transTime: Int, fromAnimatable: Boolean = false, exceptPlayer: ServerPlayer? = null) {
+        exceptPlayer?.let {
+            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, TypedAnimPayload(id, this.id, transTime, fromAnimatable))
+        } ?: run {
+            PacketDistributor.sendToAllPlayers(TypedAnimPayload(id, this.id, transTime, fromAnimatable))
+        }
+    }
+
+    fun syncToServer(id: Int, transTime: Int, fromAnimatable: Boolean = false) {
+        PacketDistributor.sendToServer(TypedAnimPayload(id, this.id, transTime, fromAnimatable))
     }
 
     override fun equals(other: Any?): Boolean {

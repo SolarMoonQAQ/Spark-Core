@@ -1,21 +1,19 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.entity.attack.AttackSystem
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.skill.component.SkillComponent
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
-import cn.solarmoon.spark_core.util.BlackBoard
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.mojang.serialization.JsonOps
 import com.mojang.serialization.MapCodec
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.Event
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent
 import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -97,6 +95,16 @@ abstract class Skill {
         components.forEach { it.onTargetDamage(event) }
     }
 
+    fun knockBack(event: LivingKnockBackEvent) {
+        onKnockBack(event)
+        components.forEach { it.onKnockBack(event) }
+    }
+
+    fun targetKnockBack(event: LivingKnockBackEvent) {
+        onTargetKnockBack(event)
+        components.forEach { it.onTargetKnockBack(event) }
+    }
+
     open fun new(id: Int, type: SkillType<*>, host: SkillHost, level: Level): Skill {
         return codec.codec().decode(JsonOps.INSTANCE, CODEC.encodeStart(JsonOps.INSTANCE, this).orThrow).orThrow.first.apply {
             this.id = id
@@ -146,6 +154,10 @@ abstract class Skill {
     protected open fun onDamage(event: LivingDamageEvent) {}
 
     protected open fun onTargetDamage(event: LivingDamageEvent) {}
+
+    protected open fun onKnockBack(event: LivingKnockBackEvent) {}
+
+    protected open fun onTargetKnockBack(event: LivingKnockBackEvent) {}
 
     fun addTarget(entity: Entity) {
         targets.add(entity)

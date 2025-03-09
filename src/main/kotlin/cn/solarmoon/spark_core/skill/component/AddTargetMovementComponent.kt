@@ -12,20 +12,17 @@ class AddTargetMovementComponent(
     val add: Vec3 = Vec3.ZERO
 ): SkillComponent() {
 
-    private var origin = mutableMapOf<Entity, Boolean>()
-
     override fun onAttach(): Boolean {
         val holder = skill.holder as? Entity ?: return false
         val relative = holder.position()
         skill.getTargets().forEach {
-            origin[it] = it.canKnockBack
-            it.canKnockBack = false
             it.addRelativeMovement(relative, add)
-            skill.level.submitImmediateTask {
-                it.canKnockBack = origin[it]!!
-            }
         }
         return false
+    }
+
+    override fun onTargetKnockBack(event: LivingKnockBackEvent) {
+        event.isCanceled = true
     }
 
     override val codec: MapCodec<out SkillComponent> = CODEC

@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.presets
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.BlendAnimation
+import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import net.minecraft.client.player.LocalPlayer
@@ -19,8 +20,15 @@ object CommonAnimApplier {
     private fun entityTick(event: EntityTickEvent.Pre) {
         val entity = event.entity
 
-        if (entity is Player && entity.isLocalPlayer) {
-            (entity as LocalPlayer).stateMachine.processEventBlocking(PlayerStateAnimMachine.SwitchEvent())
+        when {
+            entity is Player -> {
+                // 强制玩家实体使用 PlayerStateAnimMachine
+                AnimStateMachineManager.getStateMachine(entity)?.processEventBlocking(PlayerStateAnimMachine.SwitchEvent())
+            }
+            else -> {
+                // 其他实体使用 EntityStateAnimMachine
+                AnimStateMachineManager.getStateMachine(entity)?.processEventBlocking(EntityStateAnimMachine.SwitchEvent())
+            }
         }
 
         if (entity.jumpingLag && !entity.isAboveGround(0.1)) {

@@ -1,10 +1,9 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spark_core.event.MolangQueryRegisterEvent
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
-import net.minecraft.server.level.ServerLevel
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
-import net.neoforged.neoforge.event.entity.EntityEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
@@ -66,11 +65,19 @@ object SkillApplier {
     }
 
     @SubscribeEvent
-    private fun playerInput(event: MovementInputUpdateEvent) {
-        handle(event)
+    private fun onKnockBack(event: LivingKnockBackEvent) {
+        val entity = event.entity
+        entity.activeSkills.forEach {
+            it.knockBack(event)
+        }
+
+        SkillManager.getSkillsByTarget(entity).forEach {
+            it.targetKnockBack(event)
+        }
     }
 
-    private fun handle(event: EntityEvent) {
+    @SubscribeEvent
+    private fun playerInput(event: MovementInputUpdateEvent) {
         event.entity.activeSkills.forEach {
             it.handleEvent(event)
         }

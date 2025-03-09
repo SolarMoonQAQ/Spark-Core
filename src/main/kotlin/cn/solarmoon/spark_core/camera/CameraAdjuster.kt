@@ -1,19 +1,41 @@
 package cn.solarmoon.spark_core.camera
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.event.EntityTurnEvent
 import net.minecraft.client.Minecraft
-import net.minecraft.client.player.LocalPlayer
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.Mob
+import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.ClientTickEvent
 import net.neoforged.neoforge.client.event.ViewportEvent
+import net.neoforged.neoforge.event.entity.EntityEvent
+import net.neoforged.neoforge.event.tick.EntityTickEvent
 import org.joml.Vector2f
 
 object CameraAdjuster {
 
     private val CAMERA_TURN: Vector2f = Vector2f()
+
+    @SubscribeEvent
+    private fun tick(event: EntityTickEvent.Pre) {
+        val entity = event.entity
+        if (entity is Player) return
+        entity.setCameraLock(false)
+    }
+
+    @SubscribeEvent
+    private fun tickP(event: EntityTickEvent.Post) {
+        val entity = event.entity
+        if (entity is Player) return
+        if (entity.isCameraLocked()) {
+            entity.yRot = entity.persistentData.getFloat("yRot")
+            entity.yHeadRot = entity.persistentData.getFloat("yHeadRot")
+        } else {
+            entity.persistentData.putFloat("yRot", entity.yRot)
+            entity.persistentData.putFloat("yHeadRot", entity.yHeadRot)
+        }
+    }
 
     @SubscribeEvent
     private fun tick(event: ClientTickEvent.Pre) {
@@ -26,16 +48,14 @@ object CameraAdjuster {
         val entity = event.entity
         val xRot = event.xRot.toFloat()
         val yRot = event.yRot.toFloat()
-        if (entity is IEntityAnimatable<*>) {
-            if (entity.isCameraLocked()) {
-                if (entity is LocalPlayer) CAMERA_TURN.add(xRot, yRot)
-                event.isCanceled = true
-            } else if (CAMERA_TURN != Vector2f()) {
-                val x = CAMERA_TURN.x.toDouble()
-                val y = CAMERA_TURN.y.toDouble()
-                CAMERA_TURN.set(0f)
-                entity.turn(y, x)
-            }
+        if (entity.isCameraLocked()) {
+            if (entity is Player && entity.isLocalPlayer) CAMERA_TURN.add(xRot, yRot)
+            event.isCanceled = true
+        } else if (CAMERA_TURN != Vector2f()) {
+            val x = CAMERA_TURN.x.toDouble()
+            val y = CAMERA_TURN.y.toDouble()
+            CAMERA_TURN.set(0f)
+            entity.turn(y, x)
         }
     }
 

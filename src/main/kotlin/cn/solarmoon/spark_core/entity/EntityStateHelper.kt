@@ -26,7 +26,7 @@ import kotlin.math.sqrt
 fun Entity.moveCheck(): Boolean {
     val v = deltaMovement
     val avgV = (abs(v.x) + abs(v.z)) / 2f
-    return avgV >= if (isCrouching || (this is LivingEntity && isUsingItem)) 0.0025 else 0.015
+    return avgV >= 0.015
 }
 
 fun Entity.moveBackCheck(): Boolean {

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.builtin;
 
+import cn.solarmoon.spark_core.event.MolangQueryRegisterEvent;
 import cn.solarmoon.spark_core.molang.core.binding.ContextBinding;
 import cn.solarmoon.spark_core.molang.core.builtin.query.*;
 import cn.solarmoon.spark_core.molang.core.util.MolangUtils;
@@ -13,6 +14,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 
 public class QueryBinding extends ContextBinding {
     public static final QueryBinding INSTANCE = new QueryBinding();
@@ -66,7 +68,6 @@ public class QueryBinding extends ContextBinding {
         entityVar("is_spectator", ctx -> ctx.getAnimatable().isSpectator());
         entityVar("is_sprinting", ctx -> ctx.getAnimatable().isSprinting());
         entityVar("is_swimming", ctx -> ctx.getAnimatable().isSwimming());
-        entityVar("charging_time", ctx -> ctx.getAnimatable().getChargingTime());
 
         livingEntityVar("body_x_rotation", ctx -> Mth.lerp(ctx.getPartialTicks(), ctx.getAnimatable().xRotO, ctx.getAnimatable().getXRot()));
         livingEntityVar("body_y_rotation", ctx -> Mth.wrapDegrees(Mth.lerp(ctx.getPartialTicks(), ctx.getAnimatable().yBodyRotO, ctx.getAnimatable().yBodyRot)));
@@ -87,6 +88,8 @@ public class QueryBinding extends ContextBinding {
         var("has_cape", ctx -> false);
         var("cape_flap_amount", ctx -> 0);
         mobEntityVar("is_jumping", ctx -> !ctx.getAnimatable().isPassenger() && !ctx.getAnimatable().onGround() && !ctx.getAnimatable().isInWater());
+
+        NeoForge.EVENT_BUS.post(new MolangQueryRegisterEvent(this));
     }
 
 

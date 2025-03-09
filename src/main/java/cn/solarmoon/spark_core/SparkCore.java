@@ -22,6 +22,7 @@ public class SparkCore {
     public static final ObjectRegister REGISTER = new ObjectRegister(MOD_ID, true);
     public static final ObjectRegister MC_REGISTER = new ObjectRegister("minecraft", false);
     public static final MolangParser PARSER = new MolangParser(null);
+
     public SparkCore(IEventBus modEventBus, ModContainer modContainer) {
         REGISTER.register(modEventBus);
         MC_REGISTER.register(modEventBus);

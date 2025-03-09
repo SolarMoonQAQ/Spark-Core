@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
+import net.minecraft.world.entity.player.Player
 
 object SparkTypedAnimations {
 
@@ -50,7 +51,7 @@ object SparkTypedAnimations {
 
     fun createMoveStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = createStateAnim(name, index) {
         onEvent<AnimEvent.Tick> {
-            if (holder is LivingEntity) {
+            if (holder is Player) {
                 speed = holder.getAttributeValue(Attributes.MOVEMENT_SPEED) / (if (holder.isSprinting) 0.13 else 0.1)
                 if (holder.isUsingItem) speed /= 1.5
             }

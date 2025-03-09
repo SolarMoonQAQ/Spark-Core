@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
+import net.minecraft.commands.CommandBuildContext
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.commands.SharedSuggestionProvider
@@ -11,14 +12,14 @@ import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.ResourceLocationArgument
 import net.minecraft.network.chat.Component
 
-class PlaySkillCommand: BaseCommand("sparkskill", 2, true) {
+class PlaySkillCommand: BaseCommand("playskill", 2) {
 
     private val skillSuggestions = SuggestionProvider<CommandSourceStack> { context, builder ->
-        val registry = context.source.registryAccess().registry(SparkRegistries.SKILL_TYPE).get()
+        val registry = context.source.level.registryAccess().registry(SparkRegistries.SKILL_TYPE).get()
         SharedSuggestionProvider.suggestResource(registry.keySet(), builder)
     }
 
-    override fun putExecution() {
+    override fun putExecution(context: CommandBuildContext) {
         builder.then(
             Commands.argument("targets", EntityArgument.entities()) // 添加目标选择器
                 .then(

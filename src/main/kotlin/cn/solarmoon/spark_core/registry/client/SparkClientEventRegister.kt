@@ -15,7 +15,6 @@ object SparkClientEventRegister {
         add(VisualEffectTicker)
         add(CameraShakeApplier)
         add(LocalController)
-        add(CameraAdjuster)
     }
 
     private fun add(event: Any) {

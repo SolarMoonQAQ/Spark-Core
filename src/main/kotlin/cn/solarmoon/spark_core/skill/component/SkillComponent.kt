@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag
 import net.neoforged.bus.api.Event
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
+import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent
 import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.function.Function
 
@@ -66,6 +67,10 @@ abstract class SkillComponent {
     open fun onDamage(event: LivingDamageEvent) {}
 
     open fun onTargetDamage(event: LivingDamageEvent) {}
+
+    open fun onKnockBack(event: LivingKnockBackEvent) {}
+
+    open fun onTargetKnockBack(event: LivingKnockBackEvent) {}
 
     protected open fun onEvent(event: Event) {}
 

@@ -6,11 +6,12 @@ import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
 import com.mojang.serialization.Codec;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class MolangValue implements IValue {
     private final String originalExpressions;//Molang表达式的原始字符串
     private final Expression[] expressions;//待计算的molang表达式
-    public static final Codec<IValue> MOLANG_VALUE_CODEC = Codec.stringResolver(MolangValue::deParse, MolangValue::parse);
+    public static final Codec<IValue> MOLANG_VALUE_CODEC = Codec.lazyInitialized(() -> Codec.stringResolver(MolangValue::deParse, MolangValue::parse));
 
     public MolangValue(List<Expression> expressions, String originalExpressions) {
         this.expressions = expressions.toArray(new Expression[0]);

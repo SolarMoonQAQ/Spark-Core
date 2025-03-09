@@ -1,11 +1,9 @@
 package cn.solarmoon.spark_core.entity
 
+import ru.nsk.kstatemachine.statemachine.StateMachine
+
 interface IEntityPatch {
 
-    var canKnockBack: Boolean
-
     var jumpingLag: Boolean
-
-    var chargingTime: Double
 
 }

@@ -14,6 +14,7 @@
     "extension.DamageSourceMixin",
     "extension.EntityMixin",
     "extension.LivingEntityMixin",
+    "extension.LookControlMixin",
     "phys.EntityMixin",
     "phys.LevelMixin"
   ],
@@ -25,8 +26,8 @@
     "animation.ItemInHandLayerMixin",
     "animation.LivingEntityRendererMixin",
     "animation.ModelPartMixin",
-    "animation.animatable.PlayerModelMixin",
     "animation.PlayerRendererMixin",
+    "animation.animatable.PlayerModelMixin",
     "animation.animatable.ZombieModelMixin",
     "animation.humanoid.first_person.EntityRenderDispatcherMixin",
     "animation.humanoid.first_person.ItemInHandRendererMixin",

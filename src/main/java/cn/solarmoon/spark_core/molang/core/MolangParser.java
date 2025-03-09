@@ -12,10 +12,16 @@ import cn.solarmoon.spark_core.molang.engine.runtime.binding.ObjectBinding;
 import java.util.Map;
 
 public class MolangParser {
-    private final MolangEngine engine;
-    private final PrimaryBinding primaryBinding;
+
+    private final Map<String, ObjectBinding> extraBindings;
+    private MolangEngine engine;
+    private PrimaryBinding primaryBinding;
 
     public MolangParser(Map<String, ObjectBinding> extraBindings) {
+        this.extraBindings = extraBindings;
+    }
+
+    private void init() {
         primaryBinding = new PrimaryBinding(extraBindings);
         engine = MolangEngine.fromCustomBinding(primaryBinding);
     }
@@ -31,6 +37,7 @@ public class MolangParser {
     }
 
     public IValue parseExpressionUnsafe(String molangExpression) throws ParseException {
+        init();
         MolangValue value = new MolangValue(engine.parse(molangExpression), molangExpression);
         primaryBinding.popStackFrame();
         return value;

@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.animation.anim.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
+import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
 import cn.solarmoon.spark_core.physics.toRadians
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -44,7 +45,8 @@ data class OBoneAnimation(
         }
 
         if (valueMap.isNotEmpty() && time >= valueMap.keys.last()) {
-            return valueMap.values.last().post.eval(animatable)
+            val eva = ExpressionEvaluator.evaluator(animatable)
+            return valueMap.values.last().post.eval(eva)
         }
 
         return defaultValue

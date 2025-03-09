@@ -18,23 +18,11 @@ public abstract class LocalPlayerMixin extends AbstractClientPlayer implements I
 
     @Shadow public Input input;
     private final LocalPlayer player = (LocalPlayer) (Object) this;
-    private StateMachine stateMachine;
     @Unique
     private Input _1_21_1_neoforge$input0 = input;
 
     public LocalPlayerMixin(ClientLevel clientLevel, GameProfile gameProfile) {
         super(clientLevel, gameProfile);
-    }
-
-    @Override
-    public void onAddedToLevel() {
-        stateMachine = PlayerStateAnimMachine.create(player);
-        super.onAddedToLevel();
-    }
-
-    @Override
-    public @NotNull StateMachine getStateMachine() {
-        return stateMachine;
     }
 
     @Override

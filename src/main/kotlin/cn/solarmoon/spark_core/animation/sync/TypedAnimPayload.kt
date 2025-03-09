@@ -14,7 +14,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 class TypedAnimPayload(
     val id: Int,
     val animId: Int,
-    val transTime: Int
+    val transTime: Int,
+    val fromAnimatable: Boolean
 ): CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -28,8 +29,8 @@ class TypedAnimPayload(
             val entity = level.getEntity(payload.id)
             if (entity !is IEntityAnimatable<*>) return
             val anim = SparkRegistries.TYPED_ANIMATION.byId(payload.animId) ?: return
-            anim.play(entity, payload.transTime)
-            if (!level.isClientSide) anim.syncToClient(payload.id, payload.transTime, context.player() as? ServerPlayer)
+            anim.play(entity, payload.transTime, payload.fromAnimatable)
+            if (!level.isClientSide) anim.syncToClient(payload.id, payload.transTime, payload.fromAnimatable, context.player() as? ServerPlayer)
         }
 
         @JvmStatic
@@ -40,6 +41,7 @@ class TypedAnimPayload(
             ByteBufCodecs.INT, TypedAnimPayload::id,
             ByteBufCodecs.INT, TypedAnimPayload::animId,
             ByteBufCodecs.INT, TypedAnimPayload::transTime,
+            ByteBufCodecs.BOOL, TypedAnimPayload::fromAnimatable,
             ::TypedAnimPayload
         )
     }

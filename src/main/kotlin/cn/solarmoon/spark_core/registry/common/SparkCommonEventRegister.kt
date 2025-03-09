@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.animation.presets.CommonAnimApplier
 import cn.solarmoon.spark_core.animation.presets.PoseAnimApplier
 import cn.solarmoon.spark_core.animation.presets.UseAnimApplier
 import cn.solarmoon.spark_core.animation.vanilla.PlayerBoneModifier
-import cn.solarmoon.spark_core.entity.EntityApplier
+import cn.solarmoon.spark_core.camera.CameraAdjuster
 import cn.solarmoon.spark_core.physics.collision.CollisionFuncApplier
 import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
@@ -29,7 +29,7 @@ object SparkCommonEventRegister {
         add(PlayerBoneModifier)
         add(CollisionFuncApplier)
         add(SkillApplier)
-        add(EntityApplier)
+        add(CameraAdjuster)
     }
 
     private fun add(event: Any) {

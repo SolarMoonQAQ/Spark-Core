@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
 import com.mojang.serialization.Codec
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
@@ -22,10 +23,11 @@ enum class InterpolationType {
     ): Vector3f {
         val progress = min(progress, 1f)
         val keyFrameGroup = keyFrames.values
-        val kPre = keyFrameGroup.elementAt(max(presentIndex - 1, 0)).pre.eval(animatable)
-        val kNow = keyFrameGroup.elementAt(presentIndex).post.eval(animatable)
-        val kTarget = keyFrameGroup.elementAt(min(presentIndex + 1, keyFrameGroup.size - 1)).pre.eval(animatable)
-        val kPost = keyFrameGroup.elementAt(min(presentIndex + 2, keyFrameGroup.size - 1)).post.eval(animatable)
+        val eva = ExpressionEvaluator.evaluator(animatable)
+        val kPre = keyFrameGroup.elementAt(max(presentIndex - 1, 0)).pre.eval(eva)
+        val kNow = keyFrameGroup.elementAt(presentIndex).post.eval(eva)
+        val kTarget = keyFrameGroup.elementAt(min(presentIndex + 1, keyFrameGroup.size - 1)).pre.eval(eva)
+        val kPost = keyFrameGroup.elementAt(min(presentIndex + 2, keyFrameGroup.size - 1)).post.eval(eva)
 
         // 在终点就不lerp了
         if (presentIndex == keyFrameGroup.size - 1) return kNow

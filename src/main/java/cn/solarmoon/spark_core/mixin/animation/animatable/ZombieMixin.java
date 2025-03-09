@@ -4,11 +4,14 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager;
+import cn.solarmoon.spark_core.animation.presets.EntityStateAnimMachine;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
@@ -35,7 +38,10 @@ public abstract class ZombieMixin extends Monster implements IEntityAnimatable<Z
     @Override
     public void onAddedToLevel() {
         super.onAddedToLevel();
-        setModelIndex(ModelIndex.of(EntityType.PLAYER));
+        var model = ModelIndex.of(getType());
+        model.setModelPath(BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.PLAYER));
+        setModelIndex(model);
+        if (!level().isClientSide) AnimStateMachineManager.INSTANCE.putStateMachine(zombie, level(), EntityStateAnimMachine.create(zombie, true));
     }
 
     @Override

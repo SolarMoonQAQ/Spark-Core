@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.event
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.presets.CommonState
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.Event
 import net.neoforged.bus.api.ICancellableEvent
@@ -12,6 +13,11 @@ abstract class ChangePresetAnimEvent: Event() {
 
     class PlayerState(val player: Player, val originAnim: TypedAnimation, val state: IState, var transitionTime: Int): ChangePresetAnimEvent(), ICancellableEvent {
         var newAnim: TypedAnimation? = null
+    }
+
+    class EntityState(val entity: LivingEntity, val originAnim: TypedAnimation, val state: IState, var transitionTime: Int, val originUsePlayerAnim: Boolean): ChangePresetAnimEvent(), ICancellableEvent {
+        var newAnim: TypedAnimation? = null
+        var usePlayerAnim = originUsePlayerAnim
     }
 
     class Common(val entity: Entity, val originAnim: String, val commonState: CommonState): ChangePresetAnimEvent() {

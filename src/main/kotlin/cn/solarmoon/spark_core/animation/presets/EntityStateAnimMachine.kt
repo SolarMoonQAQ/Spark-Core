@@ -1,16 +1,15 @@
 package cn.solarmoon.spark_core.animation.presets
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.entity.isFalling
-import cn.solarmoon.spark_core.entity.isMoving
 import cn.solarmoon.spark_core.entity.moveBackCheck
 import cn.solarmoon.spark_core.entity.moveCheck
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import net.minecraft.client.Minecraft
-import net.minecraft.client.player.LocalPlayer
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.entity.LivingEntity
 import net.neoforged.neoforge.common.NeoForge
 import ru.nsk.kstatemachine.event.DataEvent
 import ru.nsk.kstatemachine.event.Event
@@ -20,16 +19,20 @@ import ru.nsk.kstatemachine.state.transition
 import ru.nsk.kstatemachine.statemachine.buildCreationArguments
 import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
 import ru.nsk.kstatemachine.statemachine.onStateEntry
-import ru.nsk.kstatemachine.statemachine.onStateExit
 
-object PlayerStateAnimMachine {
+object EntityStateAnimMachine {
 
     class SwitchEvent: DataEvent<Boolean> { override var data = true }
 
     object ResetEvent: Event
 
     @JvmStatic
-    fun create(player: LocalPlayer) = createStdLibStateMachine(creationArguments = buildCreationArguments { isUndoEnabled = true }) {
+    fun create(animatable: IEntityAnimatable<out LivingEntity>, usePlayerAnim: Boolean) = createStdLibStateMachine(
+        creationArguments = buildCreationArguments {
+            isUndoEnabled = true
+        }
+    ) {
+        val entity = animatable.animatable
         val none = state("none")
         val idle = addState(EntityStates.Idle())
         val walk = addState(EntityStates.Walk())
@@ -48,35 +51,33 @@ object PlayerStateAnimMachine {
 
         val choice = initialChoiceState("choice") {
             when {
-                Minecraft.getInstance().player == null -> none
-                checkPlayingOtherAnim(player) -> none
-                player.vehicle != null -> sit
-                player.isSleeping -> sleeping
-                player.isSwimming -> swimming
-                player.isFallFlying -> fallFlying
-                player.abilities.flying && player.moveCheck() -> flyMove
-                player.abilities.flying -> fly
-                player.isInWater && player.isFalling() -> swimmingIdle
-                player.isFalling() && player.isAboveGround(0.75) -> fall
-                player.isCrouching && player.moveCheck() -> crouchingMove
-                player.isCrouching -> crouching
-                player.isSprinting -> sprinting
-                player.moveBackCheck() && player.isMoving() -> walkBack
-                player.isMoving() -> walk
+                checkPlayingOtherAnim(animatable) -> none
+                entity.vehicle != null -> sit
+                entity.isSleeping -> sleeping
+                entity.isSwimming -> swimming
+                entity.isFallFlying -> fallFlying
+                entity.isInWater && entity.isFalling() -> swimmingIdle
+                entity.isFalling() && entity.isAboveGround(0.75) -> fall
+                entity.isCrouching && entity.moveCheck() -> crouchingMove
+                entity.isCrouching -> crouching
+                entity.isSprinting -> sprinting
+                entity.moveBackCheck() && entity.moveCheck() -> walkBack
+                entity.moveCheck() -> walk
                 else -> idle
             }
         }
 
         onStateEntry { s, b ->
-            if ((b.event as? SwitchEvent)?.data == false) return@onStateEntry
+            val events = b.event as? SwitchEvent ?: return@onStateEntry
+            if (events.data == false) return@onStateEntry
             if (s == none) return@onStateEntry
             val sName = s.name ?: return@onStateEntry
             SparkRegistries.TYPED_ANIMATION.get(ResourceLocation.parse(sName))?.let {
-                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, s, 7))
+                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityState(entity, it, s, 7, usePlayerAnim))
                 if (event.isCanceled) return@let
                 val anim = event.newAnim ?: event.originAnim
-                anim.play(player, event.transitionTime)
-                anim.syncToServer(player.id, event.transitionTime)
+                anim.play(animatable, event.transitionTime, !event.usePlayerAnim)
+                anim.syncToClient(entity.id, event.transitionTime, !event.usePlayerAnim)
             }
         }
 

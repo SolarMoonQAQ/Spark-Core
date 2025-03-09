@@ -16,6 +16,7 @@ import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import ru.nsk.kstatemachine.statemachine.StateMachine;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,15 +31,12 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     private final ConcurrentHashMap<Integer, Skill> allSkills = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Skill> predictedSkills = new ConcurrentHashMap<>();
     private final AtomicInteger skillCount = new AtomicInteger();
-    private boolean canKnockback = true;
     private boolean jumpingLag = false;
-    private double chargingTime = 0;
 
     @Override
     public @NotNull PreInput getPreInput() {
         return preInput;
     }
-
 
     @Override
     public void pushHurtData(CollisionHurtData data) {
@@ -77,16 +75,6 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     }
 
     @Override
-    public boolean getCanKnockBack() {
-        return canKnockback;
-    }
-
-    @Override
-    public void setCanKnockBack(boolean b) {
-        this.canKnockback = b;
-    }
-
-    @Override
     public boolean getJumpingLag() {
         return jumpingLag;
     }
@@ -96,13 +84,4 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
         jumpingLag = b;
     }
 
-    @Override
-    public double getChargingTime() {
-        return chargingTime;
-    }
-
-    @Override
-    public void setChargingTime(double v) {
-        chargingTime = v;
-    }
 }
