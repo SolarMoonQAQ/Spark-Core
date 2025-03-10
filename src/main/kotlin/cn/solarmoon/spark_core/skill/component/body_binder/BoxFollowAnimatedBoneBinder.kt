@@ -27,7 +27,7 @@ class BoxFollowAnimatedBoneBinder(
 ): RigidBodyBinder(activeTime, onBodyActive, onBodyInactive) {
 
     override val shape: CollisionShape = CompoundCollisionShape().apply {
-        addChildShape(BoxCollisionShape(size.div(2f, Vector3f()).toBVector3f()), offset.toBVector3f())
+         addChildShape(BoxCollisionShape(size.div(2f, Vector3f()).toBVector3f()), offset.toBVector3f())
     }
 
     override fun createBody(owner: PhysicsHost): PhysicsRigidBody {

@@ -26,6 +26,11 @@ class MoveWithAnimatedBoneTicker(
         body: PhysicsCollisionObject,
         level: PhysicsLevel
     ) {
+        val animatable = body.owner as? IAnimatable<*> ?: return
+        if (body is PhysicsRigidBody) {
+            body.setPhysicsRotation(animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion())
+            body.setPhysicsScale(animatable.getBone(boneName).getScale().toBVector3f())
+        }
 //        val animatable = body.owner as? IAnimatable<*> ?: return
 //        if (body is PhysicsRigidBody) {
 //            val shape = body.collisionShape as? CompoundCollisionShape ?: return
@@ -53,11 +58,9 @@ class MoveWithAnimatedBoneTicker(
 
             level.physicsLevel.submitTask {
                 body.setPhysicsLocation(animatable.getWorldBonePivot(boneName).toBVector3f())
-                body.setPhysicsRotation(animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion())
-                body.setPhysicsScale(animatable.getBone(boneName).getScale().toBVector3f())
 
-                val v = targetPos.subtract(lastPos).mult(20f)
-                body.setLinearVelocity(v)
+//                val v = targetPos.subtract(lastPos).mult(20f)
+//                body.setLinearVelocity(v)
             }
             lastPos = targetPos
         }
