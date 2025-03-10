@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.skill.component.body_binder
 
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
+import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithBonePivotTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.skill.SkillTimeLine
 import cn.solarmoon.spark_core.skill.component.SkillComponent
@@ -34,7 +35,7 @@ class BoxFollowAnimatedBoneBinder(
         return owner.bindBody(PhysicsRigidBody("${UUID.randomUUID()}", owner, shape)) {
             isContactResponse = false
             setGravity(Vector3f().toBVector3f())
-            addPhysicsTicker(MoveWithAnimatedBoneTicker(boneName))
+            addPhysicsTicker(MoveWithBonePivotTicker(boneName))
             collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
         }
     }
