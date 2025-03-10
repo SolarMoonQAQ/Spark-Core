@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class EntityRenderDispatcherMixin {
     @Inject(method = "renderShadow", at = @At("HEAD"), cancellable = true)
     private static void preventRenderShadowWhenInFirstPersonAnim(PoseStack matrices, MultiBufferSource vertexConsumers, Entity entity, float opacity, float tickDelta, LevelReader world, float radius, CallbackInfo ci) {
-        if (entity instanceof AbstractClientPlayer player && PlayerAnimHelperKt.shouldRenderArmAnimInFirstPerson(player)) {
+        if (entity instanceof AbstractClientPlayer player && PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(player).getShouldRender()) {
             ci.cancel();
         }
     }

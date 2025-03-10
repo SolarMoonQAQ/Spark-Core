@@ -22,7 +22,7 @@ public class LevelRendererMixin {
     private void fakeThirdPersonMode(DeltaTracker deltaTracker, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, Matrix4f matrix4f2, CallbackInfo ci) {
         defaultCameraState = camera.isDetached();
         if (camera.getEntity() instanceof AbstractClientPlayer player) {
-            if (PlayerAnimHelperKt.shouldRenderArmAnimInFirstPerson(player)) {
+            if (PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(player).getShouldRender()) {
                 camera.detached = true;
             }
         }

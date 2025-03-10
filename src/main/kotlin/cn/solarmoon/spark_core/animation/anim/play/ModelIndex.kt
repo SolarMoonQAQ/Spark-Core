@@ -62,7 +62,7 @@ class ModelIndex (
         }
 
         @JvmStatic
-        val EMPTY get() = ModelIndex(ResourceLocation.withDefaultNamespace("player"), ResourceLocation.withDefaultNamespace("player"), ResourceLocation.withDefaultNamespace("player"))
+        val EMPTY get() = ModelIndex(ResourceLocation.withDefaultNamespace("empty"), ResourceLocation.withDefaultNamespace("empty"), ResourceLocation.withDefaultNamespace("empty"))
 
         @JvmStatic
         fun of(type: EntityType<*>): ModelIndex {

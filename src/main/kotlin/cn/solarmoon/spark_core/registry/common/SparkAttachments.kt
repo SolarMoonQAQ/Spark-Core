@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 
 object SparkAttachments {
@@ -10,7 +12,11 @@ object SparkAttachments {
     @JvmStatic
     val MODEL_INDEX = SparkCore.REGISTER.attachment<ModelIndex>()
         .id("model_index")
-        .defaultValue { ModelIndex.EMPTY }
+        .defaultValue {
+            if (it is IEntityAnimatable<*>) {
+                return@defaultValue ModelIndex.of(it.animatable.type)
+            } else ModelIndex.EMPTY
+        }
         .serializer { it.serialize(ModelIndex.CODEC) }
         .build()
 

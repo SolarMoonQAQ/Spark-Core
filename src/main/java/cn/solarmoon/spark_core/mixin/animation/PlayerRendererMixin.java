@@ -43,7 +43,7 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
 
     @Inject(method = "setupRotations(Lnet/minecraft/client/player/AbstractClientPlayer;Lcom/mojang/blaze3d/vertex/PoseStack;FFFF)V", at = @At("HEAD"), cancellable = true)
     private void rot(AbstractClientPlayer entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
-        if (VanillaModelHelper.shouldSwitchToAnim((IAnimatable<?>) entity)) {
+        if (VanillaModelHelper.shouldSwitchToAnim(entity)) {
             super.setupRotations(entity, poseStack, bob, yBodyRot, partialTick, scale);
             ci.cancel();
         }

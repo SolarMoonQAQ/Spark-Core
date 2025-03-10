@@ -26,13 +26,10 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
     @Inject(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"))
     private void hideUnnecessaryBonesWhenRenderInFirstPerson(AbstractClientPlayer entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        if (PlayerAnimHelperKt.shouldRenderArmAnimInFirstPerson(entity)) {
+        var event = PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(entity);
+        if (event.getShouldRender()) {
             model.setAllVisible(false);
-            // 感觉不是很好看先注释掉了
-//            model.leftArm.visible = true;
-//            model.leftSleeve.visible = true;
-//            model.rightArm.visible = true;
-//            model.rightSleeve.visible = true;
+            event.getModifier$SparkCore_1_21_1().invoke();
         }
     }
 

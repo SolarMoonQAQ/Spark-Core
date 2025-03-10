@@ -27,12 +27,11 @@ object EntityStateAnimMachine {
     object ResetEvent: Event
 
     @JvmStatic
-    fun create(animatable: IEntityAnimatable<out LivingEntity>, usePlayerAnim: Boolean) = createStdLibStateMachine(
+    fun create(animatable: IEntityAnimatable<*>, entity: LivingEntity, usePlayerAnim: Boolean) = createStdLibStateMachine(
         creationArguments = buildCreationArguments {
             isUndoEnabled = true
         }
     ) {
-        val entity = animatable.animatable
         val none = state("none")
         val idle = addState(EntityStates.Idle())
         val walk = addState(EntityStates.Walk())

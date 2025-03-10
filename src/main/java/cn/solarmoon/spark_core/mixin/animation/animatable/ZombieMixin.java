@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.animation.presets.EntityStateAnimMachine;
 import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
@@ -33,15 +34,6 @@ public abstract class ZombieMixin extends Monster implements IEntityAnimatable<Z
 
     protected ZombieMixin(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
-    }
-
-    @Override
-    public void onAddedToLevel() {
-        super.onAddedToLevel();
-        var model = ModelIndex.of(getType());
-        model.setModelPath(BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.PLAYER));
-        setModelIndex(model);
-        if (!level().isClientSide) AnimStateMachineManager.INSTANCE.putStateMachine(zombie, level(), EntityStateAnimMachine.create(zombie, true));
     }
 
     @Override

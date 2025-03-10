@@ -20,7 +20,7 @@ class EntityAnimListener : SimpleJsonListener("geo/animation") {
             val originSet = OAnimationSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
 
 //            originSet.animations.values.forEach {
-//                it.bones.forEach {
+//                it.bones.forEach {//
 //                    it.value.rotation.values.forEach {
 //                        it.pre = it.pre.toVector3d().apply { x = -x.toRadians(); y = -y.toRadians(); z = z.toRadians() }
 //                            .toVec3()

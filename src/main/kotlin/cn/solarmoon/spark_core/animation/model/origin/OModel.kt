@@ -23,7 +23,7 @@ data class OModel(
      * 安全获取指定名称的骨骼
      * @throws NullPointerException 找不到名称为[name]的骨骼
      */
-    fun getBone(name: String) = bones[name] ?: throw NullPointerException("找不到名为 $name 的骨骼。")
+    fun getBone(name: String) = bones[name]
 
     fun hasBone(name: String) = bones[name] != null
 

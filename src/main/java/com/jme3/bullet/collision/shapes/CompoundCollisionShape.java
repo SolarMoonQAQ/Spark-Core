@@ -113,9 +113,9 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param childShape the child shape to add (not null, not a compound shape,
      * alias created)
      */
-    public void addChildShape(CollisionShape childShape) {
+    public ChildCollisionShape addChildShape(CollisionShape childShape) {
         Validate.nonNull(childShape, "child shape");
-        addChildShape(childShape, translateIdentity, matrixIdentity);
+        return addChildShape(childShape, translateIdentity, matrixIdentity);
     }
 
     /**
@@ -127,13 +127,13 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param offsetY the local Y coordinate of the child shape's origin
      * @param offsetZ the local Z coordinate of the child shape's origin
      */
-    public void addChildShape(CollisionShape childShape, float offsetX,
+    public ChildCollisionShape addChildShape(CollisionShape childShape, float offsetX,
             float offsetY, float offsetZ) {
         Validate.nonNull(childShape, "child shape");
 
         Vector3f offset
                 = new Vector3f(offsetX, offsetY, offsetZ); // TODO garbage
-        addChildShape(childShape, offset, matrixIdentity);
+        return addChildShape(childShape, offset, matrixIdentity);
     }
 
     /**
@@ -144,11 +144,11 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param offset the local coordinates of the child shape's origin (not
      * null, unaffected)
      */
-    public void addChildShape(CollisionShape childShape, Vector3f offset) {
+    public ChildCollisionShape addChildShape(CollisionShape childShape, Vector3f offset) {
         Validate.nonNull(childShape, "child shape");
         Validate.nonNull(offset, "offset");
 
-        addChildShape(childShape, offset, matrixIdentity);
+        return addChildShape(childShape, offset, matrixIdentity);
     }
 
     /**
@@ -161,7 +161,7 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param rotation the local orientation of the child shape (not null,
      * unaffected)
      */
-    public void addChildShape(
+    public ChildCollisionShape addChildShape(
             CollisionShape childShape, Vector3f offset, Matrix3f rotation) {
         if (childShape instanceof CompoundCollisionShape) {
             throw new IllegalArgumentException(
@@ -176,6 +176,7 @@ public class CompoundCollisionShape extends CollisionShape {
 
         long parentId = nativeId();
         addChildShape(parentId, childId, offset, rotation);
+        return child;
     }
 
     /**
@@ -187,10 +188,10 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param transform the local transform of the child shape (not null,
      * unaffected)
      */
-    public void addChildShape(CollisionShape shape, Transform transform) {
+    public ChildCollisionShape addChildShape(CollisionShape shape, Transform transform) {
         Vector3f offset = transform.getTranslation(); // alias
         Matrix3f rotation = transform.getRotation().toRotationMatrix();
-        addChildShape(shape, offset, rotation);
+        return addChildShape(shape, offset, rotation);
     }
 
     /**

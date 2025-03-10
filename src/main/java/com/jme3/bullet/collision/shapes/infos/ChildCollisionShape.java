@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.collision.shapes.infos;
 
+import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.collision.shapes.EmptyShape;
@@ -38,6 +39,7 @@ import com.jme3.bullet.collision.shapes.HullCollisionShape;
 import com.jme3.math.*;
 import jme3utilities.Validate;
 import jme3utilities.math.MyMath;
+import kotlin.Pair;
 
 import java.util.logging.Logger;
 
@@ -50,6 +52,9 @@ import java.util.logging.Logger;
  * @author normenhansen
  */
 public class ChildCollisionShape {
+
+    public Pair<Integer, OCube> cubeBound = null;
+
     // *************************************************************************
     // constants and loggers
 

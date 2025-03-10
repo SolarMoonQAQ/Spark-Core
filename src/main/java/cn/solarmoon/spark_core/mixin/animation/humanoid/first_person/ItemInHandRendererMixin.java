@@ -15,7 +15,7 @@ public class ItemInHandRendererMixin {
 
     @Inject(method = "renderHandsWithItems", at = @At("HEAD"), cancellable = true)
     private void disableRenderItemWhenInFirstPersonAnim(float f, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, LocalPlayer localPlayer, int i, CallbackInfo ci) {
-        if (PlayerAnimHelperKt.shouldRenderArmAnimInFirstPerson(localPlayer)) {
+        if (PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(localPlayer).getShouldRender()) {
             ci.cancel();
         }
     }

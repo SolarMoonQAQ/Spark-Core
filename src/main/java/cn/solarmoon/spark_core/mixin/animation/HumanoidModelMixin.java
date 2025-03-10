@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.mixin.animation;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.vanilla.ITransformModel;
 import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
+import cn.solarmoon.spark_core.compat.player_animator.PlayerAnimatorHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -30,7 +31,7 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
 
     @Inject(method = "<init>(Lnet/minecraft/client/model/geom/ModelPart;Ljava/util/function/Function;)V", at = @At("RETURN"))
     private void init(ModelPart root, Function renderType, CallbackInfo ci) {
-
+        //
     }
 
     @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/geom/ModelPart;copyFrom(Lnet/minecraft/client/model/geom/ModelPart;)V", ordinal = 0))

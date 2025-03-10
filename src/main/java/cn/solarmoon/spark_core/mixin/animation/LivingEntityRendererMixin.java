@@ -17,7 +17,9 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
     private void offset(T entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.isHumanoidModel(entity)) {
             var physPartialTicks = entity.getPhysicsLevel().getPartialTicks();
-            poseStack.mulPose(animatable.getSpaceBoneMatrix("body", partialTick, physPartialTicks));
+            if (animatable.getModel().hasBone("body")) {
+                poseStack.mulPose(animatable.getSpaceBoneMatrix("body", partialTick, physPartialTicks));
+            }
         }
     }
 

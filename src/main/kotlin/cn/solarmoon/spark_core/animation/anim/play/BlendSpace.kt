@@ -20,8 +20,7 @@ class BlendSpace : ConcurrentHashMap<String, BlendAnimation>() {
      * 按当前空间权重混合指定骨骼的动画，并输出新的混合结果
      */
     fun blendBone(boneName: String, animatable: IAnimatable<*>?): KeyAnimData {
-        val totalWeight =
-            values.filter { boneName !in it.boneBlackList && boneName in it.anim.origin.bones }.sumOf { it.weight }
+        val totalWeight = values.filter { boneName !in it.boneBlackList && boneName in it.anim.origin.bones }.sumOf { it.weight }
         val pos = Vector3f()
         val rot = Vector3f()
         val scale = Vector3f(1f)

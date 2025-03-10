@@ -6,10 +6,17 @@ import cn.solarmoon.spark_core.animation.anim.play.BlendAnimation
 import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
+import cn.solarmoon.spark_core.local_control.KeyEvent
+import cn.solarmoon.spark_core.local_control.onEvent
+import dev.kosmx.playerAnim.api.layered.PlayerAnimationFrame
+import dev.kosmx.playerAnim.minecraftApi.PlayerAnimationAccess
+import net.minecraft.client.Minecraft
 import net.minecraft.client.player.LocalPlayer
+import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.living.LivingEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
@@ -17,8 +24,22 @@ import ru.nsk.kstatemachine.statemachine.processEventBlocking
 object CommonAnimApplier {
 
     @SubscribeEvent
+    private fun entityJoin(event: EntityJoinLevelEvent) {
+        val entity = event.entity
+        val level = event.level
+        if (entity is IEntityAnimatable<*> && entity is LivingEntity) {
+            AnimStateMachineManager.putStateMachine(entity, level, EntityStateAnimMachine.create(entity, entity, true))
+        }
+    }
+
+    @SubscribeEvent
     private fun entityTick(event: EntityTickEvent.Pre) {
         val entity = event.entity
+
+//        Minecraft.getInstance().options.keyAttack.onEvent(KeyEvent.PRESS_ONCE) {
+//            Minecraft.getInstance().player?.animController?.setAnimation("sword:combo_${entity.tickCount % 2}", 0)
+//            true
+//        }
 
         when {
             entity is Player -> {

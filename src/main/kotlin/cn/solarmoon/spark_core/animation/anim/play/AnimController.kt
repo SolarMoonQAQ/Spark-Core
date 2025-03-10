@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 
 class AnimController(
@@ -25,6 +26,13 @@ class AnimController(
     val blendSpace = BlendSpace()
 
     fun setAnimation(anim: AnimInstance?, transTime: Int) {
+        if (anim != null) {
+            val valid = testAnimValidity(anim)
+            if (valid.isNotEmpty()) {
+                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：$valid")
+                return
+            }
+        }
         if (mainAnim?.rejectNewAnim?.invoke(anim) == true && mainAnim?.isCancelled != true) return
         mainAnim?.cancel()
         mainAnim?.triggerEvent(AnimEvent.SwitchOut(anim))
@@ -67,6 +75,13 @@ class AnimController(
     }
 
     fun isNotPlaying() = mainAnim == null || mainAnim?.isCancelled == true
+
+    /**
+     * @return 当前模型缺少的播放[anim]所需的骨骼的集合，为空则不缺少，即该动画可播放
+     */
+    fun testAnimValidity(anim: AnimInstance): Set<String> {
+        return anim.origin.bones.keys - animatable.model.bones.keys
+    }
 
     fun getPlayingAnim(): AnimInstance? {
         val anim = mainAnim

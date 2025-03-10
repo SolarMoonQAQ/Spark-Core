@@ -12,9 +12,8 @@ object PlayerAnimHelper {}
 /**
  * 用于判断是否应当在第一人称下播放动画时渲染手部（目前只有物品）的动作
  */
-fun AbstractClientPlayer.shouldRenderArmAnimInFirstPerson(): Boolean {
+fun AbstractClientPlayer.shouldRenderArmAnimInFirstPersonEvent(): PlayerRenderAnimInFirstPersonEvent {
     val isInFirstPerson = Minecraft.getInstance().options.cameraType.isFirstPerson
     val isMainCamera = Minecraft.getInstance().cameraEntity == this
-    val renderEvent = NeoForge.EVENT_BUS.post(PlayerRenderAnimInFirstPersonEvent(this))
-    return isInFirstPerson && isMainCamera && renderEvent.shouldRender
+    return NeoForge.EVENT_BUS.post(PlayerRenderAnimInFirstPersonEvent(this, isInFirstPerson && isMainCamera))
 }

@@ -4,17 +4,19 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.physics.toRadians
+import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.neoforge.event.tick.EntityTickEvent
 import net.neoforged.neoforge.event.tick.PlayerTickEvent
 
 object PlayerBoneModifier {
 
     @SubscribeEvent
-    private fun playerTick(event: PlayerTickEvent.Pre) {
+    private fun playerTick(event: EntityTickEvent.Pre) {
         val player = event.entity
-        if (player !is IEntityAnimatable<*>) return
+        if (player !is IEntityAnimatable<*> || player !is LivingEntity) return
         val head = player.getBone("head")
         head.updateVanilla(KeyAnimData(
             Vec3.ZERO,

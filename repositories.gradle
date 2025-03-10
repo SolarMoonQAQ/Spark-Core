@@ -7,6 +7,8 @@ dependencies {
     implementation "maven.modrinth:jade:${jade_version}"
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
+    // PlayerAnimator
+    implementation "dev.kosmx.player-anim:player-animation-lib-forge:${player_animator_version}"
 
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
@@ -22,6 +24,7 @@ dependencies {
     // azurelib
     implementation "mod.azure.azurelib:azurelib-neo-${minecraft_version}:${azurelib_version}"
 }
+
 repositories {
     mavenLocal()
     mavenCentral()

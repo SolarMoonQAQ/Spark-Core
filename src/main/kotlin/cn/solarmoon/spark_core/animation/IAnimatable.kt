@@ -114,7 +114,7 @@ interface IAnimatable<T> : Syncer {
     fun getWorldBoneMatrix(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Matrix4f {
         val ma = getWorldPositionMatrix(partialTick)
         val bone = model.getBone(name)
-        bone.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
+        bone?.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
         return ma
     }
 
@@ -126,7 +126,7 @@ interface IAnimatable<T> : Syncer {
     fun getWorldBonePivot(name: String, offset: Vec3 = Vec3.ZERO, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
         val ma = getWorldBoneMatrix(name, partialTick, physPartialTick)
         val bone = model.getBone(name)
-        val pivot = bone.pivot.add(offset).toVector3f()
+        val pivot = bone?.pivot?.add(offset)?.toVector3f() ?: Vector3f()
         return ma.transformPosition(pivot)
     }
 
@@ -137,7 +137,7 @@ interface IAnimatable<T> : Syncer {
     fun getSpaceBoneMatrix(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Matrix4f {
         val ma = Matrix4f()
         val bone = model.getBone(name)
-        bone.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
+        bone?.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
         return ma
     }
 
@@ -147,7 +147,7 @@ interface IAnimatable<T> : Syncer {
      */
     fun getSpaceBonePivot(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
         val ma = Matrix4f()
-        val bone = model.getBone(name)
+        val bone = model.getBone(name) ?: return Vector3f()
         val pivot = bone.pivot.toVector3f()
         bone.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
         return ma.transformPosition(pivot)

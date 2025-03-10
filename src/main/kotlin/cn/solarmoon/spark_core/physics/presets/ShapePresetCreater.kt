@@ -17,8 +17,9 @@ fun CompoundCollisionShape.initWithAnimatedBone(bone: OBone) {
         val box = BoxCollisionShape(cube.size.div(2.0).toBVector3f())
         val rot = cube.rotation.toRadians().toVector3f()
         val offsetPosition = cube.getTransformedCenter(Matrix4f()).sub(bone.pivot.toVector3f()).toBVector3f()
-        val offsetRotation = Quaternionf().rotateZYX(rot.z, rot.y, rot.z).toBQuaternion()
+        val offsetRotation = Quaternionf().rotateZYX(rot.z, rot.y, rot.x).toBQuaternion()
         val offset = Transform(offsetPosition, offsetRotation, Vector3f())
-        addChildShape(box, offset)
+        val child = addChildShape(box, offset)
+        child.cubeBound = index to cube
     }
 }

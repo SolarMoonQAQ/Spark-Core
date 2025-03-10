@@ -33,7 +33,9 @@ object VanillaModelHelper {
 
     @JvmStatic
     fun setPivot(animatable: IAnimatable<*>, boneName: String, model: ModelPart) {
-        (model as ITransformModelPart).pivot.set(animatable.model.getBone(boneName).pivot.toVector3f())
+        animatable.model.getBone(boneName)?.pivot?.toVector3f()?.let {
+            (model as ITransformModelPart).pivot.set(it)
+        }
     }
 
     @JvmStatic

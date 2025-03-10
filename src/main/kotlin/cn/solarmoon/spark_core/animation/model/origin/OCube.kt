@@ -15,6 +15,7 @@ import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
 import org.joml.Matrix3f
 import org.joml.Matrix4f
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 
@@ -64,7 +65,16 @@ data class OCube(
         return list.toList()
     }
 
+    fun getTransformedRotation(matrix4f: Matrix4f): Quaternionf {
+        val correctedMatrix = Matrix4f(matrix4f)
+        correctedMatrix.translate(pivot.toVector3f())
+        correctedMatrix.rotateZYX(rotation.toVector3f())
+        correctedMatrix.translate(pivot.toVector3f().negate())
+        return correctedMatrix.getUnnormalizedRotation(Quaternionf())
+    }
+
     fun getTransformedCenter(matrix4f: Matrix4f): Vector3f {
+        val matrix4f = Matrix4f(matrix4f)
         matrix4f.translate(pivot.toVector3f())
         matrix4f.rotateZYX(rotation.toVector3f())
         matrix4f.translate(pivot.div(-1.0).toVector3f())
