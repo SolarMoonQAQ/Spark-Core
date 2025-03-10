@@ -35,7 +35,7 @@ class BoxFollowAnimatedBoneBinder(
         return owner.bindBody(PhysicsRigidBody("${UUID.randomUUID()}", owner, shape)) {
             isContactResponse = false
             setGravity(Vector3f().toBVector3f())
-            addPhysicsTicker(MoveWithBonePivotTicker(boneName))
+            addPhysicsTicker(MoveWithBonePivotTicker(boneName, offset.toBVector3f()))
             collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
         }
     }

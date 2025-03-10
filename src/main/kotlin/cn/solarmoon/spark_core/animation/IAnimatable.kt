@@ -125,8 +125,8 @@ interface IAnimatable<T> : Syncer {
      */
     fun getWorldBonePivot(name: String, offset: Vec3 = Vec3.ZERO, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
         val ma = getWorldBoneMatrix(name, partialTick, physPartialTick)
-        val bone = model.getBone(name)
-        val pivot = bone?.pivot?.add(offset)?.toVector3f() ?: Vector3f()
+        val bone = model.getBone(name) ?: return Vector3f()
+        val pivot = bone.pivot.add(offset).toVector3f()
         return ma.transformPosition(pivot)
     }
 
@@ -145,10 +145,10 @@ interface IAnimatable<T> : Syncer {
      * 获取动画体指定骨骼的枢轴点在模型空间的变换矩阵
      * @param physPartialTick 物理线程客户端的tick时间
      */
-    fun getSpaceBonePivot(name: String, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
+    fun getSpaceBonePivot(name: String, offset: Vec3 = Vec3.ZERO, partialTick: Float = 1f, physPartialTick: Float = 1f): Vector3f {
         val ma = Matrix4f()
         val bone = model.getBone(name) ?: return Vector3f()
-        val pivot = bone.pivot.toVector3f()
+        val pivot = bone.pivot.add(offset).toVector3f()
         bone.applyTransformWithParents(bones, ma, partialTick, physPartialTick)
         return ma.transformPosition(pivot)
     }
