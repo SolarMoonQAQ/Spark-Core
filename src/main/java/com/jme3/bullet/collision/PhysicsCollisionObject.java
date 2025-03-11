@@ -209,6 +209,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     public ArrayList<CollisionCallback> collisionListeners = new ArrayList<>();
 
+    public Vector3f lastPos = new Vector3f();
+
     /**
      * Instantiate a collision object with no tracker and no assigned native
      * object.

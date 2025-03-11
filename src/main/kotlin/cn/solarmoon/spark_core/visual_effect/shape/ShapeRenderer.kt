@@ -28,21 +28,22 @@ class ShapeRenderer: VisualEffectRenderer() {
     ) {
         val level = mc.level ?: return
         if (!mc.entityRenderDispatcher.shouldRenderHitBoxes()) return
-        val physLevel = level.physicsLevel
+        val physLevel:PhysicsLevel = level.physicsLevel
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
+            val lerpPos = body.lastPos.mult(1-partialTicks).add(body.getPhysicsLocation(null).mult(partialTicks))
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
-                    val parentTransform = body.getTransform(null).toTransformMatrix().toMatrix4f()
+                    val parentTransform = body.getTransform(null).setTranslation(lerpPos).toTransformMatrix().toMatrix4f()
                     val childTransform = it.copyTransform(null).toTransformMatrix().toMatrix4f()
                     val finalMatrix = parentTransform.mul(childTransform)
                     visualizer.render(physLevel, body, finalMatrix, it.shape, mc, camPos, poseStack, bufferSource, partialTicks)
                 }
             } else {
                 val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
-                visualizer.render(physLevel, body, body.getTransform(null).toTransformMatrix().toMatrix4f(), shape, mc, camPos, poseStack, bufferSource, partialTicks)
+                visualizer.render(physLevel, body, body.getTransform(null).setTranslation(lerpPos).toTransformMatrix().toMatrix4f(), shape, mc, camPos, poseStack, bufferSource, partialTicks)
             }
         }
     }

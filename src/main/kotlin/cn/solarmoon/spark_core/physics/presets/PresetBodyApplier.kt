@@ -25,14 +25,16 @@ object PresetBodyApplier {
 
         if (entity is Player || entity is Zombie) {
             entity.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {
-                val b = PhysicsRigidBody(it.name, entity, CompoundCollisionShape())
+                val body = PhysicsRigidBody(it.name, entity, CompoundCollisionShape())
 
-                entity.bindBody(b, event.level.physicsLevel, true) {
-                    (collisionShape as CompoundCollisionShape).initWithAnimatedBone(it)
-                    isContactResponse = false
-                    setGravity(Vector3f.ZERO)
-                    collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
-                    addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
+                entity.bindBody(body, event.level.physicsLevel, true) {
+                    (body.collisionShape as CompoundCollisionShape).initWithAnimatedBone(it)
+                    body.isContactResponse = false
+                    body.setGravity(Vector3f.ZERO)
+                    body.setEnableSleep(false)
+                    body.isKinematic = true
+                    body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
+                    body.addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
                 }
             }
         } else {
@@ -40,10 +42,12 @@ object PresetBodyApplier {
                 val size = Vec3(boundingBox.xsize, boundingBox.ysize, boundingBox.zsize).div(2.0).toBVector3f()
                 val body = PhysicsRigidBody("body", entity, BoxCollisionShape(size))
                 bindBody(body, event.level.physicsLevel) {
-                    isContactResponse = false
-                    collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
-                    setGravity(Vector3f.ZERO)
-                    addPhysicsTicker(MoveWithBoundingBoxTicker(true))
+                    body.isContactResponse = false
+                    body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
+                    body.setGravity(Vector3f.ZERO)
+                    body.setEnableSleep(false)
+                    body.isKinematic = true
+                    body.addPhysicsTicker(MoveWithBoundingBoxTicker(true))
                 }
             }
         }

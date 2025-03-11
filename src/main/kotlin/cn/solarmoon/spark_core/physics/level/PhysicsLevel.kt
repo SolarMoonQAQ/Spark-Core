@@ -6,7 +6,9 @@ import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Vector3f
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,8 +23,11 @@ import net.minecraft.world.level.Level
 import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
+
 abstract class PhysicsLevel(
     val name: String,
 ): PhysicsTickListener, AutoCloseable {
@@ -35,9 +40,11 @@ abstract class PhysicsLevel(
         private set
     var lastPhysicsTickTime = System.nanoTime()
         private set
+    var lastMcTickTime = System.nanoTime()
+        private set
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     val previousTime = AtomicLong(System.nanoTime())
-
+    val body = PhysicsRigidBody("test", null, BoxCollisionShape(0.1f))
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val physicsDispatcher = newSingleThreadContext(name).apply {
         executor.execute {
@@ -99,6 +106,13 @@ abstract class PhysicsLevel(
         var accumulatedTime = 0f     // 累积时间（秒）
 
         while (isActive) {
+//            if(!body.isInWorld) {
+//                body.setProtectGravity(true)
+//                body.setGravity(Vector3f(0f,0f,0f))
+//                world.addCollisionObject(body)
+//
+//            }
+            body.setLinearVelocity(Vector3f(30* sin(tickCount*Math.PI/12).toFloat(),0f,30* cos(tickCount*Math.PI/12).toFloat()))
             val currentTime = System.nanoTime()
             val elapsed = (currentTime - previousTime.get()) / 1e9f // 转换为秒
             previousTime.set(currentTime)
@@ -156,6 +170,13 @@ abstract class PhysicsLevel(
             block()
         }
 
+    fun mcTick(){
+        world.pcoList.forEach { pco ->
+            pco.lastPos = pco.getPhysicsLocation(null)
+        }
+        lastMcTickTime = System.nanoTime()
+    }
+
     override fun prePhysicsTick(space: PhysicsSpace?, timeStep: Float) {
         world.pcoList.forEach { pco ->
             pco.isColliding = false
@@ -179,6 +200,12 @@ abstract class PhysicsLevel(
         val currentTime = System.nanoTime()
         val elapsedSinceLastTick = (currentTime - lastPhysicsTickTime) / 1e9f
         return (elapsedSinceLastTick * TPS).coerceIn(0f, 1f)
+    }
+
+    val mcPartialTicks: Float get() {
+        val currentTime = System.nanoTime()
+        val elapsedSinceLastTick = (currentTime - lastMcTickTime) / 1e9f
+        return (elapsedSinceLastTick * 20).coerceIn(0f, 1f)
     }
 
  }
