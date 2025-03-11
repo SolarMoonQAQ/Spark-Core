@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.mixin.animation.humanoid.first_person;
 
-import cn.solarmoon.spark_core.animation.vanilla.PlayerAnimHelperKt;
-import cn.solarmoon.spark_core.compat.player_animator.PlayerAnimatorHelper;
+import cn.solarmoon.spark_core.animation.vanilla.player.PlayerAnimHelperKt;
+import cn.solarmoon.spark_core.compat.player_animator.PlayerAnimatorCompat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -10,14 +10,11 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.PlayerItemInHandLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.fml.ModList;
-import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
@@ -47,7 +44,7 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
             at = @At("HEAD")
     )
     private void h(T entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        if (entity instanceof AbstractClientPlayer player && !PlayerAnimatorHelper.INSTANCE.isLoaded()) {
+        if (entity instanceof AbstractClientPlayer player && !PlayerAnimatorCompat.INSTANCE.isLoaded()) {
             boolean shouldRender = PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(player).getShouldRender();
             if (shouldRender != lastShouldRender) {
                 // 仅在条件变化时重新过滤

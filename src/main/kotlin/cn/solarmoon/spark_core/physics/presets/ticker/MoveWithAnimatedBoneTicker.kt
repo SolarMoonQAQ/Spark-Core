@@ -14,6 +14,7 @@ import com.jme3.math.Transform
 import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
+import net.neoforged.neoforge.client.event.ViewportEvent
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 

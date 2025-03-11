@@ -9,6 +9,10 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // PlayerAnimator
     implementation "dev.kosmx.player-anim:player-animation-lib-forge:${player_animator_version}"
+    // RealCamera
+    implementation "maven.modrinth:real-camera:0.6.1-beta-1.21"
+    // 第一人称
+    implementation "maven.modrinth:first-person-model:Sx5QD2SF"
 
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))

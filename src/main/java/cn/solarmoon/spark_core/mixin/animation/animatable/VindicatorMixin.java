@@ -8,30 +8,30 @@ import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.AbstractIllager;
+import net.minecraft.world.entity.monster.Vindicator;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(Zombie.class)
-public abstract class ZombieMixin extends Monster implements IEntityAnimatable<Zombie> {
+@Mixin(Vindicator.class)
+public abstract class VindicatorMixin extends AbstractIllager implements IEntityAnimatable<Vindicator> {
 
     private final ITempVariableStorage tempStorage = new VariableStorage();
     private final IScopedVariableStorage scopedStorage = new VariableStorage();
     private final IForeignVariableStorage foreignStorage = new VariableStorage();
-    private Zombie zombie = (Zombie) (Object) this;
-    private final AnimController animController = new AnimController(zombie);
-    private final BoneGroup boneGroup = new BoneGroup(zombie);
+    private Vindicator vindicator = (Vindicator) (Object) this;
+    private final AnimController animController = new AnimController(vindicator);
+    private final BoneGroup boneGroup = new BoneGroup(vindicator);
 
-    protected ZombieMixin(EntityType<? extends Monster> entityType, Level level) {
+    protected VindicatorMixin(EntityType<? extends AbstractIllager> entityType, Level level) {
         super(entityType, level);
     }
 
     @Override
-    public Zombie getAnimatable() {
-        return zombie;
+    public Vindicator getAnimatable() {
+        return vindicator;
     }
 
     @Override

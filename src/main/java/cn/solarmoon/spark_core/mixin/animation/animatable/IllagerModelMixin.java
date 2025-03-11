@@ -1,12 +1,14 @@
-package cn.solarmoon.spark_core.mixin.animation;
+package cn.solarmoon.spark_core.mixin.animation.animatable;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.vanilla.ITransformModel;
 import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.ArmedModel;
+import net.minecraft.client.model.HeadedModel;
+import net.minecraft.client.model.HierarchicalModel;
+import net.minecraft.client.model.IllagerModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.AbstractIllager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -14,30 +16,30 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.function.Function;
+@Mixin(IllagerModel.class)
+public abstract class IllagerModelMixin<T extends AbstractIllager> extends HierarchicalModel<T> implements ArmedModel, HeadedModel {
 
-@Mixin(HumanoidModel.class)
-public class HumanoidModelMixin<T extends LivingEntity> implements ITransformModel {
+    @Shadow @Final private ModelPart leftArm;
 
-    @Shadow @Final public ModelPart leftLeg;
-    @Shadow @Final public ModelPart rightLeg;
-    @Shadow @Final public ModelPart head;
-    @Shadow @Final public ModelPart rightArm;
-    @Shadow @Final public ModelPart leftArm;
-    @Shadow @Final public ModelPart body;
+    @Shadow @Final private ModelPart root;
 
-    boolean transform = true;
+    @Shadow @Final private ModelPart rightArm;
 
-    @Inject(method = "<init>(Lnet/minecraft/client/model/geom/ModelPart;Ljava/util/function/Function;)V", at = @At("RETURN"))
-    private void init(ModelPart root, Function renderType, CallbackInfo ci) {
-        //
-    }
+    @Shadow @Final private ModelPart head;
 
-    @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/model/geom/ModelPart;copyFrom(Lnet/minecraft/client/model/geom/ModelPart;)V", ordinal = 0))
+    @Shadow @Final private ModelPart leftLeg;
+
+    @Shadow @Final private ModelPart rightLeg;
+
+    @Shadow @Final private ModelPart arms;
+
+    @Inject(method = "setupAnim(Lnet/minecraft/world/entity/monster/AbstractIllager;FFFFF)V", at = @At("TAIL"))
     private void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
+        var body = root.getChild("body");
+        var nose = head.getChild("nose");
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable)) {
             setDefault();
-            if (shouldTransform() && animatable.getAnimController().getMainAnim() != null) {
+            if (animatable.getAnimController().getMainAnim() != null) {
                 var physPartialTicks = entity.getPhysicsLevel().getPartialTicks();
                 var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 VanillaModelHelper.setRoot(leftArm, body);
@@ -50,8 +52,8 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
                 VanillaModelHelper.applyTransform(animatable, "rightLeg", rightLeg, partialTicks, physPartialTicks);
                 VanillaModelHelper.applyTransform(animatable, "waist", body, partialTicks, physPartialTicks);
                 VanillaModelHelper.applyTransform(animatable, "head", head, partialTicks, physPartialTicks);
-            } else {
-                setShouldTransform(true);
+                VanillaModelHelper.applyTransform(animatable, "nose", nose, partialTicks, physPartialTicks);
+                VanillaModelHelper.applyTransform(animatable, "arms", arms, partialTicks, physPartialTicks);
             }
         }
     }
@@ -62,7 +64,7 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
         rightArm.setPos(-5f, 2f, 0f);
         leftArm.setPos(5f, 2f, 0f);
         head.setPos(0.0F, 0.0F, 0.0F);
-        body.setPos(0f, 0f, 0f);
+//        body.setPos(0f, 0f, 0f);
         head.setPos(0f, 0f, 0f);
 
         head.zRot = 0f;
@@ -70,9 +72,9 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
         head.xScale = ModelPart.DEFAULT_SCALE;
         head.yScale = ModelPart.DEFAULT_SCALE;
         head.zScale = ModelPart.DEFAULT_SCALE;
-        body.xScale = ModelPart.DEFAULT_SCALE;
-        body.yScale = ModelPart.DEFAULT_SCALE;
-        body.zScale = ModelPart.DEFAULT_SCALE;
+//        body.xScale = ModelPart.DEFAULT_SCALE;
+//        body.yScale = ModelPart.DEFAULT_SCALE;
+//        body.zScale = ModelPart.DEFAULT_SCALE;
         rightArm.xScale = ModelPart.DEFAULT_SCALE;
         rightArm.yScale = ModelPart.DEFAULT_SCALE;
         rightArm.zScale = ModelPart.DEFAULT_SCALE;
@@ -85,16 +87,10 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
         leftLeg.xScale = ModelPart.DEFAULT_SCALE;
         leftLeg.yScale = ModelPart.DEFAULT_SCALE;
         leftLeg.zScale = ModelPart.DEFAULT_SCALE;
-    }
 
-    @Override
-    public boolean shouldTransform() {
-        return transform;
-    }
-
-    @Override
-    public void setShouldTransform(boolean transform) {
-        this.transform = transform;
+        arms.visible = false;
+        leftArm.visible = true;
+        rightArm.visible = true;
     }
 
 }

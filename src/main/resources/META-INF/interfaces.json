@@ -20,6 +20,9 @@
   "net/minecraft/world/entity/monster/Zombie": [
     "cn/solarmoon/spark_core/animation/IEntityAnimatable"
   ],
+  "net/minecraft/world/entity/monster/Vindicator": [
+    "cn/solarmoon/spark_core/animation/IEntityAnimatable"
+  ],
   "net/minecraft/world/entity/player/Player": [
     "cn/solarmoon/spark_core/animation/IEntityAnimatable"
   ]

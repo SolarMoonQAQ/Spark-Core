@@ -1,10 +1,8 @@
-package cn.solarmoon.spark_core.animation.vanilla
+package cn.solarmoon.spark_core.animation.vanilla.player
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.event.PlayerRenderAnimInFirstPersonEvent
 import net.minecraft.client.Minecraft
 import net.minecraft.client.player.AbstractClientPlayer
-import net.minecraft.world.entity.player.Player
 import net.neoforged.neoforge.common.NeoForge
 
 object PlayerAnimHelper {}

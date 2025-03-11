@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.mixin.animation;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
-import cn.solarmoon.spark_core.compat.player_animator.PlayerAnimatorHelper;
+import cn.solarmoon.spark_core.compat.player_animator.PlayerAnimatorCompat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -17,9 +17,6 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.fml.ModList;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -38,7 +35,7 @@ public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends Ent
 
     @Inject(method = "renderArmWithItem", at = @At(value = "HEAD"), cancellable = true)
     private void render(LivingEntity livingEntity, ItemStack itemStack, ItemDisplayContext displayContext, HumanoidArm arm, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        if (livingEntity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable) && !PlayerAnimatorHelper.INSTANCE.isAnimActive(livingEntity)) {
+        if (livingEntity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable) && !PlayerAnimatorCompat.INSTANCE.isAnimActive(livingEntity)) {
             var boneName = arm.getSerializedName() + "Item";
             if (!itemStack.isEmpty() && animatable.getModelIndex().getModel().hasBone(boneName)) {
                 var physPartialTicks = livingEntity.getPhysicsLevel().getPartialTicks();

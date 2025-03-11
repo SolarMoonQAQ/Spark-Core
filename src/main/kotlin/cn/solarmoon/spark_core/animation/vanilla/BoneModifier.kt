@@ -9,9 +9,8 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
-import net.neoforged.neoforge.event.tick.PlayerTickEvent
 
-object PlayerBoneModifier {
+object BoneModifier {
 
     @SubscribeEvent
     private fun playerTick(event: EntityTickEvent.Pre) {

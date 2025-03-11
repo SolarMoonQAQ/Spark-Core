@@ -7,7 +7,9 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.Mob
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.neoforge.client.event.CalculateDetachedCameraDistanceEvent
 import net.neoforged.neoforge.client.event.ClientTickEvent
+import net.neoforged.neoforge.client.event.RenderPlayerEvent
 import net.neoforged.neoforge.client.event.ViewportEvent
 import net.neoforged.neoforge.event.entity.EntityEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent

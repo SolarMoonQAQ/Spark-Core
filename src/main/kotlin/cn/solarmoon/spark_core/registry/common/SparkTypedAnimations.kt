@@ -4,7 +4,9 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
@@ -42,6 +44,11 @@ object SparkTypedAnimations {
     val SWIMMING_IDLE = createStateAnim("swimming_idle")
     @JvmStatic
     val SWIMMING = createMoveStateAnim("swimming")
+
+    @JvmStatic
+    val VINDICATOR_IDLE_COMBAT = createStateAnim("idle_combat", BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.VINDICATOR))
+    @JvmStatic
+    val VINDICATOR_WALK_COMBAT = createStateAnim("walk_combat", BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.VINDICATOR))
 
     fun createStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
         .id(name)
