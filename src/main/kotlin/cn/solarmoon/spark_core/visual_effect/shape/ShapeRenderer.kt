@@ -5,6 +5,8 @@ import cn.solarmoon.spark_core.physics.toMatrix4f
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
+import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Vector3f
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
@@ -32,7 +34,10 @@ class ShapeRenderer: VisualEffectRenderer() {
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
-            val lerpPos = body.lastPos.mult(1-partialTicks).add(body.getPhysicsLocation(null).mult(partialTicks))
+            val lerpPos: Vector3f = if(body is PhysicsRigidBody && body.isDynamic)
+                body.lastMcTickPos.mult(1-partialTicks).add(body.mcTickPos.mult(partialTicks))
+            else
+                body.mcTickPos.mult(1-partialTicks).add(body.getPhysicsLocation(null).mult(partialTicks))
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach

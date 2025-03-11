@@ -172,7 +172,8 @@ abstract class PhysicsLevel(
 
     fun mcTick(){
         world.pcoList.forEach { pco ->
-            pco.lastPos = pco.getPhysicsLocation(null)
+            pco.lastMcTickPos = pco.mcTickPos
+            pco.mcTickPos = pco.getPhysicsLocation(null)
         }
         lastMcTickTime = System.nanoTime()
     }
