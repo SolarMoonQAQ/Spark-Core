@@ -164,12 +164,13 @@ abstract class PhysicsLevel(
         val boundingBox = pco.boundingBox(null)
         val min = boundingBox.getMin(null)
         val max = boundingBox.getMax(null)
-        if (pco is PhysicsRigidBody) {
-            val v = pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区
-            if (v.x < 0) min.x += v.x * 1 / TPS else max.x += v.x * 1 / TPS
-            if (v.y < 0) min.y += v.y * 1 / TPS else max.y += v.y * 1 / TPS
-            if (v.z < 0) min.z += v.z * 1 / TPS else max.z += v.z * 1 / TPS
-        }
+        //TODO:会导致方块碰撞数量爆炸，需排查原因
+//        if (pco is PhysicsRigidBody) {
+//            val v = pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区
+//            if (v.x < 0) min.x += v.x * 1 / TPS else max.x += v.x * 1 / TPS
+//            if (v.y < 0) min.y += v.y * 1 / TPS else max.y += v.y * 1 / TPS
+//            if (v.z < 0) min.z += v.z * 1 / TPS else max.z += v.z * 1 / TPS
+//        }
         addTerrainBlocksToWorld(min, max)
     }
 
@@ -243,14 +244,9 @@ abstract class PhysicsLevel(
         world.pcoList.forEach { pco ->
             pco.isColliding = false
             if (!pco.isStatic && pco.owner != mcLevel && !pco.name.equals("terrain")) {
-                /**
-                 * 存在数量爆炸风险，暂时关闭
-                 * */
-//                addNearbyTerrainBlocksToWorld(pco)
+                addNearbyTerrainBlocksToWorld(pco)
             }
         }
-        SparkCore.LOGGER.info("terrain bodies count: " + terrainBlockBodies.size)
-//        SparkCore.LOGGER.info("terrain handle time (ms): " + (System.nanoTime() - currentTime) / 1e6f)
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
     }
 
