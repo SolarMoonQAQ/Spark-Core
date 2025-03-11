@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.mixin.phys;
 
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.*;
 import kotlin.Pair;
 import kotlin.Unit;
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Supplier;
 
 @Mixin(Level.class)
-public abstract class LevelMixin implements PhysicsLevelHolder, TaskSubmitOffice {
+public abstract class LevelMixin implements PhysicsLevelHolder, PhysicsHost, TaskSubmitOffice {
 
     private final Level level = (Level) (Object) this;
     private PhysicsLevel physicsLevel;

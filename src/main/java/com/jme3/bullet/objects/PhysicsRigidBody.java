@@ -47,6 +47,7 @@ import com.simsilica.mathd.Vec3d;
 import jme3utilities.Validate;
 import jme3utilities.math.MyQuaternion;
 import jme3utilities.math.MyVector3f;
+import net.minecraft.core.BlockPos;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,6 +83,10 @@ public class PhysicsRigidBody extends PhysicsBody {
      * motion state
      */
     final private RigidBodyMotionState motionState = new RigidBodyMotionState();
+    /**
+     * 存储方块坐标，仅用于方块的碰撞体
+     */
+    public final BlockPos blockPos;
     // *************************************************************************
     // constructors
 
@@ -97,12 +102,28 @@ public class PhysicsRigidBody extends PhysicsBody {
 
         super.setCollisionShape(shape);
         rebuildRigidBody();
+        this.blockPos = null;
 
         assert isContactResponse();
         assert !isInWorld();
         assert !isKinematic();
         assert !isStatic();
         assert mass == 1f : mass;
+    }
+
+    public PhysicsRigidBody(PhysicsHost owner, CollisionShape shape, BlockPos blockPos){
+        super("terrain", owner);
+        Validate.nonNull(shape, "shape");
+        Validate.nonNull(blockPos, "blockPos");
+
+        this.mass = 0;
+        this.blockPos = blockPos;
+        super.setCollisionShape(shape);
+        rebuildRigidBody();
+
+        assert isContactResponse();
+        assert !isInWorld();
+        assert isStatic();
     }
 
     /**
@@ -119,6 +140,7 @@ public class PhysicsRigidBody extends PhysicsBody {
         Validate.nonNegative(mass, "mass");
 
         this.mass = mass;
+        this.blockPos = null;
         super.setCollisionShape(shape);
         rebuildRigidBody();
 

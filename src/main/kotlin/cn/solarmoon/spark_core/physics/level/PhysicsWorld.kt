@@ -23,6 +23,7 @@ class PhysicsWorld(
     }
 
     override fun needsCollision(pcoA: PhysicsCollisionObject, pcoB: PhysicsCollisionObject): Boolean {
+        if(pcoA.isStatic && pcoB.isStatic) return false
         var r = true
         if (pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner) r = false
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide

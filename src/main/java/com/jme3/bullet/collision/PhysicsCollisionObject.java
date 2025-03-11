@@ -45,6 +45,7 @@ import com.simsilica.mathd.Matrix3d;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
 import jme3utilities.Validate;
+import net.minecraft.core.BlockPos;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -280,7 +281,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * ignore list doesn't affect them.
      *
      * @param otherPco the other collision object (not null, not {@code this},
-     * modified)
+     *                 modified)
      */
     public void addToIgnoreList(PhysicsCollisionObject otherPco) {
         Validate.nonNull(otherPco, "other collision object");
@@ -833,7 +834,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * Friction doesn't affect a PhysicsCharacter or PhysicsGhostObject.
      *
      * @param mode the mode(s) to test for: 1=basic anisotropic friction,
-     * 2=anisotropic rolling friction, 3=either one
+     *             2=anisotropic rolling friction, 3=either one
      * @return true if (one of) the specified mode(s) is active, otherwise false
      */
     public boolean hasAnisotropicFriction(int mode) {
@@ -1022,9 +1023,9 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * Friction doesn't affect a PhysicsCharacter or PhysicsGhostObject.
      *
      * @param components the desired friction components (not null, unaffected,
-     * default=(1,1,1))
-     * @param mode the desired friction mode: 0=isotropic, 1=basic anisotropic
-     * friction, 2=anisotropic rolling friction (default=0)
+     *                   default=(1,1,1))
+     * @param mode       the desired friction mode: 0=isotropic, 1=basic anisotropic
+     *                   friction, 2=anisotropic rolling friction (default=0)
      */
     public void setAnisotropicFriction(Vector3f components, int mode) {
         Validate.nonNull(components, "components");
@@ -1044,8 +1045,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * CCD doesn't affect a PhysicsCharacter or PhysicsGhostObject.
      *
      * @param threshold the desired minimum distance per simulation step to
-     * trigger CCD (in physics-space units, &gt;0) or zero to disable CCD
-     * (default=0)
+     *                  trigger CCD (in physics-space units, &gt;0) or zero to disable CCD
+     *                  (default=0)
      */
     public void setCcdMotionThreshold(float threshold) {
         long objectId = nativeId();
@@ -1069,10 +1070,11 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * Directly alter the collision groups with which this object can collide.
      *
      * @param collisionGroups the desired groups, ORed together (bitmask,
-     * default=COLLISION_GROUP_01)
+     *                        default=COLLISION_GROUP_01)
      */
     public void setCollideWithGroups(int collisionGroups) {
-        if (this.collideWithGroups != 0 && collisionGroups == 0) triggerEvent(PhysicsEvent.OnCollisionInactive.INSTANCE);
+        if (this.collideWithGroups != 0 && collisionGroups == 0)
+            triggerEvent(PhysicsEvent.OnCollisionInactive.INSTANCE);
         if (this.collideWithGroups == 0 && collisionGroups != 0) triggerEvent(PhysicsEvent.OnCollisionActive.INSTANCE);
         long objectId = nativeId();
         this.collideWithGroups = collisionGroups;
@@ -1089,7 +1091,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * other in its collideWithGroups set.
      *
      * @param collisionGroup the collisionGroup to apply (bitmask with exactly
-     * one bit set, default=COLLISION_GROUP_01)
+     *                       one bit set, default=COLLISION_GROUP_01)
      */
     public void setCollisionGroup(int collisionGroup) {
         Validate.require(
@@ -1133,7 +1135,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * PhysicsGhostObject.
      *
      * @param distance the desired threshold distance (in physics-space units,
-     * default=1e18 with SP library or 1e30 with DP library)
+     *                 default=1e18 with SP library or 1e30 with DP library)
      */
     public void setContactProcessingThreshold(float distance) {
         long objectId = nativeId();
@@ -1148,7 +1150,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * PhysicsGhostObject.
      *
      * @param stiffness the desired stiffness (default=1e18 with SP library or
-     * 1e30 with DP library)
+     *                  1e30 with DP library)
      */
     public void setContactStiffness(float stiffness) {
         long objectId = nativeId();
@@ -1186,7 +1188,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * Replace the ignore list.
      *
      * @param desiredList collision objects to ignore (not null, may be empty,
-     * may contain nulls or duplicates or {@code this}, unaffected)
+     *                    may contain nulls or duplicates or {@code this}, unaffected)
      */
     public void setIgnoreList(PhysicsCollisionObject[] desiredList) {
         Validate.nonNull(desiredList, "desired list");
@@ -1343,11 +1345,11 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * Attach the identified {@code btCollisionShape} to the identified
      * {@code btCollisionObject}. Native method.
      *
-     * @param objectId the identifier of the btCollisionObject (not zero)
+     * @param objectId         the identifier of the btCollisionObject (not zero)
      * @param collisionShapeId the identifier of the btCollisionShape (not zero)
      */
     native protected static void
-            attachCollisionShape(long objectId, long collisionShapeId);
+    attachCollisionShape(long objectId, long collisionShapeId);
 
     /**
      * Finalize the identified btCollisionObject. Native method.
@@ -1385,33 +1387,33 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * <p>
      * Deactivation doesn't affect a PhysicsCharacter or PhysicsGhostObject.
      *
-     * @param objectId the ID of the btCollisionObject (not zero)
+     * @param objectId     the ID of the btCollisionObject (not zero)
      * @param desiredState the desired state
      */
     native protected static void
-            setActivationState(long objectId, int desiredState);
+    setActivationState(long objectId, int desiredState);
 
     /**
      * Alter the collision flags of the collision object (native field:
      * m_collisionFlags). Flag values are defined in
      * {@link CollisionFlag}. Native method.
      *
-     * @param objectId the ID of the btCollisionObject (not zero)
+     * @param objectId     the ID of the btCollisionObject (not zero)
      * @param desiredFlags the desired collision flags, ORed together
      */
     native protected static void
-            setCollisionFlags(long objectId, int desiredFlags);
+    setCollisionFlags(long objectId, int desiredFlags);
 
     /**
      * Directly alter the collision object's location and basis.
      *
      * @param centerLocation the desired location for the collision object's
-     * center (in physics-space coordinates, not null, unaffected)
-     * @param orientation the desired orientation for the collision object
-     * (rotation matrix in physics-space coordinates, not null, unaffected)
+     *                       center (in physics-space coordinates, not null, unaffected)
+     * @param orientation    the desired orientation for the collision object
+     *                       (rotation matrix in physics-space coordinates, not null, unaffected)
      */
     protected void
-            setLocationAndBasis(Vector3f centerLocation, Matrix3f orientation) {
+    setLocationAndBasis(Vector3f centerLocation, Matrix3f orientation) {
         Validate.finite(centerLocation, "center location");
         Validate.nonNull(orientation, "orientation");
 
@@ -1480,7 +1482,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     native private static int getActivationState(long objectId);
 
     native private static void
-            getAnisotropicFriction(long objectId, Vector3f storeVector);
+    getAnisotropicFriction(long objectId, Vector3f storeVector);
 
     native private static void getBasis(long objectId, Matrix3f storeMatrix);
 
@@ -1515,13 +1517,13 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     native private static int getNumObjectsWithoutCollision(long objectId);
 
     native private static long
-            getObjectWithoutCollision(long objectId, int listIndex);
+    getObjectWithoutCollision(long objectId, int listIndex);
 
     native private static void
-            getOrientation(long objectId, Quaternion storeQuat);
+    getOrientation(long objectId, Quaternion storeQuat);
 
     native private static void
-            getOrientationDp(long objectId, Quatd storeQuat);
+    getOrientationDp(long objectId, Quatd storeQuat);
 
     native private static int getProxyFilterGroup(long objectId);
 
@@ -1542,7 +1544,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     native private static int getUserIndex3(long objectId);
 
     native private static boolean
-            hasAnisotropicFriction(long objectId, int mode);
+    hasAnisotropicFriction(long objectId, int mode);
 
     native private static boolean hasBroadphaseProxy(long objectId);
 
@@ -1556,16 +1558,16 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
             long objectId, Vector3f components, int mode);
 
     native private static void
-            setCcdMotionThreshold(long objectId, float threshold);
+    setCcdMotionThreshold(long objectId, float threshold);
 
     native private static void
-            setCcdSweptSphereRadius(long objectId, float radius);
+    setCcdSweptSphereRadius(long objectId, float radius);
 
     native private static void
-            setCollideWithGroups(long objectId, int collisionGroups);
+    setCollideWithGroups(long objectId, int collisionGroups);
 
     native private static void
-            setCollisionGroup(long objectId, int collisionGroup);
+    setCollisionGroup(long objectId, int collisionGroup);
 
     native private static void setContactProcessingThreshold(
             long objectId, float thresholdDistance);
@@ -1586,10 +1588,10 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     native private static void setRestitution(long objectId, float restitution);
 
     native private static void
-            setRollingFriction(long objectId, float friction);
+    setRollingFriction(long objectId, float friction);
 
     native private static void
-            setSpinningFriction(long objectId, float friction);
+    setSpinningFriction(long objectId, float friction);
 
     native private static void setUserIndex(long objectId, int index);
 

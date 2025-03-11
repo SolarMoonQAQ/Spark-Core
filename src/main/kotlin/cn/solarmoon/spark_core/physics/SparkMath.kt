@@ -4,7 +4,9 @@ import cn.solarmoon.spark_core.molang.core.value.DoubleValue
 import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import com.jme3.math.Matrix4f
 import com.jme3.math.Quaternion
+import net.minecraft.core.BlockPos
 import net.minecraft.util.Mth
+import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3f
 import org.joml.Quaterniond
@@ -12,7 +14,10 @@ import org.joml.Quaternionf
 import org.joml.Vector3d
 import org.joml.Vector3f
 import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
-import kotlin.math.*
+import java.lang.Math
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.sqrt
 
 fun Vec3.toRadians(): Vec3 {
     return Vec3(Math.toRadians(x), Math.toRadians(y), Math.toRadians(z))
@@ -108,6 +113,12 @@ fun Vec3.wrapDegrees() = Vec3(
 fun com.jme3.math.Vector3f.toVector3f() = Vector3f(x, y, z)
 
 fun com.jme3.math.Vector3f.toVec3() = toVector3f().toVec3()
+
+fun Vec3.toChunkPos() = ChunkPos(x.toInt() shr 4, z.toInt() shr 4)
+
+fun com.jme3.math.Vector3f.toChunkPos() = ChunkPos(x.toInt() shr 4, z.toInt() shr 4)
+
+fun Vector3f.toChunkPos() = ChunkPos(x.toInt() shr 4, z.toInt() shr 4)
 
 fun Vec3.toVector3k() = Vector3k(
     DoubleValue(x),

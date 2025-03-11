@@ -34,10 +34,13 @@ class ShapeRenderer: VisualEffectRenderer() {
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
-            val lerpPos: Vector3f = if(body is PhysicsRigidBody && body.isDynamic)
-                body.lastMcTickPos.mult(1-partialTicks).add(body.mcTickPos.mult(partialTicks))
+            var lerpPos: Vector3f
+            if(body is PhysicsRigidBody && body.isDynamic)
+                lerpPos = body.lastMcTickPos.mult(1-partialTicks).add(body.mcTickPos.mult(partialTicks))
+            else if(body is PhysicsRigidBody && body.isStatic)
+                lerpPos = body.getPhysicsLocation(null)
             else
-                body.mcTickPos.mult(1-partialTicks).add(body.getPhysicsLocation(null).mult(partialTicks))
+                lerpPos = body.mcTickPos.mult(1-partialTicks).add(body.getPhysicsLocation(null).mult(partialTicks))
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
