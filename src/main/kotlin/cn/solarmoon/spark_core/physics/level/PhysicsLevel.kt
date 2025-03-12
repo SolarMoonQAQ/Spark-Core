@@ -103,7 +103,7 @@ abstract class PhysicsLevel(
     @OptIn(ExperimentalCoroutinesApi::class)
     fun load() = scope.launch {
         val fixedTimeStep = 1f / TPS // 固定时间步长（秒）
-        val maxSubSteps = Int.MAX_VALUE // 最大允许每帧子步数
+        val maxSubSteps = 10 // 最大允许每帧子步数
         var accumulatedTime = 0f     // 累积时间（秒）
 
         while (isActive) {
@@ -146,13 +146,14 @@ abstract class PhysicsLevel(
         runBlocking {
             // 第一阶段：停止协程
             scope.coroutineContext.cancelChildren()
-
+            SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理线程 $name 已停止")
+            terrainBlocks.clear()
+            terrainBlockBodies.clear()
+            terrainChunks.clear()
             // 第二阶段：同步清理物理世界
-            withContext(physicsDispatcher) {
-                // 清理物理世界
-                world.destroy()
-                SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理世界已清理")
-            }
+            // 清理物理世界
+            world.destroy()
+            SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理世界已清理")
 
             // 第三阶段：关闭线程
             physicsDispatcher.close()
