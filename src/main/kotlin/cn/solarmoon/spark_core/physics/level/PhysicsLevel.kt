@@ -147,14 +147,14 @@ abstract class PhysicsLevel(
             // 第一阶段：停止协程
             scope.coroutineContext.cancelChildren()
             SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理线程 $name 已停止")
-            terrainBlocks.clear()
-            terrainBlockBodies.clear()
             terrainChunks.clear()
+            terrainBlocks.clear()
             // 第二阶段：同步清理物理世界
-            // 清理物理世界
-            world.destroy()
-            SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理世界已清理")
-
+            withContext(physicsDispatcher) {
+                // 清理物理世界
+                world.destroy()
+                SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理世界已清理")
+            }
             // 第三阶段：关闭线程
             physicsDispatcher.close()
             SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理线程 $name 已关闭")
@@ -187,22 +187,19 @@ abstract class PhysicsLevel(
                 for (z in minZ..maxZ) {
                     val blockPos = BlockPos(x, y, z)
                     val chunkPos = ChunkPos(blockPos)
-                    if (!terrainChunks.containsKey(chunkPos)) { //服务端的getChunk()性能不佳，故如果该位置的区块没有缓存过，则获取区块并缓存
-                        terrainChunks[chunkPos] = mcLevel.getChunk(blockPos)
-                    }
                     if (terrainChunks[chunkPos] != null) {
                         val blockState = terrainChunks[chunkPos]!!.getBlockState(blockPos)
                         if (terrainBlockBodies.containsKey(blockPos)) {//如果该位置的方块已经记录过，则检查方块类型后重置销毁倒计时
                             if (blockState.isAir || blockState.getCollisionShape(mcLevel, blockPos).isEmpty) {
                                 terrainBlockBodies[blockPos]?.setUserIndex(0)
-                            } else terrainBlockBodies[blockPos]?.setUserIndex(300)
+                            } else terrainBlockBodies[blockPos]?.setUserIndex(120)
                         } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象
                             if (!blockState.isAir && !blockState.getCollisionShape(mcLevel, blockPos).isEmpty) {
                                 // 如果块不是空气或可替换方块，记录方块的状态和坐标
                                 terrainBlocks[blockPos] = blockState
                                 //TODO:根据方块形状不同取不同的CollisionShape，或许预先在BlockState中建好Shape以减少资源消耗
                                 val blockBody = PhysicsRigidBody(mcLevel, defaultShape, blockPos)
-                                blockBody.setUserIndex(300) //设定销毁倒计时(5秒，300物理tick)
+                                blockBody.setUserIndex(120) //设定销毁倒计时(2秒，120物理tick)
                                 blockBody.setPhysicsLocation(
                                     Vector3f(
                                         blockPos.x.toFloat() + 0.5f,
@@ -241,7 +238,6 @@ abstract class PhysicsLevel(
     }
 
     override fun prePhysicsTick(space: PhysicsSpace?, timeStep: Float) {
-        val currentTime = System.nanoTime()
         world.pcoList.forEach { pco ->
             pco.isColliding = false
             if (!pco.isStatic && pco.owner != mcLevel && !pco.name.equals("terrain")) {

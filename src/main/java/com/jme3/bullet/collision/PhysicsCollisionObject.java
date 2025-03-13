@@ -45,7 +45,6 @@ import com.simsilica.mathd.Matrix3d;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
 import jme3utilities.Validate;
-import net.minecraft.core.BlockPos;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
