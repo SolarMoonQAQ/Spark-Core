@@ -56,9 +56,11 @@ open class MoveWithAnimatedBoneTicker(
         if (body is PhysicsRigidBody) {
             val targetPos = entity.position().toBVector3f()
             val v = targetPos.subtract(lastPos).mult(20f)
-            body.setLinearVelocity(v)
-            body.setPhysicsLocation(animatable.getWorldPosition(1f).toBVector3f())
-            body.setPhysicsRotation(animatable.getWorldPositionMatrix(1f).getUnnormalizedRotation(Quaternionf()).toBQuaternion())
+            level.physicsLevel.submitTask {
+                body.setLinearVelocity(v)
+                body.setPhysicsLocation(animatable.getWorldPosition(1f).toBVector3f())
+                body.setPhysicsRotation(animatable.getWorldPositionMatrix(1f).getUnnormalizedRotation(Quaternionf()).toBQuaternion())
+            }
             lastPos = targetPos
         }
     }

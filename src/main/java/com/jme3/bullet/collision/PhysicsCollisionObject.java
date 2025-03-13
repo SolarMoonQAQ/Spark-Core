@@ -87,9 +87,9 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
         }
     }
 
-    public boolean collideWithOwner = false;
+    public volatile boolean collideWithOwner = false;
 
-    public boolean isColliding = false;
+    public volatile boolean isColliding = false;
 
     public HashMap<Long, Set<Long>> allContacts = new HashMap<>();
 
@@ -209,8 +209,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     public ArrayList<CollisionCallback> collisionListeners = new ArrayList<>();
 
-    public Vector3f lastMcTickPos = new Vector3f();
-    public Vector3f mcTickPos = new Vector3f();
+    public Vector3f lastMcTickPos;
+    public Vector3f mcTickPos;
 
     /**
      * Instantiate a collision object with no tracker and no assigned native

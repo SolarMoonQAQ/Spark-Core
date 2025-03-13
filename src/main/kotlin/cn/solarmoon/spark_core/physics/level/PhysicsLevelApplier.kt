@@ -40,6 +40,7 @@ object PhysicsLevelApplier {
         val level = event.level as Level
         val physLevel: PhysicsLevel = level.physicsLevel
         physLevel.terrainChunks[event.chunk.pos] = event.chunk
+        //TODO:整合全区块方块为单一碰撞体积，减少资源占用
     }
 
     /**
