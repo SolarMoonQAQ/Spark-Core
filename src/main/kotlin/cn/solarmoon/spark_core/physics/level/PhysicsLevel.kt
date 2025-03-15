@@ -201,21 +201,19 @@ abstract class PhysicsLevel(
                                 terrainBlocks[blockPos] = blockState
                                 submitTask {
                                     //TODO:根据方块形状不同取不同的CollisionShape，或许预先在BlockState中建好Shape以减少资源消耗
-                                    terrainBlockBodies.computeIfAbsent(blockPos) {
-                                        val blockBody = PhysicsRigidBody(mcLevel, defaultShape, blockPos)
-                                        blockBody.setUserIndex(40) //设定销毁倒计时(2秒，120物理tick)
-                                        blockBody.setPhysicsLocation(
-                                            Vector3f(
-                                                blockPos.x.toFloat() + 0.5f,
-                                                blockPos.y.toFloat() + 0.5f,
-                                                blockPos.z.toFloat() + 0.5f
-                                            )
+                                    val blockBody = PhysicsRigidBody(mcLevel, defaultShape, blockPos)
+                                    blockBody.setUserIndex(40) //设定销毁倒计时(2秒，120物理tick)
+                                    blockBody.setPhysicsLocation(
+                                        Vector3f(
+                                            blockPos.x.toFloat() + 0.5f,
+                                            blockPos.y.toFloat() + 0.5f,
+                                            blockPos.z.toFloat() + 0.5f
                                         )
-                                        blockBody.mcTickPos = blockBody.getPhysicsLocation(null)
-                                        blockBody.lastMcTickPos = blockBody.mcTickPos
-                                        world.add(blockBody)
-                                        blockBody
-                                    }
+                                    )
+                                    blockBody.mcTickPos = blockBody.getPhysicsLocation(null)
+                                    blockBody.lastMcTickPos = blockBody.mcTickPos
+                                    terrainBlockBodies[blockPos] = blockBody
+                                    world.add(blockBody)
                                 }
                             }
                         }
@@ -235,8 +233,7 @@ abstract class PhysicsLevel(
 
     fun mcTick() {
         submitTask {
-            if(world.pcoList.isNotEmpty())SparkCore.LOGGER.info("物体数量：${world.pcoList.size}")
-            world.pcoList.forEach { pco ->
+            world.pcoList.iterator().forEach { pco ->
                 if (!pco.isStatic) {
                     pco.mcTickPos?.let { pco.lastMcTickPos = it }
                     pco.mcTickPos = pco.getPhysicsLocation(null)
