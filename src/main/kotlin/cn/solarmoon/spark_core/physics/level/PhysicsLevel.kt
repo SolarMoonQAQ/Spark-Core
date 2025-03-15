@@ -235,6 +235,7 @@ abstract class PhysicsLevel(
 
     fun mcTick() {
         submitTask {
+            if(world.pcoList.isNotEmpty())SparkCore.LOGGER.info("物体数量：${world.pcoList.size}")
             world.pcoList.forEach { pco ->
                 if (!pco.isStatic) {
                     pco.mcTickPos?.let { pco.lastMcTickPos = it }
