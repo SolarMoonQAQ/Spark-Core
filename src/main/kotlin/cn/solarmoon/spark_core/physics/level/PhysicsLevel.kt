@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
+import cn.solarmoon.spark_core.physics.collision.getBulletCollisionShape
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
@@ -44,7 +45,7 @@ abstract class PhysicsLevel(
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
     val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
     val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
-    private val defaultShape = BoxCollisionShape(0.5f) //默认碰撞形状
+//    private val defaultShape = BoxCollisionShape(0.5f) //默认碰撞形状
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val physicsDispatcher = newSingleThreadContext(name).apply {
@@ -168,13 +169,13 @@ abstract class PhysicsLevel(
         val min = boundingBox.getMin(null)
         val max = boundingBox.getMax(null)
         //TODO:会导致方块碰撞数量爆炸，需排查原因
-        if (pco is PhysicsRigidBody) {
-            val v = pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区
-            if (v.lengthSquared() < 1600)
-            if (v.x < 0) min.x += v.x * 0.05f else max.x += v.x * 0.05f
-            if (v.y < 0) min.y += v.y * 0.05f else max.y += v.y * 0.05f
-            if (v.z < 0) min.z += v.z * 0.05f else max.z += v.z * 0.05f
-        }
+//        if (pco is PhysicsRigidBody) {
+//            val v = pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区
+//            if (v.lengthSquared() < 1600)
+//            if (v.x < 0) min.x += v.x * 0.05f else max.x += v.x * 0.05f
+//            if (v.y < 0) min.y += v.y * 0.05f else max.y += v.y * 0.05f
+//            if (v.z < 0) min.z += v.z * 0.05f else max.z += v.z * 0.05f
+//        }
         addTerrainBlocksToWorld(min, max)
     }
 
@@ -202,7 +203,7 @@ abstract class PhysicsLevel(
                                 terrainBlocks[blockPos] = blockState
                                 submitTask {
                                     //TODO:根据方块形状不同取不同的CollisionShape，或许预先在BlockState中建好Shape以减少资源消耗
-                                    val blockBody = PhysicsRigidBody(mcLevel, defaultShape, blockPos)
+                                    val blockBody = PhysicsRigidBody(mcLevel, blockState.getBulletCollisionShape(), blockPos)
                                     blockBody.setUserIndex(40) //设定销毁倒计时(2秒，120物理tick)
                                     blockBody.setPhysicsLocation(
                                         Vector3f(
