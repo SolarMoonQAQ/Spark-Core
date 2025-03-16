@@ -89,6 +89,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     public volatile boolean collideWithOwner = false;
 
+    public volatile boolean collideWithTerrain = true;
+
     public volatile boolean isColliding = false;
 
     public HashMap<Long, Set<Long>> allContacts = new HashMap<>();

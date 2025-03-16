@@ -168,12 +168,13 @@ abstract class PhysicsLevel(
         val min = boundingBox.getMin(null)
         val max = boundingBox.getMax(null)
         //TODO:会导致方块碰撞数量爆炸，需排查原因
-//        if (pco is PhysicsRigidBody) {
-//            val v = pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区
-//            if (v.x < 0) min.x += v.x * 1 / TPS else max.x += v.x * 1 / TPS
-//            if (v.y < 0) min.y += v.y * 1 / TPS else max.y += v.y * 1 / TPS
-//            if (v.z < 0) min.z += v.z * 1 / TPS else max.z += v.z * 1 / TPS
-//        }
+        if (pco is PhysicsRigidBody) {
+            val v = pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区
+            if (v.lengthSquared() < 1600)
+            if (v.x < 0) min.x += v.x * 0.05f else max.x += v.x * 0.05f
+            if (v.y < 0) min.y += v.y * 0.05f else max.y += v.y * 0.05f
+            if (v.z < 0) min.z += v.z * 0.05f else max.z += v.z * 0.05f
+        }
         addTerrainBlocksToWorld(min, max)
     }
 

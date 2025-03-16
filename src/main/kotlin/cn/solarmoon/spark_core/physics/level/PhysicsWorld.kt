@@ -11,21 +11,24 @@ import net.neoforged.neoforge.common.NeoForge
 
 class PhysicsWorld(
     val physicsLevel: PhysicsLevel
-): PhysicsSpace(
+) : PhysicsSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
     BroadphaseType.DBVT
 ) {
-    
+
     init {
         setGravity(Vector3f(0f, -9.81f, 0f))
         addTickListener(physicsLevel)
     }
 
     override fun needsCollision(pcoA: PhysicsCollisionObject, pcoB: PhysicsCollisionObject): Boolean {
-        if(pcoA.isStatic && pcoB.isStatic) return false
+        if (pcoA.isStatic && pcoB.isStatic) return false
         var r = true
-        if (pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner) r = false
+        if ((pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner) ||
+            (pcoA.isStatic && pcoA.name.equals("terrain") && !pcoB.collideWithTerrain) ||
+            (pcoB.isStatic && pcoB.name.equals("terrain") && !pcoA.collideWithTerrain)
+        ) r = false
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
@@ -33,8 +36,20 @@ class PhysicsWorld(
         val pcoA = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
         val pcoB = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
 
-        if (pcoA.isCollisionGroupContains(pcoB)) pcoA.collisionListeners.forEach { it.onStarted(pcoA, pcoB, manifoldId) }
-        if (pcoB.isCollisionGroupContains(pcoA)) pcoB.collisionListeners.forEach { it.onStarted(pcoB, pcoA, manifoldId) }
+        if (pcoA.isCollisionGroupContains(pcoB)) pcoA.collisionListeners.forEach {
+            it.onStarted(
+                pcoA,
+                pcoB,
+                manifoldId
+            )
+        }
+        if (pcoB.isCollisionGroupContains(pcoA)) pcoB.collisionListeners.forEach {
+            it.onStarted(
+                pcoB,
+                pcoA,
+                manifoldId
+            )
+        }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Start(manifoldId))
     }
@@ -65,5 +80,5 @@ class PhysicsWorld(
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.End(manifoldId))
     }
-    
+
 }
