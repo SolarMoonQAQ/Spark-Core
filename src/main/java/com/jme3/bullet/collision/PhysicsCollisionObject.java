@@ -258,6 +258,14 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
         activate(objectId, forceFlag);
     }
 
+    public void forceDeactivate() {
+        if (getActivationState() == 1) {
+            long objectId = nativeId();
+            setActivationState(objectId, 2);
+        }
+
+    }
+
     /**
      * Add collision groups to the set with which this object can collide.
      * <p>
