@@ -2,6 +2,8 @@ package cn.solarmoon.spark_core;
 
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+//import cn.solarmoon.spark_core.physics.sync.PhysicsSyncConfigKt;
+import cn.solarmoon.spark_core.registry.client.SparkKeyMappings;
 import cn.solarmoon.spark_core.registry.client.SparkModelRegister;
 import cn.solarmoon.spark_core.registry.common.SparkRegistries;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
@@ -30,6 +32,8 @@ public class SparkCore {
         if (FMLEnvironment.dist.isClient()) {
             SparkClientEventRegister.register();
             SparkModelRegister.register(modEventBus);
+            // 注册键位映射
+            SparkKeyMappings.register();
             // 启动 WebSocket 服务器
             WebSocketRpcServer rpcServer = new WebSocketRpcServer();
             rpcServer.start(8080); // 启动服务器

@@ -1,9 +1,11 @@
 package cn.solarmoon.spark_core.physics.host
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.physics.entity.EntityPhysicsManager
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import net.minecraft.world.entity.Entity
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
@@ -23,7 +25,7 @@ interface PhysicsHost {
         allowOverride: Boolean = false,
         apply: T.() -> Unit = {}
     ): T {
-        physicsLevel.apply { 
+        physicsLevel.apply {
             submitImmediateTask {
                 hostManager
                     .getOrPut(this@PhysicsHost) { ConcurrentHashMap() }
@@ -80,6 +82,31 @@ interface PhysicsHost {
                 it.values.forEach { physicsLevel.world.removeCollisionObject(it) }
                 it.clear()
             }
+        }
+    }
+
+    /**
+     * 获取物理宿主的冻结状态
+     * 如果宿主是实体，则使用EntityPhysicsManager管理冻结状态
+     */
+    fun isPhysicsFrozen(): Boolean {
+        return if (this is Entity) {
+            EntityPhysicsManager.isEntityFrozen(this)
+        } else {
+            // 非实体宿主的冻结状态可以在这里扩展
+            false
+        }
+    }
+
+    /**
+     * 设置物理宿主的冻结状态
+     * 如果宿主是实体，则使用EntityPhysicsManager管理冻结状态
+     */
+    fun setPhysicsFrozen(frozen: Boolean) {
+        if (this is Entity) {
+            EntityPhysicsManager.setEntityFrozen(this, frozen)
+        } else {
+            // 非实体宿主的冻结状态设置可以在这里扩展
         }
     }
 

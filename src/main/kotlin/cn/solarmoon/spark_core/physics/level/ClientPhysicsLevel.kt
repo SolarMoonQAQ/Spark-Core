@@ -5,6 +5,8 @@ import com.jme3.bullet.PhysicsSpace
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
 import net.neoforged.neoforge.common.NeoForge
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
 
 class ClientPhysicsLevel(
     override val mcLevel: ClientLevel
@@ -25,5 +27,10 @@ class ClientPhysicsLevel(
             }
         }
     }
+
+    override val taskMap: ConcurrentHashMap<String, () -> Unit>
+        get() = ConcurrentHashMap()
+    override val immediateQueue: ConcurrentLinkedDeque<() -> Unit>
+        get() = ConcurrentLinkedDeque()
 
 }
