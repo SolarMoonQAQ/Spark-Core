@@ -11,6 +11,7 @@ import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.client.Minecraft
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.entity.player.Player
 import net.neoforged.neoforge.common.NeoForge
 import ru.nsk.kstatemachine.event.DataEvent
 import ru.nsk.kstatemachine.event.Event
@@ -29,7 +30,9 @@ object PlayerStateAnimMachine {
     object ResetEvent: Event
 
     @JvmStatic
-    fun create(player: LocalPlayer) = createStdLibStateMachine(creationArguments = buildCreationArguments { isUndoEnabled = true }) {
+    fun create(player: Player) = createStdLibStateMachine(creationArguments = buildCreationArguments { isUndoEnabled = true }) {
+        val player = player as LocalPlayer
+
         val none = state("none")
         val idle = addState(EntityStates.Idle())
         val walk = addState(EntityStates.Walk())

@@ -23,6 +23,7 @@ object PresetBodyApplier {
     @SubscribeEvent
     private fun onEntityJoin(event: EntityJoinLevelEvent) {
         val entity = event.entity
+        val level = event.level
 
         if (entity is Player || entity is Zombie || entity is Vindicator) {
             entity.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {

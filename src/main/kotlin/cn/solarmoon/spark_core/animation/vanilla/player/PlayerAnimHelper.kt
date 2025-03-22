@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.animation.vanilla.player
 
+import cn.solarmoon.spark_core.compat.first_person_model.FirstPersonModelCompat
+import cn.solarmoon.spark_core.compat.real_camera.RealCameraCompat
 import cn.solarmoon.spark_core.event.PlayerRenderAnimInFirstPersonEvent
 import net.minecraft.client.Minecraft
 import net.minecraft.client.player.AbstractClientPlayer
@@ -13,5 +15,5 @@ object PlayerAnimHelper {}
 fun AbstractClientPlayer.shouldRenderArmAnimInFirstPersonEvent(): PlayerRenderAnimInFirstPersonEvent {
     val isInFirstPerson = Minecraft.getInstance().options.cameraType.isFirstPerson
     val isMainCamera = Minecraft.getInstance().cameraEntity == this
-    return NeoForge.EVENT_BUS.post(PlayerRenderAnimInFirstPersonEvent(this, isInFirstPerson && isMainCamera))
+    return NeoForge.EVENT_BUS.post(PlayerRenderAnimInFirstPersonEvent(this, isInFirstPerson && isMainCamera && !(RealCameraCompat.isActive() || FirstPersonModelCompat.isActive())))
 }

@@ -21,7 +21,7 @@ public class MolangParser {
         this.extraBindings = extraBindings;
     }
 
-    private void init() {
+    public void init() {
         primaryBinding = new PrimaryBinding(extraBindings);
         engine = MolangEngine.fromCustomBinding(primaryBinding);
     }

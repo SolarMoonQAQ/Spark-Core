@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.physics.host
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
@@ -22,8 +23,8 @@ interface PhysicsHost {
         allowOverride: Boolean = false,
         apply: T.() -> Unit = {}
     ): T {
-        physicsLevel.apply {
-            submitTask {
+        physicsLevel.apply { 
+            submitImmediateTask {
                 hostManager
                     .getOrPut(this@PhysicsHost) { ConcurrentHashMap() }
                     .compute(body.name) { _, existing ->
@@ -66,7 +67,7 @@ interface PhysicsHost {
      * 删除并销毁对象身上的物理体
      */
     fun removeBody(name: String) {
-        physicsLevel.submitTask {
+        physicsLevel.submitImmediateTask {
             physicsLevel.hostManager[this@PhysicsHost]?.remove(name)?.let {
                 physicsLevel.world.removeCollisionObject(it)
             }
@@ -74,7 +75,7 @@ interface PhysicsHost {
     }
 
     fun removeAllBodies() {
-        physicsLevel.submitTask {
+        physicsLevel.submitImmediateTask {
             physicsLevel.hostManager[this@PhysicsHost]?.let {
                 it.values.forEach { physicsLevel.world.removeCollisionObject(it) }
                 it.clear()

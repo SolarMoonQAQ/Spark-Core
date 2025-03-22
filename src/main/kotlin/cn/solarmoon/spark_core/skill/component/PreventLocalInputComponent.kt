@@ -1,10 +1,17 @@
 package cn.solarmoon.spark_core.skill.component
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.skill.SkillTimeLine
 import com.mojang.serialization.Codec
 import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.client.player.LocalPlayer
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.ai.attributes.AttributeModifier
+import net.minecraft.world.entity.ai.attributes.Attributes
+import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.Event
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 
@@ -27,8 +34,8 @@ class PreventLocalInputComponent(
             val player = event.entity
             val input = event.input
             if (skill.timeline.match(activeTime)) {
-                input.forwardImpulse = forwardImpulse
-                input.leftImpulse = leftImpulse
+                input.forwardImpulse *= forwardImpulse
+                input.leftImpulse *= leftImpulse
                 input.up = up
                 input.down = down
                 input.left = left
@@ -39,6 +46,24 @@ class PreventLocalInputComponent(
                 player.swinging = swinging
             }
         }
+    }
+
+    override fun onTick() {
+        val entity = skill.holder as? LivingEntity ?: return
+        if (entity is Player) return
+
+        val movementSpeed = entity.getAttribute(Attributes.MOVEMENT_SPEED)
+        if (skill.timeline.match(activeTime)) {
+            movementSpeed?.addOrReplacePermanentModifier(SKILL_SPEED_MODIFIER)
+        } else {
+            movementSpeed?.removeModifier(SKILL_SPEED_MODIFIER)
+        }
+    }
+
+    override fun onDetach() {
+        val entity = skill.holder as? LivingEntity ?: return
+        val movementSpeed = entity.getAttribute(Attributes.MOVEMENT_SPEED)
+        movementSpeed?.removeModifier(SKILL_SPEED_MODIFIER)
     }
 
     override val codec: MapCodec<out SkillComponent> = CODEC
@@ -59,6 +84,9 @@ class PreventLocalInputComponent(
                 SkillTimeLine.Stamp.CODEC.listOf().optionalFieldOf("active_time", listOf()).forGetter { it.activeTime },
             ).apply(it, ::PreventLocalInputComponent)
         }
+
+        val SKILL_SPEED_ID = ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "stop_move")
+        val SKILL_SPEED_MODIFIER = AttributeModifier(SKILL_SPEED_ID, -1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL)
     }
 
 }

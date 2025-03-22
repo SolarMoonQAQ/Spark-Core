@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.vanilla
 import cn.solarmoon.spark_core.animation.IAnimatable
 import net.minecraft.client.Minecraft
 import net.minecraft.client.model.HumanoidModel
+import net.minecraft.client.model.IllagerModel
 import net.minecraft.client.model.geom.ModelPart
 import net.minecraft.client.renderer.entity.LivingEntityRenderer
 import net.minecraft.world.entity.Entity
@@ -28,7 +29,7 @@ object VanillaModelHelper {
     @JvmStatic
     fun isHumanoidModel(entity: Entity): Boolean {
         val renderer = Minecraft.getInstance().entityRenderDispatcher.getRenderer(entity)
-        return renderer is LivingEntityRenderer<*, *> && renderer.model is HumanoidModel<*>
+        return renderer is LivingEntityRenderer<*, *> && (renderer.model is HumanoidModel<*> || renderer.model is IllagerModel<*>)
     }
 
     @JvmStatic

@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.animation.anim.EntityAnimListener
 import cn.solarmoon.spark_core.animation.model.EntityModelListener
 import net.neoforged.neoforge.common.NeoForge
+import net.neoforged.neoforge.data.event.GatherDataEvent
 import net.neoforged.neoforge.event.AddReloadListenerEvent
 
 object SparkDataRegister {

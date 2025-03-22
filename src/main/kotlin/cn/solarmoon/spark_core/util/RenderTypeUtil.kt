@@ -19,7 +19,8 @@ object RenderTypeUtil {
             .setLightmapState(RenderType.LIGHTMAP)
             .setOverlayState(RenderType.OVERLAY)
             .setOutputState(RenderType.ITEM_ENTITY_TARGET)
-            .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+            .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
+            .setLayeringState(RenderStateShard.POLYGON_OFFSET_LAYERING)
             .createCompositeState(true)
     )
 

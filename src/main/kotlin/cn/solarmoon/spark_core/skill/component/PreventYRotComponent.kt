@@ -15,6 +15,11 @@ class PreventYRotComponent(
         entity.setCameraLock(skill.timeline.match(activeTime))
     }
 
+    override fun onDetach() {
+        val entity = skill.holder as? Entity ?: return
+        entity.setCameraLock(false)
+    }
+
     override val codec: MapCodec<out SkillComponent> = CODEC
 
     companion object {

@@ -27,11 +27,12 @@ object EntityStateAnimMachine {
     object ResetEvent: Event
 
     @JvmStatic
-    fun create(animatable: IEntityAnimatable<*>, entity: LivingEntity, usePlayerAnim: Boolean) = createStdLibStateMachine(
+    fun create(animatable: IEntityAnimatable<out LivingEntity>) = createStdLibStateMachine(
         creationArguments = buildCreationArguments {
             isUndoEnabled = true
         }
     ) {
+        val entity = animatable.animatable
         val none = state("none")
         val idle = addState(EntityStates.Idle())
         val walk = addState(EntityStates.Walk())
@@ -72,11 +73,11 @@ object EntityStateAnimMachine {
             if (s == none) return@onStateEntry
             val sName = s.name ?: return@onStateEntry
             SparkRegistries.TYPED_ANIMATION.get(ResourceLocation.parse(sName))?.let {
-                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityState(entity, it, s, 7, usePlayerAnim))
+                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityState(animatable, it, s, 7, false))
                 if (event.isCanceled) return@let
                 val anim = event.newAnim ?: event.originAnim
-                anim.play(animatable, event.transitionTime, !event.usePlayerAnim)
-                anim.syncToClient(entity.id, event.transitionTime, !event.usePlayerAnim)
+                anim.play(animatable, event.transitionTime, event.fromAnimatable)
+                anim.syncToClient(entity.id, event.transitionTime, event.fromAnimatable)
             }
         }
 

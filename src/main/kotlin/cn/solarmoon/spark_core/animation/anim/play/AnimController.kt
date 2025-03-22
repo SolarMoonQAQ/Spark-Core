@@ -29,6 +29,8 @@ class AnimController(
         if (anim != null) {
             val valid = testAnimValidity(anim)
             if (valid.isNotEmpty()) {
+                anim.isCancelled = false
+                anim.cancel()
                 SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：$valid")
                 return
             }

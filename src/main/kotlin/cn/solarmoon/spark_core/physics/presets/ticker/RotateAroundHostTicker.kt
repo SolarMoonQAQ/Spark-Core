@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBMatrix3f
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toRadians
+import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
@@ -37,7 +38,7 @@ class RotateAroundHostTicker: PhysicsCollisionObjectTicker {
         val entity = body.owner as? Entity ?: return
         if (body is PhysicsRigidBody) {
             val targetPos = entity.position().toBVector3f()
-            level.physicsLevel.submitTask {
+            level.physicsLevel.submitImmediateTask {
                 val v = targetPos.subtract(lastPos).mult(20f)
                 body.setLinearVelocity(v)
             }

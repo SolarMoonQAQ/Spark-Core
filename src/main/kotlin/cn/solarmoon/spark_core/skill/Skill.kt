@@ -63,7 +63,7 @@ abstract class Skill {
     }
 
     fun end() {
-        if (isActive) {
+        if (isActive && shouldEnd()) {
             isActive = false
             if (id < 0) holder.predictedSkills.remove(id)
             else holder.allSkills.remove(id)
@@ -140,6 +140,8 @@ abstract class Skill {
     protected open fun onUpdate() {}
 
     protected open fun onEnd() {}
+
+    open fun shouldEnd(): Boolean = true
 
     protected open fun onEvent(event: Event) {}
 

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.event
 
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.presets.CommonState
 import net.minecraft.world.entity.Entity
@@ -15,9 +16,16 @@ abstract class ChangePresetAnimEvent: Event() {
         var newAnim: TypedAnimation? = null
     }
 
-    class EntityState(val entity: LivingEntity, val originAnim: TypedAnimation, val state: IState, var transitionTime: Int, val originUsePlayerAnim: Boolean): ChangePresetAnimEvent(), ICancellableEvent {
+    class EntityState(val animatable: IEntityAnimatable<out LivingEntity>, val originAnim: TypedAnimation, val state: IState, var transitionTime: Int, val originFromAnimatable: Boolean): ChangePresetAnimEvent(), ICancellableEvent {
         var newAnim: TypedAnimation? = null
-        var usePlayerAnim = originUsePlayerAnim
+            set(value) {
+                if (!fromAnimatable && value?.exist() != true) return
+                if (fromAnimatable && value?.exist(animatable) != true) return
+                field = value
+            }
+        var fromAnimatable = originFromAnimatable
+
+        val entity get() = animatable.animatable
     }
 
     class Common(val entity: Entity, val originAnim: String, val commonState: CommonState): ChangePresetAnimEvent() {

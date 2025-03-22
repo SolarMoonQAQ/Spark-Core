@@ -28,7 +28,7 @@ class PreInput(
     private var isPlayingSkill by Delegates.observable(false) { _, old, new -> if (old != new && !new) cooldown = 1 }
 
     fun hasInput(id: PreInputId): Boolean {
-        return inputQueue.any { it.id == id }
+        return inputQueue.firstOrNull()?.id == id
     }
 
     fun setInput(id: PreInputId, maxRemainTime: Int = 5, input: () -> Unit) {

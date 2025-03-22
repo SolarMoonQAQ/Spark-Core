@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
+import cn.solarmoon.spark_core.camera.CameraAdjuster;
+import cn.solarmoon.spark_core.camera.CameraAdjusterKt;
 import cn.solarmoon.spark_core.entity.IEntityPatch;
 import cn.solarmoon.spark_core.entity.attack.CollisionHurtData;
 import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
@@ -16,6 +18,9 @@ import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ru.nsk.kstatemachine.statemachine.StateMachine;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +37,21 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     private final ConcurrentHashMap<Integer, Skill> predictedSkills = new ConcurrentHashMap<>();
     private final AtomicInteger skillCount = new AtomicInteger();
     private boolean jumpingLag = false;
+
+    @Inject(method = "setYRot", at = @At("HEAD"), cancellable = true)
+    private void setYRot(float yRot, CallbackInfo ci) {
+        if (CameraAdjusterKt.isCameraLocked(entity)) ci.cancel();
+    }
+
+    @Inject(method = "setYBodyRot", at = @At("HEAD"), cancellable = true)
+    private void setYBodyRot(float yRot, CallbackInfo ci) {
+        if (CameraAdjusterKt.isCameraLocked(entity)) ci.cancel();
+    }
+
+    @Inject(method = "setYHeadRot", at = @At("HEAD"), cancellable = true)
+    private void setYHeadRot(float yRot, CallbackInfo ci) {
+        if (CameraAdjusterKt.isCameraLocked(entity)) ci.cancel();
+    }
 
     @Override
     public @NotNull PreInput getPreInput() {

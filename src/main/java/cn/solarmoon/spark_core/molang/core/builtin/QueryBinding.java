@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.fml.ModLoader;
 import net.neoforged.neoforge.common.NeoForge;
 
 public class QueryBinding extends ContextBinding {
@@ -89,7 +90,7 @@ public class QueryBinding extends ContextBinding {
         var("cape_flap_amount", ctx -> 0);
         mobEntityVar("is_jumping", ctx -> !ctx.getAnimatable().isPassenger() && !ctx.getAnimatable().onGround() && !ctx.getAnimatable().isInWater());
 
-        NeoForge.EVENT_BUS.post(new MolangQueryRegisterEvent(this));
+        ModLoader.postEvent(new MolangQueryRegisterEvent(this));
     }
 
 

@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.skill.component.body_binder
 
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
-import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithBonePivotTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.skill.SkillTimeLine
 import cn.solarmoon.spark_core.skill.component.SkillComponent
@@ -28,14 +27,14 @@ class BoxFollowAnimatedBoneBinder(
 ): RigidBodyBinder(activeTime, onBodyActive, onBodyInactive) {
 
     override val shape: CollisionShape = CompoundCollisionShape().apply {
-         addChildShape(BoxCollisionShape(size.div(2f, Vector3f()).toBVector3f()), offset.toBVector3f())
+         addChildShape(BoxCollisionShape(size.div(2f, Vector3f()).toBVector3f()))
     }
 
     override fun createBody(owner: PhysicsHost): PhysicsRigidBody {
         return owner.bindBody(PhysicsRigidBody("${UUID.randomUUID()}", owner, shape)) {
             isContactResponse = false
             setGravity(Vector3f().toBVector3f())
-            addPhysicsTicker(MoveWithBonePivotTicker(boneName, offset.toBVector3f()))
+            addPhysicsTicker(MoveWithAnimatedBoneTicker(boneName, offset.toBVector3f()))
             collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
         }
     }

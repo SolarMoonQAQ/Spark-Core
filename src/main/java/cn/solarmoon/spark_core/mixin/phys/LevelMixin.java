@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.mixin.phys;
 
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.*;
-import kotlin.Pair;
+import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -27,8 +27,8 @@ public abstract class LevelMixin implements PhysicsLevelHolder, PhysicsHost, Tas
 
     private final Level level = (Level) (Object) this;
     private PhysicsLevel physicsLevel;
-    private final ConcurrentHashMap<@NotNull String, @NotNull Boolean> pendingKeys = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedDeque<@NotNull Pair<@NotNull String, @NotNull Function0<@NotNull Unit>>> tasks = new ConcurrentLinkedDeque<>();
+    private final ConcurrentHashMap<@NotNull String, @NotNull Function0<@NotNull Unit>> tasks = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedDeque<@NotNull Function0<@NotNull Unit>> imtasks = new ConcurrentLinkedDeque<>();
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(WritableLevelData levelData, ResourceKey dimension, RegistryAccess registryAccess, Holder dimensionTypeRegistration, Supplier profiler, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates, CallbackInfo ci) {
@@ -40,13 +40,13 @@ public abstract class LevelMixin implements PhysicsLevelHolder, PhysicsHost, Tas
     }
 
     @Override
-    public @NotNull ConcurrentHashMap<@NotNull String, @NotNull Boolean> getPendingKeys() {
-        return pendingKeys;
+    public @NotNull ConcurrentHashMap<@NotNull String, @NotNull Function0<@NotNull Unit>> getTaskMap() {
+        return tasks;
     }
 
     @Override
-    public @NotNull ConcurrentLinkedDeque<@NotNull Pair<@NotNull String, @NotNull Function0<@NotNull Unit>>> getTaskQueue() {
-        return tasks;
+    public @NotNull ConcurrentLinkedDeque<@NotNull Function0<@NotNull Unit>> getImmediateQueue() {
+        return imtasks;
     }
 
     @Override

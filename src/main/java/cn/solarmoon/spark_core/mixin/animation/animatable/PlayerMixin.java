@@ -41,7 +41,7 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     @Override
     public void onAddedToLevel() {
         super.onAddedToLevel();
-        if (isLocalPlayer()) AnimStateMachineManager.INSTANCE.putStateMachine(player, level(), PlayerStateAnimMachine.create((LocalPlayer) player));
+        if (isLocalPlayer()) AnimStateMachineManager.INSTANCE.putStateMachine(player, level(), PlayerStateAnimMachine.create(player));
     }
 
     @Override
