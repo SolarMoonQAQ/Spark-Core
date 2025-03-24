@@ -26,4 +26,11 @@ class ClientPhysicsLevel(
         }
     }
 
+    val partialTicks: Float
+        get() {
+            val currentTime = System.nanoTime()
+            val elapsedSinceLastTick = (currentTime - lastPhysicsTickTime) / 1e9f
+            return (elapsedSinceLastTick * TPS).coerceIn(0f, 1f)
+        }
+
 }

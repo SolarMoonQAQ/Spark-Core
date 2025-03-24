@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.mixin.animation;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
 import cn.solarmoon.spark_core.compat.player_animator.PlayerAnimatorCompat;
+import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -38,7 +39,7 @@ public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends Ent
         if (livingEntity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable) && !PlayerAnimatorCompat.INSTANCE.isAnimActive(livingEntity)) {
             var boneName = arm.getSerializedName() + "Item";
             if (!itemStack.isEmpty() && animatable.getModelIndex().getModel().hasBone(boneName)) {
-                var physPartialTicks = livingEntity.getPhysicsLevel().getPartialTicks();
+                var physPartialTicks = ((ClientPhysicsLevel)livingEntity.getPhysicsLevel()).getPartialTicks();
                 var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 var p = new PoseStack();
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();

@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.animation.renderer
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer
+import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.entity.EntityRenderer
@@ -21,7 +22,7 @@ open class GeoEntityRenderer<T>(context: EntityRendererProvider.Context): Entity
         bufferSource: MultiBufferSource,
         packedLight: Int
     ) {
-        val physPartialTick = entity.level().physicsLevel.partialTicks.toFloat()
+        val physPartialTick = (entity.level().physicsLevel as ClientPhysicsLevel).partialTicks.toFloat()
         super<EntityRenderer>.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight)
         super<IGeoRenderer>.render(entity, entityYaw, partialTick, physPartialTick, poseStack, bufferSource, packedLight)
     }
