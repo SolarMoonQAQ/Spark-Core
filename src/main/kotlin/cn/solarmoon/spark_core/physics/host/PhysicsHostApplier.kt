@@ -1,15 +1,19 @@
 package cn.solarmoon.spark_core.physics.host
 
+import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.neoforge.client.event.ClientTickEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
+import net.neoforged.neoforge.event.tick.LevelTickEvent
 
 object PhysicsHostApplier {
 
     @SubscribeEvent
-    private fun syncState(event: EntityTickEvent.Pre) {
-        val entity = event.entity
-        entity.updatePhysicsState()
+    private fun syncState(event: ClientTickEvent.Pre) {
+        Minecraft.getInstance().level?.physicsLevel?.world?.pcoList?.forEach {
+            it.sync.update()
+        }
     }
 
     @SubscribeEvent

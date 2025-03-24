@@ -83,10 +83,4 @@ interface PhysicsHost {
         }
     }
 
-    fun updatePhysicsState() {
-        getAllBodies().forEach {
-            it.sync.update()
-        }
-    }
-
 }

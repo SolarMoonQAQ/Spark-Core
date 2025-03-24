@@ -70,14 +70,6 @@ abstract class PhysicsLevel(
 
     abstract val mcLevel: Level
 
-    init {
-        // 防止创建log刷屏
-        PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING)
-        scope.launch {
-            world = PhysicsWorld(this@PhysicsLevel)
-        }
-    }
-
     /**
      * 物理模拟协程的核心循环流程说明
      *
@@ -106,6 +98,9 @@ abstract class PhysicsLevel(
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun load() = scope.launch {
+        PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
+        world = PhysicsWorld(this@PhysicsLevel)
+
         val fixedTimeStep = 1f / TPS // 固定时间步长（秒）
         val maxSubSteps = 10 // 最大允许每帧子步数
         var accumulatedTime = 0f     // 累积时间（秒）
@@ -238,6 +233,11 @@ abstract class PhysicsLevel(
 
         world.pcoList.forEach { pco ->
             pco.tickers.forEach { it.physicsTick(pco, this) }
+            if (!mcLevel.isClientSide) {
+                mcLevel.submitDeduplicatedTask("updateState: ${pco.nativeId()}") {
+                    pco.sync.update()
+                }
+            }
         }
 
         terrainBlockBodies.forEach { (pos, body) ->
