@@ -2,12 +2,12 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
+import cn.solarmoon.spark_core.physics.collision.getBulletCollisionShape
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import kotlinx.coroutines.*
@@ -49,7 +49,6 @@ abstract class PhysicsLevel(
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
     val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
     val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
-    val defaultShape = BoxCollisionShape(0.5f) //默认碰撞形状
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val physicsDispatcher = newSingleThreadContext(name).apply {
@@ -149,7 +148,7 @@ abstract class PhysicsLevel(
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun close() {
         runBlocking {
-            // 同步清理资源
+            // 同步清理资源 Clean up resources synchronously
             withContext(physicsDispatcher) {
                 terrainChunks.clear()
                 terrainBlocks.clear()
@@ -157,7 +156,7 @@ abstract class PhysicsLevel(
                 terrainBlockBodies.clear()
                 world.destroy()
             }
-            // 取消协程作用域
+            // 取消协程作用域 Cancel the coroutine scope
             scope.cancel()
         }
         SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理线程 $name 已关闭")
@@ -167,13 +166,14 @@ abstract class PhysicsLevel(
         val boundingBox = pco.boundingBox(null)
         val min = boundingBox.getMin(null)
         val max = boundingBox.getMax(null)
-        //TODO:会导致方块碰撞数量爆炸，需排查原因
-//        if (pco is PhysicsRigidBody) {
-//            val v = pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区
-//            if (v.x < 0) min.x += v.x * 1 / TPS else max.x += v.x * 1 / TPS
-//            if (v.y < 0) min.y += v.y * 1 / TPS else max.y += v.y * 1 / TPS
-//            if (v.z < 0) min.z += v.z * 1 / TPS else max.z += v.z * 1 / TPS
-//        }
+        if (pco is PhysicsRigidBody) {
+            val v = pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区 Extend the detection area in the direction of the velocity for the moving object
+            if (v.lengthSquared() < 1600) {//TODO:速度过大(40m/s+)的物体采用其他方法扩展选区 For objects with high speeds (40m/s+), use other methods to extend the selection area
+                if (v.x < 0) min.x += v.x * 0.05f else max.x += v.x * 0.05f
+                if (v.y < 0) min.y += v.y * 0.05f else max.y += v.y * 0.05f
+                if (v.z < 0) min.z += v.z * 0.05f else max.z += v.z * 0.05f
+            }
+        }
         addTerrainBlocksToWorld(min, max)
     }
 
@@ -191,28 +191,30 @@ abstract class PhysicsLevel(
                     val chunkPos = ChunkPos(blockPos)
                     if (terrainChunks[chunkPos] != null) {
                         val blockState = terrainChunks[chunkPos]!!.getBlockState(blockPos)
-                        if (terrainBlockBodies.containsKey(blockPos)) {//如果该位置的方块已经记录过，则检查方块类型后重置销毁倒计时
+                        if (terrainBlockBodies.containsKey(blockPos)) {//如果该位置的方块已经记录过，则检查方块类型后重置销毁倒计时 Reset the destruction count if the block has been recorded
                             if (blockState.isAir || blockState.getCollisionShape(mcLevel, blockPos).isEmpty) {
-                                terrainBlockBodies[blockPos]?.setUserIndex(0)
-                            } else terrainBlockBodies[blockPos]?.setUserIndex(120)
-                        } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象
+                                submitDeduplicatedTask(blockPos.toString()) { terrainBlockBodies[blockPos]?.setUserIndex(0) }
+                            } else submitDeduplicatedTask(blockPos.toString()) { terrainBlockBodies[blockPos]?.setUserIndex(40) }
+                        } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象 Create a physics body for the block if it has not been recorded
                             if (!blockState.isAir && !blockState.getCollisionShape(mcLevel, blockPos).isEmpty) {
-                                // 如果块不是空气或可替换方块，记录方块的状态和坐标
+                                // 如果块不是空气或可替换方块，记录方块的状态和坐标 Record the block state and coordinates
                                 terrainBlocks[blockPos] = blockState
-                                //TODO:根据方块形状不同取不同的CollisionShape，或许预先在BlockState中建好Shape以减少资源消耗
-                                val blockBody = PhysicsRigidBody(mcLevel, defaultShape, blockPos)
-                                blockBody.setUserIndex(120) //设定销毁倒计时(2秒，120物理tick)
-                                blockBody.setPhysicsLocation(
-                                    Vector3f(
-                                        blockPos.x.toFloat() + 0.5f,
-                                        blockPos.y.toFloat() + 0.5f,
-                                        blockPos.z.toFloat() + 0.5f
+                                submitDeduplicatedTask(blockPos.toString()) {
+                                    val blockBody =
+                                        PhysicsRigidBody(mcLevel, blockState.getBulletCollisionShape(), blockPos)
+                                    blockBody.setUserIndex(40) //设定销毁倒计时(2秒，40主线程tick) Set the destruction count (2 seconds, 40 main thread ticks)
+                                    blockBody.setPhysicsLocation(
+                                        Vector3f(
+                                            blockPos.x.toFloat() + 0.5f,
+                                            blockPos.y.toFloat() + 0.5f,
+                                            blockPos.z.toFloat() + 0.5f
+                                        )
                                     )
-                                )
-                                blockBody.mcTickPos = blockBody.getPhysicsLocation(null)
-                                blockBody.lastMcTickPos = blockBody.mcTickPos
-                                world.add(blockBody)
-                                terrainBlockBodies[blockPos] = blockBody
+                                    blockBody.mcTickPos = blockBody.getPhysicsLocation(null)
+                                    blockBody.lastMcTickPos = blockBody.mcTickPos
+                                    terrainBlockBodies[blockPos] = blockBody
+                                    world.add(blockBody)
+                                }
                             }
                         }
                     }
@@ -222,7 +224,7 @@ abstract class PhysicsLevel(
     }
 
     /**
-     * 提交任务到物理线程执行
+     * 提交任务到物理线程执行 Submit a task to the physics thread to execute
      */
     fun submitTask(block: suspend CoroutineScope.() -> Unit) =
         scope.launch {
@@ -230,10 +232,22 @@ abstract class PhysicsLevel(
         }
 
     fun mcTick() {
-        world.pcoList.forEach { pco ->
-            if (!pco.isStatic) {
-                pco.lastMcTickPos = pco.mcTickPos
-                pco.mcTickPos = pco.getPhysicsLocation(null)
+        submitImmediateTask {
+            world.pcoList.iterator().forEach { pco ->
+                if (!pco.isStatic) {
+                    pco.mcTickPos?.let { pco.lastMcTickPos = it }
+                    pco.mcTickPos = pco.getPhysicsLocation(null)
+                    if (pco.owner != mcLevel && !pco.name.equals("terrain")) {
+                        addNearbyTerrainBlocksToWorld(pco)
+                    }
+                } else if (pco.name.equals("terrain") && pco.owner == mcLevel && pco is PhysicsRigidBody) {
+                    val pos = pco.blockPos
+                    if (pco.userIndex() <= 0) {
+                        terrainBlocks.remove(pos)
+                        world.remove(pco)
+                        terrainBlockBodies.remove(pos)
+                    } else pco.setUserIndex(pco.userIndex() - 1)
+                }
             }
         }
         lastMcTickTime = System.nanoTime()
@@ -242,9 +256,6 @@ abstract class PhysicsLevel(
     override fun prePhysicsTick(space: PhysicsSpace?, timeStep: Float) {
         world.pcoList.forEach { pco ->
             pco.isColliding = false
-            if (!pco.isStatic && pco.owner != mcLevel && !pco.name.equals("terrain")) {
-                addNearbyTerrainBlocksToWorld(pco)
-            }
         }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
     }
@@ -254,14 +265,6 @@ abstract class PhysicsLevel(
 
         world.pcoList.forEach { pco ->
             pco.tickers.forEach { it.physicsTick(pco, this) }
-        }
-
-        terrainBlockBodies.forEach { (pos, body) ->
-            if (body.userIndex() <= 0) {//移除过久未被访问的块记录及其刚体对象
-                terrainBlocks.remove(pos)
-                world.remove(body)
-                terrainBlockBodies.remove(pos)
-            } else body.setUserIndex(body.userIndex() - 1) //销毁倒计时推进
         }
 
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent(this))

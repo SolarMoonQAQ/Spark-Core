@@ -3,9 +3,9 @@ package cn.solarmoon.spark_core.physics.level
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
 import com.jme3.bullet.PhysicsSpace
-import com.jme3.bullet.PhysicsSpace.BroadphaseType
 import com.jme3.bullet.collision.PersistentManifolds
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge
 
@@ -19,6 +19,7 @@ class PhysicsWorld(
 
     init {
         setGravity(Vector3f(0f, -9.81f, 0f))
+        PhysicsBody.setDeactivationDeadline(4f)
         addTickListener(physicsLevel)
     }
 
