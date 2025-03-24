@@ -28,7 +28,6 @@ object PhysicsLevelApplier {
     private fun mcLevelTask(event: LevelTickEvent.Post) {
         val level = event.level
         level.processTasks()
-        level.physicsLevel.mcTick()
     }
 
     /**

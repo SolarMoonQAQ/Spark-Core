@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import kotlinx.coroutines.*
@@ -37,8 +38,6 @@ abstract class PhysicsLevel(
         private set
     var lastPhysicsTickTime = System.nanoTime()
         private set
-    var lastMcTickTime = System.nanoTime()
-        private set
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     val previousTime = AtomicLong(System.nanoTime())
 
@@ -49,6 +48,7 @@ abstract class PhysicsLevel(
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
     val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
     val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
+    val defaultShape = BoxCollisionShape(0.5f) //默认碰撞形状
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     private val physicsDispatcher = newSingleThreadContext(name).apply {
@@ -148,7 +148,7 @@ abstract class PhysicsLevel(
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun close() {
         runBlocking {
-            // 同步清理资源 Clean up resources synchronously
+            // 同步清理资源
             withContext(physicsDispatcher) {
                 terrainChunks.clear()
                 terrainBlocks.clear()
@@ -156,7 +156,7 @@ abstract class PhysicsLevel(
                 terrainBlockBodies.clear()
                 world.destroy()
             }
-            // 取消协程作用域 Cancel the coroutine scope
+            // 取消协程作用域
             scope.cancel()
         }
         SparkCore.LOGGER.info("绑定在 ${mcLevel.dimensionType().effectsLocation} 的物理线程 $name 已关闭")
@@ -223,39 +223,12 @@ abstract class PhysicsLevel(
         }
     }
 
-    /**
-     * 提交任务到物理线程执行 Submit a task to the physics thread to execute
-     */
-    fun submitTask(block: suspend CoroutineScope.() -> Unit) =
-        scope.launch {
-            block()
-        }
-
-    fun mcTick() {
-        submitImmediateTask {
-            world.pcoList.iterator().forEach { pco ->
-                if (!pco.isStatic) {
-                    pco.mcTickPos?.let { pco.lastMcTickPos = it }
-                    pco.mcTickPos = pco.getPhysicsLocation(null)
-                    if (pco.owner != mcLevel && !pco.name.equals("terrain")) {
-                        addNearbyTerrainBlocksToWorld(pco)
-                    }
-                } else if (pco.name.equals("terrain") && pco.owner == mcLevel && pco is PhysicsRigidBody) {
-                    val pos = pco.blockPos
-                    if (pco.userIndex() <= 0) {
-                        terrainBlocks.remove(pos)
-                        world.remove(pco)
-                        terrainBlockBodies.remove(pos)
-                    } else pco.setUserIndex(pco.userIndex() - 1)
-                }
-            }
-        }
-        lastMcTickTime = System.nanoTime()
-    }
-
     override fun prePhysicsTick(space: PhysicsSpace?, timeStep: Float) {
         world.pcoList.forEach { pco ->
             pco.isColliding = false
+            if (!pco.isStatic && pco.owner != mcLevel && !pco.name.equals("terrain")) {
+                addNearbyTerrainBlocksToWorld(pco)
+            }
         }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
     }
@@ -265,6 +238,14 @@ abstract class PhysicsLevel(
 
         world.pcoList.forEach { pco ->
             pco.tickers.forEach { it.physicsTick(pco, this) }
+        }
+
+        terrainBlockBodies.forEach { (pos, body) ->
+            if (body.userIndex() <= 0) {//移除过久未被访问的块记录及其刚体对象
+                terrainBlocks.remove(pos)
+                world.remove(body)
+                terrainBlockBodies.remove(pos)
+            } else body.setUserIndex(body.userIndex() - 1) //销毁倒计时推进
         }
 
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent(this))

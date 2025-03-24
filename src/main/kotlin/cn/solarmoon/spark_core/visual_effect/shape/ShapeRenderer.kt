@@ -43,7 +43,7 @@ class ShapeRenderer: VisualEffectRenderer() {
                 }
             } else {
                 val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
-                visualizer.render(physLevel, body, body.getTransform(null).toTransformMatrix().toMatrix4f(), shape, mc, camPos, poseStack, bufferSource, partialTicks)
+                visualizer.render(physLevel, body, body.sync.getBuffer().transform.toTransformMatrix().toMatrix4f(), shape, mc, camPos, poseStack, bufferSource, partialTicks)
             }
         }
     }

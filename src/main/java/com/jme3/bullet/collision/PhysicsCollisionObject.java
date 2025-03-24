@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.collision;
 
+import cn.solarmoon.spark_core.physics.PhysicsSync;
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.collision.PhysicsEvent;
@@ -64,6 +65,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     // *************************************************************************
     // constants and loggers
 
+    public final PhysicsSync sync = new PhysicsSync(this);
+
     // 事件处理器存储
     private final Map<Class<?>, List<PhysicsEventListener<?>>> eventListeners = new HashMap<>();
 
@@ -92,8 +95,6 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     public volatile boolean collideWithTerrain = true;
 
     public volatile boolean isColliding = false;
-
-    public HashMap<Long, Set<Long>> allContacts = new HashMap<>();
 
     public LinkedHashSet<String> flags = new LinkedHashSet<>();
 

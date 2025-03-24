@@ -54,14 +54,14 @@ interface PhysicsHost {
      * @return 如果类型匹配则返回实例，否则返回null
      */
     fun <T : PhysicsCollisionObject> getBody(name: String, type: KClass<T>): T? {
-        val body = physicsLevel.hostManager[this]?.get(name)
+        val body = physicsLevel.hostManager.getOrPut(this) { mutableMapOf() }[name]
         return if (type.isInstance(body)) type.cast(body) else null
     }
 
     /**
      * 获取物理宿主身上所有绑定的物理体
      */
-    fun getAllBodies() = physicsLevel.hostManager[this]?.values
+    fun getAllBodies() = physicsLevel.hostManager.getOrPut(this) { mutableMapOf() }.values
 
     /**
      * 删除并销毁对象身上的物理体
@@ -80,6 +80,12 @@ interface PhysicsHost {
                 it.values.forEach { physicsLevel.world.removeCollisionObject(it) }
                 it.clear()
             }
+        }
+    }
+
+    fun updatePhysicsState() {
+        getAllBodies().forEach {
+            it.sync.update()
         }
     }
 
