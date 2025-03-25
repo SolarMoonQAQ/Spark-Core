@@ -9,12 +9,12 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent
 
 object PhysicsHostApplier {
 
-    @SubscribeEvent
-    private fun syncState(event: LevelTickEvent.Pre) {
-        event.level.physicsLevel.world.pcoList.forEach {
-            it.sync.swapBuffers()
-        }
-    }
+//    @SubscribeEvent
+//    private fun syncState(event: LevelTickEvent.Pre) {
+//        event.level.physicsLevel.world.pcoList.forEach {
+//            event.level.physicsLevel.getSync(it).swapBuffers()
+//        }
+//    }
 
     @SubscribeEvent
     private fun onEntityLeave(event: EntityLeaveLevelEvent) {

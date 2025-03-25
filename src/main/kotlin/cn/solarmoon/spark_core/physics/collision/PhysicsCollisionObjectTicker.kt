@@ -18,7 +18,7 @@ interface PhysicsCollisionObjectTicker {
      * @param body 碰撞体对象
      * @param level 物理世界
      */
-    fun physicsTick(body: PhysicsCollisionObject, level: PhysicsLevel) {}
+    fun postPhysicsTick(body: PhysicsCollisionObject, level: PhysicsLevel) {}
 
     fun mcTick(body: PhysicsCollisionObject, level: Level) {}
 
