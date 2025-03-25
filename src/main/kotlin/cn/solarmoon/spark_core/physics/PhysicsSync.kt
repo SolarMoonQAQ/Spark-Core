@@ -8,33 +8,39 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 
 class PhysicsSync(
-    val pco: PhysicsCollisionObject
+    private val pco: PhysicsCollisionObject
 ) {
 
-    private val physicsBuffers = arrayOf(PhysicsState(), PhysicsState())
-    private val currentBuffer = AtomicReference(physicsBuffers[0])
-    private var lastBuffer = AtomicReference(physicsBuffers[1])
+    private val frontBuffer = AtomicReference(PhysicsState())
+    private val backBuffer = AtomicReference(PhysicsState())
+
+    private var lastBuffer = AtomicReference(PhysicsState())
 
     private val tempVec = Vector3f()
     private val tempQuat = Quaternion()
 
+    // 物理线程调用：高频更新后台缓冲（60tick）
     fun update() {
-        val writeBuffer = lastBuffer.get() // 写入非当前活跃缓冲区
-
-        pco.getPhysicsLocation(tempVec)
-        writeBuffer.position.set(tempVec.toVector3f())
-
-        pco.getPhysicsRotation(tempQuat)
-        writeBuffer.rotation.set(tempQuat.toQuaternionf())
-
-        pco.getScale(tempVec)
-        writeBuffer.scale.set(tempVec.toVector3f())
-
-        // 交换缓冲区
-        val temp = currentBuffer.get()
-        currentBuffer.set(writeBuffer)
-        lastBuffer.set(temp)
+        backBuffer.updateAndGet { currentBack ->
+            pco.getPhysicsLocation(tempVec)
+            val pos = tempVec.toVector3f()
+            pco.getPhysicsRotation(tempQuat)
+            val rot = tempQuat.toQuaternionf()
+            pco.getScale(tempVec)
+            val scale = tempVec.toVector3f()
+            PhysicsState(pos, rot, scale)
+        }
     }
 
-    fun getBuffer(partialTicks: Float = 1f) = lastBuffer.get().lerp(partialTicks, currentBuffer.get())
+    // 主线程调用：在 Tick 开始时原子交换缓冲（20tick）
+    fun swapBuffers() {
+        lastBuffer = AtomicReference(frontBuffer.get())
+        frontBuffer.set(backBuffer.get())
+    }
+
+    // 主线程或渲染线程调用：获取插值后的缓冲
+    fun getBuffer(partialTicks: Float = 1f): PhysicsState {
+        return lastBuffer.get().lerp(partialTicks, frontBuffer.get())
+    }
+
 }

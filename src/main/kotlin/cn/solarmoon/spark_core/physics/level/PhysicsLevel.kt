@@ -51,17 +51,7 @@ abstract class PhysicsLevel(
     val defaultShape = BoxCollisionShape(0.5f) //默认碰撞形状
 
     @OptIn(DelicateCoroutinesApi::class, ExperimentalCoroutinesApi::class)
-    private val physicsDispatcher = newSingleThreadContext(name).apply {
-        executor.execute {
-            Thread.currentThread().apply {
-                priority = Thread.NORM_PRIORITY
-                uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, e ->
-                    throw RuntimeException("物理线程 $name 崩溃了", e)
-                }
-            }
-        }
-    }
-
+    private val physicsDispatcher = newSingleThreadContext(name)
     @OptIn(ExperimentalCoroutinesApi::class)
     private val scope = CoroutineScope(physicsDispatcher)
 
@@ -106,7 +96,6 @@ abstract class PhysicsLevel(
         var accumulatedTime = 0f     // 累积时间（秒）
 
         while (isActive) {
-
             val currentTime = System.nanoTime()
             val elapsed = (currentTime - previousTime.get()) / 1e9f // 转换为秒
             previousTime.set(currentTime)
@@ -222,10 +211,12 @@ abstract class PhysicsLevel(
         world.pcoList.forEach { pco ->
             pco.isColliding = false
             pco.tickers.forEach { it.prePhysicsTick(pco, this) }
+            pco.sync.update()
             if (!pco.isStatic && pco.owner != mcLevel && !pco.name.equals("terrain")) {
                 addNearbyTerrainBlocksToWorld(pco)
             }
         }
+        processTasks()
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
     }
 
@@ -234,11 +225,6 @@ abstract class PhysicsLevel(
 
         world.pcoList.forEach { pco ->
             pco.tickers.forEach { it.physicsTick(pco, this) }
-            if (!mcLevel.isClientSide) {
-                mcLevel.submitDeduplicatedTask("updateState: ${pco.nativeId()}") {
-                    pco.sync.update()
-                }
-            }
         }
 
         terrainBlockBodies.forEach { (pos, body) ->
@@ -250,7 +236,6 @@ abstract class PhysicsLevel(
         }
 
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent(this))
-        processTasks()
         lastPhysicsTickTime = System.nanoTime()
     }
 
