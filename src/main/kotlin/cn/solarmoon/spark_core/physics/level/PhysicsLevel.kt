@@ -221,6 +221,7 @@ abstract class PhysicsLevel(
     override fun prePhysicsTick(space: PhysicsSpace?, timeStep: Float) {
         world.pcoList.forEach { pco ->
             pco.isColliding = false
+            pco.tickers.forEach { it.prePhysicsTick(pco, this) }
             if (!pco.isStatic && pco.owner != mcLevel && !pco.name.equals("terrain")) {
                 addNearbyTerrainBlocksToWorld(pco)
             }
