@@ -43,27 +43,27 @@ object PhysicsLevelApplier {
 //        level.processTasks(PPhase.POST)
 //    }
 
-//    /**
-//     * 区块加载时存入physicsLevel缓存，方便读取包含的方块
-//     */
-//    @SubscribeEvent
-//    private fun chunkLoad(event: ChunkEvent.Load) {
-//        val level = event.level as Level
-//        val physLevel: PhysicsLevel = level.physicsLevel
-//        physLevel.terrainChunks[event.chunk.pos] = event.chunk
-//        //TODO:整合全区块方块为单一碰撞体积，减少资源占用
-//    }
-//
-//    /**
-//     * 区块卸载时从physicsLevel缓存中移除
-//     */
-//    @SubscribeEvent
-//    private fun chunkUnload(event: ChunkEvent.Unload) {
-//        val level = event.level as Level
-//        val physLevel: PhysicsLevel = level.physicsLevel
-//        if (physLevel.terrainChunks.containsKey(event.chunk.pos)){
-//            physLevel.terrainChunks.remove(event.chunk.pos)
-//        }
-//    }
+    /**
+     * 区块加载时存入physicsLevel缓存，方便读取包含的方块
+     */
+    @SubscribeEvent
+    private fun chunkLoad(event: ChunkEvent.Load) {
+        val level = event.level as Level
+        val physLevel: PhysicsLevel = level.physicsLevel
+        physLevel.terrainChunks[event.chunk.pos] = event.chunk
+        //TODO:整合全区块方块为单一碰撞体积，减少资源占用
+    }
+
+    /**
+     * 区块卸载时从physicsLevel缓存中移除
+     */
+    @SubscribeEvent
+    private fun chunkUnload(event: ChunkEvent.Unload) {
+        val level = event.level as Level
+        val physLevel: PhysicsLevel = level.physicsLevel
+        if (physLevel.terrainChunks.containsKey(event.chunk.pos)){
+            physLevel.terrainChunks.remove(event.chunk.pos)
+        }
+    }
 
 }

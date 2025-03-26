@@ -2,14 +2,13 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
+import cn.solarmoon.spark_core.physics.collision.BlockCollisionHelper
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
-import com.jme3.bullet.collision.PhysicsCollisionEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -19,17 +18,18 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.chunk.ChunkAccess
 import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -69,6 +69,11 @@ abstract class PhysicsLevel(
     override val immediateQueue: ConcurrentLinkedDeque<Pair<PPhase, () -> Unit>> = ConcurrentLinkedDeque()
     var lastPhysicsTickTime = System.nanoTime()
 
+    //地形碰撞相关
+    val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
+    val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
+    val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
+
     suspend fun CoroutineScope.run() {
         val fixedStep = 1f / TPS
         val repeat = TPS / 20
@@ -96,12 +101,23 @@ abstract class PhysicsLevel(
             val tp = Transform()
             simulationLock.withLock {
                 world.pcoList.forEach {
-                    it.lastTickTransform = it.tickTransform.clone()
-                    it.tickTransform.apply {
-                        val t = it.getTransform(tp)
-                        translation.set(t.translation)
-                        rotation.set(t.rotation)
-                        scale.set(t.scale)
+                    if (!it.isStatic) {
+                        it.lastTickTransform = it.tickTransform.clone()
+                        it.tickTransform.apply {
+                            val t = it.getTransform(tp)
+                            translation.set(t.translation)
+                            rotation.set(t.rotation)
+                            scale.set(t.scale)
+                        }
+                        BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
+                    } else if (it.owner == mcLevel && it.name.equals("terrain")) {
+                        terrainBlockBodies.forEach { (pos, body) ->
+                            if (body.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
+                                terrainBlocks.remove(pos)
+                                world.remove(body)
+                                terrainBlockBodies.remove(pos)
+                            } else body.setUserIndex(body.userIndex() - 1) //销毁倒计时推进
+                        }
                     }
                 }
                 physicsTickChannel.send(Unit)
