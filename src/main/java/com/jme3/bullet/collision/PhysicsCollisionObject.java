@@ -64,7 +64,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     // *************************************************************************
     // constants and loggers
 
-    public Transform lastTransform = new Transform();
+    public Transform lastTickTransform = new Transform();
+    public Transform tickTransform = new Transform();
 
     // 事件处理器存储
     private final Map<Class<?>, List<PhysicsEventListener<?>>> eventListeners = new HashMap<>();
@@ -210,9 +211,6 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     public ArrayList<PhysicsCollisionObjectTicker> tickers = new ArrayList<>();
 
     public ArrayList<CollisionCallback> collisionListeners = new ArrayList<>();
-
-    public Vector3f lastMcTickPos;
-    public Vector3f mcTickPos;
 
     /**
      * Instantiate a collision object with no tracker and no assigned native

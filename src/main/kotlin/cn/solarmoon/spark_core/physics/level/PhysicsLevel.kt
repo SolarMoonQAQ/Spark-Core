@@ -40,7 +40,7 @@ import kotlin.coroutines.CoroutineContext
 abstract class PhysicsLevel(
     val name: String,
     open val mcLevel: Level
-): AutoCloseable, TaskSubmitOffice, PhysicsTickListener {
+) : AutoCloseable, TaskSubmitOffice, PhysicsTickListener {
 
     companion object {
         const val TPS = 60
@@ -48,7 +48,8 @@ abstract class PhysicsLevel(
 
     // 协程配置
     val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    val scope = CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
+    val scope =
+        CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
 
     // 状态管理
     private val stateFlow = MutableStateFlow(PhysicsLevelState.IDLE)
@@ -66,6 +67,7 @@ abstract class PhysicsLevel(
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     override val taskMap: ConcurrentHashMap<String, Pair<PPhase, () -> Unit>> = ConcurrentHashMap()
     override val immediateQueue: ConcurrentLinkedDeque<Pair<PPhase, () -> Unit>> = ConcurrentLinkedDeque()
+    var lastPhysicsTickTime = System.nanoTime()
 
     suspend fun CoroutineScope.run() {
         val fixedStep = 1f / TPS
@@ -80,8 +82,8 @@ abstract class PhysicsLevel(
                 world.update(fixedStep, 0, false, true, false)
             }
             stateFlow.value = PhysicsLevelState.IDLE
-
             // 通知主线程计算完成
+            lastPhysicsTickTime = System.nanoTime()
             stepCompletedChannel.send(Unit)
         }
     }
@@ -93,12 +95,15 @@ abstract class PhysicsLevel(
         runBlocking {
             val tp = Transform()
             simulationLock.withLock {
-                world.pcoList.forEach { it.lastTransform.apply {
-                    val t = it.getTransform(tp)
-                    translation.set(t.translation)
-                    rotation.set(t.rotation)
-                    scale.set(t.scale)
-                } }
+                world.pcoList.forEach {
+                    it.lastTickTransform = it.tickTransform.clone()
+                    it.tickTransform.apply {
+                        val t = it.getTransform(tp)
+                        translation.set(t.translation)
+                        rotation.set(t.rotation)
+                        scale.set(t.scale)
+                    }
+                }
                 physicsTickChannel.send(Unit)
                 stepCompletedChannel.receive() // 等待物理线程完成
             }
@@ -165,5 +170,12 @@ abstract class PhysicsLevel(
             SparkCore.LOGGER.error("物理线程连续崩溃，停止恢复！")
         }
     }
+
+    val partialTicks: Float
+        get() {
+            val currentTime = System.nanoTime()
+            val elapsedSinceLastTick = (currentTime - lastPhysicsTickTime) / 1e9f
+            return (elapsedSinceLastTick * 20).coerceIn(0f, 1f)
+        }
 
 }
