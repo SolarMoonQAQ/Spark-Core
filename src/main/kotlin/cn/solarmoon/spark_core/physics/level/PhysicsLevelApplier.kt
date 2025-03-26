@@ -1,10 +1,12 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.util.PPhase
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.level.ChunkEvent
 import net.neoforged.neoforge.event.level.LevelEvent
 import net.neoforged.neoforge.event.tick.LevelTickEvent
+import net.neoforged.neoforge.event.tick.ServerTickEvent
 
 object PhysicsLevelApplier {
 
@@ -12,7 +14,7 @@ object PhysicsLevelApplier {
     private fun load(event: LevelEvent.Load) {
         val level = event.level
         if (level is Level) {
-            level.physicsLevel.load()
+            level.physicsLevel.start()
         }
     }
 
@@ -25,32 +27,50 @@ object PhysicsLevelApplier {
     }
 
     @SubscribeEvent
-    private fun mcLevelTask(event: LevelTickEvent.Post) {
-        val level = event.level
-        level.processTasks()
-    }
-
-    /**
-     * 区块加载时存入physicsLevel缓存，方便读取包含的方块
-     */
-    @SubscribeEvent
-    private fun chunkLoad(event: ChunkEvent.Load) {
-        val level = event.level as Level
-        val physLevel: PhysicsLevel = level.physicsLevel
-        physLevel.terrainChunks[event.chunk.pos] = event.chunk
-        //TODO:整合全区块方块为单一碰撞体积，减少资源占用
-    }
-
-    /**
-     * 区块卸载时从physicsLevel缓存中移除
-     */
-    @SubscribeEvent
-    private fun chunkUnload(event: ChunkEvent.Unload) {
-        val level = event.level as Level
-        val physLevel: PhysicsLevel = level.physicsLevel
-        if (physLevel.terrainChunks.containsKey(event.chunk.pos)){
-            physLevel.terrainChunks.remove(event.chunk.pos)
+    private fun mainServerUpdate(event: ServerTickEvent.Pre) {
+        event.server.allLevels.forEach {
+            it.physicsLevel.requestStep()
         }
     }
+
+    @SubscribeEvent
+    private fun mainUpdate(event: LevelTickEvent.Pre) {
+        event.level.physicsLevel.requestStep()
+    }
+
+//    @SubscribeEvent
+//    private fun mcLevelTask(event: LevelTickEvent.Pre) {
+//        val level = event.level
+//        level.processTasks(PPhase.PRE)
+//    }
+//
+//    @SubscribeEvent
+//    private fun mcLevelTask(event: LevelTickEvent.Post) {
+//        val level = event.level
+//        level.processTasks(PPhase.POST)
+//    }
+
+//    /**
+//     * 区块加载时存入physicsLevel缓存，方便读取包含的方块
+//     */
+//    @SubscribeEvent
+//    private fun chunkLoad(event: ChunkEvent.Load) {
+//        val level = event.level as Level
+//        val physLevel: PhysicsLevel = level.physicsLevel
+//        physLevel.terrainChunks[event.chunk.pos] = event.chunk
+//        //TODO:整合全区块方块为单一碰撞体积，减少资源占用
+//    }
+//
+//    /**
+//     * 区块卸载时从physicsLevel缓存中移除
+//     */
+//    @SubscribeEvent
+//    private fun chunkUnload(event: ChunkEvent.Unload) {
+//        val level = event.level as Level
+//        val physLevel: PhysicsLevel = level.physicsLevel
+//        if (physLevel.terrainChunks.containsKey(event.chunk.pos)){
+//            physLevel.terrainChunks.remove(event.chunk.pos)
+//        }
+//    }
 
 }

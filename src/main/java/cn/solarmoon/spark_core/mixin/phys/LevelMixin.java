@@ -2,7 +2,9 @@ package cn.solarmoon.spark_core.mixin.phys;
 
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.*;
+import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;
+import kotlin.Pair;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -23,12 +25,12 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Supplier;
 
 @Mixin(Level.class)
-public abstract class LevelMixin implements PhysicsLevelHolder, PhysicsHost, TaskSubmitOffice {
+public abstract class LevelMixin implements PhysicsHost, TaskSubmitOffice {
 
     private final Level level = (Level) (Object) this;
     private PhysicsLevel physicsLevel;
-    private final ConcurrentHashMap<@NotNull String, @NotNull Function0<@NotNull Unit>> tasks = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedDeque<@NotNull Function0<@NotNull Unit>> imtasks = new ConcurrentLinkedDeque<>();
+    private final ConcurrentHashMap<String, Pair<PPhase, Function0<Unit>>> tasks = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedDeque<Pair<PPhase, Function0<Unit>>> imtasks = new ConcurrentLinkedDeque<>();
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(WritableLevelData levelData, ResourceKey dimension, RegistryAccess registryAccess, Holder dimensionTypeRegistration, Supplier profiler, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates, CallbackInfo ci) {
@@ -40,12 +42,12 @@ public abstract class LevelMixin implements PhysicsLevelHolder, PhysicsHost, Tas
     }
 
     @Override
-    public @NotNull ConcurrentHashMap<@NotNull String, @NotNull Function0<@NotNull Unit>> getTaskMap() {
+    public ConcurrentHashMap<String, Pair<PPhase, Function0<Unit>>> getTaskMap() {
         return tasks;
     }
 
     @Override
-    public @NotNull ConcurrentLinkedDeque<@NotNull Function0<@NotNull Unit>> getImmediateQueue() {
+    public ConcurrentLinkedDeque<Pair<PPhase, Function0<Unit>>> getImmediateQueue() {
         return imtasks;
     }
 
@@ -54,4 +56,5 @@ public abstract class LevelMixin implements PhysicsLevelHolder, PhysicsHost, Tas
     public PhysicsLevel getPhysicsLevel() {
         return physicsLevel;
     }
+
 }

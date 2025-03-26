@@ -34,17 +34,18 @@ class ShapeRenderer: VisualEffectRenderer() {
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
+            val transform = body.getTransform(null).toTransformMatrix().toMatrix4f()
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
-                    val parentTransform = body.sync.getBuffer(partialTicks).transform.toTransformMatrix().toMatrix4f()
+                    val parentTransform = body.getTransform(null).toTransformMatrix().toMatrix4f()
                     val childTransform = it.copyTransform(null).toTransformMatrix().toMatrix4f()
                     val finalMatrix = parentTransform.mul(childTransform)
                     visualizer.render(physLevel, body, finalMatrix, it.shape, mc, camPos, poseStack, bufferSource, partialTicks)
                 }
             } else {
                 val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
-                visualizer.render(physLevel, body, body.sync.getBuffer(partialTicks).transform.toTransformMatrix().toMatrix4f(), shape, mc, camPos, poseStack, bufferSource, partialTicks)
+                visualizer.render(physLevel, body, transform, shape, mc, camPos, poseStack, bufferSource, partialTicks)
             }
         }
     }

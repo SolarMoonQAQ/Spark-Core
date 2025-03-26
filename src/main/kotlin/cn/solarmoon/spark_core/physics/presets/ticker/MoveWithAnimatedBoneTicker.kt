@@ -2,10 +2,10 @@ package cn.solarmoon.spark_core.physics.presets.ticker
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBQuaternion
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toVec3
+import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
@@ -19,35 +19,22 @@ open class MoveWithAnimatedBoneTicker(
     val offset: Vector3f = Vector3f()
 ): PhysicsCollisionObjectTicker {
 
-    var lastPos = Vector3f()
+    val lastPos = Vector3f()
 
-    override fun physicsTick(
-        body: PhysicsCollisionObject,
-        level: PhysicsLevel
-    ) {
+    override fun mcTick(body: PhysicsCollisionObject, level: Level) {
+        val entity = body.owner as? Entity ?: return
         val animatable = body.owner as? IAnimatable<*> ?: return
         if (body is PhysicsRigidBody) {
+            val currentPos = entity.position().toBVector3f()
+            val previousPos = lastPos
+            lastPos.set(currentPos)
             body.setPhysicsTransform(Transform(
                 animatable.getWorldBonePivot(boneName, offset.toVec3()).toBVector3f(),
                 animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion(),
                 animatable.getBone(boneName).getScale().toBVector3f()
             ))
-        }
-    }
-
-    override fun mcTick(
-        body: PhysicsCollisionObject,
-        level: Level
-    ) {
-        val entity = body.owner as? Entity ?: return
-        if (body is PhysicsRigidBody) {
-            val currentPos = entity.position().toBVector3f()
-            val previousPos = lastPos
-            lastPos = currentPos
-            level.physicsLevel.submitImmediateTask {
-                val v = currentPos.subtract(previousPos).mult(20f)
-                body.setLinearVelocity(v)
-            }
+            val v = currentPos.subtract(previousPos).mult(20f)
+            body.setLinearVelocity(v)
         }
     }
 

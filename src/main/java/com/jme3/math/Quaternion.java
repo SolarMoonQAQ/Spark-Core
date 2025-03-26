@@ -32,6 +32,7 @@
 package com.jme3.math;
 
 import com.jme3.util.TempVars;
+import org.joml.Quaternionf;
 
 import java.util.logging.Logger;
 
@@ -175,6 +176,14 @@ public final class Quaternion implements Cloneable, java.io.Serializable {
      * @return the (modified) current instance (for chaining)
      */
     public Quaternion set(Quaternion q) {
+        this.x = q.x;
+        this.y = q.y;
+        this.z = q.z;
+        this.w = q.w;
+        return this;
+    }
+
+    public Quaternion set(Quaternionf q) {
         this.x = q.x;
         this.y = q.y;
         this.z = q.z;

@@ -31,6 +31,8 @@
  */
 package com.jme3.math;
 
+import net.minecraft.world.phys.Vec3;
+
 import java.util.logging.Logger;
 
 /**
@@ -134,6 +136,20 @@ public final class Vector3f implements Cloneable, java.io.Serializable {
         this.x = vect.x;
         this.y = vect.y;
         this.z = vect.z;
+        return this;
+    }
+
+    public Vector3f set(org.joml.Vector3f vect) {
+        this.x = vect.x;
+        this.y = vect.y;
+        this.z = vect.z;
+        return this;
+    }
+
+    public Vector3f set(Vec3 vect) {
+        this.x = (float) vect.x;
+        this.y = (float) vect.y;
+        this.z = (float) vect.z;
         return this;
     }
 
