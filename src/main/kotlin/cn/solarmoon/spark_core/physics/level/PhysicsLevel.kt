@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.TaskSubmitOffice
@@ -29,6 +30,7 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import net.minecraft.world.level.Level
+import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
@@ -137,8 +139,10 @@ abstract class PhysicsLevel(
 
     override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
         world.pcoList.forEach { pco ->
+            pco.isColliding = false
             pco.tickers.forEach { it.prePhysicsTick(pco, this) }
         }
+        NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
         processTasks(PPhase.PRE)
     }
 
@@ -146,6 +150,7 @@ abstract class PhysicsLevel(
         world.pcoList.forEach { pco ->
             pco.tickers.forEach { it.postPhysicsTick(pco, this) }
         }
+        NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Post(this))
         processTasks(PPhase.POST)
     }
 
