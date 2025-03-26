@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.physics.toMatrix4f
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
+import com.jme3.math.Matrix4f
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
@@ -35,13 +36,13 @@ class ShapeRenderer : VisualEffectRenderer() {
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
-//            val transform = body.lastTickTransform.lerp(body.tickTransform, partialTicks).toTransformMatrix().toMatrix4f()
             val transform = body.tickTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
+                    val parentTransform = org.joml.Matrix4f(transform)
                     val childTransform = it.copyTransform(null).toTransformMatrix().toMatrix4f()
-                    val finalMatrix = transform.mul(childTransform)
+                    val finalMatrix = parentTransform.mul(childTransform)
                     visualizer.render(
                         physLevel,
                         body,
