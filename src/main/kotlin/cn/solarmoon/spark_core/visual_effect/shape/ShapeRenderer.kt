@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.visual_effect.shape
 
+import cn.solarmoon.spark_core.physics.lerp
 import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toMatrix4f
@@ -34,7 +35,7 @@ class ShapeRenderer: VisualEffectRenderer() {
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
-            val transform = body.getTransform(null).toTransformMatrix().toMatrix4f()
+            val transform = body.lastTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach

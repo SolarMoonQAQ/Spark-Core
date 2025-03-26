@@ -20,6 +20,6 @@ interface PhysicsCollisionObjectTicker {
      */
     fun postPhysicsTick(body: PhysicsCollisionObject, level: PhysicsLevel) {}
 
-    fun mcTick(body: PhysicsCollisionObject, level: Level) {}
+    fun ownerTick(body: PhysicsCollisionObject) {}
 
 }

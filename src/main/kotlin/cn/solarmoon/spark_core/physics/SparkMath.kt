@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.molang.core.value.DoubleValue
 import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import com.jme3.math.Matrix4f
 import com.jme3.math.Quaternion
+import com.jme3.math.Transform
 import net.minecraft.core.BlockPos
 import net.minecraft.util.Mth
 import net.minecraft.world.level.ChunkPos
@@ -142,3 +143,9 @@ fun Matrix4f.toMatrix4f() = org.joml.Matrix4f(
 fun Quaternion.toQuaternionf() = Quaternionf(x, y, z, w)
 
 fun Quaternionf.toBQuaternion() = Quaternion(x, y, z, w)
+
+fun Transform.lerp(target: Transform, delta: Float) = Transform(
+    translation.toVector3f().lerp(target.translation.toVector3f(), delta).toBVector3f(),
+    rotation.toQuaternionf().slerp(target.rotation.toQuaternionf(), delta).toBQuaternion(),
+    scale.toVector3f().lerp(target.scale.toVector3f(), delta).toBVector3f()
+)
