@@ -13,7 +13,7 @@ object VisualEffectTicker {
     }
 
     @SubscribeEvent
-    private fun physTick(event: PhysicsLevelTickEvent) {
+    private fun physTick(event: PhysicsLevelTickEvent.Pre) {
         ALL_VISUAL_EFFECTS.forEach { it.physTick(event.level) }
     }
 

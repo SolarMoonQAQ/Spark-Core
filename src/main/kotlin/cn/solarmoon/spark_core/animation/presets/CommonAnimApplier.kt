@@ -27,7 +27,7 @@ object CommonAnimApplier {
     private fun entityJoin(event: EntityJoinLevelEvent) {
         val entity = event.entity
         val level = event.level
-        if (entity as? IEntityAnimatable<out LivingEntity> != null && !level.isClientSide) {
+        if (entity is LivingEntity && entity as? IEntityAnimatable<out LivingEntity> != null && !level.isClientSide) {
             AnimStateMachineManager.putStateMachine(entity, level, EntityStateAnimMachine.create(entity))
         }
     }

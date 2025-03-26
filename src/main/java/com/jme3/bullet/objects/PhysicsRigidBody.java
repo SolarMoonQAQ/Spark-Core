@@ -488,7 +488,7 @@ public class PhysicsRigidBody extends PhysicsBody {
         long objectId = nativeId();
         getLinearVelocity(objectId, result);//获取物体质心在世界坐标系下的线速度
         Quaternion localToWorld = this.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
-        MyQuaternion.rotate(localToWorld, result, result);//旋转世界坐标系向量到刚体自身坐标系
+        MyQuaternion.rotateInverse(localToWorld, result, result);//旋转世界坐标系向量到刚体自身坐标系
         return result;
     }
 

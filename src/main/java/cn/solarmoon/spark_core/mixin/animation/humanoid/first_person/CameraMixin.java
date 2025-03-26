@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.compat.first_person_model.FirstPersonModelCompat;
 import cn.solarmoon.spark_core.compat.real_camera.RealCameraCompat;
 import cn.solarmoon.spark_core.event.CameraFollowHeadEvent;
+import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel;
 import net.minecraft.client.Camera;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -34,8 +35,8 @@ public abstract class CameraMixin {
         if (entity instanceof IEntityAnimatable<?> animatable && animatable.getModel().hasBone("head")) {
             var event = NeoForge.EVENT_BUS.post(new CameraFollowHeadEvent(entity, camera, RealCameraCompat.INSTANCE.isActive() || FirstPersonModelCompat.INSTANCE.isActive()));
             if (event.isEnabled()) {
-                var pos = animatable.getWorldBonePivot("head", Vec3.ZERO, partialTick, entity.level().getPhysicsLevel().getPartialTicks());
-                var pos2 = animatable.getWorldBonePivot("head", new Vec3(0.0, Mth.lerp(partialTick, this.eyeHeightOld, this.eyeHeight) - (pos.y - Mth.lerp(partialTick, entity.yo, entity.getY())), 0.0), partialTick, entity.level().getPhysicsLevel().getPartialTicks());
+                var pos = animatable.getWorldBonePivot("head", Vec3.ZERO, partialTick, ((ClientPhysicsLevel)entity.level().getPhysicsLevel()).getPartialTicks());
+                var pos2 = animatable.getWorldBonePivot("head", new Vec3(0.0, Mth.lerp(partialTick, this.eyeHeightOld, this.eyeHeight) - (pos.y - Mth.lerp(partialTick, entity.yo, entity.getY())), 0.0), partialTick, ((ClientPhysicsLevel)entity.level().getPhysicsLevel()).getPartialTicks());
                 setPosition(pos.x, pos2.y, pos.z);
             }
         }

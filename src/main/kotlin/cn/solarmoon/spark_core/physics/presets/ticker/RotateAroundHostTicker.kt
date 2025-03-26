@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBMatrix3f
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toRadians
+import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
@@ -18,7 +19,7 @@ class RotateAroundHostTicker: PhysicsCollisionObjectTicker {
 
     var lastPos = Vector3f()
 
-    override fun physicsTick(
+    override fun prePhysicsTick(
         body: PhysicsCollisionObject,
         level: PhysicsLevel
     ) {
@@ -27,22 +28,12 @@ class RotateAroundHostTicker: PhysicsCollisionObjectTicker {
             if (owner is Entity) {
                 body.setPhysicsLocation(owner.position().toBVector3f())
                 body.setPhysicsRotation(Matrix3f().rotateY(Mth.wrapDegrees(owner.yRot).toRadians()).toBMatrix3f())
-            }
-        }
-    }
 
-    override fun mcTick(
-        body: PhysicsCollisionObject,
-        level: Level
-    ) {
-        val entity = body.owner as? Entity ?: return
-        if (body is PhysicsRigidBody) {
-            val targetPos = entity.position().toBVector3f()
-            level.physicsLevel.submitImmediateTask {
+                val targetPos = owner.position().toBVector3f()
                 val v = targetPos.subtract(lastPos).mult(20f)
                 body.setLinearVelocity(v)
+                lastPos = targetPos
             }
-            lastPos = targetPos
         }
     }
 

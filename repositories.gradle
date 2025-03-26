@@ -27,6 +27,10 @@ dependencies {
     implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
     // azurelib
     implementation "mod.azure.azurelib:azurelib-neo-${minecraft_version}:${azurelib_version}"
+
+    // 对象池
+    jarJar(implementation "org.apache.commons:commons-pool2:2.12.1")
+    additionalRuntimeClasspath "org.apache.commons:commons-pool2:2.12.1"
 }
 
 repositories {

@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.visual_effect.shape
 
+import cn.solarmoon.spark_core.physics.lerp
+import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toMatrix4f
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
@@ -10,7 +12,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.world.phys.Vec3
 
-class ShapeRenderer: VisualEffectRenderer() {
+class ShapeRenderer : VisualEffectRenderer() {
 
     override fun tick() {
 
@@ -29,21 +31,32 @@ class ShapeRenderer: VisualEffectRenderer() {
     ) {
         val level = mc.level ?: return
         if (!mc.entityRenderDispatcher.shouldRenderHitBoxes()) return
-        val physLevel = level.physicsLevel
+        val physLevel = level.physicsLevel as ClientPhysicsLevel
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
+//            val transform = body.lastTickTransform.lerp(body.tickTransform, partialTicks).toTransformMatrix().toMatrix4f()
+            val transform = body.tickTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
-                    val parentTransform = body.getTransform(null).toTransformMatrix().toMatrix4f()
                     val childTransform = it.copyTransform(null).toTransformMatrix().toMatrix4f()
-                    val finalMatrix = parentTransform.mul(childTransform)
-                    visualizer.render(physLevel, body, finalMatrix, it.shape, mc, camPos, poseStack, bufferSource, partialTicks)
+                    val finalMatrix = transform.mul(childTransform)
+                    visualizer.render(
+                        physLevel,
+                        body,
+                        finalMatrix,
+                        it.shape,
+                        mc,
+                        camPos,
+                        poseStack,
+                        bufferSource,
+                        partialTicks
+                    )
                 }
             } else {
                 val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
-                visualizer.render(physLevel, body, body.getTransform(null).toTransformMatrix().toMatrix4f(), shape, mc, camPos, poseStack, bufferSource, partialTicks)
+                visualizer.render(physLevel, body, transform, shape, mc, camPos, poseStack, bufferSource, partialTicks)
             }
         }
     }

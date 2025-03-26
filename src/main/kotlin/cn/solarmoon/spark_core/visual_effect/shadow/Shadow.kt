@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.visual_effect.shadow
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.render
+import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.util.ColorUtil
 import cn.solarmoon.spark_core.util.RenderTypeUtil
 import com.mojang.blaze3d.vertex.PoseStack
@@ -43,7 +44,7 @@ class Shadow(
     }
 
     fun render(level: Level, poseStack: PoseStack, bufferSource: MultiBufferSource, partialTicks: Float) {
-        val physPartialTicks = level.physicsLevel.partialTicks.toFloat()
+        val physPartialTicks = (level.physicsLevel as ClientPhysicsLevel).partialTicks.toFloat()
         val buffer = bufferSource.getBuffer(RenderTypeUtil.transparentRepair(textureLocation))
         val posMa = Matrix4f().translate(pos.toVector3f()).rotateY(yRotR)
         val normal = poseStack.last().normal()

@@ -2,16 +2,15 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
+import com.jme3.bullet.PhysicsSoftSpace
 import com.jme3.bullet.PhysicsSpace
-import com.jme3.bullet.PhysicsSpace.BroadphaseType
-import com.jme3.bullet.collision.PersistentManifolds
+import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge
 
-class PhysicsWorld(
-    val physicsLevel: PhysicsLevel
-) : PhysicsSpace(
+class PhysicsWorld(level: PhysicsLevel): PhysicsSoftSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
     BroadphaseType.DBVT
@@ -19,9 +18,14 @@ class PhysicsWorld(
 
     init {
         setGravity(Vector3f(0f, -9.81f, 0f))
-        addTickListener(physicsLevel)
+        PhysicsBody.setDeactivationDeadline(4f)
+        addTickListener(level)
+        isForceUpdateAllAabbs = false
     }
 
+    /**
+     * @return 在碰撞预检测时是否能够继续执行后续真实碰撞及检测
+     */
     override fun needsCollision(pcoA: PhysicsCollisionObject, pcoB: PhysicsCollisionObject): Boolean {
         if (pcoA.isStatic && pcoB.isStatic) return false
         var r = true
@@ -32,28 +36,9 @@ class PhysicsWorld(
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
-    override fun onContactStarted(manifoldId: Long) {
-        val pcoA = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
-        val pcoB = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
-
-        if (pcoA.isCollisionGroupContains(pcoB)) pcoA.collisionListeners.forEach {
-            it.onStarted(
-                pcoA,
-                pcoB,
-                manifoldId
-            )
-        }
-        if (pcoB.isCollisionGroupContains(pcoA)) pcoB.collisionListeners.forEach {
-            it.onStarted(
-                pcoB,
-                pcoA,
-                manifoldId
-            )
-        }
-
-        NeoForge.EVENT_BUS.post(PhysicsContactEvent.Start(manifoldId))
-    }
-
+    /**
+     * 处理接触点
+     */
     override fun onContactProcessed(
         pcoA: PhysicsCollisionObject,
         pcoB: PhysicsCollisionObject,
@@ -69,16 +54,6 @@ class PhysicsWorld(
         }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(manifoldPointId, pcoA, pcoB))
-    }
-
-    override fun onContactEnded(manifoldId: Long) {
-        val pcoA = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyAId(manifoldId))
-        val pcoB = PhysicsCollisionObject.findInstance(PersistentManifolds.getBodyBId(manifoldId))
-
-        if (pcoA.isCollisionGroupContains(pcoB)) pcoA.collisionListeners.forEach { it.onEnded(pcoA, pcoB, manifoldId) }
-        if (pcoB.isCollisionGroupContains(pcoA)) pcoB.collisionListeners.forEach { it.onEnded(pcoB, pcoA, manifoldId) }
-
-        NeoForge.EVENT_BUS.post(PhysicsContactEvent.End(manifoldId))
     }
 
 }
