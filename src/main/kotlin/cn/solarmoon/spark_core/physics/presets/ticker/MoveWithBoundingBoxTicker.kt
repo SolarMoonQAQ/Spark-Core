@@ -25,7 +25,7 @@ class MoveWithBoundingBoxTicker(private val shapeOverride: Boolean = false) : Ph
 
     }
 
-    override fun mcTick(body: PhysicsCollisionObject, level: Level) {
+    override fun ownerTick(body: PhysicsCollisionObject) {
         if (body is PhysicsBody) {
             val entity = body.getOwner<Entity>() ?: return
             val bb = entity.boundingBox

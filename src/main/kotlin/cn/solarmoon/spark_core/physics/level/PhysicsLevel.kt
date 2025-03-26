@@ -6,9 +6,11 @@ import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
+import com.jme3.bullet.collision.PhysicsCollisionEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Transform
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -64,13 +66,16 @@ abstract class PhysicsLevel(
     override val immediateQueue: ConcurrentLinkedDeque<Pair<PPhase, () -> Unit>> = ConcurrentLinkedDeque()
 
     suspend fun CoroutineScope.run() {
+        val fixedStep = 1f / TPS
+        val repeat = TPS / 20
+
         while (isActive) {
             physicsTickChannel.receive()
 
             // 执行物理计算
             stateFlow.value = PhysicsLevelState.RUNNING
-            repeat(TPS / 20) {
-                world.update(1f/TPS, 0, false, true, false)
+            repeat(repeat) {
+                world.update(fixedStep, 0, false, true, false)
             }
             stateFlow.value = PhysicsLevelState.IDLE
 
@@ -84,7 +89,14 @@ abstract class PhysicsLevel(
      */
     fun requestStep() {
         runBlocking {
+            val tp = Transform()
             simulationLock.withLock {
+                world.pcoList.forEach { it.lastTransform.apply {
+                    val t = it.getTransform(tp)
+                    translation.set(t.translation)
+                    rotation.set(t.rotation)
+                    scale.set(t.scale)
+                } }
                 physicsTickChannel.send(Unit)
                 stepCompletedChannel.receive() // 等待物理线程完成
             }

@@ -10,6 +10,12 @@ class ServerPhysicsLevel(
     override val mcLevel: ServerLevel
 ): PhysicsLevel("Server PhysicsThread", mcLevel) {
 
+    override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
+        super.prePhysicsTick(space, timeStep)
 
+        mcLevel.allEntities.forEach {
+            NeoForge.EVENT_BUS.post(PhysicsEntityTickEvent(it))
+        }
+    }
 
 }

@@ -11,8 +11,22 @@ class ClientPhysicsLevel(
     override val mcLevel: ClientLevel
 ): PhysicsLevel("Client PhysicsThread", mcLevel) {
 
+    override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
+        super.prePhysicsTick(space, timeStep)
 
+        val renderDistance = Minecraft.getInstance().gameRenderer.renderDistance
 
-    val partialTicks: Float = 1f
+        Minecraft.getInstance().also { mc ->
+            mc.player?.let {
+                val level = mc.level ?: return@let
+                level.getEntities(null, it.boundingBox.inflate(renderDistance.toDouble()))
+                    .forEach {
+                        NeoForge.EVENT_BUS.post(PhysicsEntityTickEvent(it))
+                    }
+            }
+        }
+    }
+
+    val partialTicks: Float get() = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
 
 }

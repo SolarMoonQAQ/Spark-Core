@@ -6,11 +6,11 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent
 object CollisionFuncApplier {
 
     @SubscribeEvent
-    private fun mcTick(event: LevelTickEvent.Post) {
+    private fun mcTick(event: LevelTickEvent.Pre) {
         val level = event.level
         level.physicsLevel.world.pcoList.forEach { body ->
             body.tickers.forEach {
-                it.mcTick(body, level)
+                it.ownerTick(body)
             }
         }
     }

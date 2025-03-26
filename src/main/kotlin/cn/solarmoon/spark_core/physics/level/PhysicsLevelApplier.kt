@@ -27,13 +27,6 @@ object PhysicsLevelApplier {
     }
 
     @SubscribeEvent
-    private fun mainServerUpdate(event: ServerTickEvent.Pre) {
-        event.server.allLevels.forEach {
-            it.physicsLevel.requestStep()
-        }
-    }
-
-    @SubscribeEvent
     private fun mainUpdate(event: LevelTickEvent.Pre) {
         event.level.physicsLevel.requestStep()
     }

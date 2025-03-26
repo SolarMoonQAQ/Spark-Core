@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
 import cn.solarmoon.spark_core.physics.toBQuaternion
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toVec3
-import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
@@ -21,7 +20,7 @@ open class MoveWithAnimatedBoneTicker(
 
     val lastPos = Vector3f()
 
-    override fun mcTick(body: PhysicsCollisionObject, level: Level) {
+    override fun ownerTick(body: PhysicsCollisionObject) {
         val entity = body.owner as? Entity ?: return
         val animatable = body.owner as? IAnimatable<*> ?: return
         if (body is PhysicsRigidBody) {
