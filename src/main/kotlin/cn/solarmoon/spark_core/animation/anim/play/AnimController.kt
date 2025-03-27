@@ -110,7 +110,7 @@ class AnimController(
             animatable.model.bones.forEach {
                 val targetData = blendSpace.blendBone(it.key,animatable)
                 val result = (lastBlendResult[it.key] ?: KeyAnimData()).lerp(targetData, progress)
-                animatable.getBone(it.key).update(result)
+                animatable.getBone(it.key).updateInternal(result)
             }
             transitionTick--
         }
@@ -120,7 +120,7 @@ class AnimController(
 
             animatable.model.bones.forEach { entry ->
                 val bone = animatable.getBone(entry.key)
-                bone.update(blendSpace.blendBone(entry.key,animatable))
+                bone.updateInternal(blendSpace.blendBone(entry.key,animatable))
             }
         }
 
@@ -129,6 +129,11 @@ class AnimController(
     }
 
     fun tick() {
+
+        animatable.model.bones.forEach {
+            animatable.getBone(it.key).setChanged()
+        }
+
         if (!isInTransition) {
             val anim = mainAnim ?: return
             if (!anim.isCancelled) anim.tick()

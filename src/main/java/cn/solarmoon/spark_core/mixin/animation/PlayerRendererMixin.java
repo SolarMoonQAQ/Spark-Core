@@ -29,13 +29,12 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
 
     @Inject(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At("HEAD"), cancellable = true)
     private void render(AbstractClientPlayer entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        var physPartialTicks = ((ClientPhysicsLevel)entity.getPhysicsLevel()).getPartialTicks();
         var animatable = entity;
         var animData = animatable.getModelIndex();
         var path = animData.getModelPath();
         if (!path.equals(ResourceLocation.withDefaultNamespace("player"))) {
             var vb = buffer.getBuffer(RenderType.entityTranslucent(animData.getTextureLocation()));
-            ModelRenderHelperKt.render(animatable, poseStack.last().normal(), vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, physPartialTicks)), -1, partialTicks, physPartialTicks);
+            ModelRenderHelperKt.render(animatable, poseStack.last().normal(), vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks)), -1, partialTicks);
             ci.cancel();
         }
     }

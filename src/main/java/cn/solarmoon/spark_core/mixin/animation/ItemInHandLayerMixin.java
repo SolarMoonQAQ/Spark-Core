@@ -39,12 +39,11 @@ public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends Ent
         if (livingEntity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable) && !PlayerAnimatorCompat.INSTANCE.isAnimActive(livingEntity)) {
             var boneName = arm.getSerializedName() + "Item";
             if (!itemStack.isEmpty() && animatable.getModelIndex().getModel().hasBone(boneName)) {
-                var physPartialTicks = ((ClientPhysicsLevel)livingEntity.getPhysicsLevel()).getPartialTicks();
                 var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 var p = new PoseStack();
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
                 p.translate(-cam.x, -cam.y, -cam.z);
-                var ma = animatable.getWorldBoneMatrix(boneName, partialTicks, physPartialTicks);
+                var ma = animatable.getWorldBoneMatrix(boneName, partialTicks);
                 var pivot = animatable.getModelIndex().getModel().getBone(boneName).getPivot();
                 p.mulPose(ma);
                 p.translate(pivot.x, pivot.y - 1/16f, pivot.z - 1.75/16f);

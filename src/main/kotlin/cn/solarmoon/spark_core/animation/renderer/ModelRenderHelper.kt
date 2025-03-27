@@ -19,10 +19,9 @@ fun OBone.render(
     packedLight: Int,
     packedOverlay: Int,
     color: Int,
-    partialTick: Float,
-    physPartialTick: Float
+    partialTick: Float
 ) {
-    applyTransformWithParents(bones, ma, partialTick, physPartialTick)
+    applyTransformWithParents(bones, ma, partialTick)
     cubes.forEach {
         it.renderVertexes(Matrix4f(ma), normal3f, buffer, packedLight, packedOverlay, color)
     }
@@ -36,11 +35,10 @@ fun OModel.render(
     packedLight: Int,
     packedOverlay: Int,
     color: Int,
-    partialTick: Float,
-    physPartialTick: Float
+    partialTick: Float
 ) {
     bones.values.forEach {
-        it.render(iBones, Matrix4f(matrix4f), normal3f, buffer, packedLight, packedOverlay, color, partialTick, physPartialTick)
+        it.render(iBones, Matrix4f(matrix4f), normal3f, buffer, packedLight, packedOverlay, color, partialTick)
     }
 }
 
@@ -50,13 +48,12 @@ fun IAnimatable<*>.render(
     packedLight: Int,
     packedOverlay: Int,
     color: Int,
-    partialTick: Float,
-    physPartialTick: Float
+    partialTick: Float
 ) {
     // 把坐标计算改在这里能解决omodel渲染卡顿的问题, 用接口中定义的却不行, 很奇怪
     val worldMatrix = Matrix4f()
     val worldPos = getWorldPosition(partialTick)
     worldMatrix.translate(worldPos.toVector3f())
     worldMatrix.rotateY(getRootYRot(partialTick))
-    model.render(bones, worldMatrix, normal, buffer, packedLight, packedOverlay, color, partialTick, physPartialTick)
+    model.render(bones, worldMatrix, normal, buffer, packedLight, packedOverlay, color, partialTick)
 }

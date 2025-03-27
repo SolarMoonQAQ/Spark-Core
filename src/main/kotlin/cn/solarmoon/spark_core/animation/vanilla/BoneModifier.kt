@@ -13,29 +13,37 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent
 object BoneModifier {
 
     @SubscribeEvent
-    private fun playerTick(event: EntityTickEvent.Pre) {
-        val player = event.entity
+    private fun head(event: BoneUpdateEvent) {
+        val player = event.animatable
         if (player !is IEntityAnimatable<*> || player !is LivingEntity) return
-        val head = player.getBone("head")
-        head.updateVanilla(KeyAnimData(
-            Vec3.ZERO,
-            Vec3(-player.xRot / 1.5, (-player.yHeadRot + player.yBodyRot).toDouble(), 0.0).toRadians(),
-            Vec3.ZERO
-        ))
-
-        val waist = player.getBone("waist")
-        waist.updateVanilla(KeyAnimData(
-            Vec3.ZERO,
-            Vec3(-player.xRot.toDouble().toRadians() / 4.0, 0.0, 0.0),
-            Vec3.ZERO
-        ))
+        val old = event.oldData
+        if (event.bone.name == "head") {
+            event.newData = KeyAnimData(
+                old.position,
+                event.newData.rotation.add(Vec3(-player.xRot.toDouble(), (-player.yHeadRot + player.yBodyRot).toDouble(), 0.0).toRadians()),
+                old.scale
+            )
+        }
     }
+
+//    @SubscribeEvent
+//    private fun waist(event: BoneUpdateEvent) {
+//        val player = event.animatable
+//        if (player !is IEntityAnimatable<*> || player !is LivingEntity) return
+//        val old = event.oldData
+//        if (event.bone.name == "waist") {
+//            event.newData = KeyAnimData(
+//                old.position,
+//                event.newData.rotation.add(Vec3(-player.xRot.toDouble().toRadians() / 4.0, 0.0, 0.0)),
+//                old.scale
+//            )
+//        }
+//    }
 
     @SubscribeEvent
     private fun sleep(event: BoneUpdateEvent) {
         val player = event.animatable
         if (event.bone.name == "body" && player is Player) {
-
             val bedDirection = player.bedOrientation
             if (bedDirection != null && player.isSleeping) {
                 val old = event.newData
@@ -45,7 +53,6 @@ object BoneModifier {
                     old.scale
                 )
             }
-
         }
     }
 
