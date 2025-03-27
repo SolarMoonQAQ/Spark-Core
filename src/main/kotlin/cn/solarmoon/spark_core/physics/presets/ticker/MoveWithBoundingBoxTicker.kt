@@ -28,10 +28,12 @@ class MoveWithBoundingBoxTicker(private val shapeOverride: Boolean = false) : Ph
     override fun ownerTick(body: PhysicsCollisionObject) {
         if (body is PhysicsBody) {
             val entity = body.getOwner<Entity>() ?: return
-            val bb = entity.boundingBox
-            val targetPos = bb.center.toBVector3f()
-            body.setPhysicsLocation(targetPos)
-            if (shapeOverride) body.collisionShape = BoxCollisionShape(Vec3(bb.xsize, bb.ysize, bb.zsize).div(2.0).toBVector3f())
+            entity.level().physicsLevel.submitImmediateTask(PPhase.PRE) {
+                val bb = entity.boundingBox
+                val targetPos = bb.center.toBVector3f()
+                body.setPhysicsLocation(targetPos)
+                if (shapeOverride) body.collisionShape = BoxCollisionShape(Vec3(bb.xsize, bb.ysize, bb.zsize).div(2.0).toBVector3f())
+            }
         }
     }
 

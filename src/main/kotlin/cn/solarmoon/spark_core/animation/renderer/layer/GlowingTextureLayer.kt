@@ -25,7 +25,6 @@ open class GlowingTextureLayer<T, S: IAnimatable<T>>: RenderLayer<T, S>() {
     override fun render(
         sth: S,
         partialTick: Float,
-        physPartialTick: Float,
         poseStack: PoseStack,
         bufferSource: MultiBufferSource,
         packedLight: Int,
@@ -34,7 +33,7 @@ open class GlowingTextureLayer<T, S: IAnimatable<T>>: RenderLayer<T, S>() {
         val buffer = bufferSource.getBuffer(getRenderType(sth))
         poseStack.pushPose()
         val overlay = OverlayTexture.NO_OVERLAY
-        sth.render(poseStack.last().normal(), buffer, packedLight, overlay, -1, partialTick, physPartialTick)
+        sth.render(poseStack.last().normal(), buffer, packedLight, overlay, -1, partialTick)
         poseStack.popPose()
     }
 

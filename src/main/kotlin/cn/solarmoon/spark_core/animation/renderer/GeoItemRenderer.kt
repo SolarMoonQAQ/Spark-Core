@@ -26,10 +26,9 @@ open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstanc
     ) {
         val animatable = stack.get(SparkDataComponents.ANIMATABLE) ?: return
         val partialTicks = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
-        val physPartialTick = (Minecraft.getInstance().level?.physicsLevel as? ClientPhysicsLevel)?.partialTicks ?: return
         when(displayContext) {
             ItemDisplayContext.GUI -> {  }
-            else -> render(animatable, 0f, partialTicks, physPartialTick, poseStack, buffer, packedLight)
+            else -> render(animatable, 0f, partialTicks, poseStack, buffer, packedLight)
         }
     }
 

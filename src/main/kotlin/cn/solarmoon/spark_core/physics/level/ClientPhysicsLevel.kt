@@ -15,7 +15,6 @@ class ClientPhysicsLevel(
         super.prePhysicsTick(space, timeStep)
 
         val renderDistance = Minecraft.getInstance().gameRenderer.renderDistance
-
         Minecraft.getInstance().also { mc ->
             mc.player?.let {
                 val level = mc.level ?: return@let
@@ -27,6 +26,11 @@ class ClientPhysicsLevel(
         }
     }
 
-//    val partialTicks: Float get() = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
+    val partialTicks: Float
+        get() {
+            val currentTime = System.nanoTime()
+            val elapsedSinceLastTick = (currentTime - lastPhysicsTickTime) / 1e9f
+            return (elapsedSinceLastTick * 20).coerceIn(0f, 1f)
+        }
 
 }

@@ -26,9 +26,8 @@ open class GeoLivingEntityRenderer<T>(context: EntityRendererProvider.Context, s
         bufferSource: MultiBufferSource,
         packedLight: Int
     ) {
-        val physPartialTick = (animatable.level().physicsLevel as ClientPhysicsLevel).partialTicks.toFloat()
         super<LivingEntityRenderer>.render(animatable, yaw, partialTick, poseStack, bufferSource, packedLight)
-        super<IGeoRenderer>.render(animatable, yaw, partialTick, physPartialTick, poseStack, bufferSource, packedLight)
+        super<IGeoRenderer>.render(animatable, yaw, partialTick, poseStack, bufferSource, packedLight)
     }
 
     override fun getTextureLocation(entity: T): ResourceLocation {

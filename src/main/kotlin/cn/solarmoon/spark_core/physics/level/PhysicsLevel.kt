@@ -187,11 +187,4 @@ abstract class PhysicsLevel(
         }
     }
 
-    val partialTicks: Float
-        get() {
-            val currentTime = System.nanoTime()
-            val elapsedSinceLastTick = (currentTime - lastPhysicsTickTime) / 1e9f
-            return (elapsedSinceLastTick * 20).coerceIn(0f, 1f)
-        }
-
 }

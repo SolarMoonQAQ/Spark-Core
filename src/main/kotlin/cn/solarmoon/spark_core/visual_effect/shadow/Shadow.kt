@@ -44,14 +44,13 @@ class Shadow(
     }
 
     fun render(level: Level, poseStack: PoseStack, bufferSource: MultiBufferSource, partialTicks: Float) {
-        val physPartialTicks = (level.physicsLevel as ClientPhysicsLevel).partialTicks.toFloat()
         val buffer = bufferSource.getBuffer(RenderTypeUtil.transparentRepair(textureLocation))
         val posMa = Matrix4f().translate(pos.toVector3f()).rotateY(yRotR)
         val normal = poseStack.last().normal()
         val light = LevelRenderer.getLightColor(level, BlockPos(pos.toVec3i()).above())
         val overlay = OverlayTexture.NO_OVERLAY
         val color = ColorUtil.getColorAndSetAlpha(color.rgb, 1 - getProgress(partialTicks))
-        animatable.model.render(boneCache, posMa, normal, buffer, light, overlay, color, partialTicks, physPartialTicks)
+        animatable.model.render(boneCache, posMa, normal, buffer, light, overlay, color, partialTicks)
     }
 
 }
