@@ -7,15 +7,30 @@ import com.jme3.math.Quaternion
 import com.jme3.math.Transform
 import com.jme3.math.Vector3f
 import net.minecraft.core.BlockPos
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.world.level.EmptyBlockGetter
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.shapes.CollisionContext
 import net.minecraft.world.phys.shapes.VoxelShape
 import java.util.*
 
-object BlockShapeHelper {
+
+object CollisionShapeHelper {
     private val SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
     private val DEFAULT_SHAPE = BoxCollisionShape(0.5f)
+
+    // Mod初始化时调用此方法
+    private fun generateShapeCache() {
+        for (block in BuiltInRegistries.BLOCK) {
+            // 遍历方块的所有可能状态（如方向、激活状态等）
+            for (blockState in block.stateDefinition.possibleStates) {
+                val voxel: VoxelShape =
+                    blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
+                val shape = convertVoxelToCollisionShape(voxel)
+                SHAPE_CACHE[blockState] = shape
+            }
+        }
+    }
 
     private fun generateShapeCache(blockState: BlockState): CollisionShape {
         val voxel: VoxelShape =
@@ -61,5 +76,5 @@ object BlockShapeHelper {
 }
 
 fun BlockState.getBulletCollisionShape(): CollisionShape {
-    return BlockShapeHelper.getCollisionShape(this)
+    return CollisionShapeHelper.getCollisionShape(this)
 }

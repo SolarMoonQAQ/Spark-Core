@@ -23,27 +23,14 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
 object PhysicsLevelApplier {
-    
-    // 性能报告周期（默认每分钟记录一次）
-    private const val PERFORMANCE_REPORT_INTERVAL = 1200 // 60秒 * 20tps = 1200个tick
-    private val lastReportTime = AtomicLong(0)
-    
     // 玩家上次位置缓存
     private val playerLastPositions = ConcurrentHashMap<LivingEntity, BlockPos>()
-    
-    // 玩家移动触发更新的阈值距离（方块）
-    private const val MOVEMENT_UPDATE_THRESHOLD = 2
-    
-    // 安全网更新周期（tick），为了确保系统稳定性，每300tick仍会执行一次更新
-    private const val SAFETY_UPDATE_INTERVAL = 300
 
     @SubscribeEvent
     private fun load(event: LevelEvent.Load) {
         val level = event.level
         if (level is Level) {
-            level.physicsLevel.load()
-            // 初始化地形管理器
-            level.physicsLevel.terrainManager.initialize()
+            level.physicsLevel.start()
         }
     }
 
@@ -56,28 +43,8 @@ object PhysicsLevelApplier {
     }
 
     @SubscribeEvent
-    private fun mcLevelTask(event: LevelTickEvent.Post) {
-        val level = event.level
-        level.physicsLevel.processTasks()
-        level.physicsLevel.mcTick()
-        
-//        // 替代每10tick更新为安全网更新
-//        if (level.gameTime % SAFETY_UPDATE_INTERVAL == 0L) {
-//            SparkCore.LOGGER.debug("执行安全网三维地形更新（每${SAFETY_UPDATE_INTERVAL}tick）")
-//
-//            // 使用异步方式调用updateTerrain3D，避免在主线程中执行过长时间
-//            Thread {
-//                try {
-//                    level.physicsLevel.terrainManager.updateTerrain3D()
-//                } catch (e: Exception) {
-//                    SparkCore.LOGGER.error("异步执行三维地形更新时发生错误", e)
-//                }
-//            }.apply {
-//                name = "Terrain3D-Update-Thread"
-//                isDaemon = true
-//                start()
-//            }
-//        }
+    private fun mainUpdate(event: LevelTickEvent.Pre) {
+        event.level.physicsLevel.requestStep()
     }
     
     /**
@@ -89,8 +56,6 @@ object PhysicsLevelApplier {
         if (event.entity !is Player) return
         val player = event.entity
         val level = player.level()
-        
-//        if (level.isClientSide) return // 仅在服务端处理
         
         // 使用事件提供的didChunkChange()方法直接检测是否跨区块
         val shouldUpdate = event.didChunkChange() || playerLastPositions.get(player as LivingEntity) == null
@@ -152,33 +117,14 @@ object PhysicsLevelApplier {
     fun playerLoggedOut(event: PlayerEvent.PlayerLoggedOutEvent) {
         val player = event.entity
         val level = player.level()
-        
+
         // 清除位置缓存
         playerLastPositions.remove(player as LivingEntity)
         
         // 释放玩家关联的三维区块
         level.physicsLevel.terrainManager.releasePlayerChunks(player)
     }
-    
-    /**
-     * 记录性能报告
-     */
-    @SubscribeEvent
-    private fun serverTick(event: ServerTickEvent.Post) {
-        val currentTime = System.currentTimeMillis()
-        val lastTime = lastReportTime.get()
 
-        // 每隔一段时间记录一次性能报告
-        if (currentTime - lastTime > PERFORMANCE_REPORT_INTERVAL * 50) { // 转换为毫秒
-            lastReportTime.set(currentTime)
-
-            // 遍历所有维度记录性能信息
-            event.server.allLevels.forEach { level ->
-                val report = level.physicsLevel.getPerformanceReport()
-                SparkCore.LOGGER.info("维度 [${level.dimension().location()}] 物理引擎性能报告:\n$report")
-            }
-        }
-    }
 
     /**
      * 区块加载事件 - 触发地形更新
@@ -199,40 +145,6 @@ object PhysicsLevelApplier {
                 PacketDistributor.sendToAllPlayers(
                     PhysicsEventPayload(PhysicsEventPayload.EventType.CHUNK_LOAD, chunkPos)
                 )
-            }
-
-            // 检查是否有玩家在附近
-            val minX = chunkPos.x * 16
-            val minZ = chunkPos.z * 16
-            val nearestPlayer = level.getNearestPlayer(
-                minX + 8.0,
-                0.0,
-                minZ + 8.0,
-                64.0, // 只考虑64格范围内的玩家
-                null
-            )
-
-            if (nearestPlayer != null) {
-                SparkCore.LOGGER.debug("区块加载时有玩家在附近，触发三维区块更新, ChunkPos: $chunkPos")
-
-                // 使用异步线程处理
-                Thread {
-                    try {
-//                        // 获取玩家高度对应的三维区块
-//                        val playerY = nearestPlayer.blockPosition().y
-//                        val chunk3DY = TerrainChunkPos3D.getYIndex(playerY)
-//
-//                        // 对玩家所在高度的三维区块进行处理
-//                        val chunk3D = TerrainChunkPos3D(chunkPos.x, chunk3DY, chunkPos.z)
-//                        level.physicsLevel.terrainManager.mergeManager.mergeChunk3D(chunk3D)
-                    } catch (e: Exception) {
-                        SparkCore.LOGGER.error("区块加载时更新三维区块发生错误", e)
-                    }
-                }.apply {
-                    name = "Chunk-Load-3D-Update-Thread"
-                    isDaemon = true
-                    start()
-                }
             }
         }
     }
@@ -394,4 +306,39 @@ object PhysicsLevelApplier {
             }
         }
     }
+
+//    @SubscribeEvent
+//    private fun mcLevelTask(event: LevelTickEvent.Pre) {
+//        val level = event.level
+//        level.processTasks(PPhase.PRE)
+//    }
+//
+//    @SubscribeEvent
+//    private fun mcLevelTask(event: LevelTickEvent.Post) {
+//        val level = event.level
+//        level.processTasks(PPhase.POST)
+//    }
+
+//    /**
+//     * 区块加载时存入physicsLevel缓存，方便读取包含的方块
+//     */
+//    @SubscribeEvent
+//    private fun chunkLoad(event: ChunkEvent.Load) {
+//        val level = event.level as Level
+//        val physLevel: PhysicsLevel = level.physicsLevel
+//        physLevel.terrainChunks[event.chunk.pos] = event.chunk
+//        //TODO:整合全区块方块为单一碰撞体积，减少资源占用
+//    }
+//
+//    /**
+//     * 区块卸载时从physicsLevel缓存中移除
+//     */
+//    @SubscribeEvent
+//    private fun chunkUnload(event: ChunkEvent.Unload) {
+//        val level = event.level as Level
+//        val physLevel: PhysicsLevel = level.physicsLevel
+//        if (physLevel.terrainChunks.containsKey(event.chunk.pos)){
+//            physLevel.terrainChunks.remove(event.chunk.pos)
+//        }
+//    }
 }

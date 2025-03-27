@@ -4,16 +4,15 @@ import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import com.jme3.bullet.PhysicsSpace
 import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.world.level.Level
 import net.neoforged.neoforge.common.NeoForge
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedDeque
 
 class ClientPhysicsLevel(
     override val mcLevel: ClientLevel
-): PhysicsLevel("Client PhysicsThread") {
+): PhysicsLevel("Client PhysicsThread", mcLevel) {
 
-    override fun physicsTick(space: PhysicsSpace, timeStep: Float) {
-        super.physicsTick(space, timeStep)
+    override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
+        super.prePhysicsTick(space, timeStep)
 
         val renderDistance = Minecraft.getInstance().gameRenderer.renderDistance
 
@@ -28,9 +27,6 @@ class ClientPhysicsLevel(
         }
     }
 
-    override val taskMap: ConcurrentHashMap<String, () -> Unit>
-        get() = ConcurrentHashMap()
-    override val immediateQueue: ConcurrentLinkedDeque<() -> Unit>
-        get() = ConcurrentLinkedDeque()
+    val partialTicks: Float get() = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
 
 }

@@ -3,8 +3,9 @@ package cn.solarmoon.spark_core.physics.host
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.entity.EntityPhysicsManager
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.util.TaskSubmitOffice
+import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import kotlinx.coroutines.launch
 import net.minecraft.world.entity.Entity
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
@@ -26,7 +27,7 @@ interface PhysicsHost {
         apply: T.() -> Unit = {}
     ): T {
         physicsLevel.apply {
-            submitImmediateTask {
+            submitImmediateTask(PPhase.PRE) {
                 hostManager
                     .getOrPut(this@PhysicsHost) { ConcurrentHashMap() }
                     .compute(body.name) { _, existing ->
@@ -56,20 +57,20 @@ interface PhysicsHost {
      * @return 如果类型匹配则返回实例，否则返回null
      */
     fun <T : PhysicsCollisionObject> getBody(name: String, type: KClass<T>): T? {
-        val body = physicsLevel.hostManager[this]?.get(name)
+        val body = physicsLevel.hostManager.getOrPut(this) { mutableMapOf() }[name]
         return if (type.isInstance(body)) type.cast(body) else null
     }
 
     /**
      * 获取物理宿主身上所有绑定的物理体
      */
-    fun getAllBodies() = physicsLevel.hostManager[this]?.values
+    fun getAllBodies() = physicsLevel.hostManager.getOrPut(this) { mutableMapOf() }.values
 
     /**
      * 删除并销毁对象身上的物理体
      */
     fun removeBody(name: String) {
-        physicsLevel.submitImmediateTask {
+        physicsLevel.submitImmediateTask(PPhase.PRE) {
             physicsLevel.hostManager[this@PhysicsHost]?.remove(name)?.let {
                 physicsLevel.world.removeCollisionObject(it)
             }
@@ -77,7 +78,7 @@ interface PhysicsHost {
     }
 
     fun removeAllBodies() {
-        physicsLevel.submitImmediateTask {
+        physicsLevel.submitImmediateTask(PPhase.PRE) {
             physicsLevel.hostManager[this@PhysicsHost]?.let {
                 it.values.forEach { physicsLevel.world.removeCollisionObject(it) }
                 it.clear()

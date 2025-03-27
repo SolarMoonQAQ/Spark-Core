@@ -12,7 +12,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.world.phys.Vec3
 
-class ShapeRenderer : VisualEffectRenderer() {
+class ShapeRenderer: VisualEffectRenderer() {
 
     override fun tick() {
 
@@ -35,24 +35,14 @@ class ShapeRenderer : VisualEffectRenderer() {
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
-//            val transform = body.lastTickTransform.lerp(body.tickTransform, partialTicks).toTransformMatrix().toMatrix4f()
-            val transform = body.tickTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
+            val transform = body.lastTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
+                    val parentTransform = body.getTransform(null).toTransformMatrix().toMatrix4f()
                     val childTransform = it.copyTransform(null).toTransformMatrix().toMatrix4f()
-                    val finalMatrix = transform.mul(childTransform)
-                    visualizer.render(
-                        physLevel,
-                        body,
-                        finalMatrix,
-                        it.shape,
-                        mc,
-                        camPos,
-                        poseStack,
-                        bufferSource,
-                        partialTicks
-                    )
+                    val finalMatrix = parentTransform.mul(childTransform)
+                    visualizer.render(physLevel, body, finalMatrix, it.shape, mc, camPos, poseStack, bufferSource, partialTicks)
                 }
             } else {
                 val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach

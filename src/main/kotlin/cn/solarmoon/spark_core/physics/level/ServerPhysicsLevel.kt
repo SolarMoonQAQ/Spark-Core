@@ -5,8 +5,6 @@ import com.jme3.bullet.PhysicsSpace
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.common.NeoForge
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedDeque
 
 class ServerPhysicsLevel(
     override val mcLevel: ServerLevel
@@ -19,8 +17,5 @@ class ServerPhysicsLevel(
             NeoForge.EVENT_BUS.post(PhysicsEntityTickEvent(it))
         }
     }
-    override val taskMap: ConcurrentHashMap<String, () -> Unit>
-        get() = ConcurrentHashMap()
-    override val immediateQueue: ConcurrentLinkedDeque<() -> Unit>
-        get() = ConcurrentLinkedDeque()
+
 }
