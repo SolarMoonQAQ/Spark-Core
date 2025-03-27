@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.physics.entity
 
 import cn.solarmoon.spark_core.physics.collision.isFrozen
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
@@ -31,7 +32,7 @@ object EntityPhysicsManager {
         // 获取实体关联的所有物理体
         val bodies = entity.getAllBodies() ?: return
         
-        entity.physicsLevel.submitTask {
+        entity.physicsLevel.submitImmediateTask(PPhase.PRE) {
             for (body in bodies) {
                 setBodyFrozen(body, frozen)
             }

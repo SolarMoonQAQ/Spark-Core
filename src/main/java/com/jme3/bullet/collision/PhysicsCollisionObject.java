@@ -64,7 +64,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     // *************************************************************************
     // constants and loggers
 
-    public Transform lastTransform = new Transform();
+    public Transform lastTickTransform = new Transform();
+    public Transform tickTransform = new Transform();
 
     // 事件处理器存储
     private final Map<Class<?>, List<PhysicsEventListener<?>>> eventListeners = new HashMap<>();

@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
-import cn.solarmoon.spark_core.physics.event.PhysicsEventPayload
 import cn.solarmoon.spark_core.skill.payload.SkillComponentPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
@@ -36,10 +35,6 @@ object SparkPayloadRegister {
         skill.playToClient(SkillSyncPayload.TYPE, SkillSyncPayload.STREAM_CODEC, SkillSyncPayload::handleInClient)
         skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)
         skill.playBidirectional(SkillComponentPayload.TYPE, SkillComponentPayload.STREAM_CODEC, SkillComponentPayload::handleInBothSide)
-
-        // 注册物理事件数据包
-        val physics = event.registrar("physics")
-        physics.playToClient(PhysicsEventPayload.TYPE, PhysicsEventPayload.STREAM_CODEC, PhysicsEventPayload::handleInClient)
 
 //        val rpc = event.registrar("rpc")
 //        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)

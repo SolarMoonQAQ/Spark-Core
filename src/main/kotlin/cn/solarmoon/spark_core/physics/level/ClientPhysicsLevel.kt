@@ -27,6 +27,6 @@ class ClientPhysicsLevel(
         }
     }
 
-    val partialTicks: Float get() = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
+//    val partialTicks: Float get() = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
 
 }

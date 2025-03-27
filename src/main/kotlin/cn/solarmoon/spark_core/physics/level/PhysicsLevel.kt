@@ -2,14 +2,13 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
+import cn.solarmoon.spark_core.physics.collision.BlockCollisionHelper
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
-import cn.solarmoon.spark_core.util.TaskSubmitOffice
-import cn.solarmoon.spark_core.physics.terrain.TerrainManager
 import cn.solarmoon.spark_core.util.PPhase
+import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -19,16 +18,13 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
@@ -36,24 +32,24 @@ import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.chunk.ChunkAccess
 import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicLong
-import kotlin.math.max
-import kotlin.math.min
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
+
 abstract class PhysicsLevel(
     val name: String,
     open val mcLevel: Level
-): AutoCloseable, TaskSubmitOffice, PhysicsTickListener {
+) : AutoCloseable, TaskSubmitOffice, PhysicsTickListener {
 
     companion object {
         const val TPS = 60
     }
+
     // 协程配置
     val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    val scope = CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
+    val scope =
+        CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
 
     // 状态管理
     private val stateFlow = MutableStateFlow(PhysicsLevelState.IDLE)
@@ -71,6 +67,12 @@ abstract class PhysicsLevel(
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     override val taskMap: ConcurrentHashMap<String, Pair<PPhase, () -> Unit>> = ConcurrentHashMap()
     override val immediateQueue: ConcurrentLinkedDeque<Pair<PPhase, () -> Unit>> = ConcurrentLinkedDeque()
+    var lastPhysicsTickTime = System.nanoTime()
+
+    //地形碰撞相关
+    val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
+    val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
+    val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
 
     suspend fun CoroutineScope.run() {
         val fixedStep = 1f / TPS
@@ -85,16 +87,11 @@ abstract class PhysicsLevel(
                 world.update(fixedStep, 0, false, true, false)
             }
             stateFlow.value = PhysicsLevelState.IDLE
-
             // 通知主线程计算完成
+            lastPhysicsTickTime = System.nanoTime()
             stepCompletedChannel.send(Unit)
         }
     }
-    //地形碰撞相关
-    val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
-    val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
-    val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
-//    private val defaultShape = BoxCollisionShape(0.5f) //默认碰撞形状
 
     /**
      * 在主线程每tick调用，向物理线程发送模拟请求，物理线程接收到请求后会立刻模拟约1主线程tick时间的物理步进，此时主线程会等待物理线程计算完毕后再执行后续内容
@@ -103,15 +100,30 @@ abstract class PhysicsLevel(
         runBlocking {
             val tp = Transform()
             simulationLock.withLock {
-                world.pcoList.forEach { it.lastTransform.apply {
-                    val t = it.getTransform(tp)
-                    translation.set(t.translation)
-                    rotation.set(t.rotation)
-                    scale.set(t.scale)
-                } }
+                world.pcoList.forEach {
+                    if (!it.isStatic) {
+                        it.lastTickTransform = it.tickTransform.clone()
+                        it.tickTransform.apply {
+                            val t = it.getTransform(tp)
+                            translation.set(t.translation)
+                            rotation.set(t.rotation)
+                            scale.set(t.scale)
+                        }
+                        BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
+                    } else if (it.owner == mcLevel && it.name.equals("terrain")) {
+                        terrainBlockBodies.forEach { (pos, body) ->
+                            if (body.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
+                                if (terrainBlockBodies.contains(body)){
+                                    terrainBlocks.remove(pos)
+                                    world.remove(body)
+                                    terrainBlockBodies.remove(pos)
+                                }
+                            } else body.setUserIndex(body.userIndex() - 1) //销毁倒计时推进
+                        }
+                    }
+                }
                 physicsTickChannel.send(Unit)
                 stepCompletedChannel.receive() // 等待物理线程完成
-                terrainManager.clearExpiredBodies()
             }
         }
     }
@@ -122,8 +134,7 @@ abstract class PhysicsLevel(
     fun start() {
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
         scope.launch {
-            world = PhysicsWorld(this@PhysicsLevel)            // 初始化地形管理器
-            terrainManager.initialize()
+            world = PhysicsWorld(this@PhysicsLevel)
             run()
         }
     }
@@ -133,11 +144,6 @@ abstract class PhysicsLevel(
      */
     override fun close() {
         runBlocking {
-            terrainBlocks.clear()
-            terrainBlockBodies.values.forEach { world.remove(it) }
-            terrainBlockBodies.clear()
-            // 清理地形管理器
-            terrainManager.cleanup()
             world.destroy()
             hostManager.clear()
             scope.cancel("物理线程已关闭")
@@ -153,9 +159,6 @@ abstract class PhysicsLevel(
         start()
         crashCount.set(0)
     }
-
-    // 地形管理器
-    internal val terrainManager = TerrainManager(this)
 
     override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
         world.pcoList.forEach { pco ->
@@ -185,4 +188,12 @@ abstract class PhysicsLevel(
             SparkCore.LOGGER.error("物理线程连续崩溃，停止恢复！")
         }
     }
+
+    val partialTicks: Float
+        get() {
+            val currentTime = System.nanoTime()
+            val elapsedSinceLastTick = (currentTime - lastPhysicsTickTime) / 1e9f
+            return (elapsedSinceLastTick * 20).coerceIn(0f, 1f)
+        }
+
 }
