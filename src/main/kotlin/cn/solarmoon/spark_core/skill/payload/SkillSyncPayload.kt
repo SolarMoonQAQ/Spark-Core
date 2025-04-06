@@ -27,9 +27,8 @@ class SkillSyncPayload private constructor(
         fun handleInClient(payload: SkillSyncPayload, context: IPayloadContext) {
             val level = context.player().level()
             val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return
-            val skill = payload.skillType.skill.new(payload.serverId, payload.skillType, host, level)
+            val skill = payload.skillType.createSkillWithoutSync(payload.serverId, host, level)
             if (payload.active) skill.activate()
-            host.allSkills[skill.id] = skill
         }
 
         @JvmStatic
@@ -39,7 +38,7 @@ class SkillSyncPayload private constructor(
         val STREAM_CODEC = StreamCodec.composite(
             SyncerType.STREAM_CODEC, SkillSyncPayload::syncerType,
             SyncData.STREAM_CODEC, SkillSyncPayload::syncData,
-            SkillType.Companion.STREAM_CODEC, SkillSyncPayload::skillType,
+            SkillType.STREAM_CODEC, SkillSyncPayload::skillType,
             ByteBufCodecs.INT, SkillSyncPayload::serverId,
             ByteBufCodecs.BOOL, SkillSyncPayload::active,
             ::SkillSyncPayload

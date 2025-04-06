@@ -7,14 +7,4 @@ object SparkDataComponents {
     @JvmStatic
     fun register() {}
 
-    @JvmStatic
-    val ANIMATABLE = SparkCore.REGISTER.dataComponent<ItemAnimatable>()
-        .id("animatable")
-        .build {
-            it.persistent(ItemAnimatable.CODEC)
-                .networkSynchronized(ItemAnimatable.STREAM_CODEC)
-                .cacheEncoding()
-                .build()
-        }
-
 }

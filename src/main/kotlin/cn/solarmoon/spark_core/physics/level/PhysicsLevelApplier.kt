@@ -31,17 +31,17 @@ object PhysicsLevelApplier {
         event.level.physicsLevel.requestStep()
     }
 
-//    @SubscribeEvent
-//    private fun mcLevelTask(event: LevelTickEvent.Pre) {
-//        val level = event.level
-//        level.processTasks(PPhase.PRE)
-//    }
-//
-//    @SubscribeEvent
-//    private fun mcLevelTask(event: LevelTickEvent.Post) {
-//        val level = event.level
-//        level.processTasks(PPhase.POST)
-//    }
+    @SubscribeEvent
+    private fun mcLevelTask(event: LevelTickEvent.Pre) {
+        val level = event.level
+        level.processTasks(PPhase.PRE)
+    }
+
+    @SubscribeEvent
+    private fun mcLevelTask(event: LevelTickEvent.Post) {
+        val level = event.level
+        level.processTasks(PPhase.POST)
+    }
 
     /**
      * 区块加载时存入physicsLevel缓存，方便读取包含的方块

@@ -35,7 +35,7 @@ interface IAnimatable<T> : Syncer {
     /**
      * 动画提所处的世界
      */
-    val animLevel: Level?
+    val animLevel: Level
 
     /**
      * 动画控制器，包含了对动画的控制/过渡/混合/获取等控制性操作，在类中新建一个新的即可
@@ -80,7 +80,7 @@ interface IAnimatable<T> : Syncer {
     /**
      * 获取调用时距离主线程上一次tick的时间与单tick时间的比值，服务端永远返回1
      */
-    val partialTicks: Float get() = if(animLevel?.isClientSide == true) Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(false) else 1f
+    val partialTicks: Float get() = if (animLevel.isClientSide) Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(false) else 1f
 
     /**
      * 动画体所在的世界坐标
@@ -108,7 +108,6 @@ interface IAnimatable<T> : Syncer {
 
     /**
      * 获取动画体指定骨骼在世界位置的变换矩阵
-     * @param physPartialTick 物理线程客户端的tick时间
      * @param partialTick 主线程客户端的tick时间
      */
     fun getWorldBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f {
@@ -120,7 +119,6 @@ interface IAnimatable<T> : Syncer {
 
     /**
      * 获取动画体指定骨骼的枢轴点在世界位置上的坐标
-     * @param physPartialTick 物理线程客户端的tick时间
      * @param partialTick 主线程客户端的tick时间
      */
     fun getWorldBonePivot(name: String, offset: Vec3 = Vec3.ZERO, partialTick: Float = 1f): Vector3f {
@@ -132,7 +130,6 @@ interface IAnimatable<T> : Syncer {
 
     /**
      * 获取动画体指定骨骼在模型空间的变换矩阵
-     * @param physPartialTick 物理线程客户端的tick时间
      */
     fun getSpaceBoneMatrix(name: String, partialTick: Float = 1f): Matrix4f {
         val ma = Matrix4f()
@@ -143,7 +140,6 @@ interface IAnimatable<T> : Syncer {
 
     /**
      * 获取动画体指定骨骼的枢轴点在模型空间的变换矩阵
-     * @param physPartialTick 物理线程客户端的tick时间
      */
     fun getSpaceBonePivot(name: String, offset: Vec3 = Vec3.ZERO, partialTick: Float = 1f): Vector3f {
         val ma = Matrix4f()

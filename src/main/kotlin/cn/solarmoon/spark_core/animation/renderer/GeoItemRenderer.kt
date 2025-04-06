@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.renderer
 import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer
 import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
+import cn.solarmoon.spark_core.registry.common.SparkCapabilities
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
@@ -12,9 +13,9 @@ import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.item.ItemStack
 
 
-open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstance().blockEntityRenderDispatcher, Minecraft.getInstance().entityModels), IGeoRenderer<ItemAnimatable, ItemAnimatable> {
+open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstance().blockEntityRenderDispatcher, Minecraft.getInstance().entityModels), IGeoRenderer<ItemStack, ItemAnimatable> {
 
-    override val layers: MutableList<RenderLayer<ItemAnimatable, ItemAnimatable>> = mutableListOf()
+    override val layers: MutableList<RenderLayer<ItemStack, ItemAnimatable>> = mutableListOf()
 
     override fun renderByItem(
         stack: ItemStack,
@@ -24,7 +25,8 @@ open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstanc
         packedLight: Int,
         packedOverlay: Int
     ) {
-        val animatable = stack.get(SparkDataComponents.ANIMATABLE) ?: return
+        val level = Minecraft.getInstance().level ?: return
+        val animatable = stack.getCapability(SparkCapabilities.ITEM_ANIMATABLE, level) ?: return
         val partialTicks = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
         when(displayContext) {
             ItemDisplayContext.GUI -> {  }

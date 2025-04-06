@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.presets
 
 import cn.solarmoon.spark_core.animation.model.origin.OBone
+import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.toBQuaternion
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toRadians
@@ -10,7 +11,6 @@ import com.jme3.math.Transform
 import com.jme3.math.Vector3f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 
 fun CompoundCollisionShape.initWithAnimatedBone(bone: OBone) {
     bone.cubes.forEachIndexed { index, cube ->

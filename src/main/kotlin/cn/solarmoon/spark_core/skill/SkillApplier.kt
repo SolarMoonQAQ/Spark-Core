@@ -21,46 +21,46 @@ object SkillApplier {
     @SubscribeEvent
     private fun onEntityTick(event: EntityTickEvent.Pre) {
         val entity = event.entity
-        entity.allSkills.values.forEach {
+        entity.activeSkills.forEach {
             it.update()
         }
     }
 
     @SubscribeEvent
     private fun onPhysicsTick(event: PhysicsEntityTickEvent) {
-        event.entity.activeSkills.forEach { it.physicsTick() }
+        event.entity.activeSkills.forEach { it.triggerEvent(SkillEvent.PhysicsTick) }
     }
 
     @SubscribeEvent
     private fun onHurt(event: LivingIncomingDamageEvent) {
         event.entity.activeSkills.forEach {
-            it.hurt(event)
+            it.triggerEvent(SkillEvent.Hurt(event))
         }
 
         SkillManager.getSkillsByTarget(event.entity).forEach {
-            it.targetHurt(event)
+            it.triggerEvent(SkillEvent.TargetHurt(event))
         }
     }
 
     @SubscribeEvent
     private fun onActualHurt(event: LivingDamageEvent.Pre) {
         event.entity.activeSkills.forEach {
-            it.damage(event)
+            it.triggerEvent(SkillEvent.ActualHurt(event))
         }
 
         SkillManager.getSkillsByTarget(event.entity).forEach {
-            it.targetDamage(event)
+            it.triggerEvent(SkillEvent.TargetActualHurt(event))
         }
     }
 
     @SubscribeEvent
     private fun onActualHurt(event: LivingDamageEvent.Post) {
         event.entity.activeSkills.forEach {
-            it.damage(event)
+            it.triggerEvent(SkillEvent.ActualHurt(event))
         }
 
         SkillManager.getSkillsByTarget(event.entity).forEach {
-            it.targetDamage(event)
+            it.triggerEvent(SkillEvent.TargetActualHurt(event))
         }
     }
 
@@ -68,18 +68,18 @@ object SkillApplier {
     private fun onKnockBack(event: LivingKnockBackEvent) {
         val entity = event.entity
         entity.activeSkills.forEach {
-            it.knockBack(event)
+            it.triggerEvent(SkillEvent.KnockBack(event))
         }
 
         SkillManager.getSkillsByTarget(entity).forEach {
-            it.targetKnockBack(event)
+            it.triggerEvent(SkillEvent.TargetKnockBack(event))
         }
     }
 
     @SubscribeEvent
     private fun playerInput(event: MovementInputUpdateEvent) {
         event.entity.activeSkills.forEach {
-            it.handleEvent(event)
+            it.triggerEvent(SkillEvent.LocalInputUpdate(event))
         }
     }
 

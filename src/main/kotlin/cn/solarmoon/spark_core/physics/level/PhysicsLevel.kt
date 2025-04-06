@@ -48,8 +48,7 @@ abstract class PhysicsLevel(
 
     // 协程配置
     val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    val scope =
-        CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
+    val scope = CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
 
     // 状态管理
     private val stateFlow = MutableStateFlow(PhysicsLevelState.IDLE)
@@ -65,8 +64,8 @@ abstract class PhysicsLevel(
     lateinit var world: PhysicsWorld
         private set
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
-    override val taskMap: ConcurrentHashMap<String, Pair<PPhase, () -> Unit>> = ConcurrentHashMap()
-    override val immediateQueue: ConcurrentLinkedDeque<Pair<PPhase, () -> Unit>> = ConcurrentLinkedDeque()
+    override val taskMap = ConcurrentHashMap<PPhase, ConcurrentHashMap<String, () -> Unit>>()
+    override val immediateQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>()
     var lastPhysicsTickTime = System.nanoTime()
 
     //地形碰撞相关

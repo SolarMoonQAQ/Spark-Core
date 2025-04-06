@@ -129,7 +129,6 @@ class AnimController(
     }
 
     fun tick() {
-
         animatable.model.bones.forEach {
             animatable.getBone(it.key).setChanged()
         }

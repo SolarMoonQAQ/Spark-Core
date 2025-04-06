@@ -1,13 +1,15 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
-import cn.solarmoon.spark_core.animation.IAnimatableItem
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
+import cn.solarmoon.spark_core.registry.common.SparkCapabilities
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
+import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.player.PlayerEvent
@@ -28,6 +30,12 @@ object AnimApplier {
         if (entity is IEntityAnimatable<*>) {
             entity.animController.physTick()
         }
+
+        if (entity is Player) {
+            entity.inventory.items.forEach {
+                it.getCapability(SparkCapabilities.ITEM_ANIMATABLE, entity.level())?.physicsTick()
+            }
+        }
     }
 
     @SubscribeEvent
@@ -36,21 +44,12 @@ object AnimApplier {
         if (entity is IEntityAnimatable<*>) {
             entity.animController.tick()
         }
-
     }
 
     @SubscribeEvent
     private fun itemTick(event: ItemStackInventoryTickEvent) {
         val stack = event.stack
-        val item = stack.item
-        if (item is IAnimatableItem) {
-            stack.update(SparkDataComponents.ANIMATABLE, ItemAnimatable(ModelIndex.of(item))) { old ->
-                item.onUpdate(old, event)
-                old.updatePos(item.getPosition(event))
-                old.animController.physTick()
-                old
-            }
-        }
+        stack.getCapability(SparkCapabilities.ITEM_ANIMATABLE, event.entity.level())?.inventoryTick(event.entity)
     }
 
     @SubscribeEvent

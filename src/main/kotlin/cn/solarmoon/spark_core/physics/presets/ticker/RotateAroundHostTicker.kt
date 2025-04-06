@@ -26,13 +26,15 @@ class RotateAroundHostTicker: PhysicsCollisionObjectTicker {
         if (body is PhysicsRigidBody) {
             val owner = body.owner
             if (owner is Entity) {
-                body.setPhysicsLocation(owner.position().toBVector3f())
-                body.setPhysicsRotation(Matrix3f().rotateY(Mth.wrapDegrees(owner.yRot).toRadians()).toBMatrix3f())
+                level.submitImmediateTask(PPhase.PRE) {
+                    body.setPhysicsLocation(owner.position().toBVector3f())
+                    body.setPhysicsRotation(Matrix3f().rotateY(Mth.wrapDegrees(owner.yRot).toRadians()).toBMatrix3f())
 
-                val targetPos = owner.position().toBVector3f()
-                val v = targetPos.subtract(lastPos).mult(20f)
-                body.setLinearVelocity(v)
-                lastPos = targetPos
+                    val targetPos = owner.position().toBVector3f()
+                    val v = targetPos.subtract(lastPos).mult(20f)
+                    body.setLinearVelocity(v)
+                    lastPos = targetPos
+                }
             }
         }
     }

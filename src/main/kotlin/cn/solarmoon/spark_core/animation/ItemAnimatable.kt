@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.anim.play.AnimController
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.data.SerializeHelper
+import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage
@@ -13,36 +14,49 @@ import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.StreamCodec
+import net.minecraft.util.Mth
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.EntityType
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 
-class ItemAnimatable(override var modelIndex: ModelIndex): IAnimatable<ItemAnimatable> {
-    override val animLevel: Level? = null
+open class ItemAnimatable(
+    val itemStack: ItemStack,
+    override val animLevel: Level
+): IAnimatable<ItemStack> {
+
+    var position = Vec3.ZERO
+    var oPosition = Vec3.ZERO
+    var yRot = 0f
+    var oYRot = 0f
+
+    override var modelIndex: ModelIndex = ModelIndex.of(EntityType.PLAYER)
     override val tempStorage: ITempVariableStorage = VariableStorage()
     override val scopedStorage: IScopedVariableStorage = VariableStorage()
     override val foreignStorage: IForeignVariableStorage = VariableStorage()
-    var oPosition = Vec3.ZERO
-    var position = Vec3.ZERO
-    var oYRot = 0f
-    var yRot = 0f
+    override val animatable = itemStack
+    override val animController: AnimController = AnimController(this)
+    override val bones: BoneGroup = BoneGroup(this)
 
-    fun updatePos(pos: Vec3) {
-        oPosition = position
-        position = pos
+    open fun physicsTick() {
+        animController.physTick()
     }
 
-    override val animatable = this
-
-    override val animController: AnimController = AnimController(this)
-
-    override val bones: BoneGroup = BoneGroup(this)
+    open fun inventoryTick(owner: Entity) {
+        position = owner.getPosition(1f)
+        oPosition = owner.getPosition(0f)
+        yRot = owner.getViewYRot(1f)
+        oYRot = owner.getViewYRot(0f)
+        animController.tick()
+    }
 
     override fun getWorldPosition(partialTick: Float): Vec3 {
         return oPosition.lerp(position, partialTick.toDouble())
     }
 
     override fun getRootYRot(partialTick: Float): Float {
-        return 0f
+        return Mth.lerp(oYRot, yRot, partialTick)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -57,22 +71,5 @@ class ItemAnimatable(override var modelIndex: ModelIndex): IAnimatable<ItemAnima
         get() = TODO("Not yet implemented")
     override val syncData: SyncData
         get() = TODO("Not yet implemented")
-
-    companion object {
-        @JvmStatic
-        val CODEC: Codec<ItemAnimatable> = RecordCodecBuilder.create {
-            it.group(
-                ModelIndex.CODEC.fieldOf("model_index").forGetter { it.modelIndex },
-                Vec3.CODEC.fieldOf("position").forGetter { it.position }
-            ).apply(it) { index, pos -> ItemAnimatable(index).apply { updatePos(pos) } }
-        }
-
-        @JvmStatic
-        val STREAM_CODEC = StreamCodec.composite(
-            ModelIndex.STREAM_CODEC, ItemAnimatable::modelIndex,
-            SerializeHelper.VEC3_STREAM_CODEC, ItemAnimatable::position,
-            { index, op -> ItemAnimatable(index).apply { updatePos(op) } }
-        )
-    }
 
 }

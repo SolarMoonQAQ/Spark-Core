@@ -12,9 +12,9 @@ interface SkillHost: Syncer {
 
     val predictedSkills: ConcurrentHashMap<Int, Skill>
 
-    val activeSkills get() = allSkills.values.filter { it.isActive }
+    val activeSkills get() = allSkills.values.filter { it.isActivated }
 
-    val isPlayingSkill get() = allSkills.any { it.value.isActive }
+    val isPlayingSkill get() = allSkills.any { it.value.isActivated }
 
     fun getSkill(id: Int) = allSkills[id]
 

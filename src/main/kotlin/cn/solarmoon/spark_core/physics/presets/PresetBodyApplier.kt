@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.physics.presets
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback
+import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithBoundingBoxTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
@@ -16,7 +17,6 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 
 object PresetBodyApplier {
 

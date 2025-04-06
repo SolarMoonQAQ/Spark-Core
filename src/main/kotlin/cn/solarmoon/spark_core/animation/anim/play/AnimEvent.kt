@@ -32,9 +32,4 @@ sealed class AnimEvent {
      */
     object Tick : AnimEvent()
 
-    /**
-     * 动画生命周期在物理线程tick时触发
-     */
-    object PhysicsTick : AnimEvent()
-
 }

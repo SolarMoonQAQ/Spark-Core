@@ -29,9 +29,8 @@ class SkillPredictPayload private constructor(
             val level = context.player().level()
             val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return
             val type = payload.skillType
-            val skill = type.skill.new(host.skillCount.incrementAndGet(), type, host, level)
+            val skill = type.createSkillWithoutSync(host.skillCount.incrementAndGet(), host, level)
             if (payload.active) skill.activate()
-            host.allSkills[skill.id] = skill
             PacketDistributor.sendToAllPlayers(SkillPredictSyncPayload(host, type, payload.clientId, skill.id, payload.active))
         }
 

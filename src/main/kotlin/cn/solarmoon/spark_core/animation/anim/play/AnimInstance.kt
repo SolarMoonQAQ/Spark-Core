@@ -44,7 +44,6 @@ class AnimInstance private constructor(
     fun step(overallSpeed: Double = 1.0) {
         time += step * overallSpeed
         totalTime += step * overallSpeed
-        triggerEvent(AnimEvent.PhysicsTick)
     }
 
     inline fun <reified T : AnimEvent> onEvent(crossinline handler: AnimInstance.(T) -> Unit) {

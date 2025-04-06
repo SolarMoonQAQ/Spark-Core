@@ -7,7 +7,6 @@ import net.neoforged.neoforge.registries.DataPackRegistryEvent
 object SparkDataRegistryRegister {
 
     private fun reg(event: DataPackRegistryEvent.NewRegistry) {
-        event.dataPackRegistry(SparkRegistries.SKILL_TYPE, SkillType.CODEC, SkillType.CODEC)
     }
 
     @JvmStatic
