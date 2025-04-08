@@ -1,18 +1,25 @@
 package cn.solarmoon.spark_core.js.skill
 
+import cn.solarmoon.spark_core.js.SparkJS
+import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.js.extension.JSEntity
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillEvent
 import cn.solarmoon.spark_core.skill.SkillPhase
 import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.Value
+import org.mozilla.javascript.Function
 
 open class JSSkill(
+    val js: SparkJS,
     val skill: Skill
 ) {
 
     @HostAccess.Export
-    fun getHolder() = JSEntity(skill.holder)
+    fun getHolder() = JSEntity(js, skill.holder)
+
+    @HostAccess.Export
+    fun getLevel() = skill.level
 
     @HostAccess.Export
     fun getPhase() = skill.phase.name.lowercase()
@@ -33,23 +40,23 @@ open class JSSkill(
     fun getRecoveryTickCount() = skill.recoveryTickCount
 
     @HostAccess.Export
-    fun onActive(consumer: Value) = skill.onEvent<SkillEvent.Active> {
-        consumer.execute()
+    fun onActive(consumer: Function) = skill.onEvent<SkillEvent.Active> {
+        consumer.call(js)
     }
 
     @HostAccess.Export
-    fun onActiveStart(consumer: Value) = skill.onEvent<SkillEvent.ActiveStart> {
-        consumer.execute()
+    fun onActiveStart(consumer: Function) = skill.onEvent<SkillEvent.ActiveStart> {
+        consumer.call(js)
     }
 
     @HostAccess.Export
-    fun onEnd(consumer: Value) = skill.onEvent<SkillEvent.End> {
-        consumer.execute()
+    fun onEnd(consumer: Function) = skill.onEvent<SkillEvent.End> {
+        consumer.call(js)
     }
 
     @HostAccess.Export
-    fun onLocalInputUpdate(consumer: Value) = skill.onEvent<SkillEvent.LocalInputUpdate> {
-        consumer.execute(it.event)
+    fun onLocalInputUpdate(consumer: Function) = skill.onEvent<SkillEvent.LocalInputUpdate> {
+        consumer.call(js, it.event)
     }
 
     @HostAccess.Export

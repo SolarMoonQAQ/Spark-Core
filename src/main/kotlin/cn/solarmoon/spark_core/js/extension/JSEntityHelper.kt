@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.js.extension
 
 import cn.solarmoon.spark_core.entity.getRelativeVector
+import cn.solarmoon.spark_core.js.SparkJS
+import cn.solarmoon.spark_core.js.call
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.Entity
@@ -10,10 +12,13 @@ import net.minecraft.world.phys.Vec3
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.Value
+import org.mozilla.javascript.Function
 import kotlin.math.PI
 import kotlin.math.atan2
 
-object JSEntityHelper {
+class JSEntityHelper(
+    val js: SparkJS
+) {
 
     @HostAccess.Export
     fun move(entity: Entity, move: Vec3, orientationByInput: Boolean) {
@@ -45,9 +50,9 @@ object JSEntityHelper {
     }
 
     @HostAccess.Export
-    fun preventLocalInput(event: MovementInputUpdateEvent, consumer: Value) {
+    fun preventLocalInput(event: MovementInputUpdateEvent, consumer: Function) {
         val player = event.entity as LocalPlayer
-        consumer.execute(event.input, player)
+        consumer.call(js, event.input, player)
     }
 
     @HostAccess.Export

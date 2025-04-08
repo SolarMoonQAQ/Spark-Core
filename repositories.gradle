@@ -30,10 +30,12 @@ dependencies {
     jarJar(implementation("io.github.nsk90:kstatemachine:0.33.0"))
     additionalRuntimeClasspath "io.github.nsk90:kstatemachine:0.33.0"
     // js
-    jarJar(implementation("org.graalvm.js:js:22.3.0"))
-    additionalRuntimeClasspath("org.graalvm.js:js:22.3.0")
-    jarJar(implementation("org.graalvm.js:js-scriptengine:22.3.0"))
-    additionalRuntimeClasspath("org.graalvm.js:js-scriptengine:22.3.0")
+    jarJar(implementation("org.graalvm.js:js-community:24.2.0"))
+    additionalRuntimeClasspath("org.graalvm.js:js-community:24.2.0")
+    jarJar(implementation("org.graalvm.polyglot:polyglot:24.2.0"))
+    additionalRuntimeClasspath("org.graalvm.polyglot:polyglot:24.2.0")
+    jarJar(implementation("org.mozilla:rhino:1.8.0"))
+    additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
     // 对象池
     jarJar(implementation "org.apache.commons:commons-pool2:2.12.1")
     additionalRuntimeClasspath "org.apache.commons:commons-pool2:2.12.1"

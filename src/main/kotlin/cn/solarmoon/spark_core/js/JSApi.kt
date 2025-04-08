@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.js
 
-import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine
-
 interface JSApi {
+
+    val engine: SparkJS
 
     val id: String
 
@@ -10,7 +10,7 @@ interface JSApi {
 
     fun onLoad()
 
-    fun onRegister(engine: GraalJSScriptEngine)
+    fun onRegister(engine: SparkJS)
 
     fun onReload()
 

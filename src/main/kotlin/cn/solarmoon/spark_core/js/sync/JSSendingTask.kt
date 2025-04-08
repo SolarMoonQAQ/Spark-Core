@@ -13,12 +13,14 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.network.ConfigurationTask
 import net.neoforged.neoforge.network.configuration.ICustomConfigurationTask
 import net.neoforged.neoforge.network.handling.IPayloadContext
+import net.neoforged.neoforge.server.ServerLifecycleHooks
 import java.util.function.Consumer
 
 class JSSendingTask: ICustomConfigurationTask {
 
     override fun run(sender: Consumer<CustomPacketPayload?>) {
-        sender.accept(JSPayload(SparkJS.allApi.mapValues { it.value.valueCache }, false))
+        val js = SparkJS.ALL[false]!!
+        sender.accept(JSPayload(js.allApi.mapValues { it.value.valueCache }, false))
     }
 
     override fun type(): ConfigurationTask.Type {

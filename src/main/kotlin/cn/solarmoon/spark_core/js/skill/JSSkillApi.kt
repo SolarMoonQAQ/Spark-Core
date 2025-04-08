@@ -1,14 +1,18 @@
 package cn.solarmoon.spark_core.js.skill
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.SparkJS
+import cn.solarmoon.spark_core.js.call
+import cn.solarmoon.spark_core.js.put
 import cn.solarmoon.spark_core.skill.SkillManager
-import com.oracle.truffle.js.scriptengine.GraalJSScriptEngine
 import net.minecraft.resources.ResourceLocation
 import org.graalvm.polyglot.HostAccess
-import org.graalvm.polyglot.Value
+import org.mozilla.javascript.Function
 
-object JSSkillApi: JSApi {
+class JSSkillApi(
+    override val engine: SparkJS
+): JSApi {
 
     override val id: String = "skill"
     override val valueCache: MutableMap<String, String> = mutableMapOf()
@@ -16,17 +20,19 @@ object JSSkillApi: JSApi {
     private val preLoads = mutableListOf<Pair<JSSkillTypeBuilder, () -> Unit>>()
 
     @HostAccess.Export
-    fun create(id: String, consumer: Value) = create(id, null, consumer)
+    fun create(id: String, consumer: Function) = create(id, null, consumer)
 
     @HostAccess.Export
-    fun createBy(id: String, by: String, consumer: Value) = create(id, by, consumer)
+    fun createBy(id: String, by: String, consumer: Function) = create(id, by, consumer)
 
-    fun create(id: String, by: String? = null, consumer: Value) {
+    fun create(id: String, by: String? = null, consumer: Function) {
         val builder = JSSkillTypeBuilder()
-        builder.id = ResourceLocation.parse(id)
-        consumer.execute(builder)
         preLoads.add(
-            builder to { if (by == null) builder.build() else builder.buildBy(SkillManager[ResourceLocation.parse(by)] ?: throw NullPointerException("父技能 $by 无法被继承，因为此技能尚未注册")) }
+            builder to {
+                builder.id = ResourceLocation.parse(id)
+                consumer.call(engine, builder)
+                if (by == null) builder.build() else builder.buildBy(SkillManager[ResourceLocation.parse(by)] ?: throw NullPointerException("父技能 $by 无法被继承，因为此技能尚未注册"))
+            }
         )
     }
 
@@ -36,8 +42,8 @@ object JSSkillApi: JSApi {
         preLoads.clear()
     }
 
-    override fun onRegister(engine: GraalJSScriptEngine) {
-        engine.put("Skill", this)
+    override fun onRegister(engine: SparkJS) {
+        engine.scope.put("Skill", this)
     }
 
     override fun onReload() {

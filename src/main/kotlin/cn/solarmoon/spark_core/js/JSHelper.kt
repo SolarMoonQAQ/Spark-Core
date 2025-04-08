@@ -4,6 +4,10 @@ import cn.solarmoon.spark_core.SparkCore
 import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
 import net.neoforged.fml.loading.FMLPaths
+import org.mozilla.javascript.Context
+import org.mozilla.javascript.Function
+import org.mozilla.javascript.Scriptable
+import org.mozilla.javascript.ScriptableObject
 import java.io.File
 import java.nio.file.FileVisitOption
 import java.nio.file.Files
@@ -39,3 +43,11 @@ fun loadDefaultScripts(c: Class<*>) {
         }
     }
 }
+
+fun Function.call(js: SparkJS, vararg args: Any?) = call(js.context, js.scope, js.scope, args)
+
+fun Scriptable.getMember(name: String) = ScriptableObject.getProperty(this, name) as? Scriptable
+
+fun Scriptable.getFunctionMember(name: String) = getMember(name) as? Function
+
+fun ScriptableObject.put(name: String, value: Any) = put(name, this, Context.javaToJS(value, this))

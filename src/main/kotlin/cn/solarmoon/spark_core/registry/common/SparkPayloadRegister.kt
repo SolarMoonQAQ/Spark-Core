@@ -15,6 +15,7 @@ import cn.solarmoon.spark_core.visual_effect.shadow.ShadowPayload
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
+import net.neoforged.neoforge.server.ServerLifecycleHooks
 
 
 object SparkPayloadRegister {

@@ -8,7 +8,7 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 import org.graalvm.polyglot.HostAccess
 
-object JSDamageSourceHelper {
+class JSDamageSourceHelper {
 
     @HostAccess.Export
     fun create(level: Level, id: String, directEntity: Entity?, causeEntity: Entity?, sourcePosition: Vec3?): DamageSource {

@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.skill.JSSkill
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import net.minecraft.nbt.CompoundTag
@@ -20,7 +21,7 @@ open class Skill {
     lateinit var level: Level
         private set
 
-    var jsSkill = JSSkill(this)
+    var jsSkill = JSSkill(SparkJS.ALL[false]!!, this)
     var canTransitionTo: (SkillPhase) -> Boolean = { true }
 
     val targetPool = SkillTargetPool(this)
@@ -69,6 +70,7 @@ open class Skill {
         this.type = type
         this.holder = holder
         this.level = level
+        jsSkill = JSSkill(SparkJS.ALL[level.isClientSide]!!, this)
         initHandlers.forEach { it.invoke(this) }
     }
 

@@ -6,8 +6,9 @@ Skill.create("spark_core:test", builder => {
 
         if (entity == null || animatable == null) return
 
-        const anim = animatable.createAnimation('sword:combo_1')
-        const attackBody = SpPhysicsHelper.createCollisionBoxBoundToBone(animatable, 'rightItem', SpMath.vec3(1.0, 1.0, 2.0), SpMath.vec3(0.0, 0.0, -1.0))
+        const originModel = animatable.getModelIndex()
+        const anim = animatable.createAnimation("minecraft:player", 'attack')
+        const attackBody = SpPhysicsHelper.createCollisionBoxBoundToBone(animatable, 'bone', SpMath.vec3(1.0, 1.0, 2.0), SpMath.vec3(0.0, 0.0, -1.0))
 
         attackBody.onAttackCollide('attack', {
             doAttack: (attacker, target, o1, o2, manifoldId) => {
@@ -20,6 +21,7 @@ Skill.create("spark_core:test", builder => {
         })
         
         skill.onActiveStart(() => {
+            animatable.setModelIndex(SpAnimHelper.createModelIndex("minecraft:hand", "minecraft:test"))
             animatable.playAnimation(anim, 0)
         })
 
@@ -41,6 +43,7 @@ Skill.create("spark_core:test", builder => {
         })
 
         skill.onEnd(() => {
+            animatable.setModelIndex(originModel)
             attackBody.remove()
         })
     })

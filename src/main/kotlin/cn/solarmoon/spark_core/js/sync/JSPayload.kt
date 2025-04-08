@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.SparkJS
+import net.minecraft.client.Minecraft
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.ByteBufCodecs
@@ -28,14 +29,15 @@ class JSPayload(
     companion object {
         @JvmStatic
         fun handleInClient(payload: JSPayload, context: IPayloadContext) {
+            val js = SparkJS.ALL[true]!!
             context.enqueueWork {
                 payload.api.forEach { apiId, v ->
-                    SparkJS.validateApi(apiId)
-                    val api = SparkJS.allApi[apiId]!!
+                    js.validateApi(apiId)
+                    val api = js.allApi[apiId]!!
                     v.forEach {
                         if (payload.reload) api.onReload()
                         val (fileName, value) = it
-                        SparkJS.eval(value, "$apiId - $fileName")
+                        js.eval(value, "$apiId - $fileName")
                         api.valueCache[fileName] = value
                         if (payload.reload) context.player().sendSystemMessage(Component.literal("已从服务器接收脚本数据：模块：$apiId 文件：$fileName"))
                         SparkCore.LOGGER.info("已从服务器接收脚本数据：模块：$apiId 文件：$fileName")
