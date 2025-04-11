@@ -124,3 +124,7 @@ kotlin {
         getFreeCompilerArgs().add("-Xjvm-default=all")
     }
 }
+
+tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

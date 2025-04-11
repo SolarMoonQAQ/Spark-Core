@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OLocator
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.data.SimpleJsonListener
+import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.toRadians
 import com.google.gson.JsonElement
 import com.mojang.serialization.JsonOps
@@ -15,7 +16,6 @@ import net.minecraft.util.GsonHelper
 import net.minecraft.util.profiling.ProfilerFiller
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector2i
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 
 class EntityModelListener : SimpleJsonListener("geo/model") {
 

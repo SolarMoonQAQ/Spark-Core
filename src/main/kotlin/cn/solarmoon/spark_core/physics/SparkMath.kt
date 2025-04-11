@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import com.jme3.math.Matrix4f
 import com.jme3.math.Quaternion
 import com.jme3.math.Transform
-import net.minecraft.core.BlockPos
+import net.minecraft.core.Vec3i
 import net.minecraft.util.Mth
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.phys.Vec3
@@ -14,7 +14,6 @@ import org.joml.Quaterniond
 import org.joml.Quaternionf
 import org.joml.Vector3d
 import org.joml.Vector3f
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
 import java.lang.Math
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -55,12 +54,22 @@ fun Quaternionf.getScaledAxisZ(): Vector3f {
 
 fun Quaternionf.copy(): Quaternionf = Quaternionf(this)
 
+fun Vec3.div(value: Double) = Vec3(x / value, y / value, z / value)
+
 fun Vec3.rotLerp(target: Vec3, progress: Double): Vec3 {
     val start = Quaterniond().rotateZYX(z, y, x)
     val end = Quaterniond().rotateZYX(target.z, target.y, target.x)
     val result = start.slerp(end, progress)
     return result.toEuler().toVec3()
 }
+
+fun Vector3f.toVec3() = Vec3(x.toDouble(), y.toDouble(), z.toDouble())
+
+fun Vector3d.toVec3() = Vec3(x, y, z)
+
+fun Vec3.toVec3i() = Vec3i(x.toInt(), y.toInt(), z.toInt())
+
+fun Vector3d.toVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
 
 fun Quaterniond.toEuler(): Vector3d {
     val angles = Vector3d()

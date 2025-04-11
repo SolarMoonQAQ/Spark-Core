@@ -21,7 +21,7 @@ open class MoveWithAnimatedBoneTicker(
 
     val lastPos = Vector3f()
 
-    override fun ownerTick(body: PhysicsCollisionObject) {
+    override fun mcTick(body: PhysicsCollisionObject, level: Level) {
         val entity = body.owner as? Entity ?: return
         val animatable = body.owner as? IAnimatable<*> ?: return
         if (body is PhysicsRigidBody) {

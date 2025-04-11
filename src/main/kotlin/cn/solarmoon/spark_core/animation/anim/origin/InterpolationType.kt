@@ -2,13 +2,13 @@ package cn.solarmoon.spark_core.animation.anim.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
+import cn.solarmoon.spark_core.physics.toVector3f
 import com.mojang.serialization.Codec
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.util.Mth
 import org.joml.Vector3d
 import org.joml.Vector3f
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3f
 import kotlin.math.max
 import kotlin.math.min
 

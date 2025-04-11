@@ -23,6 +23,7 @@ fun initBullet() {
         Windows -> "bulletjme.dll"
         Linux -> "libbulletjme.so"
         MacOS -> "libbulletjme.dylib"
+        Android -> "libbulletjme.so"
         else -> throw ModLoadingException(ModLoadingIssue.error("error" + SparkCore.MOD_ID + "init_bullet"))
     }
 

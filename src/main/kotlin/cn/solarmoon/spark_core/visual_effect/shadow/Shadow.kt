@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.render
 import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
+import cn.solarmoon.spark_core.physics.toVec3i
 import cn.solarmoon.spark_core.util.ColorUtil
 import cn.solarmoon.spark_core.util.RenderTypeUtil
 import com.mojang.blaze3d.vertex.PoseStack
@@ -15,7 +16,6 @@ import net.minecraft.core.BlockPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3i
 import java.awt.Color
 
 class Shadow(

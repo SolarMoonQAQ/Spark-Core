@@ -5,29 +5,27 @@ import java.util.concurrent.ConcurrentLinkedDeque
 
 interface TaskSubmitOffice {
 
-    val taskMap: ConcurrentHashMap<String, Pair<PPhase, () -> Unit>>
-    val immediateQueue: ConcurrentLinkedDeque<Pair<PPhase, () -> Unit>>
+    val taskMap: ConcurrentHashMap<PPhase, ConcurrentHashMap<String, () -> Unit>>
+    val immediateQueue: ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>
 
     fun submitDeduplicatedTask(key: String, phase: PPhase, task: () -> Unit) {
-        taskMap[key] = phase to task
+        taskMap.getOrPut(phase) { ConcurrentHashMap() } [key] = task
     }
 
     fun submitImmediateTask(phase: PPhase, task: () -> Unit) {
-        immediateQueue.add(phase to task)
+        immediateQueue.getOrPut(phase) { ConcurrentLinkedDeque() }.add(task)
     }
 
     fun processTasks(phase: PPhase) {
         // 处理去重任务
-        taskMap.values.forEach { task ->
-            if (task.first == phase) task.second.invoke()
+        taskMap.remove(phase)?.forEach {
+            it.value.invoke()
         }
-        taskMap.clear()
 
         // 处理即时任务
-        while (immediateQueue.isNotEmpty()) {
-            immediateQueue.poll()?.let {
-                if (it.first == phase) it.second.invoke()
-            }
+        val iq = immediateQueue[phase] ?: return
+        while (iq.isNotEmpty()) {
+            iq.poll()?.invoke()
         }
     }
 

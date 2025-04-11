@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
 import cn.solarmoon.spark_core.data.SerializeHelper
+import cn.solarmoon.spark_core.physics.div
 import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -17,7 +18,6 @@ import org.joml.Matrix3f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.div
 
 data class OCube(
     var originPos: Vec3,

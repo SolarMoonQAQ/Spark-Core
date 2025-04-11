@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.command
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.skill.SkillManager
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
 import net.minecraft.commands.CommandBuildContext
@@ -12,21 +13,22 @@ import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.ResourceLocationArgument
 import net.minecraft.network.chat.Component
 
-class PlaySkillCommand: BaseCommand("playskill", 2) {
+class PlaySkillCommand: SkillCommand(2) {
 
     private val skillSuggestions = SuggestionProvider<CommandSourceStack> { context, builder ->
-        val registry = context.source.level.registryAccess().registry(SparkRegistries.SKILL_TYPE).get()
-        SharedSuggestionProvider.suggestResource(registry.keySet(), builder)
+        SharedSuggestionProvider.suggestResource(SkillManager.keys, builder)
     }
 
     override fun putExecution(context: CommandBuildContext) {
         builder.then(
-            Commands.argument("targets", EntityArgument.entities()) // 添加目标选择器
-                .then(
-                    Commands.argument("skill_id", ResourceLocationArgument.id())
-                        .suggests(skillSuggestions)
-                        .executes { executePlaySkill(it) }
-                )
+            Commands.literal("play").then(
+                Commands.argument("targets", EntityArgument.entities()) // 添加目标选择器
+                    .then(
+                        Commands.argument("skill_id", ResourceLocationArgument.id())
+                            .suggests(skillSuggestions)
+                            .executes { executePlaySkill(it) }
+                    )
+            )
         )
     }
 
@@ -39,23 +41,22 @@ class PlaySkillCommand: BaseCommand("playskill", 2) {
         val targets = try {
             EntityArgument.getEntities(context, "targets")
         } catch (e: Exception) {
-            source.sendFailure(Component.translatable("command.${SparkCore.MOD_ID}.play_skill.invalid_target"))
+            source.sendFailure(Component.translatable("command.${SparkCore.MOD_ID}.skill.play.invalid_target"))
             return 0
         }
 
         // 验证技能存在
-        val registry = level.registryAccess().registry(SparkRegistries.SKILL_TYPE).get()
-        if (!registry.containsKey(skillId)) {
-            source.sendFailure(Component.translatable("command.${SparkCore.MOD_ID}.play_skill.unknown", skillId.toString()))
+        if (!SkillManager.containsKey(skillId)) {
+            source.sendFailure(Component.translatable("command.${SparkCore.MOD_ID}.skill.play.unknown", skillId.toString()))
             return 0
         }
 
         // 对每个目标执行技能
         var successCount = 0
         for (entity in targets) {
-            val skill = registry.get(skillId)!!.createSkill(entity, level, true)
+            val skill = SkillManager.get(skillId)!!.createSkill(entity, level, true)
             skill.apply {
-                if (isActive) {
+                if (isActivated) {
                     successCount++
                 }
             }
@@ -63,10 +64,10 @@ class PlaySkillCommand: BaseCommand("playskill", 2) {
 
         // 反馈结果
         if (successCount == 0) {
-            source.sendFailure(Component.translatable("command.${SparkCore.MOD_ID}.play_skill.no_target"))
+            source.sendFailure(Component.translatable("command.${SparkCore.MOD_ID}.skill.play.no_target"))
         } else {
             source.sendSuccess(
-                { Component.translatable("command.${SparkCore.MOD_ID}.play_skill.success", skillId.toString(), successCount) },
+                { Component.translatable("command.${SparkCore.MOD_ID}.skill.play.success", skillId.toString(), successCount) },
                 true
             )
         }

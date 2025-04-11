@@ -4,7 +4,8 @@ import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
-import cn.solarmoon.spark_core.skill.payload.SkillComponentPayload
+import cn.solarmoon.spark_core.js.sync.JSPayload
+import cn.solarmoon.spark_core.js.sync.JSSendingTask
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -14,6 +15,7 @@ import cn.solarmoon.spark_core.visual_effect.shadow.ShadowPayload
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
+import net.neoforged.neoforge.server.ServerLifecycleHooks
 
 
 object SparkPayloadRegister {
@@ -34,7 +36,11 @@ object SparkPayloadRegister {
         skill.playToClient(SkillPredictSyncPayload.TYPE, SkillPredictSyncPayload.STREAM_CODEC, SkillPredictSyncPayload::handleInClient)
         skill.playToClient(SkillSyncPayload.TYPE, SkillSyncPayload.STREAM_CODEC, SkillSyncPayload::handleInClient)
         skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)
-        skill.playBidirectional(SkillComponentPayload.TYPE, SkillComponentPayload.STREAM_CODEC, SkillComponentPayload::handleInBothSide)
+
+        val js = event.registrar("js")
+        skill.playToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
+        js.configurationToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
+        js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
 
 //        val rpc = event.registrar("rpc")
 //        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
@@ -42,6 +48,7 @@ object SparkPayloadRegister {
 
     private fun task(event: RegisterConfigurationTasksEvent) {
         event.register(ModelDataSendingTask())
+        event.register(JSSendingTask())
     }
 
     @JvmStatic

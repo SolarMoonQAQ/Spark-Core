@@ -17,7 +17,7 @@ class ItemBuilder<I: Item>(private val itemDeferredRegister: DeferredRegister<It
     private var capP: MutableList<Pair<ItemCapability<*, *>, ICapabilityProvider<ItemStack, *, *>>> = mutableListOf()
 
     fun id(id: String) = apply { this.id = id }
-    fun capability(cap: ItemCapability<*, *>, provider: ICapabilityProvider<ItemStack, *, *>) = apply { capP.add(Pair(cap, provider)) }
+    fun <C> capability(cap: ItemCapability<*, C>, provider: ICapabilityProvider<ItemStack, C, *>) = apply { capP.add(Pair(cap, provider)) }
     fun bound(item: Supplier<I>) = apply { this.item = item }
 
     fun build(): DeferredHolder<Item, I> {

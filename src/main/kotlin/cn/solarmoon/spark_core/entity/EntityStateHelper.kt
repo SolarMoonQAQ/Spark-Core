@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.entity
 
 import cn.solarmoon.spark_core.physics.toRadians
+import cn.solarmoon.spark_core.physics.toVec3
 import cn.solarmoon.spark_core.util.Side
 import net.minecraft.client.player.Input
 import net.minecraft.client.player.LocalPlayer
@@ -15,7 +16,6 @@ import net.minecraft.world.level.ClipContext
 import net.minecraft.world.phys.HitResult
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector2d
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2

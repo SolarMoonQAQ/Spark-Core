@@ -2,8 +2,8 @@ package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
+import cn.solarmoon.spark_core.physics.toVec3
 import org.joml.Vector3f
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVec3
 import java.util.concurrent.ConcurrentHashMap
 
 class BlendSpace : ConcurrentHashMap<String, BlendAnimation>() {

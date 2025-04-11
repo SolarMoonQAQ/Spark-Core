@@ -29,8 +29,8 @@ public abstract class LevelMixin implements PhysicsHost, TaskSubmitOffice {
 
     private final Level level = (Level) (Object) this;
     private PhysicsLevel physicsLevel;
-    private final ConcurrentHashMap<String, Pair<PPhase, Function0<Unit>>> tasks = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedDeque<Pair<PPhase, Function0<Unit>>> imtasks = new ConcurrentLinkedDeque<>();
+    private final ConcurrentHashMap<PPhase, ConcurrentHashMap<String, Function0<Unit>>> tasks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<Function0<Unit>>> imtasks = new ConcurrentHashMap<>();
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(WritableLevelData levelData, ResourceKey dimension, RegistryAccess registryAccess, Holder dimensionTypeRegistration, Supplier profiler, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates, CallbackInfo ci) {
@@ -42,12 +42,12 @@ public abstract class LevelMixin implements PhysicsHost, TaskSubmitOffice {
     }
 
     @Override
-    public ConcurrentHashMap<String, Pair<PPhase, Function0<Unit>>> getTaskMap() {
+    public ConcurrentHashMap<PPhase, ConcurrentHashMap<String, Function0<Unit>>> getTaskMap() {
         return tasks;
     }
 
     @Override
-    public ConcurrentLinkedDeque<Pair<PPhase, Function0<Unit>>> getImmediateQueue() {
+    public ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<Function0<Unit>>> getImmediateQueue() {
         return imtasks;
     }
 

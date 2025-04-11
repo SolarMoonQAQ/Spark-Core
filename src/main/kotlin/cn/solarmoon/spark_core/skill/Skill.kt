@@ -1,117 +1,139 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import cn.solarmoon.spark_core.skill.component.SkillComponent
+import cn.solarmoon.spark_core.js.SparkJS
+import cn.solarmoon.spark_core.js.skill.JSSkill
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
-import com.jme3.bullet.collision.PhysicsCollisionObject
-import com.mojang.serialization.JsonOps
-import com.mojang.serialization.MapCodec
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
-import net.neoforged.bus.api.Event
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
-import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent
 import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.function.Function
+import kotlin.reflect.KClass
 
-abstract class Skill {
+open class Skill {
 
     var id: Int = 0
+        internal set
     lateinit var type: SkillType<*>
+        private set
     lateinit var holder: SkillHost
+        private set
     lateinit var level: Level
-
-    var isActive = false
         private set
-    var isInitialized = false
-        private set
-    val components = ConcurrentLinkedQueue<SkillComponent>()
-    val timeline = SkillTimeLine(this)
-    private val targets = linkedSetOf<Entity>()
-    val physicsBodies = linkedSetOf<PhysicsCollisionObject>()
 
-    fun activate() {
-        if (!isActive) {
-            timeline.runTime = 0
-            isActive = true
-            if (!onActive()) end()
-            else isInitialized = true
-        } else {
-            SparkCore.LOGGER.warn("技能正在释放中，无法重复启用，请等待该技能释放完毕，或先结束该技能。")
+    var jsSkill = JSSkill(SparkJS.ALL[false]!!, this)
+    var canTransitionTo: (SkillPhase) -> Boolean = { true }
+
+    val targetPool = SkillTargetPool(this)
+
+    var phase = SkillPhase.IDLE
+        private set(value) {
+            field = value
+            when(value) {
+                SkillPhase.WINDUP -> {
+                    if (!triggerEvent(SkillEvent.WindupStart)) transitionTo(SkillPhase.ACTIVE)
+                }
+                SkillPhase.ACTIVE -> {
+                    triggerEvent(SkillEvent.ActiveStart)
+                }
+                SkillPhase.RECOVERY -> {
+                    if (!triggerEvent(SkillEvent.RecoveryStart)) transitionTo(SkillPhase.END)
+                }
+                SkillPhase.END -> {
+                    if (id < 0) holder.predictedSkills.remove(id)
+                    else holder.allSkills.remove(id)
+                    targetPool.forEach { SkillManager.unregisterSkillTarget(it, this) }
+                    targetPool.clear()
+                    triggerEvent(SkillEvent.End)
+                }
+                else -> {}
+            }
         }
+
+    var tickCount = 0
+        private set
+    var windupTickCount = 0
+        private set
+    var activeTickCount = 0
+        private set
+    var recoveryTickCount = 0
+        private set
+
+    val eventHandlers = mutableMapOf<KClass<out SkillEvent>, MutableList<Skill.(SkillEvent) -> Unit>>()
+    private val initHandlers = mutableListOf<Skill.() -> Unit>()
+    private val syncHandlers = mutableListOf<Skill.(CompoundTag, IPayloadContext) -> Unit>()
+
+    val isActivated get() = phase !in arrayOf(SkillPhase.IDLE, SkillPhase.END)
+
+    fun init(id: Int, type: SkillType<*>, holder: SkillHost, level: Level) = apply {
+        this.id = id
+        this.type = type
+        this.holder = holder
+        this.level = level
+        jsSkill = JSSkill(SparkJS.ALL[level.isClientSide]!!, this)
+        initHandlers.forEach { it.invoke(this) }
     }
 
-    fun update() {
-        if (isActive) {
-            timeline.runTime++
-            onUpdate()
-            components.removeIf {
-                it.tick()
-                it.isRemoved
+    fun init(handler: Skill.() -> Unit) {
+        initHandlers.add(handler)
+    }
+
+    fun sync(handler: Skill.(CompoundTag, IPayloadContext) -> Unit) {
+        syncHandlers.add(handler)
+    }
+
+    inline fun <reified T : SkillEvent> onEvent(crossinline handler: Skill.(T) -> Unit) {
+        @Suppress("UNCHECKED_CAST")
+        eventHandlers.getOrPut(T::class) { mutableListOf() }.add { handler.invoke(this, it as T) }
+    }
+
+    fun triggerEvent(event: SkillEvent): Boolean {
+        var result = false
+        eventHandlers[event::class]?.forEach { it(event); result = true }
+        return result
+    }
+
+    fun transitionTo(phase: SkillPhase): Boolean {
+        return if (this.phase != phase && canTransitionTo(phase)) {
+            this.phase = phase
+            true
+        } else false
+    }
+
+    fun activate() {
+        when(phase) {
+            SkillPhase.IDLE -> {
+                if (canTransitionTo(SkillPhase.WINDUP)) {
+                    transitionTo(SkillPhase.WINDUP)
+                }
+            }
+            else -> {
+                SparkCore.LOGGER.warn("技能已经触发，请创建新的技能实例并考虑手动结束当前技能以触发新的技能。")
             }
         }
     }
 
-    fun physicsTick() {
-        onPhysicsTick()
-        components.forEach { it.physicsTick() }
+    fun update() {
+        tickCount++
+        when(phase) {
+            SkillPhase.WINDUP -> {
+                windupTickCount++
+                triggerEvent(SkillEvent.Windup)
+            }
+            SkillPhase.ACTIVE -> {
+                activeTickCount++
+                triggerEvent(SkillEvent.Active)
+            }
+            SkillPhase.RECOVERY -> {
+                recoveryTickCount++
+                triggerEvent(SkillEvent.Recovery)
+            }
+            else -> throw IllegalStateException("技能在错误的阶段更新")
+        }
     }
 
     fun end() {
-        if (isActive && shouldEnd()) {
-            isActive = false
-            if (id < 0) holder.predictedSkills.remove(id)
-            else holder.allSkills.remove(id)
-            if (isInitialized) onEnd()
-            components.forEach { it.detach() }
-            components.clear()
-            targets.forEach { SkillManager.unregisterSkillTarget(it, this) }
-            targets.clear()
-        }
-    }
-
-    fun hurt(event: LivingIncomingDamageEvent) {
-        onHurt(event)
-        components.forEach { it.onHurt(event) }
-    }
-
-    fun targetHurt(event: LivingIncomingDamageEvent) {
-        onTargetHurt(event)
-        components.forEach { it.onTargetHurt(event) }
-    }
-
-    fun damage(event: LivingDamageEvent) {
-        onDamage(event)
-        components.forEach { it.onDamage(event) }
-    }
-
-    fun targetDamage(event: LivingDamageEvent) {
-        onTargetDamage(event)
-        components.forEach { it.onTargetDamage(event) }
-    }
-
-    fun knockBack(event: LivingKnockBackEvent) {
-        onKnockBack(event)
-        components.forEach { it.onKnockBack(event) }
-    }
-
-    fun targetKnockBack(event: LivingKnockBackEvent) {
-        onTargetKnockBack(event)
-        components.forEach { it.onTargetKnockBack(event) }
-    }
-
-    open fun new(id: Int, type: SkillType<*>, host: SkillHost, level: Level): Skill {
-        return codec.codec().decode(JsonOps.INSTANCE, CODEC.encodeStart(JsonOps.INSTANCE, this).orThrow).orThrow.first.apply {
-            this.id = id
-            this.type = type
-            this.holder = host
-            this.level = level
-        }
+        transitionTo(SkillPhase.END)
     }
 
     fun endOnClient() {
@@ -129,66 +151,8 @@ abstract class Skill {
         } else if (data.getBoolean("endC")) {
             end()
         } else {
-            onSync(data, context)
+            syncHandlers.forEach { it.invoke(this, data, context) }
         }
-    }
-
-    abstract val codec: MapCodec<out Skill>
-
-    protected open fun onActive(): Boolean = true
-
-    protected open fun onUpdate() {}
-
-    protected open fun onEnd() {}
-
-    open fun shouldEnd(): Boolean = true
-
-    protected open fun onEvent(event: Event) {}
-
-    protected open fun onPhysicsTick() {}
-
-    protected open fun onSync(data: CompoundTag, context: IPayloadContext) {}
-
-    protected open fun onHurt(event: LivingIncomingDamageEvent) {}
-
-    protected open fun onTargetHurt(event: LivingIncomingDamageEvent) {}
-
-    protected open fun onDamage(event: LivingDamageEvent) {}
-
-    protected open fun onTargetDamage(event: LivingDamageEvent) {}
-
-    protected open fun onKnockBack(event: LivingKnockBackEvent) {}
-
-    protected open fun onTargetKnockBack(event: LivingKnockBackEvent) {}
-
-    fun addTarget(entity: Entity) {
-        targets.add(entity)
-        SkillManager.registerSkillTarget(entity, this)
-    }
-
-    fun removeTarget(entity: Entity) {
-        targets.remove(entity)
-        SkillManager.unregisterSkillTarget(entity, this)
-    }
-
-    fun getTargets() = targets.toList()
-
-    fun handleEvent(event: Event) {
-        onEvent(event)
-        components.forEach {
-            it.handleEvent(event)
-        }
-    }
-
-    // 实用方法
-    protected fun <T: SkillComponent> List<T>.attachAll(provider: (SkillComponent) -> Unit = {}) = forEach { provider.invoke(it); it.attach(this@Skill) }
-
-    companion object {
-        val CODEC = SparkRegistries.SKILL_CODEC.byNameCodec()
-            .dispatch(
-                Skill::codec,
-                Function.identity()
-            )
     }
 
 }

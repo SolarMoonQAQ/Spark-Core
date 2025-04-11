@@ -10,7 +10,7 @@ object CollisionFuncApplier {
         val level = event.level
         level.physicsLevel.world.pcoList.forEach { body ->
             body.tickers.forEach {
-                it.ownerTick(body)
+                it.mcTick(body, level)
             }
         }
     }
