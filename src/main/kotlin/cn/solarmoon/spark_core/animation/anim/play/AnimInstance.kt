@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
+import cn.solarmoon.spark_core.js.extension.JSAnimation
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import kotlin.reflect.KClass
 

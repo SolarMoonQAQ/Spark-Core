@@ -17,6 +17,10 @@
     "extension.EntityMixin",
     "extension.LivingEntityMixin",
     "extension.LookControlMixin",
+    "js.AnimInstanceMixin",
+    "js.EntityMixin",
+    "js.LevelMixin",
+    "js.SkillMixin",
     "phys.EntityMixin",
     "phys.LevelMixin"
   ],

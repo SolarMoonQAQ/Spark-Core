@@ -1,36 +1,26 @@
-package cn.solarmoon.spark_core.js.anim
+package cn.solarmoon.spark_core.js.extension
 
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.util.PPhase
 import org.graalvm.polyglot.HostAccess
-import org.graalvm.polyglot.Value
 import org.mozilla.javascript.Function
 
-class JSAnimation(
-    val js: SparkJS,
-    val anim: AnimInstance
-) {
+interface JSAnimation {
+
+    val anim get() = this as AnimInstance
+
+    val js get() = anim.holder.animLevel.jsEngine
 
     @HostAccess.Export
-    fun getTime() = anim.time
-
-    @HostAccess.Export
-    fun getSpeed() = anim.speed
-
-    @HostAccess.Export
-    fun getName() = anim.name
-
-    @HostAccess.Export
-    fun getProgress() = anim.getProgress()
+    fun getProgress() = anim.getProgress(1f)
 
     @HostAccess.Export
     fun onSwitchIn(consumer: Function) {
         anim.onEvent<AnimEvent.SwitchIn> {
             val p = it.previous
-            consumer.call(js, p?.let { JSAnimation(js, it) })
+            consumer.call(js, p)
         }
     }
 
@@ -38,7 +28,7 @@ class JSAnimation(
     fun onSwitchOut(consumer: Function) {
         anim.onEvent<AnimEvent.SwitchOut> {
             val n = it.next
-            consumer.call(js, n?.let { JSAnimation(js, it) })
+            consumer.call(js, n)
         }
     }
 

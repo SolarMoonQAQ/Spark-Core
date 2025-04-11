@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.anim.play.Bone
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
+import cn.solarmoon.spark_core.js.extension.JSAnimatable
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage
@@ -20,7 +21,7 @@ import java.util.*
 /**
  * ### 动画体
  */
-interface IAnimatable<T> : Syncer {
+interface IAnimatable<T> : JSAnimatable, Syncer {
 
     /**
      * 一般而言输入this即可，用于调用该动画体的持有者

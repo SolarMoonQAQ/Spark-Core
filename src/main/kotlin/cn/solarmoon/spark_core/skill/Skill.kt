@@ -1,8 +1,7 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.js.SparkJS
-import cn.solarmoon.spark_core.js.skill.JSSkill
+import cn.solarmoon.spark_core.js.extension.JSSkill
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.world.level.Level
@@ -21,10 +20,10 @@ open class Skill {
     lateinit var level: Level
         private set
 
-    var jsSkill = JSSkill(SparkJS.ALL[false]!!, this)
-    var canTransitionTo: (SkillPhase) -> Boolean = { true }
-
+    val config = SkillConfig(this)
     val targetPool = SkillTargetPool(this)
+
+    var canTransitionTo: (SkillPhase) -> Boolean = { true }
 
     var phase = SkillPhase.IDLE
         private set(value) {
@@ -70,7 +69,6 @@ open class Skill {
         this.type = type
         this.holder = holder
         this.level = level
-        jsSkill = JSSkill(SparkJS.ALL[level.isClientSide]!!, this)
         initHandlers.forEach { it.invoke(this) }
     }
 
@@ -101,6 +99,10 @@ open class Skill {
     }
 
     fun activate() {
+        if (type.isIndependent) {
+            holder.allSkills.values.filter { it.type.registryKey == type.registryKey && it.id != id }.forEach { it.end() }
+        }
+
         when(phase) {
             SkillPhase.IDLE -> {
                 if (canTransitionTo(SkillPhase.WINDUP)) {

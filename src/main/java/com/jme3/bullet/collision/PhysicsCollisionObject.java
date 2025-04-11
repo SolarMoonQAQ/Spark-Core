@@ -64,6 +64,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     // *************************************************************************
     // constants and loggers
 
+    public int tickCount = 0;
     public Transform lastTickTransform = new Transform();
     public Transform tickTransform = new Transform();
 

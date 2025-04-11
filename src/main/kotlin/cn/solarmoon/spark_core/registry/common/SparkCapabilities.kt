@@ -3,10 +3,6 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.animation.renderer.GeoItemRenderer
-import cn.solarmoon.spark_core.js.SparkJS
-import cn.solarmoon.spark_core.skill.SkillEvent
-import cn.solarmoon.spark_core.js.skill.JSSkill
-import cn.solarmoon.spark_core.skill.skillType
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
@@ -17,7 +13,6 @@ import net.neoforged.neoforge.capabilities.ItemCapability
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent
-import org.graalvm.polyglot.HostAccess
 
 object SparkCapabilities {
 

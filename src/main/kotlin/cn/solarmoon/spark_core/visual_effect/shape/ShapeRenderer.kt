@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.physics.toMatrix4f
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
+import com.jme3.math.Vector3f
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource

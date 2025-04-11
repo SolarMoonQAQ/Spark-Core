@@ -61,6 +61,7 @@ class JSPhysicsCollisionObject(
             pco.addCollisionCallback(object : AttackCollisionCallback {
                 override val attackSystem: AttackSystem = AttackSystem()
                 override fun preAttack(
+                    isFirst: Boolean,
                     attacker: Entity,
                     target: Entity,
                     aBody: PhysicsCollisionObject,
@@ -69,7 +70,7 @@ class JSPhysicsCollisionObject(
                 ) {
                     attacker.level().submitImmediateTask(PPhase.POST) {
                         values.forEach {
-                            it.getFunctionMember("preAttack")?.call(js, attacker, target, JSPhysicsCollisionObject(js, aBody), JSPhysicsCollisionObject(js, bBody), manifoldId)
+                            it.getFunctionMember("preAttack")?.call(js, isFirst, attacker, target, JSPhysicsCollisionObject(js, aBody), JSPhysicsCollisionObject(js, bBody), manifoldId)
                         }
                     }
                 }

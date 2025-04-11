@@ -1,13 +1,11 @@
 package cn.solarmoon.spark_core.js.skill
 
-import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillType
 import cn.solarmoon.spark_core.skill.skillType
 import net.minecraft.resources.ResourceLocation
 import org.graalvm.polyglot.HostAccess
-import org.graalvm.polyglot.Value
 import org.mozilla.javascript.Function
 
 class JSSkillTypeBuilder {
@@ -28,7 +26,7 @@ class JSSkillTypeBuilder {
     @HostAccess.Export
     fun accept(consumer: Function) {
         functions.add {
-            consumer.call(jsSkill.js, jsSkill)
+            consumer.call(level.jsEngine, this)
         }
     }
 
