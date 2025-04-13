@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
+import cn.solarmoon.spark_core.js.ClientSparkJS
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.SparkJS
 import net.minecraft.client.Minecraft
@@ -18,8 +19,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 import kotlin.collections.set
 
 class JSPayload(
-    val api: Map<String, Map<String, String>>,
-    val reload: Boolean
+    val api: Map<String, Map<String, String>>
 ): CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -29,26 +29,19 @@ class JSPayload(
     companion object {
         @JvmStatic
         fun handleInClient(payload: JSPayload, context: IPayloadContext) {
-            val js = SparkJS.ALL[true]!!
-            context.enqueueWork {
-                payload.api.forEach { apiId, v ->
-                    js.validateApi(apiId)
-                    val api = js.allApi[apiId]!!
-                    v.forEach {
-                        if (payload.reload) api.onReload()
-                        val (fileName, value) = it
-                        js.eval(value, "$apiId - $fileName")
-                        api.valueCache[fileName] = value
-                        if (payload.reload) context.player().sendSystemMessage(Component.literal("已从服务器接收脚本数据：模块：$apiId 文件：$fileName"))
-                        SparkCore.LOGGER.info("已从服务器接收脚本数据：模块：$apiId 文件：$fileName")
-                    }
-                    api.onLoad()
+            JSApi.clientApiCache = payload.api
+            val js = context.player().level().jsEngine
+            payload.api.forEach { apiId, v ->
+                js.validateApi(apiId)
+                val api = JSApi.ALL[apiId]!!
+                v.forEach {
+                    api.onReload()
+                    val (fileName, value) = it
+                    js.eval(value, "$apiId - $fileName")
+                    api.valueCache[fileName] = value
+                    context.player().sendSystemMessage(Component.literal("已从服务器接收脚本数据：模块：$apiId 文件：$fileName"))
                 }
-            }.exceptionally {
-                context.disconnect(Component.literal("未能成功接受脚本数据：${payload.api.keys}"))
-                return@exceptionally null
-            }.thenAccept {
-                context.reply(JSSendingTask.Return())
+                api.onLoad()
             }
         }
 
@@ -58,7 +51,6 @@ class JSPayload(
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.map({mutableMapOf()}, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.map({mutableMapOf()}, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.STRING_UTF8)), JSPayload::api,
-            ByteBufCodecs.BOOL, JSPayload::reload,
             ::JSPayload
         )
     }

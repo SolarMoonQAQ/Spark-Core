@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.js.skill
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.js.JSApi
+import cn.solarmoon.spark_core.js.JSComponent
 import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.js.put
@@ -10,9 +11,7 @@ import net.minecraft.resources.ResourceLocation
 import org.graalvm.polyglot.HostAccess
 import org.mozilla.javascript.Function
 
-class JSSkillApi(
-    override val engine: SparkJS
-): JSApi {
+object JSSkillApi: JSApi, JSComponent() {
 
     override val id: String = "skill"
     override val valueCache: MutableMap<String, String> = mutableMapOf()
@@ -40,10 +39,6 @@ class JSSkillApi(
         preLoads.sortByDescending { it.first.priority }
         preLoads.forEach { it.second.invoke() }
         preLoads.clear()
-    }
-
-    override fun onRegister(engine: SparkJS) {
-        engine.scope.put("Skill", this)
     }
 
     override fun onReload() {

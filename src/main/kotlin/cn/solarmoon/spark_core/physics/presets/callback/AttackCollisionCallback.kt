@@ -13,7 +13,7 @@ interface AttackCollisionCallback: CollisionCallback {
 
     val attackSystem: AttackSystem
 
-    fun preAttack(attacker: Entity, target: Entity, aBody: PhysicsCollisionObject, bBody: PhysicsCollisionObject, manifoldId: Long) {}
+    fun preAttack(isFirst: Boolean, attacker: Entity, target: Entity, aBody: PhysicsCollisionObject, bBody: PhysicsCollisionObject, manifoldId: Long) {}
 
     fun doAttack(attacker: Entity, target: Entity, aBody: PhysicsCollisionObject, bBody: PhysicsCollisionObject, manifoldId: Long): Boolean = true
 
@@ -24,7 +24,7 @@ interface AttackCollisionCallback: CollisionCallback {
         (o2.owner as? Entity)?.apply {
             attackSystem.customAttack(this) {
                 this@apply.pushHurtData(CollisionHurtData(o1, o2, manifoldId))
-                preAttack(attacker, this@apply, o1, o2, manifoldId)
+                preAttack(attackSystem.attackedEntities.isEmpty(), attacker, this@apply, o1, o2, manifoldId)
                 if (!doAttack(attacker, this@apply, o1, o2, manifoldId)) return@customAttack false
                 postAttack(attacker, this@apply, o1, o2, manifoldId)
                 true

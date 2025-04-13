@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
 import cn.solarmoon.spark_core.js.sync.JSPayload
 import cn.solarmoon.spark_core.js.sync.JSSendingTask
+import cn.solarmoon.spark_core.js.sync.JSTaskPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -39,7 +40,7 @@ object SparkPayloadRegister {
 
         val js = event.registrar("js")
         skill.playToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
-        js.configurationToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
+        js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
         js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
 
 //        val rpc = event.registrar("rpc")

@@ -1,7 +1,8 @@
 {
   "net/minecraft/world/level/Level": [
     "cn/solarmoon/spark_core/physics/host/PhysicsHost",
-    "cn/solarmoon/spark_core/util/TaskSubmitOffice"
+    "cn/solarmoon/spark_core/util/TaskSubmitOffice",
+    "cn/solarmoon/spark_core/js/ISparkJSHolder"
   ],
   "net/minecraft/world/entity/Entity": [
     "cn/solarmoon/spark_core/physics/host/PhysicsHost",

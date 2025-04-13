@@ -5,6 +5,8 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
+import cn.solarmoon.spark_core.js.JSApi
+import cn.solarmoon.spark_core.js.ServerSparkJS
 import cn.solarmoon.spark_core.js.SparkJS
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
@@ -19,8 +21,7 @@ import java.util.function.Consumer
 class JSSendingTask: ICustomConfigurationTask {
 
     override fun run(sender: Consumer<CustomPacketPayload?>) {
-        val js = SparkJS.ALL[false]!!
-        sender.accept(JSPayload(js.allApi.mapValues { it.value.valueCache }, false))
+        sender.accept(JSTaskPayload(JSApi.ALL.mapValues { it.value.valueCache }))
     }
 
     override fun type(): ConfigurationTask.Type {

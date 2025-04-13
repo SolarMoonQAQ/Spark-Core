@@ -1,32 +1,32 @@
 package cn.solarmoon.spark_core.js
 
-import cn.solarmoon.spark_core.util.PPhase
-import net.minecraft.client.Minecraft
+import cn.solarmoon.spark_core.SparkCore
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.client.event.ClientTickEvent
 import net.neoforged.neoforge.event.level.LevelEvent
-import net.neoforged.neoforge.event.server.ServerStartingEvent
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 object SparkJsApplier {
 
     @SubscribeEvent
-    private fun onLevelLoad(event: ServerStartingEvent) {
-        val js = ServerSparkJS()
-        SparkJS.ALL[false] = js
+    private fun onLevelLoad(event: LevelEvent.Load) {
+        val level = event.level as Level
+        val js = level.jsEngine
         js.register()
-        js.loadAll()
-    }
-
-    var i = false
-
-    @SubscribeEvent
-    private fun onClientLoad(event: ClientTickEvent.Pre) {
-        if (!i) {
-            i = true
-            val js = ClientSparkJS()
-            SparkJS.ALL[true] = js
-            js.register()
+        if (js is ServerSparkJS) js.loadAll()
+        else {
+            JSApi.clientApiCache.forEach { apiId, v ->
+                js.validateApi(apiId)
+                val api = JSApi.ALL[apiId]!!
+                v.forEach {
+                    val (fileName, value) = it
+                    js.eval(value, "$apiId - $fileName")
+                    api.valueCache[fileName] = value
+                    SparkCore.LOGGER.info("已加载服务器脚本默认数据：模块：$apiId 文件：$fileName")
+                }
+                api.onLoad()
+            }
         }
     }
 

@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.js.extension
 
+import cn.solarmoon.spark_core.camera.setCameraLock
 import cn.solarmoon.spark_core.entity.getRelativeVector
+import cn.solarmoon.spark_core.js.JSComponent
 import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
 import net.minecraft.client.player.LocalPlayer
@@ -16,21 +18,7 @@ import org.mozilla.javascript.Function
 import kotlin.math.PI
 import kotlin.math.atan2
 
-class JSEntityHelper(
-    val js: SparkJS
-) {
-
-    @HostAccess.Export
-    fun move(entity: Entity, move: Vec3, orientationByInput: Boolean) {
-        if (entity is Player && orientationByInput && entity.isLocalPlayer) {
-            val input = (entity as LocalPlayer).savedInput
-            val angle = atan2(input.moveVector.y, -input.moveVector.x) - PI.toFloat() / 2
-            val move = move.yRot(angle)
-            entity.deltaMovement = entity.getRelativeVector(move)
-        } else {
-            entity.deltaMovement = entity.getRelativeVector(move)
-        }
-    }
+object JSEntityHelper: JSComponent() {
 
     @HostAccess.Export
     fun preventLocalInput(event: MovementInputUpdateEvent) {
@@ -52,31 +40,7 @@ class JSEntityHelper(
     @HostAccess.Export
     fun preventLocalInput(event: MovementInputUpdateEvent, consumer: Function) {
         val player = event.entity as LocalPlayer
-        consumer.call(js, event.input, player)
-    }
-
-    @HostAccess.Export
-    fun commonAttack(attacker: Entity, target: Entity) {
-        if (attacker.level().isClientSide) return
-        if (target is LivingEntity) {
-            if (attacker is Player) {
-                attacker.attack(target)
-            } else if (attacker is LivingEntity) {
-                attacker.doHurtTarget(target)
-            }
-        }
-    }
-
-    @HostAccess.Export
-    fun mobAttack(attacker: Entity, target: Entity, amount: Float) {
-        if (attacker is LivingEntity) {
-            target.hurt(attacker.damageSources().mobAttack(attacker), amount)
-        }
-    }
-
-    @HostAccess.Export
-    fun hurt(target: Entity, damageSource: DamageSource, amount: Float) {
-        target.hurt(damageSource, amount)
+        consumer.call(engine, event.input, player)
     }
 
 }

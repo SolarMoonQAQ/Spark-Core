@@ -2,12 +2,15 @@ package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.event.MolangQueryRegisterEvent
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
+import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent
+import net.neoforged.neoforge.event.entity.player.CriticalHitEvent
+import net.neoforged.neoforge.event.entity.player.SweepAttackEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
 object SkillApplier {
@@ -37,7 +40,7 @@ object SkillApplier {
             it.triggerEvent(SkillEvent.Hurt(event))
         }
 
-        SkillManager.getSkillsByTarget(event.entity).forEach {
+        event.source.entity?.activeSkills?.forEach {
             it.triggerEvent(SkillEvent.TargetHurt(event))
         }
     }
@@ -48,7 +51,7 @@ object SkillApplier {
             it.triggerEvent(SkillEvent.ActualHurt(event))
         }
 
-        SkillManager.getSkillsByTarget(event.entity).forEach {
+        event.source.entity?.activeSkills?.forEach {
             it.triggerEvent(SkillEvent.TargetActualHurt(event))
         }
     }
@@ -59,7 +62,7 @@ object SkillApplier {
             it.triggerEvent(SkillEvent.ActualHurt(event))
         }
 
-        SkillManager.getSkillsByTarget(event.entity).forEach {
+        event.source.entity?.activeSkills?.forEach {
             it.triggerEvent(SkillEvent.TargetActualHurt(event))
         }
     }
@@ -80,6 +83,27 @@ object SkillApplier {
     private fun playerInput(event: MovementInputUpdateEvent) {
         event.entity.activeSkills.forEach {
             it.triggerEvent(SkillEvent.LocalInputUpdate(event))
+        }
+    }
+
+    @SubscribeEvent
+    private fun playerAttackStrength(event: PlayerGetAttackStrengthEvent) {
+        event.entity.activeSkills.forEach {
+            it.triggerEvent(SkillEvent.PlayerGetAttackStrength(event))
+        }
+    }
+
+    @SubscribeEvent
+    private fun critical(event: CriticalHitEvent) {
+        event.entity.activeSkills.forEach {
+            it.triggerEvent(SkillEvent.CriticalHit(event))
+        }
+    }
+
+    @SubscribeEvent
+    private fun sweep(event: SweepAttackEvent) {
+        event.entity.activeSkills.forEach {
+            it.triggerEvent(SkillEvent.SweepAttack(event))
         }
     }
 

@@ -171,6 +171,7 @@ abstract class PhysicsLevel(
     override fun physicsTick(space: PhysicsSpace, timeStep: Float) {
         world.pcoList.forEach { pco ->
             pco.tickers.forEach { it.postPhysicsTick(pco, this) }
+            pco.tickCount++
         }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Post(this))
         processTasks(PPhase.POST)

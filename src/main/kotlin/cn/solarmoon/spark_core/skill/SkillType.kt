@@ -14,7 +14,8 @@ import kotlin.collections.set
 
 class SkillType<S: Skill>(
     val registryKey: ResourceLocation,
-    val provider: () -> S
+    val isIndependent: Boolean = true,
+    val provider: () -> S,
 ) {
 
     internal var fromJS = false

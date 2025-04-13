@@ -1,43 +1,23 @@
-package cn.solarmoon.spark_core.js.skill
+package cn.solarmoon.spark_core.js.extension
 
-import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
-import cn.solarmoon.spark_core.js.extension.JSEntity
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillEvent
 import cn.solarmoon.spark_core.skill.SkillPhase
 import org.graalvm.polyglot.HostAccess
-import org.graalvm.polyglot.Value
 import org.mozilla.javascript.Function
 
-open class JSSkill(
-    val js: SparkJS,
-    val skill: Skill
-) {
+interface JSSkill {
+
+    val skill get() = this as Skill
+
+    val js get() = skill.level.jsEngine
 
     @HostAccess.Export
-    fun getHolder() = JSEntity(js, skill.holder)
-
-    @HostAccess.Export
-    fun getLevel() = skill.level
-
-    @HostAccess.Export
-    fun getPhase() = skill.phase.name.lowercase()
+    fun getHolderWrapper() = JSHost(js, skill.holder)
 
     @HostAccess.Export
     fun setPhase(phase: String) = skill.transitionTo(SkillPhase.valueOf(phase.uppercase()))
-
-    @HostAccess.Export
-    fun getTickCount() = skill.tickCount
-
-    @HostAccess.Export
-    fun getWindupTickCount() = skill.windupTickCount
-
-    @HostAccess.Export
-    fun getActiveTickCount() = skill.activeTickCount
-
-    @HostAccess.Export
-    fun getRecoveryTickCount() = skill.recoveryTickCount
 
     @HostAccess.Export
     fun onActive(consumer: Function) = skill.onEvent<SkillEvent.Active> {
@@ -59,7 +39,8 @@ open class JSSkill(
         consumer.call(js, it.event)
     }
 
-    @HostAccess.Export
-    fun end() = skill.end()
+    fun onTargetActualHit(consumer: Function) = skill.onEvent<SkillEvent.TargetActualHurt> {
+        consumer.call(js, it.event)
+    }
 
 }

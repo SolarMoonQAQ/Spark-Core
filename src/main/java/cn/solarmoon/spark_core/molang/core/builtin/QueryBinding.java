@@ -15,7 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModLoader;
-import net.neoforged.neoforge.common.NeoForge;
 
 public class QueryBinding extends ContextBinding {
     public static final QueryBinding INSTANCE = new QueryBinding();

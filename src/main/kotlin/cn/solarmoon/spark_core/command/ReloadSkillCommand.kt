@@ -18,7 +18,7 @@ class ReloadSkillCommand: SkillCommand(2) {
     }
 
     private fun executeReloadSkill(context: CommandContext<CommandSourceStack>): Int {
-        (SparkJS.ALL[context.source.level.isClientSide]!! as ServerSparkJS).reload("skill")
+        (context.source.level.jsEngine as ServerSparkJS).reload("skill")
         return 1
     }
 

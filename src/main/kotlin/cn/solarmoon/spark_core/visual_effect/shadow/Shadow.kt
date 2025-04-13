@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.visual_effect.shadow
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.render
-import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.physics.toVec3i
 import cn.solarmoon.spark_core.util.ColorUtil
 import cn.solarmoon.spark_core.util.RenderTypeUtil
