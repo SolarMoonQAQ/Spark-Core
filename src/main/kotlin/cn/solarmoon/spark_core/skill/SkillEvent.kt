@@ -12,7 +12,10 @@ open class SkillEvent {
     class Hurt(val event: LivingIncomingDamageEvent): SkillEvent()
     class TargetHurt(val event: LivingIncomingDamageEvent): SkillEvent()
     class ActualHurt(val event: LivingDamageEvent): SkillEvent()
-    class TargetActualHurt(val event: LivingDamageEvent): SkillEvent()
+    abstract class TargetActualHurt: SkillEvent() {
+        class Pre(val event: LivingDamageEvent.Pre): TargetActualHurt()
+        class Post(val event: LivingDamageEvent.Post): TargetActualHurt()
+    }
     class KnockBack(val event: LivingKnockBackEvent): SkillEvent()
     class TargetKnockBack(val event: LivingKnockBackEvent): SkillEvent()
     class LocalInputUpdate(val event: MovementInputUpdateEvent): SkillEvent()

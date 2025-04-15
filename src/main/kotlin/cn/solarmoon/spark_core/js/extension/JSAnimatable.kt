@@ -5,9 +5,11 @@ import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
+import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.PacketDistributor
-import org.graalvm.polyglot.HostAccess
+import java.awt.Color
 
 interface JSAnimatable {
 
@@ -15,22 +17,18 @@ interface JSAnimatable {
 
     val js get() = js_animatable.animLevel.jsEngine
 
-    @HostAccess.Export
     fun getAnimation(): AnimInstance? {
         return js_animatable.animController.getPlayingAnim()
     }
 
-    @HostAccess.Export
     fun playAnimation(anim: AnimInstance, transitionTime: Int) {
         js_animatable.animController.setAnimation(anim, transitionTime)
     }
 
-    @HostAccess.Export
     fun createAnimation(index: String, name: String): AnimInstance {
         return AnimInstance.create(js_animatable, AnimIndex(ResourceLocation.parse(index), name))
     }
 
-    @HostAccess.Export
     fun createAnimation(name: String): AnimInstance {
         return AnimInstance.create(js_animatable, name)
     }
@@ -39,6 +37,13 @@ interface JSAnimatable {
         if (!js_animatable.animLevel.isClientSide && time > 0) {
             js_animatable.animController.changeSpeed(time, speed)
             PacketDistributor.sendToAllPlayers(AnimSpeedChangePayload(js_animatable, time, speed))
+        }
+    }
+
+    fun summonShadow(maxLifeTime: Int, color: Int) {
+        val animatable = js_animatable
+        if (animatable is Entity && !animatable.animLevel.isClientSide) {
+            SparkVisualEffects.SHADOW.addToClient(animatable.id, maxLifeTime, Color(color))
         }
     }
 

@@ -36,6 +36,7 @@ import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.collision.PhysicsEvent;
 import cn.solarmoon.spark_core.physics.collision.PhysicsEventListener;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.CollisionSpace;
 import com.jme3.bullet.NativePhysicsObject;
@@ -45,6 +46,7 @@ import com.simsilica.mathd.Matrix3d;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
 import jme3utilities.Validate;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -67,6 +69,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     public int tickCount = 0;
     public Transform lastTickTransform = new Transform();
     public Transform tickTransform = new Transform();
+    @Nullable
+    public PhysicsLevel level;
 
     // 事件处理器存储
     private final Map<Class<?>, List<PhysicsEventListener<?>>> eventListeners = new HashMap<>();

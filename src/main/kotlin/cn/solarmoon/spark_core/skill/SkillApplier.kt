@@ -40,7 +40,7 @@ object SkillApplier {
             it.triggerEvent(SkillEvent.Hurt(event))
         }
 
-        event.source.entity?.activeSkills?.forEach {
+        SkillManager.getSkillsByTarget(event.entity).forEach {
             it.triggerEvent(SkillEvent.TargetHurt(event))
         }
     }
@@ -51,8 +51,8 @@ object SkillApplier {
             it.triggerEvent(SkillEvent.ActualHurt(event))
         }
 
-        event.source.entity?.activeSkills?.forEach {
-            it.triggerEvent(SkillEvent.TargetActualHurt(event))
+        SkillManager.getSkillsByTarget(event.entity).forEach {
+            it.triggerEvent(SkillEvent.TargetActualHurt.Pre(event))
         }
     }
 
@@ -62,8 +62,8 @@ object SkillApplier {
             it.triggerEvent(SkillEvent.ActualHurt(event))
         }
 
-        event.source.entity?.activeSkills?.forEach {
-            it.triggerEvent(SkillEvent.TargetActualHurt(event))
+        SkillManager.getSkillsByTarget(event.entity).forEach {
+            it.triggerEvent(SkillEvent.TargetActualHurt.Post(event))
         }
     }
 

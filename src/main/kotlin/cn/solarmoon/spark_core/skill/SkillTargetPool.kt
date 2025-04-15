@@ -1,26 +1,54 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spark_core.skill.payload.SkillPayload
+import net.minecraft.nbt.CompoundTag
 import net.minecraft.world.entity.Entity
+import net.neoforged.neoforge.network.PacketDistributor
 import kotlin.collections.remove
 
 class SkillTargetPool(private val skill: Skill) {
 
-    private val targets = linkedSetOf<Any>()
+    private val targets = linkedSetOf<Entity>()
 
-    fun addTarget(entity: Any) {
-        targets.add(entity)
-        SkillManager.registerSkillTarget(entity, skill)
+    fun init() {
+        skill.sync { data, context ->
+            if (data.getBoolean("#AddTarget")) {
+                addTarget(level.getEntity(data.getInt("#Target"))!!)
+            }
+
+            if (data.getBoolean("#RemoveTarget")) {
+                removeTarget(level.getEntity(data.getInt("#Target"))!!)
+            }
+        }
     }
 
-    fun removeTarget(entity: Entity) {
+    fun addTarget(entity: Entity, sync: Boolean = false) {
+        targets.add(entity)
+        SkillManager.registerSkillTarget(entity, skill)
+        if (sync) {
+            PacketDistributor.sendToAllPlayers(SkillPayload(skill, CompoundTag().apply {
+                putBoolean("#AddTarget", true)
+                putInt("#Target", entity.id)
+            }))
+        }
+    }
+
+    fun removeTarget(entity: Entity, sync: Boolean = false) {
         targets.remove(entity)
         SkillManager.unregisterSkillTarget(entity, skill)
+        if (sync) {
+            PacketDistributor.sendToAllPlayers(SkillPayload(skill, CompoundTag().apply {
+                putBoolean("#RemoveTarget", true)
+                putInt("#Target", entity.id)
+            }))
+        }
     }
 
     fun getTargets() = targets.toList()
 
-    fun clear() = targets.clear()
-
-    fun forEach(consumer: (Any) -> Unit) = targets.forEach(consumer)
+    fun clear() {
+        targets.forEach { SkillManager.unregisterSkillTarget(it, skill) }
+        targets.clear()
+    }
 
 }

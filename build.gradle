@@ -31,8 +31,8 @@ neoForge {
     accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
     interfaceInjectionData {
-        from "src/main/resources/META-INF/interfaces.json"
-        publish file("src/main/resources/META-INF/interfaces.json")
+        from "src/main/resources/META-INF/spark_interfaces.json"
+        publish file("src/main/resources/META-INF/spark_interfaces.json")
     }
 
     runs {

@@ -8,7 +8,6 @@ import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.js.put
 import cn.solarmoon.spark_core.skill.SkillManager
 import net.minecraft.resources.ResourceLocation
-import org.graalvm.polyglot.HostAccess
 import org.mozilla.javascript.Function
 
 object JSSkillApi: JSApi, JSComponent() {
@@ -18,14 +17,12 @@ object JSSkillApi: JSApi, JSComponent() {
 
     private val preLoads = mutableListOf<Pair<JSSkillTypeBuilder, () -> Unit>>()
 
-    @HostAccess.Export
     fun create(id: String, consumer: Function) = create(id, null, consumer)
 
-    @HostAccess.Export
     fun createBy(id: String, by: String, consumer: Function) = create(id, by, consumer)
 
     fun create(id: String, by: String? = null, consumer: Function) {
-        val builder = JSSkillTypeBuilder()
+        val builder = JSSkillTypeBuilder(engine)
         preLoads.add(
             builder to {
                 builder.id = ResourceLocation.parse(id)
