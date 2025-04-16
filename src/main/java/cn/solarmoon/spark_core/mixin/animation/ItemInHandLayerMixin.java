@@ -25,6 +25,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Objects;
+
 @Mixin(value = ItemInHandLayer.class, priority = 100)
 public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends EntityModel<T> & ArmedModel> extends RenderLayer<T, M> {
 
@@ -44,7 +46,7 @@ public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends Ent
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
                 p.translate(-cam.x, -cam.y, -cam.z);
                 var ma = animatable.getWorldBoneMatrix(boneName, partialTicks);
-                var pivot = animatable.getModelIndex().getModel().getBone(boneName).getPivot();
+                var pivot = Objects.requireNonNull(animatable.getModelIndex().getModel().getBone(boneName)).getPivot();
                 p.mulPose(ma);
                 p.translate(pivot.x, pivot.y - 1/16f, pivot.z - 1.75/16f);
                 p.mulPose(Axis.XP.rotationDegrees(-80.0F));

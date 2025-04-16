@@ -35,20 +35,20 @@ import java.util.function.Supplier;
 public abstract class LevelMixin implements ISparkJSHolder, JSLevel {
 
     private final Level level = (Level) (Object) this;
-    private SparkJS js;
+    private SparkJS jsEngine;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(WritableLevelData levelData, ResourceKey dimension, RegistryAccess registryAccess, Holder dimensionTypeRegistration, Supplier profiler, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates, CallbackInfo ci) {
         if (isClientSide) {
-            js = new ClientSparkJS();
+            jsEngine = new ClientSparkJS();
         } else {
-            js = new ServerSparkJS();
+            jsEngine = new ServerSparkJS();
         }
     }
 
     @Override
     public @NotNull SparkJS getJsEngine() {
-        return js;
+        return jsEngine;
     }
 
 }

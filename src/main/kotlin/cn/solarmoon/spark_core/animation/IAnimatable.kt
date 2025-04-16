@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation
 
+import au.edu.federation.caliko.FabrikChain3D
 import cn.solarmoon.spark_core.animation.anim.play.AnimController
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.Bone
@@ -16,6 +17,7 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import java.util.concurrent.ConcurrentHashMap
 import java.util.*
 
 /**
@@ -161,4 +163,19 @@ interface IAnimatable<T> : JSAnimatable, Syncer {
      */
     fun onBoneUpdate(event: BoneUpdateEvent) {}
 
+    /**
+     * 存储当前 IK 链的目标世界坐标。
+     * Key: IK 链的名称 (e.g., "left_arm_ik")
+     * Value: 目标世界坐标 (Vec3)
+     * 这个 Map 应在主线程中更新。建议使用 ConcurrentHashMap 以确保线程安全，尽管最佳实践是主线程写，物理线程读。
+     */
+    val ikTargetPositions: MutableMap<String, Vec3> // 实现类需要初始化，例如： = ConcurrentHashMap()
+
+    /**
+     * 存储已构建的 IK 链实例。
+     * Key: IK 链的名称 (e.g., "left_arm_ik")
+     * Value: FabrikChain3D 实例
+     * 这个 Map 由物理线程或初始化代码填充，并由物理线程读取。建议使用 ConcurrentHashMap。
+     */
+    val ikChains: MutableMap<String, FabrikChain3D> // 实现类需要初始化，例如： = ConcurrentHashMap()
 }

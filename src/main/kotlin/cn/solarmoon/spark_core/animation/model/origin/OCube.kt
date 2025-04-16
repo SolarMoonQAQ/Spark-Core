@@ -22,7 +22,7 @@ import org.joml.Vector3f
 data class OCube(
     var originPos: Vec3,
     val size: Vec3,
-    val pivot: Vec3,
+    var pivot: Vec3,
     val rotation: Vec3,
     var inflate: Double,
     val uvUnion: OUVUnion,

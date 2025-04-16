@@ -12,7 +12,11 @@ import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
 import cn.solarmoon.spark_core.registry.common.*;
 import cn.solarmoon.spark_core.rpc.WebSocketRpcServer;
+// import net.minecraft.core.registries.Registries; // No longer needed here
+import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
+// import net.neoforged.bus.api.SubscribeEvent; // No longer needed here
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -62,5 +66,4 @@ public class SparkCore {
         PhysicsHelperKt.initBullet();
         JSHelperKt.loadDefaultScripts(getClass());
     }
-
 }

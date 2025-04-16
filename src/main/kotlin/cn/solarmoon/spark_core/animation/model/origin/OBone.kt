@@ -17,10 +17,10 @@ import kotlin.collections.LinkedHashMap
 data class OBone(
     val name: String,
     val parentName: String?, // parent相当于在顶部的变换，给到所有子类
-    val pivot: Vec3,
+    var pivot: Vec3,
     val rotation: Vec3,
     val locators: LinkedHashMap<String, OLocator>,
-    val cubes: List<OCube>
+    val cubes: MutableList<OCube>
 ) {
 
     /**
@@ -108,7 +108,7 @@ data class OBone(
             SerializeHelper.VEC3_STREAM_CODEC, OBone::rotation,
             OLocator.MAP_STREAM_CODEC, OBone::locators,
             OCube.LIST_STREAM_CODEC, OBone::cubes,
-            { a, b, c, d, l, e -> OBone(a, b.orElse(null), c, d, l , e)}
+            { a, b, c, d, l, e -> OBone(a, b.orElse(null), c, d, l , e.toMutableList())}
         )
 
         @JvmStatic

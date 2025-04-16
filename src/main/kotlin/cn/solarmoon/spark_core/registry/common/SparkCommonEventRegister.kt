@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.presets.UseAnimApplier
 import cn.solarmoon.spark_core.animation.vanilla.BoneModifier
 import cn.solarmoon.spark_core.animation.vanilla.vindicator.VindicatorStateAnimApplier
 import cn.solarmoon.spark_core.camera.CameraAdjuster
+import cn.solarmoon.spark_core.ik.presets.PlayerIKPresets
 import cn.solarmoon.spark_core.js.SparkJsApplier
 import cn.solarmoon.spark_core.physics.collision.CollisionFuncApplier
 import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
@@ -24,6 +25,7 @@ object SparkCommonEventRegister {
         add(PhysicsLevelApplier)
         add(PhysicsHostApplier)
         add(PresetBodyApplier)
+        add(PlayerIKPresets)
         add(AnimApplier)
         add(PreInputApplier)
         add(CommonAnimApplier)

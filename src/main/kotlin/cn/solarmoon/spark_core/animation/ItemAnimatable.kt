@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation
 
+import au.edu.federation.caliko.FabrikChain3D
 import cn.solarmoon.spark_core.animation.anim.play.AnimController
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
@@ -38,6 +39,8 @@ open class ItemAnimatable(
     override val animatable = itemStack
     override val animController: AnimController = AnimController(this)
     override val bones: BoneGroup = BoneGroup(this)
+    override val ikTargetPositions: MutableMap<String, Vec3> = mutableMapOf()
+    override val ikChains: MutableMap<String, FabrikChain3D> = mutableMapOf()
 
     open fun physicsTick() {
         animController.physTick()

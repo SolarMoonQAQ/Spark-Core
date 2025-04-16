@@ -4,6 +4,10 @@ import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
+import cn.solarmoon.spark_core.ik.payload.IKComponentSyncPayload
+import cn.solarmoon.spark_core.ik.payload.IKSyncTargetPayload
+import cn.solarmoon.spark_core.ik.payload.RequestIKComponentChangePayload
+import cn.solarmoon.spark_core.ik.payload.RequestSetIKTargetPayload
 import cn.solarmoon.spark_core.js.sync.JSPayload
 import cn.solarmoon.spark_core.js.sync.JSSendingTask
 import cn.solarmoon.spark_core.js.sync.JSTaskPayload
@@ -43,6 +47,14 @@ object SparkPayloadRegister {
         js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
         js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
 
+        // IK Payloads (Added based on diff)
+        val ik = event.registrar("ik")
+        ik.playToClient(IKSyncTargetPayload.TYPE, IKSyncTargetPayload.STREAM_CODEC, IKSyncTargetPayload::handleInClient)
+        ik.playToClient(IKComponentSyncPayload.TYPE, IKComponentSyncPayload.STREAM_CODEC, IKComponentSyncPayload::handleInClient)
+        ik.playToServer(RequestIKComponentChangePayload.TYPE, RequestIKComponentChangePayload.STREAM_CODEC, RequestIKComponentChangePayload::handleInServer)
+        ik.playToServer(RequestSetIKTargetPayload.TYPE, RequestSetIKTargetPayload.STREAM_CODEC, RequestSetIKTargetPayload::handleInServer)
+
+    // RPC Payloads (Commented out as in the diff)
 //        val rpc = event.registrar("rpc")
 //        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
     }

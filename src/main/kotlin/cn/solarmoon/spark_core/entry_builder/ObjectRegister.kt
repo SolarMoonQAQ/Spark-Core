@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.entry_builder
 
 import cn.solarmoon.spark_core.entry_builder.client.KeyMappingBuilder
 import cn.solarmoon.spark_core.entry_builder.client.LayerBuilder
+import cn.solarmoon.spark_core.entry_builder.common.IKComponentTypeBuilder // Add import for the new builder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.entry_builder.common.fluid.FluidBuilder
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
@@ -46,6 +47,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
     val typedAnimationDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.TYPED_ANIMATION, modId) }
     val syncerTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SYNCER_TYPE, modId) }
+    val ikComponentTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.IK_COMPONENT_TYPE, modId) } // Add deferred register for IK types
 
     fun register(bus: IEventBus) {
         modBus = bus
@@ -124,6 +126,13 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
             syncerTypeDeferredRegister.value.register(modBus!!)
         }
         return SyncerTypeBuilder(syncerTypeDeferredRegister.value)
+    }
+
+    fun ikComponentType(): IKComponentTypeBuilder { // Add builder method for IK types
+        if (!ikComponentTypeDeferredRegister.isInitialized()) {
+            ikComponentTypeDeferredRegister.value.register(modBus!!)
+        }
+        return IKComponentTypeBuilder(ikComponentTypeDeferredRegister.value)
     }
 
 }

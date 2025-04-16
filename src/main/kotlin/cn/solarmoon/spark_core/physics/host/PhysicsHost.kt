@@ -70,9 +70,11 @@ interface PhysicsHost {
      * 删除并销毁对象身上的物理体
      */
     fun removeBody(name: String) {
-        physicsLevel.submitImmediateTask(PPhase.PRE) {
-            physicsLevel.hostManager[this@PhysicsHost]?.remove(name)?.let {
-                physicsLevel.world.removeCollisionObject(it)
+        physicsLevel.apply {
+            submitImmediateTask(PPhase.PRE) {
+                hostManager[this@PhysicsHost]?.remove(name)?.let {
+                    world.removeCollisionObject(it)
+                }
             }
         }
     }

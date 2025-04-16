@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
@@ -45,5 +46,4 @@ class ModelDataSendingTask(): ICustomConfigurationTask {
             val STREAM_CODEC = StreamCodec.unit<FriendlyByteBuf, Return>(Return())
         }
     }
-
 }

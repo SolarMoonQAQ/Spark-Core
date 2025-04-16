@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.js.extension.JSDamageSourceHelper
 import cn.solarmoon.spark_core.js.extension.JSEntityHelper
 import cn.solarmoon.spark_core.js.extension.JSMath
 import cn.solarmoon.spark_core.js.extension.JSPhysicsHelper
+import cn.solarmoon.spark_core.js.ik.JSIKApi
 import cn.solarmoon.spark_core.js.put
 import cn.solarmoon.spark_core.js.skill.JSSkillApi
 import net.neoforged.bus.api.IEventBus
@@ -33,6 +34,7 @@ object SparkJSApiRegister {
         event.registerComponent("EntityHelper", JSEntityHelper)
         event.registerComponent("AnimHelper", JSAnimHelper)
         event.registerComponent("PhysicsHelper", JSPhysicsHelper)
+        event.registerComponent("Ik", JSIKApi)
     }
 
     @JvmStatic
