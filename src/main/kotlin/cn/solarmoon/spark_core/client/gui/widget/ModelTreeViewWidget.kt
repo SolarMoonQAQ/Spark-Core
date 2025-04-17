@@ -2,14 +2,16 @@ package cn.solarmoon.spark_core.client.gui.widget
 
 import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
-import cn.solarmoon.spark_core.animation.model.origin.OModel // 需要 OModel 来查找子骨骼
+import cn.solarmoon.spark_core.animation.model.origin.OModel
 import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.AbstractScrollWidget
+import net.minecraft.client.gui.components.AbstractSelectionList
 import net.minecraft.client.gui.narration.NarrationElementOutput
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import kotlin.math.max
 
 class ModelTreeViewWidget(
@@ -19,6 +21,14 @@ class ModelTreeViewWidget(
     private val indentation: Int = 10,
     private val onSelectionChanged: (Any?) -> Unit // 回调传递 OBone 或 OCube
 ) : AbstractScrollWidget(x, y, width, height, Component.empty()) {
+    val SCROLLER_SPRITE: ResourceLocation = ResourceLocation.withDefaultNamespace("widget/scroller")
+    val SCROLLER_BACKGROUND_SPRITE: ResourceLocation =
+        ResourceLocation.withDefaultNamespace("widget/scroller_background")
+    val MENU_LIST_BACKGROUND: ResourceLocation =
+        ResourceLocation.withDefaultNamespace("textures/gui/menu_list_background.png")
+    val INWORLD_MENU_LIST_BACKGROUND: ResourceLocation =
+        ResourceLocation.withDefaultNamespace("textures/gui/inworld_menu_list_background.png")
+
 
     private val minecraft: Minecraft = Minecraft.getInstance()
     private val font: Font = minecraft.font
@@ -41,7 +51,27 @@ class ModelTreeViewWidget(
         refreshVisibleNodes()
         setScrollAmount(0.0)
     }
-
+    override fun renderBackground(guiGraphics: GuiGraphics) {
+        // Draw a semi-transparent gray background
+//        super.renderBackground(guiGraphics)
+        RenderSystem.enableBlend()
+        val resourcelocation =
+            if (this.minecraft.level == null) MENU_LIST_BACKGROUND else INWORLD_MENU_LIST_BACKGROUND
+        guiGraphics.blit(
+            resourcelocation,
+            getX(),  // 控件左上角X
+            getY(),  // 控件左上角Y
+            width,   // 控件宽度
+            height,  // 控件高度
+            0f,      // uOffset从纹理左上角开始
+            0f,      // vOffset从纹理左上角开始
+            width,   // 使用控件宽度作为纹理绘制宽度
+            height,  // 使用控件高度作为纹理绘制高度
+            32,   // 纹理总宽度（假设纹理尺寸与控件一致）
+            32   // 纹理总高度
+        )
+        RenderSystem.disableBlend()
+    }
     private fun isExpanded(bone: OBone): Boolean = expandedBones.contains(bone.name)
 
     private fun toggleExpand(bone: OBone) {

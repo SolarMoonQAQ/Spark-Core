@@ -207,7 +207,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val bottomMargin = 30 // Space for buttons
 
         val padding = 4 // Increased padding between elements
-        val availableHeight = this.height - topMargin - bottomMargin - padding
+        val availableHeight = this.height - topMargin - bottomMargin
 
         val sidebarWidth = 150 // From backup
 
