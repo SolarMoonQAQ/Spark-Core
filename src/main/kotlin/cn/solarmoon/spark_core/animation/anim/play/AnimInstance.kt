@@ -64,19 +64,19 @@ class AnimInstance private constructor(
      * @param endBoneName IK 链的末端效应器骨骼名称。
      * @return 如果成功构建并存储了 IK 链，则返回 true；否则返回 false。
      */
-    fun setupIkChain(chainName: String, startBoneName: String, endBoneName: String): Boolean {
-        val model = holder.model
-        // Assuming CalikoStructureBuilder.buildChain exists and works as intended
-        val chain = CalikoStructureBuilder.buildChain(holder, chainName, startBoneName, endBoneName, model)
-        return if (chain != null) {
-            ikChains[chainName] = chain
-            SparkCore.LOGGER.debug("Successfully built IK chain '$chainName' for ${holder.animatable}")
-            true
-        } else {
-            SparkCore.LOGGER.warn("Failed to build IK chain '$chainName' (start: $startBoneName, end: $endBoneName) for ${holder.animatable}")
-            false
-        }
-    }
+//    fun setupIkChain(chainName: String, startBoneName: String, endBoneName: String): Boolean {
+//        val model = holder.model
+//        // Assuming CalikoStructureBuilder.buildChain exists and works as intended
+//        val chain = CalikoStructureBuilder.buildChain(holder, chainName, startBoneName, endBoneName, model)
+//        return if (chain != null) {
+//            ikChains[chainName] = chainworldPoseMatrix
+//            SparkCore.LOGGER.debug("Successfully built IK chain '$chainName' for ${holder.animatable}")
+//            true
+//        } else {
+//            SparkCore.LOGGER.warn("Failed to build IK chain '$chainName' (start: $startBoneName, end: $endBoneName) for ${holder.animatable}")
+//            false
+//        }
+//    }
 
     inline fun <reified T : AnimEvent> onEvent(crossinline handler: AnimInstance.(T) -> Unit) {
         @Suppress("UNCHECKED_CAST")

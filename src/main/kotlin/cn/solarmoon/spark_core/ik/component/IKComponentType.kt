@@ -48,7 +48,8 @@ data class IKComponentType(
             // Use the explicit path if provided
             println("Building chain '$chainName' using explicit path: $bonePathNames")
             CalikoStructureBuilder.buildChainFromPath(owner, chainName, bonePathNames, model, jointConstraints)
-        } else {
+        }
+        else {
             // Fallback to using start and end bone names
             CalikoStructureBuilder.buildChain(owner, chainName, startBoneName, endBoneName, model, jointConstraints)
         }

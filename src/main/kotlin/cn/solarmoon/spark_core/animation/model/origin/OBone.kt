@@ -49,12 +49,25 @@ data class OBone(
         ma: Matrix4f,
         partialTick: Float = 1f
     ): Matrix4f {
-        val bone = bones[name] ?: return ma
-        ma.translate(pivot.toVector3f())
-        ma.translate(bone.getPosition(partialTick).toVector3f())
-        ma.rotateZYX(rotation.toVector3f().add(bone.getRotation(partialTick).toVector3f()))
-        ma.scale(bone.getScale(partialTick).toVector3f())
-        ma.translate(pivot.toVector3f().negate())
+        // 获取动画数据，如果不存在则使用默认值
+        val boneInstance = bones[name]
+        val animatedPos = boneInstance?.getPosition(partialTick)?.toVector3f() ?: org.joml.Vector3f()
+        val animatedRot = boneInstance?.getRotation(partialTick)?.toVector3f() ?: org.joml.Vector3f()
+        val animatedScale = boneInstance?.getScale(partialTick)?.toVector3f() ?: org.joml.Vector3f(1f, 1f, 1f)
+
+        val baseRot = rotation.toVector3f()
+        val pivotVec = pivot.toVector3f()
+
+        // 1. 平移到 pivot
+        ma.translate(pivotVec)
+        // 2. 应用旋转（基础旋转 + 动画旋转）
+        ma.rotateZYX(baseRot.add(animatedRot))
+        // 3. 应用缩放（基础缩放 + 动画缩放）
+        ma.scale(animatedScale)
+        // 4. 从 pivot 平移回来
+        ma.translate(pivotVec.negate())
+        // 5. 应用动画位置偏移
+        ma.translate(animatedPos)
         return ma
     }
 
