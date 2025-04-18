@@ -13,7 +13,6 @@ import net.minecraft.client.gui.narration.NarrationElementOutput
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import kotlin.math.max
-import cn.solarmoon.spark_core.client.gui.screen.drawScaledString
 
 class ModelTreeViewWidget(
     x: Int, y: Int, width: Int, height: Int,
@@ -38,9 +37,6 @@ class ModelTreeViewWidget(
     private var expandedBones: MutableSet<String> = mutableSetOf() // 存储展开的骨骼名称
     private var selectedElement: Any? = null // OBone or OCube
     private var contentHeight = 0
-
-    // Define scale factor locally or pass it in constructor/access via companion
-    private val fontScaleFactor = 2.0f / 3.0f
 
     init {
         // 默认展开所有根骨骼
@@ -163,38 +159,22 @@ class ModelTreeViewWidget(
                      guiGraphics.fill(nodeX, elementTop, nodeX + nodeWidth, elementBottom, 0x40FFFFFF.toInt())
                  }
 
-                // --- 绘制展开/折叠图标 --- (Scaling the icon text)
+                // --- 绘制展开/折叠图标 ---
                 val iconX = nodeX - 8
                 val canExpand = element is OBone && (model?.bones?.values?.any { it.parentName == element.name } == true || element.cubes.isNotEmpty())
 
                 if (canExpand) {
                     val icon = if (isExpanded(element as OBone)) "-" else "+"
-                    // guiGraphics.drawString(font, icon, iconX, elementTop + (itemHeight - font.lineHeight) / 2, 0xFFFFFF.toInt()) // Original
-                    guiGraphics.drawScaledString(
-                        font,
-                        icon,
-                        iconX.toFloat(), // Original X
-                        (elementTop + (itemHeight - font.lineHeight * fontScaleFactor) / 2).toFloat(), // Adjust Y for scaled font height
-                        fontScaleFactor,
-                        0xFFFFFF.toInt()
-                    )
+                    guiGraphics.drawString(font, icon, iconX, elementTop + (itemHeight - font.lineHeight) / 2, 0xFFFFFF.toInt())
                 }
 
-                // --- 绘制节点名称 --- (Scaling the node name)
+                // --- 绘制节点名称 ---
                 val displayName = when (element) {
                     is OBone -> Component.literal(element.name)
                     is CubeInfo -> Component.literal("  Cube ${element.index}") // 传递的是 CubeInfo
                     else -> Component.literal("Unknown")
                 }
-                // guiGraphics.drawString(font, displayName, nodeX, elementTop + (itemHeight - font.lineHeight) / 2, 0xFFFFFF.toInt()) // Original
-                guiGraphics.drawScaledString(
-                    font,
-                    displayName,
-                    nodeX.toFloat(), // Original X
-                    (elementTop + (itemHeight - font.lineHeight * fontScaleFactor) / 2).toFloat(), // Adjust Y for scaled font height
-                    fontScaleFactor,
-                    0xFFFFFF.toInt()
-                )
+                guiGraphics.drawString(font, displayName, nodeX, elementTop + (itemHeight - font.lineHeight) / 2, 0xFFFFFF.toInt())
             }
 
             currentY += itemHeight
