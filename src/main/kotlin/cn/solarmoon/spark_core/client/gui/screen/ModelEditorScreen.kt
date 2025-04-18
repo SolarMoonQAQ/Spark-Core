@@ -36,6 +36,8 @@ import org.lwjgl.opengl.GL11
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import kotlin.math.max
+import cn.solarmoon.spark_core.client.gui.browser.WebBrowserWidget
+import com.cinemamod.mcef.MCEF
 
 class ModelEditorScreen(private val modelLocation: ResourceLocation, private val textureLocation: ResourceLocation) : Screen(Component.translatable("spark_core.screen.model_editor.title")) {
 
@@ -69,6 +71,9 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     // --- Animation Selection List --- M
     private lateinit var animationSelectionList: AnimationSelectionList
     private var currentAnimations: List<String> = emptyList() // Cache current model's animations
+
+    // --- Web Browser Widget for Testing ---
+    private var webBrowserWidget: WebBrowserWidget? = null // 添加属性
 
     private enum class Axis { X, Y, Z }
 
@@ -209,16 +214,11 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val padding = 4 // Increased padding between elements
         val availableHeight = this.height - topMargin - bottomMargin
 
-        val sidebarWidth = 150 // From backup
+        val sidebarWidth = 150
 
-        val modelListHeight = (availableHeight-padding)/2 // From backup (listHeight)
+        val modelListY =topMargin + padding + availableHeight/2
+        val modelListHeight = (availableHeight-padding)/2
 
-        // Right Sidebar Coordinates (TreeView & Model List)
-
-        val modelListY =topMargin + padding + availableHeight/2 // From backup (listY)
-
-        // Left Column Coordinates (Animation List)
-        val animListX = sideMargin
         val animListY = topMargin
         val animListHeight = (availableHeight - padding)/2 // Let animation list take full height on left
 
@@ -307,6 +307,25 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // cameraYaw = player.yRot // Example: Start facing same way as player
         // cameraPitch = player.xRot
 
+        // --- Add Web Browser Widget ---
+        if (MCEF.isInitialized()) {
+            val browserHeight = 60
+            val browserWidth = this.width - 20
+            val browserX = 10
+            val browserY = buttonY - browserHeight - 5
+
+            webBrowserWidget = WebBrowserWidget(
+                browserX, browserY, browserWidth, browserHeight,
+                "https://www.baidu.com",
+                transparent = false
+            )
+            this.addRenderableWidget(webBrowserWidget!!) // 添加到 renderables
+            println("WebBrowserWidget added to ModelEditorScreen.")
+        } else {
+            println("MCEF not initialized, skipping WebBrowserWidget.")
+            minecraft.gui.chat.addMessage(Component.literal("Warning: MCEF not initialized, web browser widget disabled."))
+        }
+
         // --- Register Event Listener --- M
         NeoForge.EVENT_BUS.register(this)
     }
@@ -326,6 +345,10 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             player.setItemInHand(InteractionHand.MAIN_HAND, wandStack)
             // Optional: Send feedback?
         }
+
+        // --- Close Browser Widget ---
+        webBrowserWidget?.close() // 关闭浏览器释放资源
+        println("WebBrowserWidget closed.")
     }
 
     // Override renderBackground to do nothing, preventing default dimming/gradient
@@ -485,31 +508,32 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
     // --- Restore mouseScrolled from Backup --- M
     override fun mouseScrolled(mouseX: Double, mouseY: Double, scrollX: Double, scrollY: Double): Boolean {
-        // Check if scrolling over TreeView first
+        // 优先让 WebBrowserWidget 处理滚动
+        if (webBrowserWidget?.mouseScrolled(mouseX, mouseY, scrollX, scrollY) == true) {
+            return true // 如果浏览器处理了滚动，事件结束
+        }
+
+        // 接着检查其他可滚动组件
         if (treeView.isMouseOver(mouseX, mouseY)) {
             if (treeView.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
                 return true
             }
         }
-        // Check if scrolling over ModelSelectionList
         if (modelSelectionList.isMouseOver(mouseX, mouseY)) {
             if (modelSelectionList.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
                 return true
             }
         }
-        // --- Add check for AnimationSelectionList --- M
         if (animationSelectionList.isMouseOver(mouseX, mouseY)) {
             if (animationSelectionList.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
                 return true
             }
         }
 
-        // If not scrolling over UI, adjust camera distance (zoom)
-        // Adjust sensitivity/direction as needed
-        val zoomAmount = scrollY * 0.1f * cameraDistance // Make scroll speed dependent on current distance
+        // 如果其他组件都没处理滚动，则调整相机距离
+        val zoomAmount = scrollY * 0.1f * cameraDistance
         cameraDistance -= zoomAmount.toFloat()
-        cameraDistance = cameraDistance.coerceIn(0.5f, 50f) // Adjust limits as needed
-        // No need to call update method, Mixin reads state directly
+        cameraDistance = cameraDistance.coerceIn(0.5f, 50f)
         return true
     }
 
@@ -517,15 +541,20 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     override fun isPauseScreen(): Boolean = false
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
-        // Prioritize widgets
-        if (treeView.mouseClicked(mouseX, mouseY, button)) {
-            return true
-        }
-        if (modelSelectionList.mouseClicked(mouseX, mouseY, button)) {
-            return true
-        }
-        // --- Animation List Click --- M
-        if (animationSelectionList.mouseClicked(mouseX, mouseY, button)) {
+        // 优先处理其他 Widget
+        if (treeView.mouseClicked(mouseX, mouseY, button)) return true
+        if (modelSelectionList.mouseClicked(mouseX, mouseY, button)) return true
+        if (animationSelectionList.mouseClicked(mouseX, mouseY, button)) return true
+
+        // 处理 WebBrowserWidget 的点击
+        if (webBrowserWidget?.mouseClicked(mouseX, mouseY, button) == true) {
+            // 如果 WebBrowserWidget 处理了点击 (它内部会设置 isFocused = true)
+            // 可以选择性地取消其他 widget 的焦点（如果它们实现了焦点管理）
+            // treeView.isFocused = false
+            // modelSelectionList.isFocused = false
+            // animationSelectionList.isFocused = false
+            // 设置屏幕的焦点，确保后续键盘事件能路由到它
+            this.focused = webBrowserWidget // 让 Screen 知道谁是焦点
             return true
         }
 
@@ -563,10 +592,9 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 draggingAxis = nearestAxis
                 dragStartX = mouseX
                 dragStartY = mouseY
-                    println("Dragging Gizmo Axis: $nearestAxis")
-
-                    // Record original pivot (Use Player/IAnimatable)
-                    val player = Minecraft.getInstance().player as? IAnimatable<*>
+                println("Dragging Gizmo Axis: $nearestAxis")
+                // Record original pivot (Use Player/IAnimatable)
+                val player = Minecraft.getInstance().player as? IAnimatable<*>
                 val targetElement = selectedCube ?: selectedBone
                     if (targetElement != null && player != null) {
                          // This part relies on PivotEditAction being updated too
@@ -583,8 +611,10 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             }
         }
         */
+        // 如果点击在所有 widget 外部，取消焦点
+        // this.focused = null // Screen 会处理这个?
+        // webBrowserWidget?.isFocused = false // widget 内部会处理
 
-        // Fallback to super if not handled by widgets or Gizmo click
         return super.mouseClicked(mouseX, mouseY, button)
     }
 
@@ -630,32 +660,33 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
     // --- Keyboard Input Handling (Remains the same) ---
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
-        // ... (Undo/Redo logic is unchanged)
-        if (SparkKeyMappings.MODEL_EDITOR_UNDO.matches(keyCode, scanCode)) {
-            if (undoStack.isNotEmpty()) {
-                val action = undoStack.pop()
-                action.undo(treeView) // Pass treeView for refresh
-                redoStack.push(action)
-                println("Undo performed via shortcut. Undo: ${undoStack.size}, Redo: ${redoStack.size}") // Debug
-                return true // Key handled
-            }
-        }
-
-        // Check for Redo (Ctrl+Y)
-        if (SparkKeyMappings.MODEL_EDITOR_REDO.matches(keyCode, scanCode)) {
-            if (redoStack.isNotEmpty()) {
-                val action = redoStack.pop()
-                action.redo(treeView) // Pass treeView for refresh
-                undoStack.push(action)
-                println("Redo performed via shortcut. Undo: ${undoStack.size}, Redo: ${redoStack.size}") // Debug
-                return true // Key handled
-            }
-        }
-        // Allow Esc key to close the screen (default behavior)
+        // 检查是否有获得焦点的 Widget 处理按键 (包括 WebBrowserWidget)
+        // Screen -> AbstractContainerEventHandler -> AbstractWidget 会将事件传递给 this.focused
         if (super.keyPressed(keyCode, scanCode, modifiers)) {
             return true
         }
-        return false
+
+        // 处理 Undo/Redo 快捷键 (如果焦点不在 Widget 上，或者 Widget 未处理)
+        if (SparkKeyMappings.MODEL_EDITOR_UNDO.matches(keyCode, scanCode)) {
+            if (undoStack.isNotEmpty()) {
+                val action = undoStack.pop()
+                action.undo(treeView)
+                redoStack.push(action)
+                println("Undo performed via shortcut. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
+                return true
+            }
+        }
+        if (SparkKeyMappings.MODEL_EDITOR_REDO.matches(keyCode, scanCode)) {
+            if (redoStack.isNotEmpty()) {
+                val action = redoStack.pop()
+                action.redo(treeView)
+                undoStack.push(action)
+                println("Redo performed via shortcut. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
+                return true
+            }
+        }
+
+        return false // 没有处理
     }
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {

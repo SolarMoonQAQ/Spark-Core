@@ -45,6 +45,7 @@ dependencies {
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
     implementation("com.google.code.gson:gson:[2.10.1,2.11.0)")
+    implementation files("libs/mcef-neoforge-2.1.6-1.21.1.jar")
     files(fileTree(dir: 'libs', includes: ['*.jar']))
     additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
 }
@@ -106,5 +107,12 @@ repositories {
     }
     flatDir {
         dir 'libs'
+    }
+    maven {
+        url = uri('https://mcef-download.cinemamod.com/repositories/releases')
+    }
+    // Optional for snapshot versions
+    maven {
+        url = uri('https://mcef-download.cinemamod.com/repositories/snapshots')
     }
 }
