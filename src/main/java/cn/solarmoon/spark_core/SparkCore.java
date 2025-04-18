@@ -13,6 +13,7 @@ import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
 import cn.solarmoon.spark_core.registry.common.*;
 import cn.solarmoon.spark_core.rpc.WebSocketRpcServer;
 // import net.minecraft.core.registries.Registries; // No longer needed here
+import com.cinemamod.mcef.MCEF;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
 // import net.neoforged.bus.api.SubscribeEvent; // No longer needed here

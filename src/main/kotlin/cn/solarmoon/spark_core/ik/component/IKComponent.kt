@@ -91,8 +91,6 @@ class IKComponent(
             // Found ground: Calculate hit point manually and set as actual target
             // hitPoint = rayStart + (rayEnd - rayStart) * closestHit.hitFraction
 
-
-
             val direction = rayEnd.subtract(rayStart) // Calculate direction vector (end - start)
             val scaledDirection = direction.multLocal(closestHit.hitFraction) // Scale direction by hit fraction (modifies 'direction')
             this.actualTargetPosition.set(rayStart).addLocal(scaledDirection) // Set to start point and add scaled direction

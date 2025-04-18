@@ -8,7 +8,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.AbstractScrollWidget
-import net.minecraft.client.gui.components.AbstractSelectionList
 import net.minecraft.client.gui.narration.NarrationElementOutput
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
@@ -21,9 +20,6 @@ class ModelTreeViewWidget(
     private val indentation: Int = 10,
     private val onSelectionChanged: (Any?) -> Unit // 回调传递 OBone 或 OCube
 ) : AbstractScrollWidget(x, y, width, height, Component.empty()) {
-    val SCROLLER_SPRITE: ResourceLocation = ResourceLocation.withDefaultNamespace("widget/scroller")
-    val SCROLLER_BACKGROUND_SPRITE: ResourceLocation =
-        ResourceLocation.withDefaultNamespace("widget/scroller_background")
     val MENU_LIST_BACKGROUND: ResourceLocation =
         ResourceLocation.withDefaultNamespace("textures/gui/menu_list_background.png")
     val INWORLD_MENU_LIST_BACKGROUND: ResourceLocation =
@@ -59,8 +55,8 @@ class ModelTreeViewWidget(
             if (this.minecraft.level == null) MENU_LIST_BACKGROUND else INWORLD_MENU_LIST_BACKGROUND
         guiGraphics.blit(
             resourcelocation,
-            getX(),  // 控件左上角X
-            getY(),  // 控件左上角Y
+            x,  // 控件左上角X
+            y,  // 控件左上角Y
             width,   // 控件宽度
             height,  // 控件高度
             0f,      // uOffset从纹理左上角开始
@@ -134,10 +130,10 @@ class ModelTreeViewWidget(
         mouseY: Int,
         partialTick: Float
     ) {
-        val minY = this.getY() + 2
-        val maxY = minY + this.innerHeight // 可见区域底部
+        val minY = this.y + 2
+        minY + this.innerHeight // 可见区域底部
         val startY = minY - this.scrollAmount().toInt()
-        val startX = this.getX() + 2
+        val startX = this.x + 2
 
         var currentY = startY
         for ((element, level) in flatVisibleNodes) {
@@ -145,7 +141,7 @@ class ModelTreeViewWidget(
             val elementBottom = elementTop + itemHeight
 
             // 只渲染在可见滚动区域内的条目
-            if (elementBottom >= this.getY() && elementTop <= this.getY() + this.height) {
+            if (elementBottom >= this.y && elementTop <= this.y + this.height) {
                 val nodeX = startX + level * indentation
                 val nodeWidth = this.width - 4 - level * indentation
 
@@ -164,7 +160,7 @@ class ModelTreeViewWidget(
                 val canExpand = element is OBone && (model?.bones?.values?.any { it.parentName == element.name } == true || element.cubes.isNotEmpty())
 
                 if (canExpand) {
-                    val icon = if (isExpanded(element as OBone)) "-" else "+"
+                    val icon = if (isExpanded(element)) "-" else "+"
                     guiGraphics.drawString(font, icon, iconX, elementTop + (itemHeight - font.lineHeight) / 2, 0xFFFFFF.toInt())
                 }
 
@@ -188,7 +184,7 @@ class ModelTreeViewWidget(
             return false // 不在控件区域内
         }
 
-        val minY = this.getY() + 2
+        val minY = this.y + 2
         val startY = minY - this.scrollAmount().toInt()
         val relativeY = mouseY - startY
 
@@ -198,8 +194,8 @@ class ModelTreeViewWidget(
 
         if (clickedIndex >= 0 && clickedIndex < flatVisibleNodes.size) {
             val (clickedElement, level) = flatVisibleNodes[clickedIndex]
-            val clickX = mouseX - (this.getX() + 2) // 相对于内容区的 X
-            val elementTop = startY + clickedIndex * itemHeight
+            val clickX = mouseX - (this.x + 2) // 相对于内容区的 X
+            startY + clickedIndex * itemHeight
 
             // --- 处理展开/折叠 (仅对 OBone) ---
             if (clickedElement is OBone) {
@@ -236,6 +232,95 @@ class ModelTreeViewWidget(
 
     override fun updateWidgetNarration(output: NarrationElementOutput) {
         // TODO: 添加辅助功能旁白
+    }
+
+    /**
+     * Sets the selected element in the tree view and expands parent nodes as needed
+     * @param element The element to select (OBone or OCube)
+     */
+    fun setSelectedElement(element: Any?) {
+        when (element) {
+            is OBone -> {
+                // Find and expand all parent bones
+                expandParentBones(element)
+                selectedElement = element
+                onSelectionChanged(element)
+            }
+            is OCube -> {
+                // Find the parent bone of this cube
+                val parentBone = model?.bones?.values?.find { it.cubes.contains(element) }
+                if (parentBone != null) {
+                    // Expand all parent bones
+                    expandParentBones(parentBone)
+                    // Expand the direct parent to show the cube
+                    expandedBones.add(parentBone.name)
+                    refreshVisibleNodes()
+                }
+
+                // Find the CubeInfo wrapper for this cube
+                val cubeInfo = flatVisibleNodes.find {
+                    (it.first is CubeInfo) && (it.first as CubeInfo).cube === element
+                }?.first
+
+                selectedElement = cubeInfo ?: element
+                onSelectionChanged(element)
+            }
+            else -> {
+                selectedElement = null
+                onSelectionChanged(null)
+            }
+        }
+
+        // Ensure the selected element is visible by scrolling to it
+        scrollToSelectedElement()
+    }
+
+    /**
+     * Expands all parent bones of the given bone
+     */
+    private fun expandParentBones(bone: OBone) {
+        var currentBone = bone
+        var parentName = currentBone.parentName
+
+        // Expand the bone itself
+        expandedBones.add(currentBone.name)
+
+        // Expand all parent bones
+        while (parentName != null) {
+            val parentBone = model?.bones?.get(parentName)
+            if (parentBone != null) {
+                expandedBones.add(parentBone.name)
+                parentName = parentBone.parentName
+            } else {
+                break
+            }
+        }
+
+        refreshVisibleNodes()
+    }
+
+    /**
+     * Scrolls the view to make the selected element visible
+     */
+    private fun scrollToSelectedElement() {
+        val selectedIndex = flatVisibleNodes.indexOfFirst {
+            it.first === selectedElement ||
+            (selectedElement is OCube && it.first is CubeInfo && (it.first as CubeInfo).cube === selectedElement)
+        }
+
+        if (selectedIndex >= 0) {
+            val elementY = selectedIndex * itemHeight
+            val visibleStart = scrollAmount().toInt()
+            val visibleEnd = visibleStart + innerHeight
+
+            if (elementY < visibleStart) {
+                // Element is above visible area, scroll up
+                setScrollAmount(elementY.toDouble())
+            } else if (elementY + itemHeight > visibleEnd) {
+                // Element is below visible area, scroll down
+                setScrollAmount((elementY + itemHeight - innerHeight).toDouble())
+            }
+        }
     }
 
     // 临时的 CubeInfo 包装类，用于在列表中区分 Cube

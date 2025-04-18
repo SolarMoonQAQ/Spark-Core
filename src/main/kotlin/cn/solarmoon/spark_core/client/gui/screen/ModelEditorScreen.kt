@@ -8,8 +8,13 @@ import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.client.gui.widget.ModelTreeViewWidget
+import cn.solarmoon.spark_core.physics.level.PhysicsWorld
 import cn.solarmoon.spark_core.registry.client.SparkKeyMappings
 import com.google.gson.GsonBuilder
+import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.collision.PhysicsRayTestResult
+import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.math.Vector3f as JMEVector3f
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.vertex.VertexConsumer
 import net.minecraft.Util
@@ -38,15 +43,21 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import kotlin.math.max
 import cn.solarmoon.spark_core.client.gui.browser.WebBrowserWidget
 import com.cinemamod.mcef.MCEF
+import org.joml.Vector4f
+import java.util.UUID
+import kotlin.math.atan
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.tan
 
 class ModelEditorScreen(private val modelLocation: ResourceLocation, private val textureLocation: ResourceLocation) : Screen(Component.translatable("spark_core.screen.model_editor.title")) {
 
     // --- Main Camera Control State (used by CameraMixin) ---
-    var cameraDistance: Float = 5.0f // Renamed from sceneCameraDist
-        private set // Allow external read for Mixin, but modification only via methods
-    var cameraYaw: Float = 0f // Renamed from sceneCameraYaw
+    var cameraDistance: Float = 5.0f
         private set
-    var cameraPitch: Float = 15f // Renamed from sceneCameraPitch
+    var cameraYaw: Float = 0f
+        private set
+    var cameraPitch: Float = 15f
         private set
 
     // --- TreeView & Selection ---
@@ -73,7 +84,12 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     private var currentAnimations: List<String> = emptyList() // Cache current model's animations
 
     // --- Web Browser Widget for Testing ---
-    private var webBrowserWidget: WebBrowserWidget? = null // 添加属性
+    private lateinit var webBrowserWidget: WebBrowserWidget // 添加属性
+
+    // --- Debug Ray Visualization ---
+    private var debugRayOrigin: Vector3f? = null
+    private var debugRayDirection: Vector3f? = null
+    private var debugRayLength: Float = 100f
 
     private enum class Axis { X, Y, Z }
 
@@ -214,7 +230,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val padding = 4 // Increased padding between elements
         val availableHeight = this.height - topMargin - bottomMargin
 
-        val sidebarWidth = 150
+        val sidebarWidth = 100
 
         val modelListY =topMargin + padding + availableHeight/2
         val modelListHeight = (availableHeight-padding)/2
@@ -309,18 +325,19 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         // --- Add Web Browser Widget ---
         if (MCEF.isInitialized()) {
-            val browserHeight = 60
-            val browserWidth = this.width - 20
-            val browserX = 10
-            val browserY = buttonY - browserHeight - 5
+            val browserWidgetHeight = 70
+            val browserWidgetWidth = this.width - sidebarWidth*2
+            val browserWidgetX = sidebarWidth
+            val browserWidgetY = buttonY - browserWidgetHeight - 5
 
             webBrowserWidget = WebBrowserWidget(
-                browserX, browserY, browserWidth, browserHeight,
-                "https://www.baidu.com",
-                transparent = false
+                browserWidgetX, browserWidgetY,
+                browserWidgetWidth, browserWidgetHeight,
+                "https://www.google.com",
+                transparent = true
             )
-            this.addRenderableWidget(webBrowserWidget!!) // 添加到 renderables
-            println("WebBrowserWidget added to ModelEditorScreen.")
+            this.addRenderableWidget(webBrowserWidget) // Add to screen
+            println("WebBrowserWidget added to ModelEditorScreen.") // Updated log message
         } else {
             println("MCEF not initialized, skipping WebBrowserWidget.")
             minecraft.gui.chat.addMessage(Component.literal("Warning: MCEF not initialized, web browser widget disabled."))
@@ -347,7 +364,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         }
 
         // --- Close Browser Widget ---
-        webBrowserWidget?.close() // 关闭浏览器释放资源
+        webBrowserWidget.close() // 关闭浏览器释放资源
         println("WebBrowserWidget closed.")
     }
 
@@ -384,19 +401,34 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
          if (treeView.isMouseOver(mouseX, mouseY)) {
              if (treeView.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
                     return true
-                }
             }
+            if (treeView.isMouseOver(dragStartX, dragStartY)){
+                return true
+            }
+        }
          // Check if dragging ModelSelectionList
          if (modelSelectionList.isMouseOver(mouseX, mouseY)) {
              if (modelSelectionList.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
                   return true
              }
+             if (modelSelectionList.isMouseOver(dragStartX, dragStartY)){
+                 return true
+             }
          }
          // Check if dragging AnimationSelectionList
         if (animationSelectionList.isMouseOver(mouseX, mouseY)) {
-             if (animationSelectionList.mouseDragged(mouseX, mouseY, button, dragX, dragY)) return true
+             if (animationSelectionList.mouseDragged(mouseX, mouseY, button, dragX, dragY)){
+                 return true
+             }
+             if (animationSelectionList.isMouseOver(dragStartX, dragStartY)){
+                 return true
+             }
         }
-
+        if (webBrowserWidget.isMouseOver(mouseX, mouseY)) {
+            if (webBrowserWidget.isMouseOver(dragStartX, dragStartY)){
+                return true
+            }
+        }
         // If not dragging UI elements, control camera or Gizmo
         if (button == 0) { // Left button drag
             // If dragging Gizmo axis (needs update)
@@ -509,7 +541,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     // --- Restore mouseScrolled from Backup --- M
     override fun mouseScrolled(mouseX: Double, mouseY: Double, scrollX: Double, scrollY: Double): Boolean {
         // 优先让 WebBrowserWidget 处理滚动
-        if (webBrowserWidget?.mouseScrolled(mouseX, mouseY, scrollX, scrollY) == true) {
+        if (webBrowserWidget.mouseScrolled(mouseX, mouseY, scrollX, scrollY) == true) {
             return true // 如果浏览器处理了滚动，事件结束
         }
 
@@ -540,80 +572,206 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     // isPauseScreen remains false
     override fun isPauseScreen(): Boolean = false
 
+    // Convert screen coordinates to a ray in world space using Minecraft's pick method
+    private fun screenToWorldRay(screenX: Double, screenY: Double): Pair<Vector3f, Vector3f> {
+        val minecraft = Minecraft.getInstance()
+        val camera = minecraft.gameRenderer.mainCamera
+
+        try {
+            val mc     = Minecraft.getInstance()
+            val camera = mc.gameRenderer.mainCamera
+
+            // ==== 用 Screen 的宽高 而不是 Window 的帧缓冲分辨率 ====
+            val width  = this.width .toFloat()
+            val height = this.height.toFloat()
+
+            // 1. 真实 FOV 和宽高比
+            val fovY   = Math.toRadians(mc.options.fov().get().toDouble()).toFloat()
+            val aspect = width / height
+            val fovX   = 2f * atan(tan(fovY / 2f) * aspect)
+
+            // 2. NDC 坐标 [-1,1]
+            val ndcX = (2f * screenX.toFloat() / width  - 1f)
+            val ndcY = (1f - 2f * screenY.toFloat() / height)
+
+            // 3. 本地偏移
+            val offsetX = ndcX * tan(fovX / 2f)
+            val offsetY = ndcY * tan(fovY / 2f)
+
+            // 4. world-space 基向量
+            val fwd   = Vector3f(camera.lookVector .x.toFloat(), camera.lookVector .y.toFloat(), camera.lookVector .z.toFloat())
+            val up    = Vector3f(camera.upVector   .x.toFloat(), camera.upVector   .y.toFloat(), camera.upVector   .z.toFloat())
+            val right = Vector3f(camera.leftVector.x.toFloat(), camera.leftVector.y.toFloat(), camera.leftVector.z.toFloat())
+                .negate()
+
+            // 5. 合成方向
+            val dir = Vector3f(fwd)
+                .add(Vector3f(right).mul(offsetX))
+                .add(Vector3f(up   ).mul(offsetY))
+                .normalize()
+
+            // 6. 射线原点 = 相机世界位置
+            val pos    = camera.position
+            val origin = Vector3f(pos.x.toFloat(), pos.y.toFloat(), pos.z.toFloat())
+
+            return Pair(origin, dir)
+
+        } catch (e: Exception) {
+            // 如果计算出错，记录错误并返回一个默认射线
+            println("Error calculating ray: ${e.message}")
+            e.printStackTrace()
+
+            // 返回一个默认射线（直视前方）
+            val rayOrigin = Vector3f(camera.position.toVector3f())
+            val rayDirection = Vector3f(
+                -sin(Math.toRadians(camera.yRot.toDouble())).toFloat() * cos(Math.toRadians(camera.xRot.toDouble())).toFloat(),
+                -sin(Math.toRadians(camera.xRot.toDouble())).toFloat(),
+                cos(Math.toRadians(camera.yRot.toDouble())).toFloat() * cos(Math.toRadians(camera.xRot.toDouble())).toFloat()
+            ).normalize()
+
+            return Pair(rayOrigin, rayDirection)
+        }
+    }
+
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+        // 记录拖拽开始位置
+        dragStartX = mouseX
+        dragStartY = mouseY
+
         // 优先处理其他 Widget
         if (treeView.mouseClicked(mouseX, mouseY, button)) return true
         if (modelSelectionList.mouseClicked(mouseX, mouseY, button)) return true
         if (animationSelectionList.mouseClicked(mouseX, mouseY, button)) return true
 
         // 处理 WebBrowserWidget 的点击
-        if (webBrowserWidget?.mouseClicked(mouseX, mouseY, button) == true) {
-            // 如果 WebBrowserWidget 处理了点击 (它内部会设置 isFocused = true)
-            // 可以选择性地取消其他 widget 的焦点（如果它们实现了焦点管理）
-            // treeView.isFocused = false
-            // modelSelectionList.isFocused = false
-            // animationSelectionList.isFocused = false
+        if (webBrowserWidget.mouseClicked(mouseX, mouseY, button) == true) {
+             treeView.isFocused = false
+             modelSelectionList.isFocused = false
+             animationSelectionList.isFocused = false
             // 设置屏幕的焦点，确保后续键盘事件能路由到它
             this.focused = webBrowserWidget // 让 Screen 知道谁是焦点
             return true
         }
 
-        // --- Gizmo Click Detection (NEEDS REWORK) ---
-        // This logic requires recalculating gizmo screen positions based on main camera
-        // and world-to-screen projection within GUI context.
-        /*
-        val viewportX = 10; val viewportY = 20 // Example UI area, needs adjustment
-        if (button == 0 && draggingAxis == null && // Left click, not already dragging
-            // Check if click is within the main 'viewport' area (excluding sidebars)
-            mouseX >= viewportX && mouseX < (this.width - 150 - 20) && // Adjust based on sidebar layout
-            mouseY >= viewportY && mouseY < (this.height - 30) &&      // Adjust based on button layout
-            (selectedBone != null || selectedCube != null) // Something must be selected
-           )
-        {
-             // TODO: Recalculate Gizmo screen coords (gizmoPivotScreen, etc.) based on main camera
-             // Example: Use Camera.project or manual matrix math
+        // Only handle left clicks in the 3D view area
+        if (button == 0) {
+            val minecraft = Minecraft.getInstance()
+            val player = minecraft.player ?: return super.mouseClicked(mouseX, mouseY, button)
+            val animatable = player as? IAnimatable<*> ?: return super.mouseClicked(mouseX, mouseY, button)
 
-             // Placeholder check - assuming coords were recalculated
-             if (gizmoPivotScreen != null) {
-            val mouseXf = mouseX.toFloat()
-            val mouseYf = mouseY.toFloat()
-                val thresholdSqr = 7f * 7f // Click threshold
+            // Get ray from screen position
+            val (rayOrigin, rayDirection) = screenToWorldRay(mouseX, mouseY)
 
-            var minDistSqr = Float.MAX_VALUE
-            var nearestAxis: Axis? = null
+            // 输出射线信息便于调试
+            println("Player.pos: ${player.getPosition(1f)}, Ray origin: $rayOrigin, direction: $rayDirection")
 
-                // Simplified check (Needs proper projection and distToSegmentSqr)
-                if (gizmoXEndScreen != null && gizmoPivotScreen!!.distanceSquared(mouseXf, mouseYf, 0f) < thresholdSqr) nearestAxis = Axis.X
-                if (gizmoYEndScreen != null && gizmoPivotScreen!!.distanceSquared(mouseXf, mouseYf, 0f) < thresholdSqr) nearestAxis = Axis.Y // Placeholder logic
-                if (gizmoZEndScreen != null && gizmoPivotScreen!!.distanceSquared(mouseXf, mouseYf, 0f) < thresholdSqr) nearestAxis = Axis.Z // Placeholder logic
+            // 存储射线信息用于可视化
+            debugRayOrigin = rayOrigin
+            debugRayDirection = rayDirection
 
+            // 转换为JME的Vector3f
+            val jmeRayOrigin = JMEVector3f(rayOrigin.x, rayOrigin.y, rayOrigin.z)
+            val jmeRayDirection = JMEVector3f(rayDirection.x, rayDirection.y, rayDirection.z)
 
-                if (nearestAxis != null) {
-                draggingAxis = nearestAxis
-                dragStartX = mouseX
-                dragStartY = mouseY
-                println("Dragging Gizmo Axis: $nearestAxis")
-                // Record original pivot (Use Player/IAnimatable)
-                val player = Minecraft.getInstance().player as? IAnimatable<*>
-                val targetElement = selectedCube ?: selectedBone
-                    if (targetElement != null && player != null) {
-                         // This part relies on PivotEditAction being updated too
-                    originalPivotBeforeDrag = when (targetElement) {
-                             is OBone -> targetElement.pivot // Assuming OModel holds the *base* pivot
-                        is OCube -> targetElement.pivot
-                             else -> null
+            // 计算射线终点（射线长度设为100单位）
+            val jmeRayEnd = JMEVector3f(jmeRayOrigin)
+            jmeRayEnd.addLocal(jmeRayDirection.mult(100f))
+
+            // 执行射线检测
+            val results = ArrayList<PhysicsRayTestResult>()
+            player.level().physicsLevel.world.rayTest(jmeRayOrigin, jmeRayEnd, results)
+
+            // 如果有碰撞结果，处理它们
+            if (results.isNotEmpty()) {
+                // 按照距离排序
+                results.sortBy { it.hitFraction }
+
+                // 获取最近的碰撞结果
+                val closestHit = results[0]
+                val hitObjectName = closestHit.collisionObject.name
+
+                println("Hit object: $hitObjectName")
+
+                // 检查是否击中了Gizmo
+                if (hitObjectName.startsWith("gizmo_")) {
+                    // 解析轴名称
+                    val axisName = hitObjectName.substringAfter("gizmo_")
+                    val axis = when (axisName) {
+                        "x" -> Axis.X
+                        "y" -> Axis.Y
+                        "z" -> Axis.Z
+                        else -> null
                     }
-                         println("Started dragging $nearestAxis, original pivot: $originalPivotBeforeDrag")
-                } else {
-                        originalPivotBeforeDrag = null
+
+                    if (axis != null) {
+                        draggingAxis = axis
+                        println("Dragging Gizmo Axis: $axis")
+
+                        // Record original pivot for undo/redo
+                        val targetElement = selectedCube ?: selectedBone
+                        if (targetElement != null) {
+                            originalPivotBeforeDrag = when (targetElement) {
+                                is OBone -> targetElement.pivot
+                                is OCube -> targetElement.pivot
+                                else -> null
+                            }
+                            println("Started dragging $axis, original pivot: $originalPivotBeforeDrag")
+                        }
+
+                        return true // Event handled
+                    }
                 }
-                    return true // Event handled
+                // 检查是否击中了立方体
+                else if (hitObjectName.startsWith("cube_")) {
+                    // 解析立方体信息（格式：cube_骨骼名称_立方体索引）
+                    val parts = hitObjectName.split("_", limit = 3)
+                    if (parts.size >= 3) {
+                        val boneName = parts[1]
+                        val cubeIndex = parts[2].toIntOrNull()
+
+                        if (cubeIndex != null) {
+                            // 查找对应的骨骼和立方体
+                            val bone = model?.bones?.get(boneName)
+                            val cube = bone?.cubes?.getOrNull(cubeIndex)
+
+                            if (bone != null && cube != null) {
+                                // 立方体被点击 - 更新选择
+                                selectedCube = cube
+                                selectedBone = bone
+                                draggingAxis = null
+                                originalPivotBeforeDrag = null
+
+                                // 更新TreeView选择
+                                treeView.setSelectedElement(cube)
+
+                                println("Selected cube in bone: ${bone.name}")
+                                return true
+                            }
+                        }
+                    }
+                }
+                // 检查是否击中了骨骼
+                else {
+                    // 解析骨骼名称
+                    val boneName = hitObjectName
+                    // 查找对应的骨骼
+                    val bone = model?.bones?.get(boneName)
+                    if (bone != null) {
+                        // 骨骼被点击 - 更新选择
+                        selectedBone = bone
+                        selectedCube = null
+                        draggingAxis = null
+                        originalPivotBeforeDrag = null
+
+                        // 更新TreeView选择
+                        treeView.setSelectedElement(bone)
+
+                        println("Selected bone: ${bone.name}")
+                        return true
+                    }
+                }
             }
         }
-        */
-        // 如果点击在所有 widget 外部，取消焦点
-        // this.focused = null // Screen 会处理这个?
-        // webBrowserWidget?.isFocused = false // widget 内部会处理
 
         return super.mouseClicked(mouseX, mouseY, button)
     }
@@ -827,7 +985,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         // --- Calculate Gizmo Position (Always based on the primary selected bone's pivot) ---
         val gizmoTargetBoneName = selectedBone?.name ?: selectedBoneName // Use selectedBone directly if available, else inferred name
-        val pivotWorldPos = animatable.getWorldBonePivot(gizmoTargetBoneName ?: "") ?: return // Gizmo needs a bone pivot
+        val pivotWorldPos = animatable.getWorldBonePivot(gizmoTargetBoneName ?: "") // Gizmo needs a bone pivot
 
         // --- Calculate Highlight Box Vertices (Recursively if a bone is selected) --- M
         val allCubeHighlightVerticesWorld: MutableList<List<Vector3f>> = mutableListOf()
@@ -915,6 +1073,17 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, pivotWorldPos, gizmoXEndWorld, 1f, 0.2f, 0.2f, gizmoAlpha) // Red X
             drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, pivotWorldPos, gizmoYEndWorld, 0.2f, 1f, 0.2f, gizmoAlpha) // Green Y
             drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, pivotWorldPos, gizmoZEndWorld, 0.2f, 0.2f, 1f, gizmoAlpha) // Blue Z
+//
+//            // 绘制调试射线
+//            if (debugRayOrigin != null && debugRayDirection != null) {
+//                val rayEnd = Vector3f(debugRayOrigin).add(Vector3f(debugRayDirection).mul(debugRayLength))
+//                drawWorldLine(worldPoseMatrix, gizmoBuffer, debugRayOrigin!!, rayEnd, 1f, 1f, 0f, 1f) // 黄色射线
+//
+//                // 在射线起点和终点绘制小球体
+//                drawDebugPoint(worldPoseMatrix, gizmoBuffer, debugRayOrigin!!, 0.2f, 1f, 0f, 0f, 1f) // 红色起点
+//                drawDebugPoint(worldPoseMatrix, gizmoBuffer, rayEnd, 0.2f, 0f, 1f, 0f, 1f) // 绿色终点
+//            }
+
             bufferSource.endBatch(RenderType.lines())
 
         } finally {
@@ -931,7 +1100,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     //  递归收集cube顶点
     private fun collectDescendantCubeVertices(bone: OBone, animatable: IAnimatable<*>, partialTick: Float): List<List<Vector3f>> {
         val results = mutableListOf<List<Vector3f>>()
-        val boneWorldMatrix = animatable.getWorldBoneMatrix(bone.name, partialTick) ?: return emptyList() // Stop if bone matrix fails
+        val boneWorldMatrix = animatable.getWorldBoneMatrix(bone.name, partialTick) // Stop if bone matrix fails
 
         // 1. 从当前骨骼收集cube
         bone.cubes.forEach { cube ->
@@ -963,7 +1132,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         buffer.addVertex(poseMatrix, start.x, start.y, start.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
         buffer.addVertex(poseMatrix, end.x, end.y, end.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
     }
-    
+
     // --- 当两个面或线在同一深度时，会出现闪烁 ---
     private fun drawWorldLineWithOffset(poseMatrix: Matrix4f, buffer: VertexConsumer, start: Vector3f, end: Vector3f, r: Float, g: Float, b: Float, a: Float) {
         // 计算朝向摄像机的微小偏移向量
@@ -979,18 +1148,87 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             (cameraPos.y - midPoint.y).toFloat(),
             (cameraPos.z - midPoint.z).toFloat()
         )
-        
+
         if (offsetDir.lengthSquared() > 0.0001f) {
             offsetDir.normalize().mul(0.001f) // 极小偏移量
         } else {
             offsetDir.set(0f, 0f, 0.001f) // 如果位置接近相机，使用默认偏移
         }
-        
+
         // 应用偏移绘制
         val startOffset = Vector3f(start).add(offsetDir)
         val endOffset = Vector3f(end).add(offsetDir)
         buffer.addVertex(poseMatrix, startOffset.x, startOffset.y, startOffset.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
         buffer.addVertex(poseMatrix, endOffset.x, endOffset.y, endOffset.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+    }
+
+    // --- Helper to draw a debug point (small octahedron) ---
+    private fun drawDebugPoint(poseMatrix: Matrix4f, buffer: VertexConsumer, position: Vector3f, size: Float, r: Float, g: Float, b: Float, a: Float) {
+        val halfSize = size / 2f
+
+        // 绘制八面体的八个三角形
+        // 上半部分
+        drawDebugTriangle(poseMatrix, buffer,
+            Vector3f(position).add(0f, halfSize, 0f),
+            Vector3f(position).add(halfSize, 0f, 0f),
+            Vector3f(position).add(0f, 0f, halfSize),
+            r, g, b, a)
+
+        drawDebugTriangle(poseMatrix, buffer,
+            Vector3f(position).add(0f, halfSize, 0f),
+            Vector3f(position).add(0f, 0f, halfSize),
+            Vector3f(position).add(-halfSize, 0f, 0f),
+            r, g, b, a)
+
+        drawDebugTriangle(poseMatrix, buffer,
+            Vector3f(position).add(0f, halfSize, 0f),
+            Vector3f(position).add(-halfSize, 0f, 0f),
+            Vector3f(position).add(0f, 0f, -halfSize),
+            r, g, b, a)
+
+        drawDebugTriangle(poseMatrix, buffer,
+            Vector3f(position).add(0f, halfSize, 0f),
+            Vector3f(position).add(0f, 0f, -halfSize),
+            Vector3f(position).add(halfSize, 0f, 0f),
+            r, g, b, a)
+
+        // 下半部分
+        drawDebugTriangle(poseMatrix, buffer,
+            Vector3f(position).add(0f, -halfSize, 0f),
+            Vector3f(position).add(0f, 0f, halfSize),
+            Vector3f(position).add(halfSize, 0f, 0f),
+            r, g, b, a)
+
+        drawDebugTriangle(poseMatrix, buffer,
+            Vector3f(position).add(0f, -halfSize, 0f),
+            Vector3f(position).add(-halfSize, 0f, 0f),
+            Vector3f(position).add(0f, 0f, halfSize),
+            r, g, b, a)
+
+        drawDebugTriangle(poseMatrix, buffer,
+            Vector3f(position).add(0f, -halfSize, 0f),
+            Vector3f(position).add(0f, 0f, -halfSize),
+            Vector3f(position).add(-halfSize, 0f, 0f),
+            r, g, b, a)
+
+        drawDebugTriangle(poseMatrix, buffer,
+            Vector3f(position).add(0f, -halfSize, 0f),
+            Vector3f(position).add(halfSize, 0f, 0f),
+            Vector3f(position).add(0f, 0f, -halfSize),
+            r, g, b, a)
+    }
+
+    // --- Helper to draw a triangle ---
+    private fun drawDebugTriangle(poseMatrix: Matrix4f, buffer: VertexConsumer, v1: Vector3f, v2: Vector3f, v3: Vector3f, r: Float, g: Float, b: Float, a: Float) {
+        // 绘制三角形的三条边
+        buffer.addVertex(poseMatrix, v1.x, v1.y, v1.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, v2.x, v2.y, v2.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, v2.x, v2.y, v2.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, v3.x, v3.y, v3.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, v3.x, v3.y, v3.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, v1.x, v1.y, v1.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
     }
 
     // --- Animation Handling --- M
