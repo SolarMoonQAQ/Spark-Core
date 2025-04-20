@@ -109,14 +109,12 @@ abstract class PhysicsLevel(
                             scale.set(t.scale)
                         }
                         BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
-                    } else if (it.owner == mcLevel && it.name.equals("terrain")) {
-                        terrainBlockBodies.forEach { (pos, body) ->
-                            if (body.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
-                                terrainBlocks.remove(pos)
-                                world.remove(body)
-                                terrainBlockBodies.remove(pos)
-                            } else body.setUserIndex(body.userIndex() - 1) //销毁倒计时推进
-                        }
+                    } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
+                        if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
+                            terrainBlocks.remove(it.blockPos)
+                            world.remove(it)
+                            terrainBlockBodies.remove(it.blockPos)
+                        } else it.setUserIndex(it.userIndex() - 1) //销毁倒计时推进
                     }
                 }
                 physicsTickChannel.send(Unit)
