@@ -366,6 +366,18 @@ public class CompoundCollisionShape extends CollisionShape {
     }
 
     /**
+     * Find the child with the specified shape.
+     * @param index the index of the child to find (0&lt;index&lt;countChildren())
+     * @return the child shape at the specified index, or null if not found
+     */
+    public ChildCollisionShape findChild(int index) {
+        int size = children.size();
+        if (index >= 0 && index < size) {
+            return children.get(index);
+        } else return null;
+    }
+
+    /**
      * Enumerate the child shapes.
      *
      * @return a new array of pre-existing child shapes (not null)
