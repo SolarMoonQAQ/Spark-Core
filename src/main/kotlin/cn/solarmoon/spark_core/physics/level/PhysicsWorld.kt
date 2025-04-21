@@ -10,7 +10,7 @@ import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge
 
-class PhysicsWorld(level: PhysicsLevel): PhysicsSoftSpace(
+class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
     BroadphaseType.DBVT
@@ -54,6 +54,11 @@ class PhysicsWorld(level: PhysicsLevel): PhysicsSoftSpace(
         }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(manifoldPointId, pcoA, pcoB))
+    }
+
+    override fun addCollisionObject(pco: PhysicsCollisionObject) {
+        pco.level = level
+        super.addCollisionObject(pco)
     }
 
 }

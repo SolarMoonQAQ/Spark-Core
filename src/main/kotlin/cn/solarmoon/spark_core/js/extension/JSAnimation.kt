@@ -4,8 +4,8 @@ import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.util.PPhase
-import org.graalvm.polyglot.HostAccess
 import org.mozilla.javascript.Function
+import org.mozilla.javascript.Scriptable
 
 interface JSAnimation {
 
@@ -13,10 +13,8 @@ interface JSAnimation {
 
     val js get() = anim.holder.animLevel.jsEngine
 
-    @HostAccess.Export
     fun getProgress() = anim.getProgress(1f)
 
-    @HostAccess.Export
     fun onSwitchIn(consumer: Function) {
         anim.onEvent<AnimEvent.SwitchIn> {
             val p = it.previous
@@ -24,7 +22,6 @@ interface JSAnimation {
         }
     }
 
-    @HostAccess.Export
     fun onSwitchOut(consumer: Function) {
         anim.onEvent<AnimEvent.SwitchOut> {
             val n = it.next
@@ -32,7 +29,6 @@ interface JSAnimation {
         }
     }
 
-    @HostAccess.Export
     fun onEnd(consumer: Function) {
         anim.holder.animLevel.submitImmediateTask(PPhase.POST) {
             anim.onEvent<AnimEvent.End> {
@@ -41,13 +37,22 @@ interface JSAnimation {
         }
     }
 
-    @HostAccess.Export
     fun onCompleted(consumer: Function) {
         anim.holder.animLevel.submitImmediateTask(PPhase.POST) {
             anim.onEvent<AnimEvent.Completed> {
                 consumer.call(js)
             }
         }
+    }
+
+    fun onStart(consumer: Function) {
+        anim.onEvent<AnimEvent.SwitchIn> {
+            consumer.call(js, it.previous)
+        }
+    }
+
+    fun setShouldTurnBody(bool: Boolean) {
+        anim.shouldTurnBody = bool
     }
 
 }

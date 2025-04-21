@@ -1,14 +1,20 @@
 package cn.solarmoon.spark_core.animation.vanilla
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.physics.toRadians
+import net.minecraft.client.renderer.entity.LivingEntityRenderer
+import net.minecraft.core.Direction
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.Pose
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.event.tick.EntityTickEvent
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
+import kotlin.math.PI
 
 object BoneModifier {
 
@@ -42,18 +48,40 @@ object BoneModifier {
 
     @SubscribeEvent
     private fun sleep(event: BoneUpdateEvent) {
-        val player = event.animatable
-        if (event.bone.name == "body" && player is Player) {
-            val bedDirection = player.bedOrientation
-            if (bedDirection != null && player.isSleeping) {
+        val animatable = event.animatable
+        if (event.bone.name == "root" && animatable is LivingEntity) {
+            val bedDirection = animatable.bedOrientation
+            if (bedDirection != null && animatable.isSleeping) {
                 val old = event.newData
+
+                val bedRotation = sleepDirectionToRotation(bedDirection).toRadians()
+
+                val f3 = animatable.getEyeHeight(Pose.STANDING) - 1.2
+                val offset = Vec3(f3 * bedDirection.stepX, 0.0, f3 * bedDirection.stepZ).yRot(animatable.yBodyRot.toRadians())
+
                 event.newData = KeyAnimData(
-                    old.position,
-                    Vec3(old.rotation.x, old.rotation.y, old.rotation.z),
+                    Vec3(
+                        old.position.x + offset.x,
+                        old.position.y,
+                        old.position.z + offset.z
+                    ),
+                    Vec3(
+                        old.rotation.x,
+                        old.rotation.y + animatable.yBodyRot.toRadians().toDouble() + PI + bedRotation,
+                        old.rotation.z
+                    ),
                     old.scale
                 )
             }
         }
+    }
+
+    fun sleepDirectionToRotation(facing: Direction) = when (facing) {
+        Direction.SOUTH -> 0.0
+        Direction.WEST -> 270.0
+        Direction.NORTH -> 180.0
+        Direction.EAST -> 90.0
+        else -> 0.0
     }
 
 }

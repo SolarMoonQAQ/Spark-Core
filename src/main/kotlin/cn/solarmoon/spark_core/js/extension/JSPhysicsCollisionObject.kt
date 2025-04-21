@@ -1,10 +1,8 @@
-package cn.solarmoon.spark_core.js.physics
+package cn.solarmoon.spark_core.js.extension
 
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
-import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.js.getFunctionMember
-import cn.solarmoon.spark_core.js.getMember
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback
 import cn.solarmoon.spark_core.physics.collision.PhysicsEvent
 import cn.solarmoon.spark_core.physics.onEvent
@@ -12,19 +10,16 @@ import cn.solarmoon.spark_core.physics.presets.callback.AttackCollisionCallback
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import net.minecraft.world.entity.Entity
-import org.graalvm.polyglot.HostAccess
-import org.graalvm.polyglot.Value
 import org.mozilla.javascript.Function
 import org.mozilla.javascript.Scriptable
 
-class JSPhysicsCollisionObject(
-    val js: SparkJS,
-    val pco: PhysicsCollisionObject
-) {
+interface JSPhysicsCollisionObject {
 
-    private val callbackFunctions = mutableMapOf<String, MutableList<Scriptable>>()
+    val pco get() = this as PhysicsCollisionObject
+    val js get() = pco.level!!.mcLevel.jsEngine
 
-    @HostAccess.Export
+    val callbackFunctions: MutableMap<String, MutableList<Scriptable>>
+
     fun onCollide(id: String, consumer: Scriptable) {
         val values = callbackFunctions.getOrPut(id) { mutableListOf() }
 
@@ -32,19 +27,19 @@ class JSPhysicsCollisionObject(
             pco.addCollisionCallback(object : CollisionCallback {
                 override fun onStarted(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
                     values.forEach {
-                        it.getFunctionMember("onStart")?.call(js, JSPhysicsCollisionObject(js, o1), JSPhysicsCollisionObject(js, o2), manifoldId)
+                        it.getFunctionMember("onStart")?.call(js, o1, o2, manifoldId)
                     }
                 }
 
                 override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
                     values.forEach {
-                        it.getFunctionMember("onProcessed")?.call(js, JSPhysicsCollisionObject(js, o1), JSPhysicsCollisionObject(js, o2), manifoldId)
+                        it.getFunctionMember("onProcessed")?.call(js, o1, o2, manifoldId)
                     }
                 }
 
                 override fun onEnded(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
                     values.forEach {
-                        it.getFunctionMember("onEnded")?.call(js, JSPhysicsCollisionObject(js, o1), JSPhysicsCollisionObject(js, o2), manifoldId)
+                        it.getFunctionMember("onEnded")?.call(js, o1, o2, manifoldId)
                     }
                 }
             })
@@ -53,7 +48,6 @@ class JSPhysicsCollisionObject(
         values.add(consumer)
     }
 
-    @HostAccess.Export
     fun onAttackCollide(id: String, consumer: Scriptable) {
         val values = callbackFunctions.getOrPut(id) { mutableListOf() }
 
@@ -68,9 +62,10 @@ class JSPhysicsCollisionObject(
                     bBody: PhysicsCollisionObject,
                     manifoldId: Long
                 ) {
+                    if (attacker.level().isClientSide) return
                     attacker.level().submitImmediateTask(PPhase.POST) {
                         values.forEach {
-                            it.getFunctionMember("preAttack")?.call(js, isFirst, attacker, target, JSPhysicsCollisionObject(js, aBody), JSPhysicsCollisionObject(js, bBody), manifoldId)
+                            it.getFunctionMember("preAttack")?.call(js, isFirst, attacker, target, aBody, bBody, manifoldId)
                         }
                     }
                 }
@@ -82,9 +77,10 @@ class JSPhysicsCollisionObject(
                     bBody: PhysicsCollisionObject,
                     manifoldId: Long
                 ): Boolean {
+                    if (attacker.level().isClientSide) return false
                     attacker.level().submitImmediateTask(PPhase.POST) {
                         values.forEach {
-                            it.getFunctionMember("doAttack")?.call(js, attacker, target, JSPhysicsCollisionObject(js, aBody), JSPhysicsCollisionObject(js, bBody), manifoldId)
+                            it.getFunctionMember("doAttack")?.call(js, attacker, target, aBody, bBody, manifoldId)
                         }
                     }
                     return true
@@ -97,9 +93,10 @@ class JSPhysicsCollisionObject(
                     bBody: PhysicsCollisionObject,
                     manifoldId: Long
                 ) {
+                    if (attacker.level().isClientSide) return
                     attacker.level().submitImmediateTask(PPhase.POST) {
                         values.forEach {
-                            it.getFunctionMember("postAttack")?.call(js, attacker, target, JSPhysicsCollisionObject(js, aBody), JSPhysicsCollisionObject(js, bBody), manifoldId)
+                            it.getFunctionMember("postAttack")?.call(js, attacker, target, aBody, bBody, manifoldId)
                         }
                     }
                 }
@@ -109,26 +106,22 @@ class JSPhysicsCollisionObject(
         values.add(consumer)
     }
 
-    @HostAccess.Export
     fun setCollideWithGroups(value: Int) {
         pco.collideWithGroups = value
     }
 
-    @HostAccess.Export
     fun onCollisionActive(consumer: Function) {
         pco.onEvent<PhysicsEvent.OnCollisionActive> {
             consumer.call(js)
         }
     }
 
-    @HostAccess.Export
     fun onCollisionInactive(consumer: Function) {
         pco.onEvent<PhysicsEvent.OnCollisionInactive> {
             consumer.call(js)
         }
     }
 
-    @HostAccess.Export
     fun remove() {
         pco.owner.removeBody(pco.name)
     }

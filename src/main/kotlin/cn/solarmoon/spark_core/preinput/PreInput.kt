@@ -19,7 +19,7 @@ class PreInput(
 ) {
 
     private val inputQueue = ConcurrentLinkedDeque<PreInputData>()
-    private val allowedIds = mutableSetOf<PreInputId>()
+    private val allowedIds = mutableSetOf<String>()
     var isEnabled = true
         private set
     val hasInput get() = inputQueue.isNotEmpty()
@@ -27,14 +27,14 @@ class PreInput(
     private var cooldown = 0
     private var isPlayingSkill by Delegates.observable(false) { _, old, new -> if (old != new && !new) cooldown = 1 }
 
-    fun hasInput(id: PreInputId): Boolean {
+    fun hasInput(id: String): Boolean {
         return inputQueue.firstOrNull()?.id == id
     }
 
-    fun setInput(id: PreInputId, maxRemainTime: Int = 5, input: () -> Unit) {
+    fun setInput(id: String, maxRemainTime: Int = 5, priority: Int = 0, input: () -> Unit) {
         require(maxRemainTime > 0) { "预输入存续时间必须大于0" }
         inputQueue.addFirst(PreInputData(this, id, input, 0, maxRemainTime))
-        val temp = inputQueue.sortedByDescending { it.id.priority }
+        val temp = inputQueue.sortedByDescending { priority }
         inputQueue.clear()
         inputQueue.addAll(temp)
     }
@@ -61,24 +61,33 @@ class PreInput(
         }
     }
 
-    fun executeIfPresent(id: PreInputId) {
-        if (isInputAllowed(id)) {
-            inputQueue.firstOrNull { it.id == id }?.let {
+    fun executeIfPresent(vararg id: String) {
+        inputQueue.firstOrNull { it.id in id }?.let {
+            if (isInputAllowed(it.id)) {
                 invoke(it)
                 inputQueue.clear()
             }
         }
     }
 
-    fun allowInput(id: PreInputId) {
+    fun executeExcept(vararg id: String) {
+        inputQueue.firstOrNull { it.id !in id }?.let {
+            if (isInputAllowed(it.id)) {
+                invoke(it)
+                inputQueue.clear()
+            }
+        }
+    }
+
+    fun allowInput(id: String) {
         allowedIds.add(id)
     }
 
-    fun disallowInput(id: PreInputId) {
+    fun disallowInput(id: String) {
         allowedIds.remove(id)
     }
 
-    fun isInputAllowed(id: PreInputId): Boolean {
+    fun isInputAllowed(id: String): Boolean {
         return isEnabled || id in allowedIds
     }
 

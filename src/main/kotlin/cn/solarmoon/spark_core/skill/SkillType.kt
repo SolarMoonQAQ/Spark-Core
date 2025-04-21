@@ -19,8 +19,9 @@ class SkillType<S: Skill>(
 ) {
 
     internal var fromJS = false
-    val name get() = Component.translatable("skill.${registryKey.namespace}.${registryKey.path}.name")
-    val description get() = Component.translatable("skill.${registryKey.namespace}.${registryKey.path}.description")
+    val name = Component.translatable("skill.${registryKey.namespace}.${registryKey.path}.name")
+    val description = Component.translatable("skill.${registryKey.namespace}.${registryKey.path}.description")
+    val icon = ResourceLocation.fromNamespaceAndPath(registryKey.namespace, "textures/skill/${registryKey.path}.png")
 
     fun createSkill(holder: SkillHost, level: Level, active: Boolean = false): Skill {
         var result: Skill

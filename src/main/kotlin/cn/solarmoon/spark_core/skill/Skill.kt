@@ -4,6 +4,8 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.js.extension.JSSkill
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
@@ -41,7 +43,6 @@ open class Skill {
                 SkillPhase.END -> {
                     if (id < 0) holder.predictedSkills.remove(id)
                     else holder.allSkills.remove(id)
-                    targetPool.forEach { SkillManager.unregisterSkillTarget(it, this) }
                     targetPool.clear()
                     triggerEvent(SkillEvent.End)
                 }
@@ -70,6 +71,8 @@ open class Skill {
         this.holder = holder
         this.level = level
         initHandlers.forEach { it.invoke(this) }
+        config.init()
+        targetPool.init()
     }
 
     fun init(handler: Skill.() -> Unit) {
@@ -134,17 +137,14 @@ open class Skill {
         }
     }
 
-    fun end() {
-        transitionTo(SkillPhase.END)
-    }
+    fun end() = transitionTo(SkillPhase.END)
 
     fun endOnClient() {
         PacketDistributor.sendToServer(SkillPayload(this, CompoundTag().apply { putBoolean("endS", true) }))
     }
 
     fun endOnServer() {
-        end()
-        PacketDistributor.sendToAllPlayers(SkillPayload(this, CompoundTag().apply { putBoolean("endC", true) }))
+        if (end()) PacketDistributor.sendToAllPlayers(SkillPayload(this, CompoundTag().apply { putBoolean("endC", true) }))
     }
 
     fun sync(data: CompoundTag, context: IPayloadContext) {

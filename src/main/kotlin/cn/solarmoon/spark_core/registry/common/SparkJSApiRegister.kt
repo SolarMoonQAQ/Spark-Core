@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.extension.JSAnimHelper
 import cn.solarmoon.spark_core.js.extension.JSDamageSourceHelper
 import cn.solarmoon.spark_core.js.extension.JSEntityHelper
+import cn.solarmoon.spark_core.js.extension.JSLogger
 import cn.solarmoon.spark_core.js.extension.JSMath
 import cn.solarmoon.spark_core.js.extension.JSPhysicsHelper
 import cn.solarmoon.spark_core.js.ik.JSIKApi
@@ -34,6 +35,7 @@ object SparkJSApiRegister {
         event.registerComponent("EntityHelper", JSEntityHelper)
         event.registerComponent("AnimHelper", JSAnimHelper)
         event.registerComponent("PhysicsHelper", JSPhysicsHelper)
+        event.registerComponent("Logger", JSLogger)
         event.registerComponent("Ik", JSIKApi)
     }
 

@@ -98,7 +98,7 @@ object BlockCollisionHelper {
                         if (physicsLevel.terrainBlockBodies.containsKey(blockPos)) {//如果该位置的方块已经记录过，则检查方块类型后重置销毁倒计时 Reset the destruction count if the block has been recorded
                             if (blockState.isAir || blockState.getCollisionShape(physicsLevel.mcLevel, blockPos).isEmpty) {
                                 physicsLevel.submitDeduplicatedTask(blockPos.toString(), PPhase.PRE) { physicsLevel.terrainBlockBodies[blockPos]?.setUserIndex(0) }
-                            } else physicsLevel.submitDeduplicatedTask(blockPos.toString(), PPhase.PRE) { physicsLevel.terrainBlockBodies[blockPos]?.setUserIndex(400) }
+                            } else physicsLevel.submitDeduplicatedTask(blockPos.toString(), PPhase.PRE) { physicsLevel.terrainBlockBodies[blockPos]?.setUserIndex(40) }
                         } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象 Create a physics body for the block if it has not been recorded
                             if (!blockState.isAir && !blockState.getCollisionShape(physicsLevel.mcLevel, blockPos).isEmpty) {
                                 // 如果块不是空气或可替换方块，记录方块的状态和坐标 Record the block state and coordinates
@@ -106,7 +106,7 @@ object BlockCollisionHelper {
                                 physicsLevel.submitDeduplicatedTask(blockPos.toString(), PPhase.PRE) {
                                     val blockBody =
                                         PhysicsRigidBody(physicsLevel.mcLevel, blockState.getBulletCollisionShape(), blockPos)
-                                    blockBody.setUserIndex(400) //设定销毁倒计时(2秒，40主线程tick) Set the destruction count (2 seconds, 40 main thread ticks)
+                                    blockBody.setUserIndex(40) //设定销毁倒计时(2秒，40主线程tick) Set the destruction count (2 seconds, 40 main thread ticks)
                                     blockBody.setPhysicsLocation(
                                         Vector3f(
                                             blockPos.x.toFloat() + 0.5f,

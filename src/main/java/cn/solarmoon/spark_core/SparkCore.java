@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core;
 
+import cn.solarmoon.spark_core.animation.anim.play.AnimInstance;
 import cn.solarmoon.spark_core.js.JSHelperKt;
 import cn.solarmoon.spark_core.js.SparkJS;
 import cn.solarmoon.spark_core.molang.core.MolangParser;

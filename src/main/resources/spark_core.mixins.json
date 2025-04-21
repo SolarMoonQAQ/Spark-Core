@@ -20,6 +20,7 @@
     "js.AnimInstanceMixin",
     "js.EntityMixin",
     "js.LevelMixin",
+    "js.PhysicsCollisionObjectMixin",
     "js.SkillMixin",
     "phys.EntityMixin",
     "phys.LevelMixin"

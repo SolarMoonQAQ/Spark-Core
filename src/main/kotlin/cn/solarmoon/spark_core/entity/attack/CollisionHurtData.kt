@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.entity.attack
 
 import cn.solarmoon.spark_core.util.BlackBoard
+import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.math.Vector3f
 import java.util.concurrent.atomic.AtomicInteger
 
 /**

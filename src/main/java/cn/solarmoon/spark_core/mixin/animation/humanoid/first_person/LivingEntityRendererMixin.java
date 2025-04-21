@@ -10,11 +10,13 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.layers.PlayerItemInHandLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.world.entity.LivingEntity;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
@@ -44,7 +46,7 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
             at = @At("HEAD")
     )
     private void h(T entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        if (entity instanceof AbstractClientPlayer player && !PlayerAnimatorCompat.INSTANCE.isLoaded()) {
+        if (entity instanceof AbstractClientPlayer player) {
             boolean shouldRender = PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(player).getShouldRender();
             if (shouldRender != lastShouldRender) {
                 // 仅在条件变化时重新过滤
