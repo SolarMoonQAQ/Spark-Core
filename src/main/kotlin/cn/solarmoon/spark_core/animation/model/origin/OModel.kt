@@ -12,11 +12,16 @@ import net.minecraft.resources.ResourceLocation
 data class OModel(
     val textureWidth: Int,
     val textureHeight: Int,
-    val bones: LinkedHashMap<String, OBone>
+    val bones: LinkedHashMap<String, OBone>,
+    val locators: LinkedHashMap<String, OLocator> = LinkedHashMap()
 ) {
 
+
     init {
-        bones.values.forEach { it.rootModel = this }
+        bones.values.forEach {
+            it.rootModel = this
+            this.locators.putAll(it.locators)
+        }
     }
 
     /**
