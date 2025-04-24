@@ -48,7 +48,8 @@ abstract class PhysicsLevel(
 
     // 协程配置
     val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    val scope = CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
+    val scope =
+        CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
 
     // 状态管理
     private val stateFlow = MutableStateFlow(PhysicsLevelState.IDLE)
@@ -100,7 +101,7 @@ abstract class PhysicsLevel(
             val tp = Transform()
             simulationLock.withLock {
                 world.pcoList.forEach {
-                    if (!it.isStatic) {
+                    if (!it.isStatic && it.isActive) {//仅更新非静态且未休眠的物体
                         it.lastTickTransform = it.tickTransform.clone()
                         it.tickTransform.apply {
                             val t = it.getTransform(tp)
