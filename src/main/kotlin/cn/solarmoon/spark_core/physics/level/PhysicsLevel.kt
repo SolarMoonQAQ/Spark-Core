@@ -101,7 +101,7 @@ abstract class PhysicsLevel(
             val tp = Transform()
             simulationLock.withLock {
                 world.pcoList.forEach {
-                    if (!it.isStatic && it.isActive) {//仅更新非静态且未休眠的物体
+                    if (!it.isStatic) {//仅更新非静态的物体
                         it.lastTickTransform = it.tickTransform.clone()
                         it.tickTransform.apply {
                             val t = it.getTransform(tp)
@@ -109,7 +109,7 @@ abstract class PhysicsLevel(
                             rotation.set(t.rotation)
                             scale.set(t.scale)
                         }
-                        BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
+                        if (it.isActive) BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
                     } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
                         if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
                             terrainBlocks.remove(it.blockPos)
