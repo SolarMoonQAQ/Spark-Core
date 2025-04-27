@@ -34,6 +34,7 @@ import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
@@ -57,9 +58,8 @@ abstract class PhysicsLevel(
     private val crashCount = AtomicInteger(0)
 
     // 同步控制
-    private val simulationLock = Mutex()
-    private val physicsTickChannel = Channel<Unit>(Channel.RENDEZVOUS)
-    private val stepCompletedChannel = Channel<Unit>(Channel.RENDEZVOUS)
+    private val physicsTickChannel = Channel<Unit>(Channel.CONFLATED)
+    private val stepCompletedChannel = Channel<Unit>(Channel.CONFLATED)
 
     // 运行时数据
     lateinit var world: PhysicsWorld
@@ -68,6 +68,7 @@ abstract class PhysicsLevel(
     override val taskMap = ConcurrentHashMap<PPhase, ConcurrentHashMap<String, () -> Unit>>()
     override val immediateQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>()
     var lastPhysicsTickTime = System.nanoTime()
+    var lastStepTickTime = 0L
 
     //地形碰撞相关
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
@@ -80,14 +81,15 @@ abstract class PhysicsLevel(
 
         while (isActive) {
             physicsTickChannel.receive()
-
             // 执行物理计算
+            val ticker = System.nanoTime()
             stateFlow.value = PhysicsLevelState.RUNNING
             repeat(repeat) {
                 world.update(fixedStep, 0, false, true, false)
             }
             stateFlow.value = PhysicsLevelState.IDLE
             // 通知主线程计算完成
+            lastStepTickTime = System.nanoTime() - ticker
             lastPhysicsTickTime = System.nanoTime()
             stepCompletedChannel.send(Unit)
         }
@@ -97,30 +99,43 @@ abstract class PhysicsLevel(
      * 在主线程每tick调用，向物理线程发送模拟请求，物理线程接收到请求后会立刻模拟约1主线程tick时间的物理步进，此时主线程会等待物理线程计算完毕后再执行后续内容
      */
     fun requestStep() {
-        runBlocking {
-            val tp = Transform()
-            simulationLock.withLock {
-                world.pcoList.forEach {
-                    if (!it.isStatic) {//仅更新非静态的物体
-                        it.lastTickTransform = it.tickTransform.clone()
-                        it.tickTransform.apply {
-                            val t = it.getTransform(tp)
-                            translation.set(t.translation)
-                            rotation.set(t.rotation)
-                            scale.set(t.scale)
-                        }
-                        if (it.isActive) BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
-                    } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
-                        if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
-                            terrainBlocks.remove(it.blockPos)
-                            world.remove(it)
-                            terrainBlockBodies.remove(it.blockPos)
-                        } else it.setUserIndex(it.userIndex() - 1) //销毁倒计时推进
-                    }
+        // 如果物理线程已经在运行，跳过本次请求
+        if (stateFlow.value == PhysicsLevelState.RUNNING) {
+            SparkCore.LOGGER.warn("Physics thread {} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
+            return
+        }
+        // 更新所有物体的位置姿态信息，处理地形碰撞
+        val tp = Transform()
+        world.pcoList.forEach {
+            if (!it.isStatic) {//仅更新非静态的物体
+                it.lastTickTransform = it.tickTransform.clone()
+                it.tickTransform.apply {
+                    val t = it.getTransform(tp)
+                    translation.set(t.translation)
+                    rotation.set(t.rotation)
+                    scale.set(t.scale)
                 }
-                physicsTickChannel.send(Unit)
-                stepCompletedChannel.receive() // 等待物理线程完成
+                BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
+            } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
+                if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
+                    terrainBlocks.remove(it.blockPos)
+                    world.remove(it)
+                    terrainBlockBodies.remove(it.blockPos)
+                } else it.setUserIndex(it.userIndex() - 1) //销毁倒计时推进
             }
+        }
+        // 发送物理步进请求（异步）
+        scope.launch {
+            physicsTickChannel.send(Unit)
+        }
+    }
+
+    /**
+     * 主线程在需要同步时调用（如渲染前）
+     */
+    suspend fun waitForPhysicsCompletion() {
+        if (stateFlow.value == PhysicsLevelState.RUNNING) {
+            stepCompletedChannel.receive()
         }
     }
 
