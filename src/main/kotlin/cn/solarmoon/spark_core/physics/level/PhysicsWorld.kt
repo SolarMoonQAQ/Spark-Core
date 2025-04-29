@@ -29,9 +29,9 @@ class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
     override fun needsCollision(pcoA: PhysicsCollisionObject, pcoB: PhysicsCollisionObject): Boolean {
         if (pcoA.isStatic && pcoB.isStatic) return false
         var r = true
-        if ((pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner) ||
-            (pcoA.isStatic && pcoA.name.equals("terrain") && !pcoB.collideWithTerrain) ||
-            (pcoB.isStatic && pcoB.name.equals("terrain") && !pcoA.collideWithTerrain)
+        if ((pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner)
+            || (pcoA.isStatic && pcoA.name.equals("terrain") && !pcoB.collideWithTerrain)
+            || (pcoB.isStatic && pcoB.name.equals("terrain") && !pcoA.collideWithTerrain)
         ) r = false
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }

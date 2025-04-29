@@ -69,7 +69,6 @@ abstract class PhysicsLevel(
     override val immediateQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>()
     var lastPhysicsTickTime = System.nanoTime()
     var lastStepTickTime = 0L
-
     //地形碰撞相关
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
     val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
@@ -85,7 +84,7 @@ abstract class PhysicsLevel(
             val ticker = System.nanoTime()
             stateFlow.value = PhysicsLevelState.RUNNING
             repeat(repeat) {
-                world.update(fixedStep, 0, false, true, false)
+                world.update(fixedStep, 5, false, true, false)
             }
             stateFlow.value = PhysicsLevelState.IDLE
             // 通知主线程计算完成
@@ -96,16 +95,21 @@ abstract class PhysicsLevel(
     }
 
     /**
-     * 在主线程每tick调用，向物理线程发送模拟请求，物理线程接收到请求后会立刻模拟约1主线程tick时间的物理步进，此时主线程会等待物理线程计算完毕后再执行后续内容
+     * 在主线程每tick调用，向物理线程发送模拟请求，物理线程接收到请求后会立刻模拟约1主线程tick时间的物理步进，此时主线程会继续执行后续内容
      */
     fun requestStep() {
         // 如果物理线程已经在运行，跳过本次请求
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
-            SparkCore.LOGGER.warn("Physics thread {} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
+            if (mcLevel.gameTime % 20 == 0.toLong())
+                SparkCore.LOGGER.warn("Physics thread {} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
             return
         }
         // 更新所有物体的位置姿态信息，处理地形碰撞
         val tp = Transform()
+        if(mcLevel.gameTime % 20 == 0.toLong() && world.pcoList.isNotEmpty()) {
+            SparkCore.LOGGER.debug("Rigid body count in {}: {}", mcLevel.dimension().location(), world.pcoList.size)
+            SparkCore.LOGGER.debug("Terrain body count: {}", terrainBlockBodies.size)
+        }
         world.pcoList.forEach {
             if (!it.isStatic) {//仅更新非静态的物体
                 it.lastTickTransform = it.tickTransform.clone()
