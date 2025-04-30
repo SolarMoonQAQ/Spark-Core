@@ -23,8 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
@@ -34,7 +32,6 @@ import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
@@ -69,6 +66,7 @@ abstract class PhysicsLevel(
     override val immediateQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>()
     var lastPhysicsTickTime = System.nanoTime()
     var lastStepTickTime = 0L
+
     //地形碰撞相关
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
     val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
@@ -100,16 +98,14 @@ abstract class PhysicsLevel(
     fun requestStep() {
         // 如果物理线程已经在运行，跳过本次请求
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
-            if (mcLevel.gameTime % 20 == 0.toLong())
-                SparkCore.LOGGER.warn("Physics thread {} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
+//            if (mcLevel.gameTime % 20 == 0.toLong())
+//                SparkCore.LOGGER.warn("{} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
             return
         }
+        if (world.pcoList.isNotEmpty() && mcLevel.gameTime % 20 == 0.toLong())
+            SparkCore.LOGGER.debug("{} last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
         // 更新所有物体的位置姿态信息，处理地形碰撞
         val tp = Transform()
-        if(mcLevel.gameTime % 20 == 0.toLong() && world.pcoList.isNotEmpty()) {
-            SparkCore.LOGGER.debug("Rigid body count in {}: {}", mcLevel.dimension().location(), world.pcoList.size)
-            SparkCore.LOGGER.debug("Terrain body count: {}", terrainBlockBodies.size)
-        }
         world.pcoList.forEach {
             if (!it.isStatic) {//仅更新非静态的物体
                 it.lastTickTransform = it.tickTransform.clone()
@@ -119,7 +115,8 @@ abstract class PhysicsLevel(
                     rotation.set(t.rotation)
                     scale.set(t.scale)
                 }
-                BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
+                if (it is PhysicsRigidBody && !it.isKinematic && it.isActive)
+                    BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
             } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
                 if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
                     terrainBlocks.remove(it.blockPos)
