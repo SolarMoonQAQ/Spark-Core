@@ -8,7 +8,6 @@ import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
-import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
@@ -24,8 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
@@ -35,7 +32,6 @@ import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
@@ -102,14 +98,14 @@ abstract class PhysicsLevel(
     fun requestStep() {
         // 如果物理线程已经在运行，跳过本次请求
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
-            if (mcLevel.gameTime % 20 == 0.toLong())
-                SparkCore.LOGGER.warn("{} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
+//            if (mcLevel.gameTime % 20 == 0.toLong())
+//                SparkCore.LOGGER.warn("{} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
             return
         }
+        if (world.pcoList.isNotEmpty() && mcLevel.gameTime % 20 == 0.toLong())
+            SparkCore.LOGGER.debug("{} last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
         // 更新所有物体的位置姿态信息，处理地形碰撞
         val tp = Transform()
-        var i = 0
-        var sleep = 0
         world.pcoList.forEach {
             if (!it.isStatic) {//仅更新非静态的物体
                 it.lastTickTransform = it.tickTransform.clone()
@@ -119,10 +115,7 @@ abstract class PhysicsLevel(
                     rotation.set(t.rotation)
                     scale.set(t.scale)
                 }
-                i++
-                val isSleep = !it.isActive
-                if (isSleep) sleep++
-                if (it is PhysicsRigidBody && !it.isKinematic && !isSleep)
+                if (it is PhysicsRigidBody && !it.isKinematic && it.isActive)
                     BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
             } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
                 if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
@@ -131,9 +124,6 @@ abstract class PhysicsLevel(
                     terrainBlockBodies.remove(it.blockPos)
                 } else it.setUserIndex(it.userIndex() - 1) //销毁倒计时推进
             }
-        }
-        if (mcLevel.gameTime % 20 == 0.toLong() && world.pcoList.isNotEmpty()) {
-            SparkCore.LOGGER.debug("Sleeping rigid body: {}/{}, and total: {}", sleep, i, world.pcoList.size)
         }
         // 发送物理步进请求（异步）
         scope.launch {
