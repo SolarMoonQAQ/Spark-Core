@@ -114,6 +114,8 @@ object BlockCollisionHelper {
                                             blockPos.z.toFloat() + 0.5f
                                         )
                                     )
+                                    blockBody.collisionGroup = PhysicsCollisionObject.COLLISION_GROUP_02
+                                    blockBody.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
                                     blockBody.tickTransform = blockBody.getTransform(null)
                                     blockBody.lastTickTransform = blockBody.tickTransform
                                     physicsLevel.terrainBlockBodies[blockPos] = blockBody

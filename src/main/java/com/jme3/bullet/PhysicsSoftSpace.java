@@ -96,7 +96,7 @@ public class PhysicsSoftSpace extends PhysicsSpace {
      */
     public PhysicsSoftSpace(Vector3f worldMin, Vector3f worldMax,
             BroadphaseType broadphaseType) {
-        this(worldMin, worldMax, broadphaseType, new CollisionConfiguration());
+        this(worldMin, worldMax, broadphaseType, new CollisionConfiguration(), 1);
     }
 
     /**
@@ -112,8 +112,8 @@ public class PhysicsSoftSpace extends PhysicsSpace {
      */
     public PhysicsSoftSpace(
             Vector3f worldMin, Vector3f worldMax, BroadphaseType broadphaseType,
-            CollisionConfiguration configuration) {
-        super(worldMin, worldMax, broadphaseType, 1, configuration);
+            CollisionConfiguration configuration, int numSolvers) {
+        super(worldMin, worldMax, broadphaseType, numSolvers, configuration);
 
         long spaceId = super.nativeId();
         long worldInfoId = getWorldInfo(spaceId);

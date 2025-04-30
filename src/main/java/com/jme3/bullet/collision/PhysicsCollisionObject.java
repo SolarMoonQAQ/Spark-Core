@@ -97,8 +97,6 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
 
     public volatile boolean collideWithOwner = false;
 
-    public volatile boolean collideWithTerrain = true;
-
     public volatile boolean isColliding = false;
 
     public LinkedHashSet<String> flags = new LinkedHashSet<>();

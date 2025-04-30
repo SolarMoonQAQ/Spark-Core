@@ -33,7 +33,7 @@ fun initBullet() {
 
     if (!targetDir.exists()) { targetDir.mkdirs() }
 
-    val destFile = File(targetDir,  "${platform}ReleaseSp_$libName")
+    val destFile = File(targetDir,  "${platform}ReleaseSpMt_$libName")
 
     val resourceStream = SparkCore::class.java.getResourceAsStream("/natives/$libName")
         ?: throw ModLoadingException(ModLoadingIssue.error("未找到物理库核心文件: $libName"))
@@ -57,8 +57,7 @@ fun initBullet() {
         }
     }
 
-    NativeLibraryLoader.loadLibbulletjme(true, File(gameDir, "sparkcore"), "Release", "Sp")
-    NativeLibrary.countThreads()
+    NativeLibraryLoader.loadLibbulletjme(true, File(gameDir, "sparkcore"), "Release", "SpMt")
 }
 
 fun Vec3.toBVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
