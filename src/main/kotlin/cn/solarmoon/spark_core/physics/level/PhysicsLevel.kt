@@ -69,7 +69,6 @@ abstract class PhysicsLevel(
 
     //地形碰撞相关
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
-    val terrainBlocks: ConcurrentHashMap<BlockPos, BlockState> = ConcurrentHashMap(1024) //用于碰撞检测的地形块位置表
     val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
 
     suspend fun CoroutineScope.run() {
@@ -121,7 +120,6 @@ abstract class PhysicsLevel(
                     BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
             } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
                 if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
-                    terrainBlocks.remove(it.blockPos)
                     world.remove(it)
                     terrainBlockBodies.remove(it.blockPos)
                 } else it.setUserIndex(it.userIndex() - 1) //销毁倒计时推进
