@@ -69,6 +69,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     public int tickCount = 0;
     public Transform lastTickTransform = new Transform();
     public Transform tickTransform = new Transform();
+    public BoundingBox cachedBoundingBox = new BoundingBox();
     @Nullable
     public PhysicsLevel level;
 

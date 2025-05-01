@@ -81,6 +81,7 @@ abstract class PhysicsLevel(
             // 执行物理计算
             val ticker = System.nanoTime()
             stateFlow.value = PhysicsLevelState.RUNNING
+            //TODO:根据负载压力调节步进频率，高负载时减少步进次数
             repeat(repeat) {
                 world.update(fixedStep, 5, false, true, false)
             }
@@ -115,6 +116,7 @@ abstract class PhysicsLevel(
                     rotation.set(t.rotation)
                     scale.set(t.scale)
                 }
+                it.boundingBox(it.cachedBoundingBox)
                 if (it is PhysicsRigidBody && !it.isKinematic && it.isActive)
                     BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
             } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
