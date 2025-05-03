@@ -5,6 +5,7 @@ import au.edu.federation.utils.Vec3f
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.ik.caliko.CalikoStructureBuilder
+import cn.solarmoon.spark_core.ik.origin.OIKConstraint
 import net.minecraft.resources.ResourceLocation
 
 /**
@@ -29,35 +30,57 @@ sealed interface JointConstraint {
  * Instances should be registered in a dedicated registry.
  */
 data class IKComponentType(
-    val id: ResourceLocation, // Unique identifier for registration
-    val chainName: String,    // Name used to identify the chain instance and target position
+    val id: ResourceLocation,
+    val chainName: String,
     val startBoneName: String,
     val endBoneName: String,
-    val bonePathNames: List<String>? = null, // Optional: Explicit path of bone names for the chain
+    val bonePathNames: List<String>,
     // Optional: Default solver parameters
     val defaultTolerance: Float = 0.1f,
     val defaultMaxIterations: Int = 20,
-    val jointConstraints: Map<String, JointConstraint> = emptyMap() // Map bone name to its constraint
+    val jointConstraints: Map<String, JointConstraint> = emptyMap(), // Map bone name to its constraint
+    val ikConstraintId: ResourceLocation? = null, // Optional reference to a loaded IK constraint
+    val poleTargetBoneName: String? = null, // Optional: Name of the bone to use as pole target
+    val poleAngleDegrees: Float? = null // Optional: Pole angle in degrees
 ) {
 
     /**
      * Builds a FabrikChain3D instance based on this type's configuration.
      */
     fun buildChain(owner: IAnimatable<*>, model: OModel): FabrikChain3D? {
-        val chain = if (!bonePathNames.isNullOrEmpty()) {
-            // Use the explicit path if provided
-            println("Building chain '$chainName' using explicit path: $bonePathNames")
-            CalikoStructureBuilder.buildChainFromPath(owner, chainName, bonePathNames, model, jointConstraints)
+        // 首先检查是否有引用到已加载的IK约束
+        var constraints = jointConstraints
+        var iterations = defaultMaxIterations
+        var tolerance = defaultTolerance
+        var poleTarget: Vec3f? = null
+        var poleAngle: Float? = poleAngleDegrees
+
+        // 如果有指定IK约束ID，则从同步数据中获取
+        if (ikConstraintId != null) {
+            val ikConstraint = OIKConstraint.get(ikConstraintId)
+            if (ikConstraint != OIKConstraint.EMPTY) {
+                // 转换骨骼限制为关节约束
+                constraints = ikConstraint.ikChainBoneLimits.mapNotNull { (boneName, limit) ->
+                    val constraint = limit.toJointConstraint()
+                    if (constraint != null) boneName to constraint else null
+                }.toMap()
+
+                // 使用约束中的迭代次数（如果有）
+                if (ikConstraint.iterations > 0) {
+                    iterations = ikConstraint.iterations
+                }
+            }
         }
-        else {
-            // Fallback to using start and end bone names
-            CalikoStructureBuilder.buildChain(owner, chainName, startBoneName, endBoneName, model, jointConstraints)
-        }
+
+        // 创建IK链
+        val chain = CalikoStructureBuilder.buildChainFromPath(owner, chainName, bonePathNames, model, constraints)
+
+        // 应用链属性
         chain?.apply {
-            setSolveDistanceThreshold(defaultTolerance)
-            setMaxIterationAttempts(defaultMaxIterations)
-            // Constraints are now applied during the build process in CalikoStructureBuilder
+            setSolveDistanceThreshold(tolerance)
+            setMaxIterationAttempts(iterations)
         }
+
         return chain
     }
 

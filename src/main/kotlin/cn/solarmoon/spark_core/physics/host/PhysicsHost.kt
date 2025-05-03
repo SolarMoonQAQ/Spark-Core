@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.physics.entity.EntityPhysicsManager
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import kotlinx.coroutines.launch
 import net.minecraft.world.entity.Entity
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass

@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.ik.payload
+package cn.solarmoon.spark_core.ik.sync
 
 // import cn.solarmoon.spark_core.util.logger // 移除旧的 logger 导入
 import cn.solarmoon.spark_core.SparkCore

@@ -75,6 +75,10 @@ public class Vec3f implements Vectorf<Vec3f>, Serializable
 	 */
 	public static Vec3f clone(Vec3f source) { return new Vec3f(source.x, source.y, source.z); }
 
+	public float dot(Vec3f v) {
+		return this.x * v.x + this.y * v.y + this.z * v.z;
+	}
+
 	/** 
 	 * Float setter for convenience. Note: x/y/z properties are public.
 	 *

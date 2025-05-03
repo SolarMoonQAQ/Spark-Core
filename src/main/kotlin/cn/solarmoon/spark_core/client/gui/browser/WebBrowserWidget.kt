@@ -339,11 +339,6 @@ class WebBrowserWidget(
          }
     }
 
-    fun resize(newWidth: Int, newHeight: Int) {
-        this.width = newWidth
-        this.height = newHeight
-    }
-
     fun close() {
         MCEF.getLogger().info("Closing MCEF browser for URL: ${browser?.url ?: initialUrl}")
         try {

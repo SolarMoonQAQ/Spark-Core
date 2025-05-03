@@ -37,4 +37,11 @@ setting.gradle
 lib
 mods
 
-
+.gitignore
+minecraft-spider
+Genesis
+mcef
+webdisplays
+.cursorignore
+.trae
+.vscode

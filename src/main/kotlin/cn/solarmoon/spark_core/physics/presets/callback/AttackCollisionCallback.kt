@@ -19,14 +19,15 @@ interface AttackCollisionCallback: CollisionCallback {
 
     fun postAttack(attacker: Entity, target: Entity, aBody: PhysicsCollisionObject, bBody: PhysicsCollisionObject, manifoldId: Long) {}
 
-    override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
+    override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, hitPointWorld: com.jme3.math.Vector3f, hitNormalWorld: com.jme3.math.Vector3f, impulse: Float) {
         val attacker = o1.owner as? Entity ?: return
         (o2.owner as? Entity)?.apply {
             attackSystem.customAttack(this) {
-                this@apply.pushHurtData(CollisionHurtData(o1, o2, manifoldId))
-                preAttack(attackSystem.attackedEntities.isEmpty(), attacker, this@apply, o1, o2, manifoldId)
-                if (!doAttack(attacker, this@apply, o1, o2, manifoldId)) return@customAttack false
-                postAttack(attacker, this@apply, o1, o2, manifoldId)
+                // TODO: CollisionHurtData 可能需要更新以包含新的碰撞信息，暂时移除 manifoldId
+                this@apply.pushHurtData(CollisionHurtData(o1, o2 /*, hitPointWorld, hitNormalWorld, impulse */))
+                preAttack(attackSystem.attackedEntities.isEmpty(), attacker, this@apply, o1, o2, 0L) // TODO: manifoldId 不再可用，暂时传递 0L 或考虑移除
+                if (!doAttack(attacker, this@apply, o1, o2, 0L)) return@customAttack false // TODO: manifoldId 不再可用，暂时传递 0L 或考虑移除
+                postAttack(attacker, this@apply, o1, o2, 0L) // TODO: manifoldId 不再可用，暂时传递 0L 或考虑移除
                 true
             }
         }

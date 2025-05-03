@@ -4,13 +4,16 @@ import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
-import cn.solarmoon.spark_core.ik.payload.IKComponentSyncPayload
-import cn.solarmoon.spark_core.ik.payload.IKSyncTargetPayload
-import cn.solarmoon.spark_core.ik.payload.RequestIKComponentChangePayload
-import cn.solarmoon.spark_core.ik.payload.RequestSetIKTargetPayload
+import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
+import cn.solarmoon.spark_core.ik.sync.IKDataPayload
+import cn.solarmoon.spark_core.ik.sync.IKDataSendingTask
+import cn.solarmoon.spark_core.ik.sync.IKSyncTargetPayload
+import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
+import cn.solarmoon.spark_core.ik.sync.RequestSetIKTargetPayload
 import cn.solarmoon.spark_core.js.sync.JSPayload
 import cn.solarmoon.spark_core.js.sync.JSSendingTask
 import cn.solarmoon.spark_core.js.sync.JSTaskPayload
+import cn.solarmoon.spark_core.rpc.payload.RpcPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -49,19 +52,22 @@ object SparkPayloadRegister {
 
         // IK Payloads (Added based on diff)
         val ik = event.registrar("ik")
-        ik.playToClient(IKSyncTargetPayload.TYPE, IKSyncTargetPayload.STREAM_CODEC, IKSyncTargetPayload::handleInClient)
+        ik.configurationToClient(IKDataPayload.TYPE, IKDataPayload.STREAM_CODEC, IKDataPayload::handleInClient)
+        ik.configurationToServer(IKDataSendingTask.Return.TYPE, IKDataSendingTask.Return.STREAM_CODEC, IKDataSendingTask.Return::onAct)
+        ik.playBidirectional(IKSyncTargetPayload.TYPE, IKSyncTargetPayload.STREAM_CODEC, IKSyncTargetPayload::handleInBothSide)
         ik.playToClient(IKComponentSyncPayload.TYPE, IKComponentSyncPayload.STREAM_CODEC, IKComponentSyncPayload::handleInClient)
         ik.playToServer(RequestIKComponentChangePayload.TYPE, RequestIKComponentChangePayload.STREAM_CODEC, RequestIKComponentChangePayload::handleInServer)
         ik.playToServer(RequestSetIKTargetPayload.TYPE, RequestSetIKTargetPayload.STREAM_CODEC, RequestSetIKTargetPayload::handleInServer)
 
     // RPC Payloads (Commented out as in the diff)
-//        val rpc = event.registrar("rpc")
-//        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
+        val rpc = event.registrar("rpc")
+        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {
         event.register(ModelDataSendingTask())
         event.register(JSSendingTask())
+        event.register(IKDataSendingTask())
     }
 
     @JvmStatic

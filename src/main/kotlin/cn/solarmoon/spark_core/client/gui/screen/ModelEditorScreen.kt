@@ -2,23 +2,32 @@ package cn.solarmoon.spark_core.client.gui.screen
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OModel
+import cn.solarmoon.spark_core.client.gui.browser.WebBrowserWidget
+import cn.solarmoon.spark_core.client.gui.screen.ModelEditorScreen.Axis.*
 import cn.solarmoon.spark_core.client.gui.widget.ModelTreeViewWidget
+import cn.solarmoon.spark_core.ik.component.IKComponent
 import cn.solarmoon.spark_core.physics.level.PhysicsWorld
+import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.registry.client.SparkKeyMappings
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.rpc.RpcClient
+import com.cinemamod.mcef.MCEF
 import com.google.gson.GsonBuilder
-import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.PhysicsRayTestResult
-import com.jme3.bullet.objects.PhysicsRigidBody
-import com.jme3.math.Vector3f as JMEVector3f
 import com.mojang.blaze3d.systems.RenderSystem
+import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
+import com.mojang.math.Axis
 import net.minecraft.Util
 import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.ObjectSelectionList
@@ -35,20 +44,16 @@ import net.neoforged.neoforge.common.NeoForge
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 import org.joml.Vector3f
+import org.lwjgl.opengl.GL11
 import java.io.File
 import java.util.*
-import org.lwjgl.opengl.GL11
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import kotlin.math.max
-import cn.solarmoon.spark_core.client.gui.browser.WebBrowserWidget
-import com.cinemamod.mcef.MCEF
-import org.joml.Vector4f
-import java.util.UUID
+import kotlin.math.asin
 import kotlin.math.atan
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.tan
+import com.jme3.math.Vector3f as JMEVector3f
 
 class ModelEditorScreen(private val modelLocation: ResourceLocation, private val textureLocation: ResourceLocation) : Screen(Component.translatable("spark_core.screen.model_editor.title")) {
 
@@ -59,6 +64,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         private set
     var cameraPitch: Float = 15f
         private set
+    private lateinit var physicsWorld: PhysicsWorld
 
     // --- TreeView & Selection ---
     private lateinit var treeView: ModelTreeViewWidget
@@ -91,7 +97,26 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     private var debugRayDirection: Vector3f? = null
     private var debugRayLength: Float = 100f
 
+    // --- Axis Selection and Manipulation ---
     private enum class Axis { X, Y, Z }
+    private var selectedAxis: Axis? = null
+    private var axisWorldCoordinates: Vector3f? = null
+    private var axisDebugOffset: Vector3f? = null // For visualization during dragging
+    private var axisClickDistance: Float = 0f // Distance from ray origin to axis when clicked
+
+    // --- IK Mode ---
+    private var ikModeEnabled: Boolean = false // 是否启用IK模式
+    private var selectedIKChain: String? = null // 当前选中的IK链名称
+    private var ikChains: Map<String, IKComponent> = emptyMap() // 可用的IK链
+    private var selectedIKBones: MutableList<OBone> = mutableListOf() // IK链中的骨骼
+    private var endEffectorBone: OBone? = null // 末端执行器骨骼
+    private lateinit var ikChainSelectionList: IKChainSelectionList // IK链选择列表
+
+    // --- IK Persistent Visualization ---
+    private var persistentIKTargetPosition: Vector3f? = null // 持久化显示的IK目标位置
+    private var persistentEndEffectorPosition: Vector3f? = null // 持久化显示的末端执行器实际位置
+    private var editingIKTarget: Boolean = false // 是否正在编辑IK目标坐标轴
+    private var ikTargetAxisSelected: Axis? = null // 选中的IK目标坐标轴
 
     // --- Model Selection List Widget (Inner class remains the same) ---
     private inner class ModelSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int)
@@ -140,6 +165,48 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         }
     }
 
+    // --- IK Chain Selection List Widget ---
+    private inner class IKChainSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int)
+        : ObjectSelectionList<IKChainSelectionList.Entry>(minecraft, width, height, y, itemHeight) {
+
+        fun updateIKChains(chains: Map<String, IKComponent>) {
+            this.clearEntries() // 清除先前的条目
+            chains.keys.sorted().forEach { chainName ->
+                this.addEntry(Entry(chainName, chains[chainName]!!))
+            }
+            // 重置滚动位置
+            this.scrollAmount = 0.0
+        }
+
+        override fun getRowWidth(): Int = this.width - (if (this.maxScroll > 0) 18 else 12)
+
+        override fun getScrollbarPosition(): Int = this.x + this.width - 6
+
+        inner class Entry(val chainName: String, val component: IKComponent) : ObjectSelectionList.Entry<Entry>() {
+            override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, isHovering: Boolean, partialTick: Float) {
+                val font = this@ModelEditorScreen.font
+                val color = if (chainName == selectedIKChain) 0xFFFF00 else 0xFFFFFF // 选中项显示为黄色
+                guiGraphics.drawString(font, chainName, left + 2, top + (height - font.lineHeight) / 2, color)
+            }
+
+            override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+                if (button == 0) { // 左键点击
+                    this@IKChainSelectionList.selected = this
+                    selectIKChain(chainName)
+                    return true
+                }
+                return false
+            }
+
+            override fun getNarration(): Component = Component.literal(chainName)
+        }
+
+        // 重置滚动位置
+        fun resetScroll() {
+            this.scrollAmount = 0.0
+        }
+    }
+
     // --- Animation Selection List Widget --- M
     private inner class AnimationSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int)
         : ObjectSelectionList<AnimationSelectionList.Entry>(minecraft, width, height, y, itemHeight) {
@@ -155,7 +222,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         override fun getRowWidth(): Int = this.width - (if (this.maxScroll > 0) 18 else 12)
 
-        override fun getScrollbarPosition(): Int = this.getX() + this.width - 6
+        override fun getScrollbarPosition(): Int = this.x + this.width - 6
 
         inner class Entry(val animationName: String) : ObjectSelectionList.Entry<Entry>() {
             override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, isHovering: Boolean, partialTick: Float) {
@@ -195,6 +262,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             this.onClose()
             return
         }
+        physicsWorld = player.level().physicsLevel.world
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY)
         val animatable = player as? IAnimatable<*> // Assume player implements IAnimatable
         if (animatable == null) {
@@ -223,7 +291,6 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         // --- 4. Initialize TreeView (using OModel) ---
         // Layout: Place TreeView and Model List on the right side
-        val sideMargin = 10
         val topMargin = 16
         val bottomMargin = 30 // Space for buttons
 
@@ -239,7 +306,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val animListHeight = (availableHeight - padding)/2 // Let animation list take full height on left
 
 
-        // --- Add Undo/Redo/Save Buttons ---
+        // --- Add Undo/Redo/Save/IK Buttons ---
         val buttonY = this.height - 25 // Position buttons at the bottom left
         val buttonWidth = 50
         val buttonHeight = 20
@@ -251,7 +318,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 val action = undoStack.pop()
                 action.undo(treeView)
                 redoStack.push(action)
-                println("Undo performed. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
+                SparkCore.LOGGER.debug("Undo performed. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
             }
         }.bounds(currentButtonX, buttonY, buttonWidth, buttonHeight).build())
         currentButtonX += buttonWidth + 5
@@ -262,7 +329,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 val action = redoStack.pop()
                 action.redo(treeView)
                 undoStack.push(action)
-                println("Redo performed. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
+                SparkCore.LOGGER.debug("Redo performed. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
             }
         }.bounds(currentButtonX, buttonY, buttonWidth, buttonHeight).build())
         currentButtonX += buttonWidth + 5
@@ -270,6 +337,12 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // Save Button
         addRenderableWidget(Button.builder(Component.literal("Save")) { _ ->
             saveModelToFile()
+        }.bounds(currentButtonX, buttonY, buttonWidth, buttonHeight).build())
+        currentButtonX += buttonWidth + 5
+
+        // IK Mode Button
+        addRenderableWidget(Button.builder(Component.literal("IK Test")) { _ ->
+            toggleIKMode()
         }.bounds(currentButtonX, buttonY, buttonWidth, buttonHeight).build())
 
         // --- 8. Initialize Model Selection List ---
@@ -282,8 +355,14 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         animationSelectionList = AnimationSelectionList(minecraft, sidebarWidth, animListHeight, animListY, font.lineHeight + 3)
         this.addRenderableWidget(animationSelectionList)
 
+        // --- Initialize IK Chain Selection List ---
+        // 初始化IK链选择列表，默认不显示
+        ikChainSelectionList = IKChainSelectionList(minecraft, sidebarWidth, animListHeight, animListY, font.lineHeight + 3)
+        ikChainSelectionList.visible = false // 默认不显示
+        this.addRenderableWidget(ikChainSelectionList)
 
-        val sidebarX = this.width - sidebarWidth - sideMargin // From backup
+
+        val sidebarX = this.width - sidebarWidth // From backup
         val treeViewY = topMargin // From backup
         val treeViewHeightPercent = 1f // From backup
         val treeViewHeight = (availableHeight * treeViewHeightPercent).toInt() // From backup
@@ -301,13 +380,13 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             // Reset Gizmo drag state on new selection
             draggingAxis = null
             originalPivotBeforeDrag = null
-//            println("Selected: ${selectedBone?.name ?: selectedCube?.let { "Cube in " + (model?.bones?.values?.find { b -> b.cubes.contains(it) }?.name ?: "Unknown") } ?: "None"}")
+//            SparkCore.LOGGER.debug("Selected: ${selectedBone?.name ?: selectedCube?.let { "Cube in " + (model?.bones?.values?.find { b -> b.cubes.contains(it) }?.name ?: "Unknown") } ?: "None"}")
         }
 
         // Set root nodes (same logic)
         val rootNodes = model!!.bones.values
             .filter { it.parentName == null || model!!.bones[it.parentName] == null }
-        treeView.setNodes(rootNodes)
+        treeView.setNodes(rootNodes, model!!)
         this.addRenderableWidget(treeView)
 
         // Populate initial animations and try auto-play
@@ -333,39 +412,18 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             webBrowserWidget = WebBrowserWidget(
                 browserWidgetX, browserWidgetY,
                 browserWidgetWidth, browserWidgetHeight,
-                "https://www.google.com",
+                "https://www.baidu.com",
                 transparent = true
             )
             this.addRenderableWidget(webBrowserWidget) // Add to screen
-            println("WebBrowserWidget added to ModelEditorScreen.") // Updated log message
+            SparkCore.LOGGER.debug("WebBrowserWidget added to ModelEditorScreen.") // Updated log message
         } else {
-            println("MCEF not initialized, skipping WebBrowserWidget.")
+            SparkCore.LOGGER.debug("MCEF not initialized, skipping WebBrowserWidget.")
             minecraft.gui.chat.addMessage(Component.literal("Warning: MCEF not initialized, web browser widget disabled."))
         }
 
         // --- Register Event Listener --- M
         NeoForge.EVENT_BUS.register(this)
-    }
-
-    override fun onClose() {
-        // --- Unregister Event Listener --- M
-        NeoForge.EVENT_BUS.unregister(this)
-        // sceneRenderTarget?.destroyBuffers() // REMOVED
-        // targetEntity?.discard() // REMOVED
-        super.onClose()
-        // Optional: Reset player camera if needed? Mixin should stop applying automatically.
-
-        // --- Restore Wand --- M
-        val player = Minecraft.getInstance().player
-        if (player != null) {
-            val wandStack = ItemStack(SparkRegistries.MODEL_EDITOR_WAND.get())
-            player.setItemInHand(InteractionHand.MAIN_HAND, wandStack)
-            // Optional: Send feedback?
-        }
-
-        // --- Close Browser Widget ---
-        webBrowserWidget.close() // 关闭浏览器释放资源
-        println("WebBrowserWidget closed.")
     }
 
     // Override renderBackground to do nothing, preventing default dimming/gradient
@@ -382,7 +440,55 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // It *shouldn't* call renderBackground itself if we override it.
         super.render(guiGraphics, mouseX, mouseY, partialTick)
         // --- 4. Draw Overlay Text ---
-         guiGraphics.drawString(this.font, "Editing: ${modelLocation.path}", 10, 5, 0xFFFFFF)
+        val titleColor = if (ikModeEnabled) 0xFFFF00 else 0xFFFFFF // IK模式下标题显示为黄色
+        val titleText = if (ikModeEnabled) "Editing: ${modelLocation.path} (IK Mode)" else "Editing: ${modelLocation.path}"
+        guiGraphics.drawString(this.font, titleText, 10, 5, titleColor)
+
+        // 显示IK模式信息
+        if (ikModeEnabled) {
+            // 显示选中的骨骼
+            if (selectedIKBones.isNotEmpty()) {
+                val boneNames = selectedIKBones.joinToString(", ") { it.name }
+                val endEffectorName = endEffectorBone?.name ?: "None"
+                guiGraphics.drawString(this.font, "Bones: $boneNames", 10, 29, 0xFFFFFF)
+                guiGraphics.drawString(this.font, "End Effector: $endEffectorName", 10, 41, 0xFFFF00) // 黄色显示末端执行器
+            }
+        }
+
+        // 显示选中轴的世界坐标
+        if (selectedAxis != null && axisWorldCoordinates != null) {
+            val axisName = when (selectedAxis) {
+                X -> "X"
+                Y -> "Y"
+                Z -> "Z"
+                null -> TODO()
+            }
+
+            // 格式化坐标显示，保留两位小数
+            val formatCoord = { value: Float -> String.format("%.2f", value) }
+            val worldPosStr = "(${formatCoord(axisWorldCoordinates!!.x)}, ${formatCoord(axisWorldCoordinates!!.y)}, ${formatCoord(axisWorldCoordinates!!.z)})"
+
+            // 如果有偏移，显示当前位置
+            var displayText = "$axisName Axis Origin: $worldPosStr"
+
+            if (axisDebugOffset != null && (axisDebugOffset!!.x != 0f || axisDebugOffset!!.y != 0f || axisDebugOffset!!.z != 0f)) {
+                val currentPos = Vector3f(axisWorldCoordinates).add(axisDebugOffset)
+                val currentPosStr = "(${formatCoord(currentPos.x)}, ${formatCoord(currentPos.y)}, ${formatCoord(currentPos.z)})"
+                displayText += "\nCurrent Pos: $currentPosStr"
+
+                // 在IK模式下显示额外信息
+                if (ikModeEnabled && selectedIKChain != null) {
+                    displayText += "\n\n\n\n\nIK Target for chain: $selectedIKChain"
+                }
+            }
+
+            // 绘制坐标信息
+            val textY = if (ikModeEnabled) 60 else 25 // IK模式下留出更多空间
+            val lines = displayText.split("\n")
+            for ((index, line) in lines.withIndex()) {
+                guiGraphics.drawString(this.font, line, 10, textY + index * 12, 0xFFFFFF)
+            }
+        }
 
     }
 
@@ -432,9 +538,10 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // If not dragging UI elements, control camera or Gizmo
         if (button == 0) { // Left button drag
             // If dragging Gizmo axis (needs update)
-            if (draggingAxis != null) {
-                // handleGizmoDrag(mouseX, mouseY, dragX, dragY) // COMMENTED OUT - Needs rework
-                return true // Consume event even if not implemented yet
+            if (draggingAxis != null && selectedAxis != null && axisWorldCoordinates != null) {
+                // 处理坐标轴拖动
+                handleAxisDrag(mouseX, mouseY, dragX, dragY)
+                return true
             } else { // Rotate camera
                 // Update camera state variables
                 cameraYaw -= dragX.toFloat() * 0.5f
@@ -450,8 +557,82 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY)
     }
 
-    // --- Gizmo Drag Handling (NEEDS REWORK) ---
-    // private fun handleGizmoDrag(mouseX: Double, mouseY: Double, dragX: Double, dragY: Double) { ... } // COMMENTED OUT
+    // --- Axis Drag Handling ---
+    private fun handleAxisDrag(mouseX: Double, mouseY: Double, dragX: Double, dragY: Double) {
+        val minecraft = Minecraft.getInstance()
+        val player = minecraft.player ?: return
+        val animatable = player as? IAnimatable<*> ?: return
+
+        // 根据选中的轴确定移动方向
+        val moveDirection = when (selectedAxis) {
+            X -> Vector3f(1f, 0f, 0f)
+            Y -> Vector3f(0f, 1f, 0f)
+            Z -> Vector3f(0f, 0f, 1f)
+            null -> return
+        }
+
+        // 计算屏幕移动幅度对应的世界坐标移动幅度
+        // 这里使用一个简化的计算方法，根据鼠标移动的像素数量和当前视图来计算
+        val camera = minecraft.gameRenderer.mainCamera
+        val cameraRight = Vector3f(camera.leftVector.x, camera.leftVector.y, camera.leftVector.z).negate()
+        val cameraUp = Vector3f(camera.upVector.x, camera.upVector.y, camera.upVector.z)
+
+        // 计算移动幅度因子，这里的系数可以调整以控制敏感度
+        val moveFactor = 0.01f
+
+        // 计算移动向量，结合水平和垂直移动
+        val horizontalMove = cameraRight.dot(moveDirection) * dragX.toFloat() * moveFactor
+        val verticalMove = cameraUp.dot(moveDirection) * -dragY.toFloat() * moveFactor
+
+        // 组合移动向量
+        val totalMove = horizontalMove + verticalMove
+
+        // 更新调试偏移量
+        if (axisDebugOffset == null) {
+            axisDebugOffset = Vector3f(0f, 0f, 0f)
+        }
+
+        // 根据选中的轴更新偏移量
+        when (selectedAxis) {
+            X -> axisDebugOffset!!.add(totalMove, 0f, 0f)
+            Y -> axisDebugOffset!!.add(0f, totalMove, 0f)
+            Z -> axisDebugOffset!!.add(0f, 0f, totalMove)
+            null -> {}
+        }
+
+        // 输出当前世界坐标和偏移量
+        val worldPos = axisWorldCoordinates
+        val offset = axisDebugOffset
+        if (worldPos != null && offset != null) {
+            val axisName = when (selectedAxis) {
+                X -> "X"
+                Y -> "Y"
+                Z -> "Z"
+                null -> "?"
+            }
+
+            // 计算当前位置（原始位置 + 偏移）
+            val currentPos = Vector3f(worldPos).add(offset)
+            SparkCore.LOGGER.trace(
+                "{} axis: World pos = {}, Current pos = {}, Offset = {}",
+                axisName,
+                worldPos,
+                currentPos,
+                offset
+            )
+
+            // 在IK模式下，更新IK目标位置
+            if (ikModeEnabled && selectedIKChain != null) {
+                val component = ikChains[selectedIKChain] ?: return
+
+                // 将Vector3f转换为JME的Vector3f
+                val jmeCurrentPos = currentPos.toBVector3f()
+
+                // 更新IK组件的目标位置
+                component.updateTargetWorldPosition(jmeCurrentPos)
+            }
+        }
+    }
 
     // --- Get Element Matrix (NEEDS REWORK - Use Player) ---
     // private fun getElementWorldMatrix(partialTick: Float): Matrix4f? { ... } // COMMENTED OUT
@@ -464,7 +645,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
     // --- Model Switching Logic ---
     private fun switchModel(newModelLocation: ResourceLocation) {
-        println("Switching model to: $newModelLocation")
+        SparkCore.LOGGER.debug("Switching model to: {}", newModelLocation)
         val minecraft = Minecraft.getInstance()
         val player = minecraft.player ?: return // Need player
 
@@ -483,13 +664,14 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 modelPath.startsWith("geo/model/") -> modelPath.replaceFirst("geo/model/", "textures/entity/")
                 else -> "textures/entity/$modelPath" // Assume root model path maps to textures/entity/
             }
+
             val texturePathPng = if (texturePath.endsWith(".png")) texturePath else "$texturePath.png"
             ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, texturePathPng)
         } catch (e: Exception) {
             SparkCore.LOGGER.error("Failed to infer texture location for model $newModelLocation", e)
             this.textureLocation // Fallback to original texture
         }
-        println("Inferred texture location: $newTextureLocation")
+        SparkCore.LOGGER.debug("Inferred texture location: {}", newTextureLocation)
 
         // 3. Update internal model reference (for TreeView, Save, EditAction)
         this.model = newOModel
@@ -501,6 +683,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             try {
                 // Set the model index on the player entity
                 animatable.modelIndex = ModelIndex(newModelLocation, newTextureLocation)
+                RpcClient.loadModel(newModelLocation.toString())
             } catch (e: Exception) {
                 minecraft.gui.chat.addMessage(Component.literal("Error setting model index on player: ${e.message}"))
             }
@@ -511,7 +694,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // 5. Update TreeView (same logic)
         val rootNodes = model!!.bones.values
             .filter { it.parentName == null || model!!.bones[it.parentName] == null }
-        treeView.setNodes(rootNodes)
+        treeView.setNodes(rootNodes, model!!)
 
         // 6. Clear Undo/Redo stacks (same logic)
         undoStack.clear()
@@ -535,13 +718,13 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             val newAnimSet = OAnimationSet.ORIGINS[newAnimSetKey] ?: OAnimationSet.EMPTY
              updateAndPlayIdleAnimation(animatable, newAnimSet) // Pass the specific set
         }
-        println("Model switched successfully.")
+        SparkCore.LOGGER.debug("Model switched successfully.")
     }
 
     // --- Restore mouseScrolled from Backup --- M
     override fun mouseScrolled(mouseX: Double, mouseY: Double, scrollX: Double, scrollY: Double): Boolean {
         // 优先让 WebBrowserWidget 处理滚动
-        if (webBrowserWidget.mouseScrolled(mouseX, mouseY, scrollX, scrollY) == true) {
+        if (webBrowserWidget.mouseScrolled(mouseX, mouseY, scrollX, scrollY)) {
             return true // 如果浏览器处理了滚动，事件结束
         }
 
@@ -599,9 +782,9 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             val offsetY = ndcY * tan(fovY / 2f)
 
             // 4. world-space 基向量
-            val fwd   = Vector3f(camera.lookVector .x.toFloat(), camera.lookVector .y.toFloat(), camera.lookVector .z.toFloat())
-            val up    = Vector3f(camera.upVector   .x.toFloat(), camera.upVector   .y.toFloat(), camera.upVector   .z.toFloat())
-            val right = Vector3f(camera.leftVector.x.toFloat(), camera.leftVector.y.toFloat(), camera.leftVector.z.toFloat())
+            val fwd   = Vector3f(camera.lookVector .x, camera.lookVector .y, camera.lookVector .z)
+            val up    = Vector3f(camera.upVector   .x, camera.upVector   .y, camera.upVector   .z)
+            val right = Vector3f(camera.leftVector.x, camera.leftVector.y, camera.leftVector.z)
                 .negate()
 
             // 5. 合成方向
@@ -618,18 +801,18 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         } catch (e: Exception) {
             // 如果计算出错，记录错误并返回一个默认射线
-            println("Error calculating ray: ${e.message}")
+            SparkCore.LOGGER.debug("Error calculating ray: ${e.message}")
             e.printStackTrace()
 
             // 返回一个默认射线（直视前方）
-            val rayOrigin = Vector3f(camera.position.toVector3f())
-            val rayDirection = Vector3f(
+            val origin = Vector3f(camera.position.toVector3f())
+            val dir = Vector3f(
                 -sin(Math.toRadians(camera.yRot.toDouble())).toFloat() * cos(Math.toRadians(camera.xRot.toDouble())).toFloat(),
                 -sin(Math.toRadians(camera.xRot.toDouble())).toFloat(),
                 cos(Math.toRadians(camera.yRot.toDouble())).toFloat() * cos(Math.toRadians(camera.xRot.toDouble())).toFloat()
             ).normalize()
 
-            return Pair(rayOrigin, rayDirection)
+            return Pair(origin, dir)
         }
     }
 
@@ -641,10 +824,15 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // 优先处理其他 Widget
         if (treeView.mouseClicked(mouseX, mouseY, button)) return true
         if (modelSelectionList.mouseClicked(mouseX, mouseY, button)) return true
-        if (animationSelectionList.mouseClicked(mouseX, mouseY, button)) return true
+
+        if (ikModeEnabled){
+            if (ikChainSelectionList.mouseClicked(mouseX, mouseY, button)) return true
+        }else{
+            if (animationSelectionList.mouseClicked(mouseX, mouseY,button)) return true
+        }
 
         // 处理 WebBrowserWidget 的点击
-        if (webBrowserWidget.mouseClicked(mouseX, mouseY, button) == true) {
+        if (webBrowserWidget.mouseClicked(mouseX, mouseY, button)) {
              treeView.isFocused = false
              modelSelectionList.isFocused = false
              animationSelectionList.isFocused = false
@@ -663,7 +851,12 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             val (rayOrigin, rayDirection) = screenToWorldRay(mouseX, mouseY)
 
             // 输出射线信息便于调试
-            println("Player.pos: ${player.getPosition(1f)}, Ray origin: $rayOrigin, direction: $rayDirection")
+            SparkCore.LOGGER.debug(
+                "Player.pos: {}, Ray origin: {}, direction: {}",
+                player.getPosition(1f),
+                rayOrigin,
+                rayDirection
+            )
 
             // 存储射线信息用于可视化
             debugRayOrigin = rayOrigin
@@ -679,9 +872,140 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
             // 执行射线检测
             val results = ArrayList<PhysicsRayTestResult>()
-            player.level().physicsLevel.world.rayTest(jmeRayOrigin, jmeRayEnd, results)
+            physicsWorld.rayTest(jmeRayOrigin, jmeRayEnd, results)
 
-            // 如果有碰撞结果，处理它们
+            // 首先检查是否点击了坐标轴
+            // 在IK模式下，检查末端执行器骨骼的坐标轴和IK目标坐标轴
+            // 在正常模式下，检查选中骨骼的坐标轴
+            val shouldCheckAxis = if (ikModeEnabled) {
+                endEffectorBone != null && selectedIKChain != null
+            } else {
+                selectedBone != null
+            }
+
+            // 在IK模式下，检查是否点击了持久化的IK目标坐标轴
+            if (ikModeEnabled && persistentIKTargetPosition != null) {
+                // 计算IK目标坐标轴端点
+                val targetAxisLength = 0.25f
+                val targetXEnd = Vector3f(persistentIKTargetPosition).add(targetAxisLength, 0f, 0f)
+                val targetYEnd = Vector3f(persistentIKTargetPosition).add(0f, targetAxisLength, 0f)
+                val targetZEnd = Vector3f(persistentIKTargetPosition).add(0f, 0f, targetAxisLength)
+
+                // 计算射线与各轴的最近距离
+                val (distToXAxis, xAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, persistentIKTargetPosition!!, targetXEnd)
+                val (distToYAxis, yAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, persistentIKTargetPosition!!, targetYEnd)
+                val (distToZAxis, zAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, persistentIKTargetPosition!!, targetZEnd)
+
+                // 设置阈值，决定是否认为射线击中了坐标轴
+                val hitThreshold = 0.2f
+
+                // 找出最近的轴
+                var closestAxis: Axis? = null
+                var closestDist = Float.MAX_VALUE
+                var closestPoint: Vector3f? = null
+
+                if (distToXAxis < hitThreshold && distToXAxis < closestDist) {
+                    closestAxis = X
+                    closestDist = distToXAxis
+                    closestPoint = xAxisPoint
+                }
+
+                if (distToYAxis < hitThreshold && distToYAxis < closestDist) {
+                    closestAxis = Y
+                    closestDist = distToYAxis
+                    closestPoint = yAxisPoint
+                }
+
+                if (distToZAxis < hitThreshold && distToZAxis < closestDist) {
+                    closestAxis = Z
+                    closestDist = distToZAxis
+                    closestPoint = zAxisPoint
+                }
+
+                // 如果找到了最近的轴，选中它
+                if (closestAxis != null && closestPoint != null) {
+                    ikTargetAxisSelected = closestAxis
+                    draggingAxis = closestAxis
+                    editingIKTarget = true
+                    axisWorldCoordinates = persistentIKTargetPosition
+                    axisDebugOffset = Vector3f(0f, 0f, 0f) // 初始无偏移
+                    axisClickDistance = closestDist
+
+                    // 计算从射线原点到交点的距离，用于后续拖动计算
+                    val rayToPointVec = Vector3f(closestPoint).sub(rayOrigin)
+                    axisClickDistance = rayToPointVec.length()
+
+                    SparkCore.LOGGER.debug("Selected IK target axis: {}, World coordinates: {}", closestAxis, persistentIKTargetPosition)
+                    return true
+                }
+            }
+
+            if (shouldCheckAxis) {
+                // 确定要检查的骨骼名称
+                val gizmoTargetBoneName = if (ikModeEnabled && endEffectorBone != null) {
+                    endEffectorBone?.name
+                } else {
+                    selectedBone?.name
+                }
+
+                val pivotWorldPos = animatable.getWorldBonePivot(gizmoTargetBoneName ?: "")
+
+                // 计算坐标轴端点
+                val axisLengthWorld = 0.4f
+                val gizmoXEndWorld = Vector3f(pivotWorldPos).add(axisLengthWorld, 0f, 0f)
+                val gizmoYEndWorld = Vector3f(pivotWorldPos).add(0f, axisLengthWorld, 0f)
+                val gizmoZEndWorld = Vector3f(pivotWorldPos).add(0f, 0f, axisLengthWorld)
+
+
+                // 计算射线与各轴的最近距离
+                val (distToXAxis, xAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, pivotWorldPos, gizmoXEndWorld)
+                val (distToYAxis, yAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, pivotWorldPos, gizmoYEndWorld)
+                val (distToZAxis, zAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, pivotWorldPos, gizmoZEndWorld)
+
+                // 设置阈值，决定是否认为射线击中了坐标轴
+                val hitThreshold = 0.2f // 可以根据需要调整
+
+                // 找出最近的轴
+                var closestAxis: Axis? = null
+                var closestDist = Float.MAX_VALUE
+                var closestPoint: Vector3f? = null
+
+                if (distToXAxis < hitThreshold && distToXAxis < closestDist) {
+                    closestAxis = X
+                    closestDist = distToXAxis
+                    closestPoint = xAxisPoint
+                }
+
+                if (distToYAxis < hitThreshold && distToYAxis < closestDist) {
+                    closestAxis = Y
+                    closestDist = distToYAxis
+                    closestPoint = yAxisPoint
+                }
+
+                if (distToZAxis < hitThreshold && distToZAxis < closestDist) {
+                    closestAxis = Z
+                    closestDist = distToZAxis
+                    closestPoint = zAxisPoint
+                }
+
+                // 如果找到了最近的轴，选中它
+                if (closestAxis != null && closestPoint != null) {
+                    selectedAxis = closestAxis
+                    draggingAxis = closestAxis
+                    axisWorldCoordinates = pivotWorldPos
+                    axisDebugOffset = Vector3f(0f, 0f, 0f) // 初始无偏移
+                    axisClickDistance = closestDist
+
+                    // 计算从射线原点到交点的距离，用于后续拖动计算
+                    val rayToPointVec = Vector3f(closestPoint).sub(rayOrigin)
+                    axisClickDistance = rayToPointVec.length()
+
+                    SparkCore.LOGGER.debug("Selected axis: {}, World coordinates: {}", closestAxis, pivotWorldPos)
+                    return true
+                }
+            }
+
+            // 如果没有点击坐标轴，检查是否点击了骨骼
             if (results.isNotEmpty()) {
                 // 按照距离排序
                 results.sortBy { it.hitFraction }
@@ -690,86 +1014,41 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 val closestHit = results[0]
                 val hitObjectName = closestHit.collisionObject.name
 
-                println("Hit object: $hitObjectName")
+                SparkCore.LOGGER.debug("Hit object: $hitObjectName")
+                // 解析骨骼名称
+                val boneName = hitObjectName
+                // 查找对应的骨骼
+                val bone = model?.bones?.get(boneName)
+                if (bone != null) {
+                    // 骨骼被点击 - 更新选择
+                    selectedBone = bone
+                    selectedCube = null
+                    draggingAxis = null
+                    selectedAxis = null
+                    axisWorldCoordinates = null
+                    axisDebugOffset = null
+                    originalPivotBeforeDrag = null
 
-                // 检查是否击中了Gizmo
-                if (hitObjectName.startsWith("gizmo_")) {
-                    // 解析轴名称
-                    val axisName = hitObjectName.substringAfter("gizmo_")
-                    val axis = when (axisName) {
-                        "x" -> Axis.X
-                        "y" -> Axis.Y
-                        "z" -> Axis.Z
-                        else -> null
-                    }
+                    // 更新TreeView选择
+                    treeView.setSelectedElement(bone)
 
-                    if (axis != null) {
-                        draggingAxis = axis
-                        println("Dragging Gizmo Axis: $axis")
-
-                        // Record original pivot for undo/redo
-                        val targetElement = selectedCube ?: selectedBone
-                        if (targetElement != null) {
-                            originalPivotBeforeDrag = when (targetElement) {
-                                is OBone -> targetElement.pivot
-                                is OCube -> targetElement.pivot
-                                else -> null
-                            }
-                            println("Started dragging $axis, original pivot: $originalPivotBeforeDrag")
-                        }
-
-                        return true // Event handled
-                    }
+                    SparkCore.LOGGER.debug("Selected bone: ${bone.name}")
+                    return true
                 }
-                // 检查是否击中了立方体
-                else if (hitObjectName.startsWith("cube_")) {
-                    // 解析立方体信息（格式：cube_骨骼名称_立方体索引）
-                    val parts = hitObjectName.split("_", limit = 3)
-                    if (parts.size >= 3) {
-                        val boneName = parts[1]
-                        val cubeIndex = parts[2].toIntOrNull()
+            }
+        }
 
-                        if (cubeIndex != null) {
-                            // 查找对应的骨骼和立方体
-                            val bone = model?.bones?.get(boneName)
-                            val cube = bone?.cubes?.getOrNull(cubeIndex)
-
-                            if (bone != null && cube != null) {
-                                // 立方体被点击 - 更新选择
-                                selectedCube = cube
-                                selectedBone = bone
-                                draggingAxis = null
-                                originalPivotBeforeDrag = null
-
-                                // 更新TreeView选择
-                                treeView.setSelectedElement(cube)
-
-                                println("Selected cube in bone: ${bone.name}")
-                                return true
-                            }
-                        }
-                    }
-                }
-                // 检查是否击中了骨骼
-                else {
-                    // 解析骨骼名称
-                    val boneName = hitObjectName
-                    // 查找对应的骨骼
-                    val bone = model?.bones?.get(boneName)
-                    if (bone != null) {
-                        // 骨骼被点击 - 更新选择
-                        selectedBone = bone
-                        selectedCube = null
-                        draggingAxis = null
-                        originalPivotBeforeDrag = null
-
-                        // 更新TreeView选择
-                        treeView.setSelectedElement(bone)
-
-                        println("Selected bone: ${bone.name}")
-                        return true
-                    }
-                }
+        // 如果点击了其他地方，重置轴选择状态
+        if (button == 0) {
+            // 在IK模式下，不重置轴选择状态，以便持久化显示
+            if (!ikModeEnabled) {
+                selectedAxis = null
+                axisWorldCoordinates = null
+                axisDebugOffset = null
+                draggingAxis = null
+            } else {
+                // 在IK模式下，只重置拖动状态，保留选择的轴和坐标
+                draggingAxis = null
             }
         }
 
@@ -808,7 +1087,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
             // 4. Provide feedback
             minecraft?.player?.sendSystemMessage(Component.literal("Model saved successfully to: $fullPath"))
-            println("Model saved to: $fullPath") // Also log to console
+            SparkCore.LOGGER.debug("Model saved to: $fullPath") // Also log to console
 
         } catch (e: Exception) {
             SparkCore.LOGGER.error("Failed to save model to file", e)
@@ -830,7 +1109,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 val action = undoStack.pop()
                 action.undo(treeView)
                 redoStack.push(action)
-                println("Undo performed via shortcut. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
+                SparkCore.LOGGER.debug("Undo performed via shortcut. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
                 return true
             }
         }
@@ -839,7 +1118,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 val action = redoStack.pop()
                 action.redo(treeView)
                 undoStack.push(action)
-                println("Redo performed via shortcut. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
+                SparkCore.LOGGER.debug("Redo performed via shortcut. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
                 return true
             }
         }
@@ -849,16 +1128,64 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
     override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
         // Handle widget releases first if necessary (though usually handled by click)
-        if (treeView.mouseReleased(mouseX, mouseY, button)) return true
+//        if (treeView.mouseReleased(mouseX, mouseY, button)) return true
         if (modelSelectionList.mouseReleased(mouseX, mouseY, button)) return true
         if (animationSelectionList.mouseReleased(mouseX, mouseY, button)) return true
 
 
         // Handle Gizmo drag release
         if (button == 0 && draggingAxis != null) {
-            println("Stopped dragging Gizmo Axis: $draggingAxis")
+            SparkCore.LOGGER.debug("Stopped dragging Gizmo Axis: {}, Final offset: {}", draggingAxis, axisDebugOffset)
             val axisJustDragged = draggingAxis
             draggingAxis = null
+            // 保留 selectedAxis 和 axisWorldCoordinates 以便显示坐标
+
+            // 如果正在编辑IK目标坐标轴
+            if (editingIKTarget && ikModeEnabled && selectedIKChain != null && axisWorldCoordinates != null && axisDebugOffset != null) {
+                // 更新IK目标位置（原始位置+偏移）
+                persistentIKTargetPosition = Vector3f(axisWorldCoordinates).add(axisDebugOffset)
+
+                val minecraft = Minecraft.getInstance()
+                val player = minecraft.player
+                val animatable = player as? IAnimatable<*>
+
+                if (animatable != null && endEffectorBone != null) {
+                    // 更新末端执行器的实际位置
+                    persistentEndEffectorPosition = animatable.getWorldBonePivot(endEffectorBone!!.name)
+
+                    SparkCore.LOGGER.debug(
+                        "更新IK目标坐标轴 - 新目标位置: {}, 末端位置: {}",
+                        persistentIKTargetPosition,
+                        persistentEndEffectorPosition
+                    )
+                }
+
+                // 重置编辑状态，但保留选中的轴
+                editingIKTarget = false
+                selectedAxis = ikTargetAxisSelected
+                axisWorldCoordinates = persistentIKTargetPosition
+                axisDebugOffset = Vector3f(0f, 0f, 0f)
+            }
+            // 在IK模式下，保存当前IK目标位置和末端执行器位置用于持久化显示
+            else if (ikModeEnabled && selectedIKChain != null && axisWorldCoordinates != null && axisDebugOffset != null) {
+                val minecraft = Minecraft.getInstance()
+                val player = minecraft.player
+                val animatable = player as? IAnimatable<*>
+
+                if (animatable != null && endEffectorBone != null) {
+                    // 保存当前IK目标位置（原始位置+偏移）
+                    persistentIKTargetPosition = Vector3f(axisWorldCoordinates).add(axisDebugOffset)
+
+                    // 保存末端执行器的实际位置
+                    persistentEndEffectorPosition = animatable.getWorldBonePivot(endEffectorBone!!.name)
+
+                    SparkCore.LOGGER.debug(
+                        "保存IK持久化显示 - 目标位置: {}, 末端位置: {}",
+                        persistentIKTargetPosition,
+                        persistentEndEffectorPosition
+                    )
+                }
+            }
 
             // --- Create EditAction (NEEDS REWORK) ---
             // This needs updated PivotEditAction and correct pivot checking
@@ -881,11 +1208,11 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                     // val action = PivotEditAction(targetElement, originalPivotBeforeDrag!!, currentPivot, model)
                     // undoStack.push(action)
                     // redoStack.clear()
-                    // println("Pivot changed. Added action to undo stack. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
+                    // SparkCore.LOGGER.debug("Pivot changed. Added action to undo stack. Undo: ${undoStack.size}, Redo: ${redoStack.size}")
                     // treeView.refreshVisibleNodes()
-                    println("TODO: Implement PivotEditAction creation")
+                    SparkCore.LOGGER.debug("TODO: Implement PivotEditAction creation")
                 } else {
-                    println("Pivot did not change significantly or could not be read.")
+                    SparkCore.LOGGER.debug("Pivot did not change significantly or could not be read.")
                 }
             }
             */
@@ -902,68 +1229,66 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         fun redo(treeView: ModelTreeViewWidget)
     }
 
-    // 需要审核PivotEditAction：它如何获取当前引用？
-    // OBone/OCube within the potentially modified 'model'?
-    // It might be better to store IDs/Names and look them up.
-    data class PivotEditAction(
-        val targetElement: Any, // OBone or OCube - Storing the object directly might be problematic if model updates replace instances
-        val oldPivot: Vec3,
-        val newPivot: Vec3,
-        val modelRef: OModel? // Reference to the model for modification
-    ) : EditAction {
-
-        // TODO: Update setPivot to handle potential instance changes in modelRef.bones/cubes
-        //       Maybe use names/paths to find the element to modify.
-        private fun setPivot(pivot: Vec3) {
-            when (targetElement) {
-                is OBone -> {
-                    // Find bone by name, assuming name is unique and stable
-                    val boneToUpdate = modelRef?.bones?.get(targetElement.name)
-                    if (boneToUpdate != null) {
-                         // Create a new instance with the updated pivot
-                        val updatedBone = boneToUpdate.copy(pivot = pivot)
-                        modelRef.bones.put(targetElement.name, updatedBone)
-                        // How to update screen's selectedBone if it was this one? Needs callback or direct access.
-                    } else {
-                        SparkCore.LOGGER.warn("Cannot find bone '${targetElement.name}' in model during pivot update.")
-                    }
-                }
-                is OCube -> {
-                    // Find the parent bone first, then the cube within it. This is fragile.
-                     var parentBone: OBone? = null
-                     var cubeIndex = -1
-                     modelRef?.bones?.values?.forEach { bone ->
-                         val index = bone.cubes.indexOfFirst { it == targetElement } // Relies on object identity or correct equals()
-                         if (index != -1) {
-                             parentBone = bone
-                             cubeIndex = index
-                             return@forEach // Exit loop once found
-                         }
-                     }
-
-                    if (parentBone != null) {
-                        val cubeToUpdate = parentBone.cubes[cubeIndex] // Get the potentially old instance
-                        val updatedCube = cubeToUpdate.copy(pivot = pivot) // Create new instance
-                        parentBone.cubes[cubeIndex] = updatedCube // Replace in list
-                        // Update screen's selectedCube?
-                    } else {
-                        SparkCore.LOGGER.warn("Cannot find cube or its parent bone during pivot update.")
-                    }
-                }
-                else -> SparkCore.LOGGER.warn("Unsupported element type for PivotEditAction: ${targetElement::class.simpleName}")
-            }
-        }
-
-        override fun undo(treeView: ModelTreeViewWidget) {
-            setPivot(oldPivot)
-            treeView.refreshVisibleNodes() // Refresh TreeView after undo
-        }
-
-        override fun redo(treeView: ModelTreeViewWidget) {
-            setPivot(newPivot)
-            treeView.refreshVisibleNodes() // Refresh TreeView after redo
-        }
-    }
+//    //TODO: 服务端可用, 如何修改原文件?
+//    data class PivotEditAction(
+//        val targetElement: Any, // OBone or OCube - Storing the object directly might be problematic if model updates replace instances
+//        val oldPivot: Vec3,
+//        val newPivot: Vec3,
+//        val modelRef: OModel? // Reference to the model for modification
+//    ) : EditAction {
+//
+//        // TODO: Update setPivot to handle potential instance changes in modelRef.bones/cubes
+//        //       Maybe use names/paths to find the element to modify.
+//        private fun setPivot(pivot: Vec3) {
+//            when (targetElement) {
+//                is OBone -> {
+//                    // Find bone by name, assuming name is unique and stable
+//                    val boneToUpdate = modelRef?.bones?.get(targetElement.name)
+//                    if (boneToUpdate != null) {
+//                         // Create a new instance with the updated pivot
+//                        val updatedBone = boneToUpdate.copy(pivot = pivot)
+//                        modelRef.bones.put(targetElement.name, updatedBone)
+//                        // How to update screen's selectedBone if it was this one? Needs callback or direct access.
+//                    } else {
+//                        SparkCore.LOGGER.warn("Cannot find bone '${targetElement.name}' in model during pivot update.")
+//                    }
+//                }
+//                is OCube -> {
+//                    // Find the parent bone first, then the cube within it. This is fragile.
+//                     var parentBone: OBone? = null
+//                     var cubeIndex = -1
+//                     modelRef?.bones?.values?.forEach { bone ->
+//                         val index = bone.cubes.indexOfFirst { it == targetElement } // Relies on object identity or correct equals()
+//                         if (index != -1) {
+//                             parentBone = bone
+//                             cubeIndex = index
+//                             return@forEach // Exit loop once found
+//                         }
+//                     }
+//
+//                    if (parentBone != null) {
+//                        val cubeToUpdate = parentBone.cubes[cubeIndex] // Get the potentially old instance
+//                        val updatedCube = cubeToUpdate.copy(pivot = pivot) // Create new instance
+//                        parentBone.cubes[cubeIndex] = updatedCube // Replace in list
+//                        // Update screen's selectedCube?
+//                    } else {
+//                        SparkCore.LOGGER.warn("Cannot find cube or its parent bone during pivot update.")
+//                    }
+//                }
+//                else -> SparkCore.LOGGER.warn("Unsupported element type for PivotEditAction: ${targetElement::class.simpleName}")
+//            }
+//        }
+//
+//        override fun undo(treeView: ModelTreeViewWidget) {
+//            setPivot(oldPivot)
+//            treeView.refreshVisibleNodes() // Refresh TreeView after undo
+//        }
+//
+//        override fun redo(treeView: ModelTreeViewWidget) {
+//            setPivot(newPivot)
+//            treeView.refreshVisibleNodes() // Refresh TreeView after redo
+//        }
+//    }
 
     @SubscribeEvent
     fun onRenderLevelStage(event: RenderLevelStageEvent) {
@@ -975,11 +1300,22 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val player = minecraft.player ?: return
         val animatable = player as? IAnimatable<*> ?: return
 
-        // Determine selected bone name (crucial for pivot and parent matrix)
-        val selectedBoneName = selectedBone?.name ?: selectedCube?.let { cube ->
-            model?.bones?.values?.find { bone -> bone.cubes.contains(cube) }?.name
+        // 确定选中的骨骼名称（对于透视和父矩阵至关重要）
+        val selectedBoneName = if (ikModeEnabled && endEffectorBone != null) {
+            // IK模式下，使用末端执行器骨骼
+            endEffectorBone?.name
+        } else {
+            // 正常模式下，使用选中的骨骼或方块的父骨骼
+            selectedBone?.name ?: selectedCube?.let { cube ->
+                model?.bones?.values?.find { bone -> bone.cubes.contains(cube) }?.name
+            }
         }
-        if (selectedBoneName == null && selectedCube == null) return // Nothing selected
+
+        // 如果没有选中骨骼或方块，则返回
+        if (selectedBoneName == null && selectedCube == null && !ikModeEnabled) return // Nothing selected
+
+        // 如果在IK模式下没有选中链，则返回
+        if (ikModeEnabled && selectedIKChain == null) return // No IK chain selected
 
         val partialTick = event.partialTick.getGameTimeDeltaPartialTick(true)
 
@@ -989,26 +1325,55 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         // --- Calculate Highlight Box Vertices (Recursively if a bone is selected) --- M
         val allCubeHighlightVerticesWorld: MutableList<List<Vector3f>> = mutableListOf()
+        val boneHighlightColors: MutableMap<List<Vector3f>, Triple<Float, Float, Float>> = mutableMapOf()
 
-        if (selectedCube != null && selectedBoneName != null) {
-            // Case 1: A specific Cube is selected (No recursion needed)
-            val parentBoneMatrix = animatable.getWorldBoneMatrix(selectedBoneName, partialTick)
-            val cubeLocalMatrix = Matrix4f()
-                .translate(selectedCube!!.pivot.toVector3f())
-                .rotateZYX(selectedCube!!.rotation.toVector3f())
-                .translate(selectedCube!!.pivot.toVector3f().negate())
-                .translate(selectedCube!!.originPos.toVector3f())
-            val cubeWorldMatrix = Matrix4f(parentBoneMatrix).mul(cubeLocalMatrix)
-            val s = selectedCube!!.size.toVector3f()
-            val vertices = listOf(
-                Vector3f(0f, 0f, 0f), Vector3f(s.x, 0f, 0f), Vector3f(s.x, 0f, s.z), Vector3f(0f, 0f, s.z),
-                Vector3f(0f, s.y, 0f), Vector3f(s.x, s.y, 0f), Vector3f(s.x, s.y, s.z), Vector3f(0f, s.y, s.z)
-            ).map { cubeWorldMatrix.transformPosition(it, Vector3f()) }
-            allCubeHighlightVerticesWorld.add(vertices)
+        if (ikModeEnabled) {
+            // IK模式下，高亮显示IK链中的所有骨骼
+            for (bone in selectedIKBones) {
+                val vertices = collectDescendantCubeVertices(bone, animatable, partialTick)
+                allCubeHighlightVerticesWorld.addAll(vertices)
 
-        } else if (selectedBone != null) {
-            // Case 2: A Bone is selected - Collect cubes recursively
-            allCubeHighlightVerticesWorld.addAll(collectDescendantCubeVertices(selectedBone!!, animatable, partialTick))
+                // 对末端执行器骨骼使用黄色，其他骨骼使用蓝色
+                val color = if (bone == endEffectorBone) {
+                    Triple(1f, 1f, 0.2f) // 黄色
+                } else {
+                    Triple(0.2f, 0.6f, 1f) // 蓝色
+                }
+
+                // 为每个骨骼的顶点列表设置颜色
+                vertices.forEach { vertexList ->
+                    boneHighlightColors[vertexList] = color
+                }
+            }
+        } else {
+            // 正常模式下的高亮显示
+            if (selectedCube != null && selectedBoneName != null) {
+                // Case 1: A specific Cube is selected (No recursion needed)
+                val parentBoneMatrix = animatable.getWorldBoneMatrix(selectedBoneName, partialTick)
+                val cubeLocalMatrix = Matrix4f()
+                    .translate(selectedCube!!.pivot.toVector3f())
+                    .rotateZYX(selectedCube!!.rotation.toVector3f())
+                    .translate(selectedCube!!.pivot.toVector3f().negate())
+                    .translate(selectedCube!!.originPos.toVector3f())
+                val cubeWorldMatrix = Matrix4f(parentBoneMatrix).mul(cubeLocalMatrix)
+                val s = selectedCube!!.size.toVector3f()
+                val vertices = listOf(
+                    Vector3f(0f, 0f, 0f), Vector3f(s.x, 0f, 0f), Vector3f(s.x, 0f, s.z), Vector3f(0f, 0f, s.z),
+                    Vector3f(0f, s.y, 0f), Vector3f(s.x, s.y, 0f), Vector3f(s.x, s.y, s.z), Vector3f(0f, s.y, s.z)
+                ).map { cubeWorldMatrix.transformPosition(it, Vector3f()) }
+                allCubeHighlightVerticesWorld.add(vertices)
+                boneHighlightColors[vertices] = Triple(0.2f, 0.6f, 1f) // 蓝色
+
+            } else if (selectedBone != null) {
+                // Case 2: A Bone is selected - Collect cubes recursively
+                val vertices = collectDescendantCubeVertices(selectedBone!!, animatable, partialTick)
+                allCubeHighlightVerticesWorld.addAll(vertices)
+
+                // 所有骨骼使用蓝色
+                vertices.forEach { vertexList ->
+                    boneHighlightColors[vertexList] = Triple(0.2f, 0.6f, 1f) // 蓝色
+                }
+            }
         }
 
         // --- Prepare for World Rendering ---
@@ -1039,13 +1404,14 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
             // --- Draw Highlight Boxes --- M
             if (allCubeHighlightVerticesWorld.isNotEmpty()) {
-                val r = 0.2f
-                val g = 0.6f
-                val b = 1f
+                val defaultColor = Triple(0.2f, 0.6f, 1f) // 默认蓝色
                 val a = 0.8f // Slightly transparent highlight
                 val highlightBuffer = bufferSource.getBuffer(RenderType.lines())
                 allCubeHighlightVerticesWorld.forEach { wv -> // Iterate through each cube's vertices
                     if (wv.size == 8) { // Ensure we have 8 vertices
+                        // 获取骨骼的高亮颜色，如果没有设置则使用默认颜色
+                        val (r, g, b) = boneHighlightColors[wv] ?: defaultColor
+
                         // 绘制12条边
                         drawWorldLine(worldPoseMatrix, highlightBuffer, wv[0], wv[1], r, g, b, a)
                         drawWorldLine(worldPoseMatrix, highlightBuffer, wv[1], wv[2], r, g, b, a)
@@ -1069,10 +1435,126 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             // --- Draw Gizmo Axes --- M
             val gizmoBuffer = bufferSource.getBuffer(RenderType.lines())
             val gizmoAlpha = 1.0f // Opaque gizmo
-            // 使用计算出的支点来绘制偏移，以对抗Z轴闪烁。
-            drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, pivotWorldPos, gizmoXEndWorld, 1f, 0.2f, 0.2f, gizmoAlpha) // Red X
-            drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, pivotWorldPos, gizmoYEndWorld, 0.2f, 1f, 0.2f, gizmoAlpha) // Green Y
-            drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, pivotWorldPos, gizmoZEndWorld, 0.2f, 0.2f, 1f, gizmoAlpha) // Blue Z
+
+            // 在IK模式下，只为末端执行器骨骼显示坐标轴
+            val shouldDrawGizmo = if (ikModeEnabled) {
+                endEffectorBone != null && selectedIKChain != null
+            } else {
+                selectedBone != null || selectedCube != null
+            }
+
+            if (shouldDrawGizmo) {
+                // 确定坐标轴的位置
+                val gizmoPos = if (ikModeEnabled && endEffectorBone != null) {
+                    // 在IK模式下，使用末端执行器骨骼的位置
+                    animatable.getWorldBonePivot(endEffectorBone!!.name)
+                } else {
+                    // 在正常模式下，使用选中骨骼的位置
+                    pivotWorldPos
+                }
+
+                // 计算坐标轴端点
+                val axisLengthWorld = 0.4f
+                val gizmoXEndWorld = Vector3f(gizmoPos).add(axisLengthWorld, 0f, 0f)
+                val gizmoYEndWorld = Vector3f(gizmoPos).add(0f, axisLengthWorld, 0f)
+                val gizmoZEndWorld = Vector3f(gizmoPos).add(0f, 0f, axisLengthWorld)
+
+                // 绘制坐标轴，如果轴被选中则使用更亮的颜色
+                // X轴 - 红色
+                val xAxisColor = if (selectedAxis == X) Triple(1f, 0.8f, 0.8f) else Triple(1f, 0.2f, 0.2f)
+                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, gizmoPos, gizmoXEndWorld, xAxisColor.first, xAxisColor.second, xAxisColor.third, gizmoAlpha)
+
+                // Y轴 - 绿色
+                val yAxisColor = if (selectedAxis == Y) Triple(0.8f, 1f, 0.8f) else Triple(0.2f, 1f, 0.2f)
+                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, gizmoPos, gizmoYEndWorld, yAxisColor.first, yAxisColor.second, yAxisColor.third, gizmoAlpha)
+
+                // Z轴 - 蓝色
+                val zAxisColor = if (selectedAxis == Z) Triple(0.8f, 0.8f, 1f) else Triple(0.2f, 0.2f, 1f)
+                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, gizmoPos, gizmoZEndWorld, zAxisColor.first, zAxisColor.second, zAxisColor.third, gizmoAlpha)
+            }
+
+            // 如果有选中的轴和偏移量，绘制偏移后的位置
+            if (selectedAxis != null && axisWorldCoordinates != null && axisDebugOffset != null) {
+                // 计算偏移后的位置
+                val offsetPos = Vector3f(axisWorldCoordinates).add(axisDebugOffset)
+
+                // 绘制偏移后的位置标记
+                drawDebugPoint(worldPoseMatrix, gizmoBuffer, offsetPos, 0.05f, 1f, 1f, 0f, 1f) // 黄色标记
+
+                // 绘制从原始位置到偏移位置的虚线
+                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer,
+                    axisWorldCoordinates!!, offsetPos, 1f, 1f, 0f, 0.5f) // 半透明黄色虚线
+
+                // 在偏移位置绘制坐标轴
+                val offsetAxisLength = 0.2f // 偏移位置的坐标轴长度更短
+                val offsetXEnd = Vector3f(offsetPos).add(offsetAxisLength, 0f, 0f)
+                val offsetYEnd = Vector3f(offsetPos).add(0f, offsetAxisLength, 0f)
+                val offsetZEnd = Vector3f(offsetPos).add(0f, 0f, offsetAxisLength)
+
+                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, offsetPos, offsetXEnd, 1f, 0.5f, 0.5f, gizmoAlpha)
+                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, offsetPos, offsetYEnd, 0.5f, 1f, 0.5f, gizmoAlpha)
+                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, offsetPos, offsetZEnd, 0.5f, 0.5f, 1f, gizmoAlpha)
+            }
+
+            // 在IK模式下，绘制持久化的IK目标和末端执行器位置
+            if (ikModeEnabled && selectedIKChain != null) {
+                // 绘制持久化的IK目标位置
+                if (persistentIKTargetPosition != null) {
+                    // 绘制IK目标位置标记（紫色）
+                    drawDebugPoint(worldPoseMatrix, gizmoBuffer, persistentIKTargetPosition!!, 0.07f, 0.8f, 0.2f, 1f, 1f) // 紫色标记
+
+                    // 在IK目标位置绘制坐标轴
+                    val targetAxisLength = 0.25f
+                    val targetXEnd = Vector3f(persistentIKTargetPosition).add(targetAxisLength, 0f, 0f)
+                    val targetYEnd = Vector3f(persistentIKTargetPosition).add(0f, targetAxisLength, 0f)
+                    val targetZEnd = Vector3f(persistentIKTargetPosition).add(0f, 0f, targetAxisLength)
+
+                    // 如果正在编辑IK目标坐标轴，使用更亮的颜色
+                    val xAxisColor = if (editingIKTarget && ikTargetAxisSelected == X) Triple(1f, 0.5f, 1f) else Triple(1f, 0.3f, 0.8f)
+                    val yAxisColor = if (editingIKTarget && ikTargetAxisSelected == Y) Triple(0.5f, 1f, 1f) else Triple(0.3f, 1f, 0.8f)
+                    val zAxisColor = if (editingIKTarget && ikTargetAxisSelected == Z) Triple(0.5f, 0.5f, 1f) else Triple(0.3f, 0.3f, 1f)
+
+                    drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, persistentIKTargetPosition!!, targetXEnd, xAxisColor.first, xAxisColor.second, xAxisColor.third, gizmoAlpha) // X轴
+                    drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, persistentIKTargetPosition!!, targetYEnd, yAxisColor.first, yAxisColor.second, yAxisColor.third, gizmoAlpha) // Y轴
+                    drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, persistentIKTargetPosition!!, targetZEnd, zAxisColor.first, zAxisColor.second, zAxisColor.third, gizmoAlpha) // Z轴
+
+                    // 添加“IK目标”文本标记
+                    val targetTextPos = Vector3f(persistentIKTargetPosition).add(0f, 0.3f, 0f)
+                    // drawWorldText(worldPoseMatrix, "IK目标", targetTextPos, 0.8f, 0.2f, 1f, 1f)
+                }
+
+                // 绘制持久化的末端执行器实际位置
+                if (persistentEndEffectorPosition != null) {
+                    // 绘制末端执行器实际位置标记（青色）
+                    drawDebugPoint(worldPoseMatrix, gizmoBuffer, persistentEndEffectorPosition!!, 0.07f, 0.2f, 0.8f, 1f, 1f) // 青色标记
+
+                    // 如果同时有IK目标位置，绘制从末端执行器到IK目标的连线
+                    if (persistentIKTargetPosition != null) {
+                        drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer,
+                            persistentEndEffectorPosition!!, persistentIKTargetPosition!!, 0.5f, 0.5f, 1f, 0.7f) // 半透明蓝紫色连线
+                    }
+
+                    // 添加“实际位置”文本标记
+                    val effectorTextPos = Vector3f(persistentEndEffectorPosition).add(0f, 0.3f, 0f)
+                    // drawWorldText(worldPoseMatrix, "实际位置", effectorTextPos, 0.2f, 0.8f, 1f, 1f)
+                }
+            }
+
+            // 结束线段批处理
+            bufferSource.endBatch(RenderType.lines())
+
+            // 重新绘制文本标记（在结束线段批处理后）
+            if (ikModeEnabled && selectedIKChain != null) {
+                if (persistentIKTargetPosition != null) {
+                    val targetTextPos = Vector3f(persistentIKTargetPosition).add(0f, 0.3f, 0f)
+                    drawWorldText(worldPoseMatrix, "IK目标", targetTextPos, 0.8f, 0.2f, 1f, 1f)
+                }
+
+                if (persistentEndEffectorPosition != null) {
+                    val effectorTextPos = Vector3f(persistentEndEffectorPosition).add(0f, 0.3f, 0f)
+                    drawWorldText(worldPoseMatrix, "实际位置", effectorTextPos, 0.2f, 0.8f, 1f, 1f)
+                }
+            }
 //
 //            // 绘制调试射线
 //            if (debugRayOrigin != null && debugRayDirection != null) {
@@ -1084,7 +1566,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 //                drawDebugPoint(worldPoseMatrix, gizmoBuffer, rayEnd, 0.2f, 0f, 1f, 0f, 1f) // 绿色终点
 //            }
 
-            bufferSource.endBatch(RenderType.lines())
+            // 已经在上面结束了线段批处理
 
         } finally {
             // 恢复渲染状态
@@ -1167,68 +1649,188 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val halfSize = size / 2f
 
         // 绘制八面体的八个三角形
+        // 直接绘制线段而不是三角形
+
         // 上半部分
-        drawDebugTriangle(poseMatrix, buffer,
-            Vector3f(position).add(0f, halfSize, 0f),
-            Vector3f(position).add(halfSize, 0f, 0f),
-            Vector3f(position).add(0f, 0f, halfSize),
-            r, g, b, a)
+        // 第一个三角形
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
 
-        drawDebugTriangle(poseMatrix, buffer,
-            Vector3f(position).add(0f, halfSize, 0f),
-            Vector3f(position).add(0f, 0f, halfSize),
-            Vector3f(position).add(-halfSize, 0f, 0f),
-            r, g, b, a)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
 
-        drawDebugTriangle(poseMatrix, buffer,
-            Vector3f(position).add(0f, halfSize, 0f),
-            Vector3f(position).add(-halfSize, 0f, 0f),
-            Vector3f(position).add(0f, 0f, -halfSize),
-            r, g, b, a)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
 
-        drawDebugTriangle(poseMatrix, buffer,
-            Vector3f(position).add(0f, halfSize, 0f),
-            Vector3f(position).add(0f, 0f, -halfSize),
-            Vector3f(position).add(halfSize, 0f, 0f),
-            r, g, b, a)
+        // 第二个三角形
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        // 第三个三角形
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        // 第四个三角形
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
 
         // 下半部分
-        drawDebugTriangle(poseMatrix, buffer,
-            Vector3f(position).add(0f, -halfSize, 0f),
-            Vector3f(position).add(0f, 0f, halfSize),
-            Vector3f(position).add(halfSize, 0f, 0f),
-            r, g, b, a)
+        // 第五个三角形
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
 
-        drawDebugTriangle(poseMatrix, buffer,
-            Vector3f(position).add(0f, -halfSize, 0f),
-            Vector3f(position).add(-halfSize, 0f, 0f),
-            Vector3f(position).add(0f, 0f, halfSize),
-            r, g, b, a)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
 
-        drawDebugTriangle(poseMatrix, buffer,
-            Vector3f(position).add(0f, -halfSize, 0f),
-            Vector3f(position).add(0f, 0f, -halfSize),
-            Vector3f(position).add(-halfSize, 0f, 0f),
-            r, g, b, a)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
 
-        drawDebugTriangle(poseMatrix, buffer,
-            Vector3f(position).add(0f, -halfSize, 0f),
-            Vector3f(position).add(halfSize, 0f, 0f),
-            Vector3f(position).add(0f, 0f, -halfSize),
-            r, g, b, a)
+        // 第六个三角形
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        // 第七个三角形
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        // 第八个三角形
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
     }
 
-    // --- Helper to draw a triangle ---
-    private fun drawDebugTriangle(poseMatrix: Matrix4f, buffer: VertexConsumer, v1: Vector3f, v2: Vector3f, v3: Vector3f, r: Float, g: Float, b: Float, a: Float) {
-        // 绘制三角形的三条边
-        buffer.addVertex(poseMatrix, v1.x, v1.y, v1.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, v2.x, v2.y, v2.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+    // --- IK Mode Handling ---
+    private fun toggleIKMode() {
+        ikModeEnabled = !ikModeEnabled
 
-        buffer.addVertex(poseMatrix, v2.x, v2.y, v2.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, v3.x, v3.y, v3.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        // 切换动画列表和IK链列表的显示
+        animationSelectionList.visible = !ikModeEnabled
+        ikChainSelectionList.visible = ikModeEnabled
 
-        buffer.addVertex(poseMatrix, v3.x, v3.y, v3.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, v1.x, v1.y, v1.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        if (ikModeEnabled) {
+            // 进入IK模式
+            val minecraft = Minecraft.getInstance()
+            val player = minecraft.player ?: return
+
+            // 检查玩家是否是IKHost
+            if (player is IEntityAnimatable<*>) {
+                // 获取可用的IK链
+                ikChains = player.ikManager.activeComponents
+                ikChainSelectionList.updateIKChains(ikChains)
+
+                // 重置选择状态
+                selectedIKChain = null
+                selectedIKBones.clear()
+                endEffectorBone = null
+
+                SparkCore.LOGGER.debug("IK模式已启用，可用IK链: {}", ikChains.keys)
+            } else {
+                SparkCore.LOGGER.debug("Player不是IKHost，无法启用IK模式")
+                ikModeEnabled = false
+                animationSelectionList.visible = true
+                ikChainSelectionList.visible = false
+            }
+        } else {
+            // 退出IK模式
+            selectedIKChain = null
+            selectedIKBones.clear()
+            endEffectorBone = null
+
+            // 重置持久化显示的IK目标和末端执行器位置
+            persistentIKTargetPosition = null
+            persistentEndEffectorPosition = null
+
+            // 恢复正常选择状态
+            selectedBone = null
+            selectedCube = null
+            selectedAxis = null
+            axisWorldCoordinates = null
+            axisDebugOffset = null
+
+            SparkCore.LOGGER.debug("IK模式已关闭")
+        }
+    }
+
+    private fun selectIKChain(chainName: String) {
+        selectedIKChain = chainName
+        selectedIKBones.clear()
+
+        // 重置持久化显示的IK目标和末端执行器位置
+        persistentIKTargetPosition = null
+        persistentEndEffectorPosition = null
+
+        // 重置轴选择状态
+        selectedAxis = null
+        axisWorldCoordinates = null
+        axisDebugOffset = null
+        draggingAxis = null
+
+        val component = ikChains[chainName] ?: return
+        val chain = component.chain
+
+        // 获取链中的骨骼
+        val boneNames = mutableListOf<String>()
+
+        // 使用IKComponentType中的信息获取骨骼名称
+        if (component.type.bonePathNames != null) {
+            boneNames.addAll(component.type.bonePathNames)
+        } else {
+            // 如果没有明确的路径，使用起始和结束骨骼
+            boneNames.add(component.type.startBoneName)
+            boneNames.add(component.type.endBoneName)
+        }
+
+        // 获取骨骼对象
+        for (boneName in boneNames) {
+            model?.bones?.get(boneName)?.let { bone ->
+                selectedIKBones.add(bone)
+            }
+        }
+
+        // 设置末端执行器骨骼
+        endEffectorBone = model?.bones?.get(component.targetBoneName)
+
+        // 更新TreeView选择
+        endEffectorBone?.let { bone ->
+            treeView.setSelectedElement(bone)
+        }
+
+        SparkCore.LOGGER.debug("Selected IK chain: {}, bones: {}", chainName, selectedIKBones.map { it.name })
     }
 
     // --- Animation Handling --- M
@@ -1267,22 +1869,112 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             SparkCore.LOGGER.error("Failed to play animation '$animationName'", e)
             minecraft?.gui?.chat?.addMessage(Component.literal("Error playing animation: ${e.message}"))
         }
-        println("Playing animation: $animationName")
+        SparkCore.LOGGER.debug("Playing animation: $animationName")
+    }
+
+    // --- Screen Lifecycle Methods ---
+    override fun onClose() {
+        // --- Unregister Event Listener --- M
+        NeoForge.EVENT_BUS.unregister(this)
+        // sceneRenderTarget?.destroyBuffers() // REMOVED
+        // targetEntity?.discard() // REMOVED
+        super.onClose()
+        // Optional: Reset player camera if needed? Mixin should stop applying automatically.
+
+        // --- Restore Wand --- M
+        val player = Minecraft.getInstance().player
+        if (player != null) {
+            val wandStack = ItemStack(SparkRegistries.MODEL_EDITOR_WAND.get())
+            player.setItemInHand(InteractionHand.MAIN_HAND, wandStack)
+            // Optional: Send feedback?
+        }
+
+        // --- Close Browser Widget ---
+        webBrowserWidget.close() // 关闭浏览器释放资源
+        SparkCore.LOGGER.debug("WebBrowserWidget closed.")
+
+
+        // 如果在IK模式下，重置目标位置
+        if (ikModeEnabled && selectedIKChain != null) {
+            val minecraft = Minecraft.getInstance()
+            val player = minecraft.player
+            val animatable = player as? IAnimatable<*> ?: return
+
+            // 重置持久化显示的IK目标和末端执行器位置
+            persistentIKTargetPosition = null
+            persistentEndEffectorPosition = null
+
+            // Find and play idle animation
+            val idleAnim = currentAnimations.firstOrNull { it.contains("idle", ignoreCase = true) }
+            if (idleAnim != null) {
+                playAnimation(idleAnim) // Use the common play function
+            } else if (currentAnimations.isNotEmpty()) {
+                playAnimation(currentAnimations[0]) // Play first if no idle found
+            } else {
+                animatable.stopAllAnimations()
+            }
+        }
+
+        super.onClose()
     }
 }
 
 private fun distSqr(x1: Float, y1: Float, x2: Float, y2: Float): Float {
-    // ... (implementation unchanged)
     val dx = x1 - x2
     val dy = y1 - y2
     return dx * dx + dy * dy
+}
+
+/**
+ * 计算射线到线段的最短距离，并返回最近点
+ */
+private fun rayDistanceToLineSegment(rayOrigin: Vector3f, rayDirection: Vector3f, lineStart: Vector3f, lineEnd: Vector3f): Pair<Float, Vector3f> {
+    // 线段向量
+    val lineVec = Vector3f(lineEnd).sub(lineStart)
+
+    // 射线方向和线段方向的叉积
+    val cross = Vector3f(rayDirection).cross(lineVec)
+    val crossLengthSq = cross.lengthSquared()
+
+    // 如果叉积接近于零，说明射线和线段平行
+    if (crossLengthSq < 0.0001f) {
+        // 计算射线原点到线段起点的距离
+        val distToStart = Vector3f(lineStart).sub(rayOrigin).length()
+        return Pair(distToStart, Vector3f(lineStart))
+    }
+
+    // 计算射线原点到线段所在直线的距离
+    val originToLineStart = Vector3f(lineStart).sub(rayOrigin)
+    val perpendicular = originToLineStart.dot(cross) / cross.length()
+
+    // 计算射线和线段所在直线的交点参数
+    val t = Vector3f(originToLineStart).cross(lineVec).length() / cross.length()
+    val s = Vector3f(originToLineStart).cross(rayDirection).length() / cross.length()
+
+    // 检查交点是否在线段上
+    val lineLength = lineVec.length()
+    if (s >= 0 && s <= lineLength) {
+        // 交点在线段上，计算交点坐标
+        val pointOnLine = Vector3f(lineStart).add(Vector3f(lineVec).mul(s / lineLength))
+        return Pair(Math.abs(perpendicular), pointOnLine)
+    }
+
+    // 交点不在线段上，计算到线段端点的距离
+    val distToStart = Vector3f(lineStart).sub(rayOrigin).cross(rayDirection).length() / rayDirection.length()
+    val distToEnd = Vector3f(lineEnd).sub(rayOrigin).cross(rayDirection).length() / rayDirection.length()
+
+    return if (distToStart < distToEnd) {
+        Pair(distToStart, Vector3f(lineStart))
+    } else {
+        Pair(distToEnd, Vector3f(lineEnd))
+    }
 }
 
 // --- Helper to get Animation Set Key from Model Location --- M
 private fun getAnimationSetKey(modelLocation: ResourceLocation): ResourceLocation {
     // Mimics EntityAnimListener logic: namespace + path part before first slash
     val pathRoot = modelLocation.path.substringBefore('/')
-    println(pathRoot)
+    SparkCore.LOGGER.debug(pathRoot)
     return ResourceLocation.withDefaultNamespace(pathRoot)
 }
 
@@ -1296,5 +1988,53 @@ fun IAnimatable<*>.stopAllAnimations() {
     } catch (e: Exception) {
         SparkCore.LOGGER.error("Failed to stop animations", e)
     }
+}
+
+// --- Helper to draw text in 3D world space ---
+private fun drawWorldText(poseMatrix: Matrix4f, text: String, position: Vector3f, r: Float, g: Float, b: Float, a: Float) {
+    val minecraft = Minecraft.getInstance()
+    val camera = minecraft.gameRenderer.mainCamera
+
+    // 获取相机位置和方向
+    val cameraPos = camera.position
+    val cameraDir = Vector3f(
+        (position.x - cameraPos.x).toFloat(),
+        (position.y - cameraPos.y).toFloat(),
+        (position.z - cameraPos.z).toFloat()
+    ).normalize()
+
+    // 计算旋转角度，使文本面向相机
+    val yaw = Math.toDegrees(atan2(cameraDir.x.toDouble(), cameraDir.z.toDouble())).toFloat()
+    val pitch = Math.toDegrees(asin(cameraDir.y.toDouble())).toFloat()
+
+    // 创建变换矩阵
+    val matrixStack = PoseStack()
+    matrixStack.pushPose()
+
+    // 设置位置
+    matrixStack.translate(position.x.toDouble(), position.y.toDouble(), position.z.toDouble())
+
+    // 旋转使文本面向相机
+    matrixStack.mulPose(Axis.YP.rotationDegrees(-yaw))
+    matrixStack.mulPose(Axis.XP.rotationDegrees(pitch))
+
+    // 缩放文本大小
+    val scale = 0.02f // 调整文本大小
+    matrixStack.scale(-scale, -scale, scale) // 负值使文本正面朝向相机
+
+    // 获取渲染缓冲区
+    val bufferSource = minecraft.renderBuffers().bufferSource()
+
+    // 绘制文本
+    val font = minecraft.font
+    val textWidth = font.width(text)
+    val color = ((a * 255).toInt() shl 24) or ((r * 255).toInt() shl 16) or ((g * 255).toInt() shl 8) or (b * 255).toInt()
+    font.drawInBatch(text, -textWidth / 2f, 0f, color, false, matrixStack.last().pose(), bufferSource, Font.DisplayMode.NORMAL, 0, 15728880)
+
+    // 结束批处理
+    bufferSource.endBatch()
+
+    // 恢复矩阵状态
+    matrixStack.popPose()
 }
 

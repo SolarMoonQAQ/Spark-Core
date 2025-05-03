@@ -5,10 +5,8 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.ik.component.IKComponentType
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.JSComponent
-import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
 import net.minecraft.resources.ResourceLocation
-import org.graalvm.polyglot.HostAccess
 import org.mozilla.javascript.Function
 import org.slf4j.LoggerFactory
 
@@ -23,7 +21,7 @@ object JSIKApi: JSApi,JSComponent() {
     // Assuming JSIKComponentTypeBuilder exists and has 'id', 'priority', and 'build()'
     private val pendingRegistrations = mutableListOf<Pair<JSIKComponentTypeBuilder, () -> Unit>>()
 
-    @HostAccess.Export
+    
     fun create(idStr: String, configureFunc: Function) {
         val builder = JSIKComponentTypeBuilder() // Assuming this class exists
         // Store the configuration logic to run later during onLoad

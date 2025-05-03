@@ -1,14 +1,15 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
-import cn.solarmoon.spark_core.SparkCore; // Import SparkCore for logging
+// Import SparkCore for logging
+
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.ik.caliko.IKApplier; // Import IKApplier
-import cn.solarmoon.spark_core.ik.caliko.IKResolver; // Import IKResolver
-import cn.solarmoon.spark_core.ik.component.IKComponent; // Import IKComponent
-import cn.solarmoon.spark_core.ik.component.IKHost; // Import IKHost
-import cn.solarmoon.spark_core.ik.component.IKManager; // Import IKManager
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel; // Import PhysicsLevel
-import com.jme3.math.Vector3f; // Import Vector3f
+// Import IKApplier
+// Import IKResolver
+// Import IKComponent
+// Import IEntityAnimatable
+// Import IKManager
+// Import PhysicsLevel
+// Import Vector3f
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -17,7 +18,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LivingEntity.class)

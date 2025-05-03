@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.ik.service
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.ik.component.IKHost
-import cn.solarmoon.spark_core.ik.payload.IKSyncTargetPayload // Import S2C sync payload
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.ik.sync.IKSyncTargetPayload // Import S2C sync sync
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
@@ -33,8 +33,8 @@ object IKService {
             return
         }
 
-        val host = targetEntity as? IKHost<*> ?: run { // Use non-generic IKHost
-            SparkCore.LOGGER.warn("IKService: Cannot process request. Entity $targetEntityId (${targetEntity.type.descriptionId}) is not an IKHost.")
+        val host = targetEntity as? IEntityAnimatable<*> ?: run { // Use non-generic IEntityAnimatable
+            SparkCore.LOGGER.warn("IKService: Cannot process request. Entity $targetEntityId (${targetEntity.type.descriptionId}) is not an IEntityAnimatable.")
             return
         }
 
@@ -71,9 +71,9 @@ object IKService {
             SparkCore.LOGGER.warn("IKService: Cannot set target. Entity $targetEntityId not found.")
             return
         }
-        val host = targetEntity as? IKHost<*> ?: run {
-             // Log if entity found but not IKHost
-             SparkCore.LOGGER.warn("IKService: Cannot set target. Entity $targetEntityId (${targetEntity.type.descriptionId}) is not an IKHost.")
+        val host = targetEntity as? IEntityAnimatable<*> ?: run {
+             // Log if entity found but not IEntityAnimatable
+             SparkCore.LOGGER.warn("IKService: Cannot set target. Entity $targetEntityId (${targetEntity.type.descriptionId}) is not an IEntityAnimatable.")
              return
         }
 
@@ -91,7 +91,7 @@ object IKService {
         try {
             // Explicitly get entity ID and call the primary constructor to avoid potential resolution issues
             val entityIdForPacket = (host as? Entity)?.id ?: run {
-                SparkCore.LOGGER.error("IKService: Could not get entity ID from IKHost for sync packet.")
+                SparkCore.LOGGER.error("IKService: Could not get entity ID from IEntityAnimatable for sync packet.")
                 return // Don't proceed if we can't get a valid ID
             }
             // Call the primary constructor directly

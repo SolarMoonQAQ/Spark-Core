@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 
-import cn.solarmoon.spark_core.ik.component.IKHost;
 import cn.solarmoon.spark_core.ik.component.IKManager;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
@@ -24,8 +23,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(Zombie.class)
-public abstract class ZombieMixin extends Monster implements IKHost<Zombie> {
-    // --- IKHost Implementation ---
+public abstract class ZombieMixin extends Monster implements IEntityAnimatable<Zombie> {
+    // --- IEntityAnimatable Implementation ---
     private final IKManager ikManager = new IKManager(this);
     private final Map<String, Vec3> ikTargetPositions = new ConcurrentHashMap<>();
     private final Map<String, FabrikChain3D> ikChains = new ConcurrentHashMap<>();
@@ -80,7 +79,7 @@ public abstract class ZombieMixin extends Monster implements IKHost<Zombie> {
         return level();
     }
 
-    // --- IKHost Implementation ---
+    // --- IEntityAnimatable Implementation ---
     @NotNull
     @Override
     public IKManager getIkManager() {

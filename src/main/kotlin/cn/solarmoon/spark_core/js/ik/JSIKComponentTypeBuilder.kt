@@ -1,10 +1,8 @@
 package cn.solarmoon.spark_core.js.ik
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.ik.component.JointConstraint // Import needed if handling constraints here
-import cn.solarmoon.spark_core.ik.component.IKComponentType // Keep this import
+import cn.solarmoon.spark_core.ik.component.IKComponentType
 import net.minecraft.resources.ResourceLocation
-import org.graalvm.polyglot.HostAccess
 
 /**
  * Builder used by JS scripts to configure a new IKComponentType.
@@ -15,22 +13,22 @@ class JSIKComponentTypeBuilder {
     lateinit var chainName: String
     lateinit var startBoneName: String
     lateinit var endBoneName: String
-    var bonePathNames: List<String>? = null // Add property for explicit path
+    lateinit var bonePathNames: List<String> // Add property for explicit path
     var defaultTolerance: Float = 0.1f
     var defaultMaxIterations: Int = 15
     var priority: Int = 0 // For registration order if needed
 
-    @HostAccess.Export fun setId(v: String) { id = ResourceLocation.parse(v) } // Allow setting ID via string
-    @HostAccess.Export fun setIKChainName(v: String) { chainName = v }
-    @HostAccess.Export fun setStartBone(v: String) { startBoneName = v }
-    @HostAccess.Export fun setEndBone(v: String) { endBoneName = v }
+     fun setId(v: String) { id = ResourceLocation.parse(v) } // Allow setting ID via string
+     fun setIKChainName(v: String) { chainName = v }
+     fun setStartBone(v: String) { startBoneName = v }
+     fun setEndBone(v: String) { endBoneName = v }
     // Method for JS to set the explicit bone path. Takes a JS array, converts to Kotlin List.
-    @HostAccess.Export fun setBonePath(path: Array<String>) {
-        bonePathNames = path.toList().takeIf { it.isNotEmpty() } // Store as list, null if empty
+     fun setBonePath(path: Array<String>) {
+        bonePathNames = path.toList() // Store as list, null if empty
     }
-    @HostAccess.Export fun setTolerance(v: Float) { defaultTolerance = v }
-    @HostAccess.Export fun setMaxIterations(v: Int) { defaultMaxIterations = v }
-    @HostAccess.Export fun setIKPriority(v: Int) { priority = v }
+     fun setTolerance(v: Float) { defaultTolerance = v }
+     fun setMaxIterations(v: Int) { defaultMaxIterations = v }
+     fun setIKPriority(v: Int) { priority = v }
 
     // Creates the IKComponentType instance from the collected data. Registration happens elsewhere.
     fun build(): IKComponentType? {

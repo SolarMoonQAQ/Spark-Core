@@ -15,9 +15,9 @@ import kotlin.math.max
 
 class ModelTreeViewWidget(
     x: Int, y: Int, width: Int, height: Int,
-    private val model: OModel?, // 需要持有 OModel 的引用来查找子骨骼
-    private val itemHeight: Int = 12,
-    private val indentation: Int = 10,
+    private var model: OModel?, // 需要持有 OModel 的引用来查找子骨骼
+    private var itemHeight: Int = 12,
+    private var indentation: Int = 10,
     private val onSelectionChanged: (Any?) -> Unit // 回调传递 OBone 或 OCube
 ) : AbstractScrollWidget(x, y, width, height, Component.empty()) {
     val MENU_LIST_BACKGROUND: ResourceLocation =
@@ -39,7 +39,8 @@ class ModelTreeViewWidget(
         rootBones.forEach { expandedBones.add(it.name) }
     }
 
-    fun setNodes(rootNodes: List<OBone>) {
+    fun setNodes(rootNodes: List<OBone>, model: OModel) {
+        this.model = model
         this.rootBones = rootNodes
         this.expandedBones.clear()
         // 默认展开根骨骼

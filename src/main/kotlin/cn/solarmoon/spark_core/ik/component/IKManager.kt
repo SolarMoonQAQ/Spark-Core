@@ -1,17 +1,20 @@
 package cn.solarmoon.spark_core.ik.component
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.ik.payload.IKComponentSyncPayload
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
 import cn.solarmoon.spark_core.physics.level.PhysicsWorld
 import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.PacketDistributor
 import java.util.concurrent.ConcurrentHashMap
+import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
+import cn.solarmoon.spark_core.ik.util.IKCoordinateTransformer
 
 /**
- * Manages active IKComponents for a specific IKHost.
+ * Manages active IKComponents for a specific IEntityAnimatable.
  */
-class IKManager(private val host: IKHost<*>) { // Takes the host instance
+class IKManager(private val host: IEntityAnimatable<*>) { // Takes the host instance
 
     internal val activeComponents = ConcurrentHashMap<String, IKComponent>() // Map chainName to component
 
@@ -34,15 +37,24 @@ class IKManager(private val host: IKHost<*>) { // Takes the host instance
             return false
         }
         host.ikChains[chain.name] = chain
-        val component = IKComponent(type, chain)
+        val component = IKComponent(type, chain, host)
         activeComponents[type.chainName] = component
         SparkCore.LOGGER.info("IKManager: Added IK component '${type.id}' (chain: ${type.chainName}) to ${host.animatable}.")
 
         // Sync change to clients (only if running on server)
+        if (host.animLevel.isClientSide) {
+            try {
+                // Ensure host can be treated as an Entity for tracking
+                val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable could not be cast to Entity for packet distribution")
+                PacketDistributor.sendToServer(RequestIKComponentChangePayload(host.id, type.id, true))
+            } catch (e: IllegalStateException) {
+                SparkCore.LOGGER.error("IKManager: Failed to send add component sync packet.", e)
+            }
+        }
         if (!host.animLevel.isClientSide) {
             try {
                 // Ensure host can be treated as an Entity for tracking
-                val entityHost = host as? Entity ?: throw IllegalStateException("IKHost could not be cast to Entity for packet distribution")
+                val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable could not be cast to Entity for packet distribution")
                 PacketDistributor.sendToPlayersTrackingEntity(entityHost, IKComponentSyncPayload(host, type, true))
             } catch (e: IllegalStateException) {
                 SparkCore.LOGGER.error("IKManager: Failed to send add component sync packet.", e)
@@ -64,7 +76,7 @@ class IKManager(private val host: IKHost<*>) { // Takes the host instance
             if (!host.animLevel.isClientSide) {
                 try {
                     // Ensure host can be treated as an Entity for tracking
-                    val entityHost = host as? Entity ?: throw IllegalStateException("IKHost could not be cast to Entity for packet distribution")
+                    val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable could not be cast to Entity for packet distribution")
                     PacketDistributor.sendToPlayersTrackingEntity(entityHost, IKComponentSyncPayload(host, removedComponent.type, false)) // Send removal sync
                 } catch (e: IllegalStateException) {
                     SparkCore.LOGGER.error("IKManager: Failed to send remove component sync packet.", e)
@@ -83,15 +95,24 @@ class IKManager(private val host: IKHost<*>) { // Takes the host instance
     fun prepareTargetsForPhysics(physicsWorld: PhysicsWorld) {
         activeComponents.forEach { (chainName, component) ->
             // Get the desired target position set by the host (likely from animation)
-            host.ikTargetPositions[chainName]?.let { desiredTargetVec3 ->
+            host.ikTargetPositions[chainName]?.let { targetVec3 ->
                 // Convert Minecraft Vec3 to JME Vector3f for the component's method
-                val desiredTargetJME = Vector3f(
-                    desiredTargetVec3.x.toFloat(),
-                    desiredTargetVec3.y.toFloat(),
-                    desiredTargetVec3.z.toFloat()
+                val targetJME = Vector3f(
+                    targetVec3.x.toFloat(),
+                    targetVec3.y.toFloat(),
+                    targetVec3.z.toFloat()
                 )
                 try {
-                    component.updateGroundContact(physicsWorld, desiredTargetJME)
+                    // 注意：现在我们假设ikTargetPositions中存储的是本地坐标
+                    // 直接使用本地坐标更新目标位置
+                    component.updateTargetLocalPosition(targetJME)
+
+                    // 如果需要地面接触检测，则执行
+                    if (component.stickToGround) {
+                        // 将本地坐标转换为世界坐标进行射线检测
+                        val worldTargetJME = IKCoordinateTransformer.localToWorldSpaceJME(host, targetJME)
+                        component.updateGroundContact(physicsWorld, worldTargetJME)
+                    }
                 } catch (e: Exception) {
                     SparkCore.LOGGER.error("IKManager: Exception during preparing target for component '$chainName' for ${host.animatable}", e)
                 }

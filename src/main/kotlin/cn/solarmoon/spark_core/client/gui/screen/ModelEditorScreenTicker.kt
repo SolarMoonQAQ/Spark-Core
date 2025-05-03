@@ -19,32 +19,25 @@ import net.neoforged.neoforge.client.event.ClientTickEvent
 
 object ModelEditorScreenTicker {
 
-    // 假设这是在 ClientTickEvent.ClientTickEndEvent 处理器中
     @SubscribeEvent
     fun onClientTick(event: ClientTickEvent.Post) {
         val minecraft = Minecraft.getInstance()
         val player = minecraft.player ?: return // 需要玩家实例
         // 检查按键是否刚刚被按下
         if (SparkKeyMappings.OPEN_MODEL_EDITOR.consumeClick()) {
-            // 检查玩家是否手持特殊物品 (假设物品为 SparkItems.MODEL_EDITOR_WAND)
-            // 需要确保 SparkItems 已经定义并且 MODEL_EDITOR_WAND 是正确的物品引用
-             // Get the actual Item instance from the DeferredItem
+            // 检查玩家是否手持特殊物品
              val requiredItem = SparkRegistries.MODEL_EDITOR_WAND.get()
              if (player.mainHandItem.`is`(requiredItem) || player.offhandItem.`is`(requiredItem)) { // Check if player holds the wand
 
                 println("Open Model Editor key pressed and condition met (holding Model Editor Wand).")
 
-                // 获取玩家模型和纹理 (需要您提供具体实现)
-                // 这部分逻辑高度依赖于您的 Mod 如何管理玩家模型
-                // 暂时使用硬编码的占位符，您需要替换它们
-                val playerModelLocation: ResourceLocation? = getPlayerModelLocation(player) // 您需要实现这个方法
-                val playerTextureLocation: ResourceLocation? = getPlayerTextureLocation(player) // 您需要实现这个方法
+                val playerModelLocation: ResourceLocation? = getPlayerModelLocation(player)
+                val playerTextureLocation: ResourceLocation? = getPlayerTextureLocation(player)
 
                 if (playerModelLocation != null && playerTextureLocation != null) {
-                    // 确保模型已在 OModel.ORIGINS 中加载，如果不在，可能需要先触发加载
                     if (!OModel.ORIGINS.containsKey(playerModelLocation)) {
                         // 尝试加载模型？或者提示错误？
-                        // OModel.loadModel(playerModelLocation) // 假设有这样的加载方法
+                        // OModel.loadModel(playerModelLocation)
                         player.sendSystemMessage(Component.literal("Error: Player model $playerModelLocation not found in cache."))
                         return
                     }

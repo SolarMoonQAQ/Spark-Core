@@ -81,6 +81,11 @@ interface IAnimatable<T> : JSAnimatable, Syncer {
     val animations get() = modelIndex.animationSet
 
     /**
+     * 该动画体的可用IK链
+     */
+    val ikConstraints get() = modelIndex.ikConstraints
+
+    /**
      * 获取调用时距离主线程上一次tick的时间与单tick时间的比值，服务端永远返回1
      */
     val partialTicks: Float get() = if (animLevel.isClientSide) Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(false) else 1f

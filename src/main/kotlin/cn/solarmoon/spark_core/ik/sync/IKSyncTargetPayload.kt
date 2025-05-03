@@ -1,8 +1,8 @@
-package cn.solarmoon.spark_core.ik.payload
+package cn.solarmoon.spark_core.ik.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.ik.component.IKHost
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
@@ -23,7 +23,7 @@ class IKSyncTargetPayload(
 ) : CustomPacketPayload {
 
     // Convenience constructor (optional, but can be useful)
-    constructor(host: IKHost<*>, chainName: String, targetPosition: Vec3?) : this(
+    constructor(host: IEntityAnimatable<*>, chainName: String, targetPosition: Vec3?) : this(
         (host as? net.minecraft.world.entity.Entity)?.id ?: -1, // Safely get entity ID
         chainName,
         targetPosition
@@ -46,26 +46,26 @@ class IKSyncTargetPayload(
 
         @JvmStatic
         // Handler executed on the Client thread
-        fun handleInClient(payload: IKSyncTargetPayload, context: IPayloadContext) {
+        fun handleInBothSide(payload: IKSyncTargetPayload, context: IPayloadContext) {
             context.enqueueWork {
                 val level = context.player().level() ?: return@enqueueWork
                 val targetEntity = level.getEntity(payload.targetEntityId)
 
                 if (targetEntity == null) {
                     // Entity might not exist on client yet or was removed
-                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Target entity ${payload.targetEntityId} not found on client.")
+                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Target entity ${sync.targetEntityId} not found on client.")
                     return@enqueueWork
                 }
 
-                val host = targetEntity as? IKHost<*> ?: return@enqueueWork // Check if it's an IKHost
+                val host = targetEntity as? IEntityAnimatable<*> ?: return@enqueueWork // Check if it's an IEntityAnimatable
 
                 // Update the client's target map based on the received authoritative state
                 if (payload.targetPosition != null) {
                     host.ikTargetPositions[payload.chainName] = payload.targetPosition
-                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Set client target for chain '${payload.chainName}' on entity ${payload.targetEntityId}")
+                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Set client target for chain '${sync.chainName}' on entity ${sync.targetEntityId}")
                 } else {
                     host.ikTargetPositions.remove(payload.chainName)
-                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Cleared client target for chain '${payload.chainName}' on entity ${payload.targetEntityId}")
+                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Cleared client target for chain '${sync.chainName}' on entity ${sync.targetEntityId}")
                 }
             }.exceptionally {
                 SparkCore.LOGGER.error("Exception handling IKSyncTargetPayload", it)

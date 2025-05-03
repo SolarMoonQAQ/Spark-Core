@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.ik.visualizer
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.ik.component.IKComponent
-import cn.solarmoon.spark_core.ik.component.IKHost
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBVector3f
@@ -52,7 +52,7 @@ class IKDebugRenderer : VisualEffectRenderer() {
         if (!isEnabled) return
 
         val player = Minecraft.getInstance().player ?: return
-        if (player !is IKHost<*>) return // Ensure player implements IKHost
+        if (player !is IEntityAnimatable<*>) return // Ensure player implements IEntityAnimatable
 
         val ikManager = player.ikManager // Should be implemented now
         val physicsWorld = player.physicsLevel.world // Get client physics world

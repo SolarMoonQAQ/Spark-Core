@@ -4,7 +4,6 @@ import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
-import cn.solarmoon.spark_core.ik.component.IKHost;
 import cn.solarmoon.spark_core.ik.component.IKManager;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
@@ -23,8 +22,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(Vindicator.class)
-public abstract class VindicatorMixin extends AbstractIllager implements IKHost<Vindicator> {
-    // --- IKHost Implementation ---
+public abstract class VindicatorMixin extends AbstractIllager implements IEntityAnimatable<Vindicator> {
+    // --- IEntityAnimatable Implementation ---
     private final IKManager ikManager = new IKManager(this);
     private final Map<String, Vec3> ikTargetPositions = new ConcurrentHashMap<>();
     private final Map<String, FabrikChain3D> ikChains = new ConcurrentHashMap<>();
@@ -79,7 +78,7 @@ public abstract class VindicatorMixin extends AbstractIllager implements IKHost<
         return level();
     }
 
-    // --- IKHost Implementation ---
+    // --- IEntityAnimatable Implementation ---
     @NotNull
     @Override
     public IKManager getIkManager() {

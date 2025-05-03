@@ -35,7 +35,6 @@ object SparkJSApiRegister {
         event.registerComponent("EntityHelper", JSEntityHelper)
         event.registerComponent("AnimHelper", JSAnimHelper)
         event.registerComponent("PhysicsHelper", JSPhysicsHelper)
-        event.registerComponent("Logger", JSLogger)
         event.registerComponent("Ik", JSIKApi)
     }
 

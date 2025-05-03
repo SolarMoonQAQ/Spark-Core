@@ -1,8 +1,7 @@
-package cn.solarmoon.spark_core.ik.payload
+package cn.solarmoon.spark_core.ik.sync
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.ik.caliko.IKResolver
-import cn.solarmoon.spark_core.ik.component.IKHost
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.ik.component.IKComponentType
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.sync.SyncData
@@ -13,7 +12,6 @@ import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
-import org.slf4j.LoggerFactory
 
 /**
  * Payload used to synchronize the active state of an IK component between server and client.
@@ -26,9 +24,9 @@ class IKComponentSyncPayload private constructor(
     val active: Boolean             // True if the component should be active, false if inactive (removed)
 ) : CustomPacketPayload {
     // Convenience constructor
-    constructor(host: IKHost<*>, type: IKComponentType, active: Boolean) : this(
-        host.syncerType, // Assuming IKHost provides these (inherited from IAnimatable/Syncer?)
-        host.syncData,   // Assuming IKHost provides these
+    constructor(host: IEntityAnimatable<*>, type: IKComponentType, active: Boolean) : this(
+        host.syncerType, // Assuming IEntityAnimatable provides these (inherited from IAnimatable/Syncer?)
+        host.syncData,   // Assuming IEntityAnimatable provides these
         type.id,
         active
     )
@@ -56,7 +54,7 @@ class IKComponentSyncPayload private constructor(
             context.enqueueWork {
                 val level = context.player().level() ?: return@enqueueWork // Use safe call for player
                 // Find the host entity using the syncer info
-                val host = payload.syncerType.getSyncer(level, payload.syncData) as? IKHost<*> ?: return@enqueueWork
+                val host = payload.syncerType.getSyncer(level, payload.syncData) as? IEntityAnimatable<*> ?: return@enqueueWork
 
                 // Look up the component type from the registry
                 val componentType = SparkRegistries.IK_COMPONENT_TYPE.get(payload.componentTypeId) ?: run { // Access registry via .get()

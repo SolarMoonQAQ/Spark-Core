@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core;
 
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance;
+import cn.solarmoon.spark_core.config.SparkConfig;
 import cn.solarmoon.spark_core.js.JSHelperKt;
 import cn.solarmoon.spark_core.js.SparkJS;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
@@ -64,6 +64,9 @@ public class SparkCore {
         SparkDataGenerator.register(modEventBus);
         SparkCapabilities.register(modEventBus);
         SparkJSApiRegister.register(modEventBus);
+
+        // 注册配置
+        SparkConfig.INSTANCE.register(modContainer);
 
         PhysicsHelperKt.initBullet();
         JSHelperKt.loadDefaultScripts(getClass());

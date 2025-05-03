@@ -39,6 +39,7 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable)) {
             setDefault();
             if (shouldTransform() && animatable.getAnimController().getMainAnim() != null) {
+                var physPartialTicks = ((ClientPhysicsLevel)entity.getPhysicsLevel()).getPartialTicks();
                 var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 VanillaModelHelper.setRoot(leftArm, body);
                 VanillaModelHelper.setRoot(rightArm, body);
