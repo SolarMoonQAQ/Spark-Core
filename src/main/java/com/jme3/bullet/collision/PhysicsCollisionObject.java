@@ -261,13 +261,14 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
         activate(objectId, forceFlag);
     }
 
-    public void forceDeactivate() {
-        if (getActivationState() == 1) {
-            long objectId = nativeId();
-            setActivationState(objectId, 2);
-        }
-
-    }
+//无效，待排查
+//    public void forceDeactivate() {
+//        if (getActivationState() == Activation.active) {
+//            long objectId = nativeId();
+//            setActivationState(objectId, Activation.sleeping);
+//        }
+//
+//    }
 
     /**
      * Add collision groups to the set with which this object can collide.
@@ -887,9 +888,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      */
     public boolean isActive() {
         long objectId = nativeId();
-        boolean result = isActive(objectId);
 
-        return result;
+        return isActive(objectId);
     }
 
     /**

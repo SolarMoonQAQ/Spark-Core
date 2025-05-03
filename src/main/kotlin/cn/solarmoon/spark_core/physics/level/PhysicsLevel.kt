@@ -48,7 +48,8 @@ abstract class PhysicsLevel(
 
     // 协程配置
     val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    val scope = CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
+    val scope =
+        CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
 
     // 状态管理
     private val stateFlow = MutableStateFlow(PhysicsLevelState.IDLE)
@@ -100,7 +101,7 @@ abstract class PhysicsLevel(
             val tp = Transform()
             simulationLock.withLock {
                 world.pcoList.forEach {
-                    if (!it.isStatic) {
+                    if (!it.isStatic) {//仅更新非静态的物体
                         it.lastTickTransform = it.tickTransform.clone()
                         it.tickTransform.apply {
                             val t = it.getTransform(tp)
@@ -108,7 +109,7 @@ abstract class PhysicsLevel(
                             rotation.set(t.rotation)
                             scale.set(t.scale)
                         }
-                        BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
+                        if (it.isActive) BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
                     } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
                         if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
                             terrainBlocks.remove(it.blockPos)
