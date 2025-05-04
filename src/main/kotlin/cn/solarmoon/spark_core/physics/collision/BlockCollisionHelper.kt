@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.collision
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import cn.solarmoon.spark_core.util.BlockFricionUitl
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
@@ -104,24 +105,21 @@ object BlockCollisionHelper {
                 if (physicsLevel.terrainBlockBodies.containsKey(blockPos)) {//如果该位置的方块已经记录过，则检查方块类型后重置销毁倒计时 Reset the destruction count if the block has been recorded
                     val blockBody = physicsLevel.terrainBlockBodies[blockPos]
                     if (blockState.isAir || blockState.getCollisionShape(physicsLevel.mcLevel, blockPos).isEmpty
-                    ) {
+                    ) {//如果该位置的方块已经是空气或可替换方块，则重置销毁倒计时
                         physicsLevel.submitDeduplicatedTask(
                             blockPos.toString(),
                             PPhase.PRE
                         ) { blockBody?.setUserIndex(0) }
-                    } else if (blockState != blockBody?.userObject) {
+                    } else {//重置销毁倒计时 Reset the destruction count
                         physicsLevel.submitDeduplicatedTask(
                             blockPos.toString(),
                             PPhase.PRE
                         ) {
                             blockBody?.setUserIndex(40)
-                            blockBody?.userObject = blockState
+                            if (blockState != blockBody?.userObject) blockBody?.userObject = blockState
+                            //更新方块打滑属性(默认取决于方块类型，上方方块，和天气)
+                            blockBody?.setUserIndex2(BlockFricionUitl.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos))
                         }
-                    } else {
-                        physicsLevel.submitDeduplicatedTask(
-                            blockPos.toString(),
-                            PPhase.PRE
-                        ) { blockBody?.setUserIndex(40) }
                     }
                 } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象 Create a physics body for the block if it has not been recorded
                     if (!blockState.isAir && !blockState.getCollisionShape(
@@ -146,8 +144,9 @@ object BlockCollisionHelper {
                                 )
                             )
                             blockBody.userObject = blockState
-                            blockBody.friction = 2 * (1 - blockState.getFriction(physicsLevel.mcLevel, blockPos, null))
-                            blockBody.collisionGroup = PhysicsCollisionObject.COLLISION_GROUP_02
+                            blockBody.friction = BlockFricionUitl.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
+                            blockBody.setUserIndex2(BlockFricionUitl.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos))
+                            blockBody.collisionGroup = PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                             blockBody.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
                             blockBody.tickTransform = blockBody.getTransform(null)
                             blockBody.lastTickTransform = blockBody.tickTransform

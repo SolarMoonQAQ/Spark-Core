@@ -822,7 +822,7 @@ public class MultiBody extends NativePhysicsObject {
      * collide.
      *
      * @param groups the desired groups, ORed together (bitmask,
-     * default=COLLISION_GROUP_01)
+     * default=COLLISION_GROUP_OBJECT)
      */
     public void setCollideWithGroups(int groups) {
         long multiBodyId = nativeId();
@@ -839,7 +839,7 @@ public class MultiBody extends NativePhysicsObject {
      * other in its collideWithGroups set.
      *
      * @param group the collisionGroup to apply (bitmask with exactly one bit
-     * set, default=COLLISION_GROUP_01)
+     * set, default=COLLISION_GROUP_OBJECT)
      */
     public void setCollisionGroup(int group) {
         Validate.require(Integer.bitCount(group) == 1, "exactly one bit set");

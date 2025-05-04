@@ -115,23 +115,27 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     /**
      * collisionGroup/collideWithGroups bitmask that represents group #1
      */
-    final public static int COLLISION_GROUP_01 = 0x0001;
+    final public static int COLLISION_GROUP_OBJECT = 0x0001;
     /**
-     * collisionGroup/collideWithGroups bitmask that represents group #2
+     * 代表地形方块的碰撞组 #2
+     * Represent the collision group for terrain blocks #2
      */
-    final public static int COLLISION_GROUP_02 = 0x0002;
+    final public static int COLLISION_GROUP_BLOCK = 0x0002;
     /**
-     * collisionGroup/collideWithGroups bitmask that represents group #3
+     * 代表技能等范围效果判定区的碰撞组 #3
+     * Represent the collision group for skill range effect detection etc. #3
      */
-    final public static int COLLISION_GROUP_03 = 0x0004;
+    final public static int COLLISION_GROUP_EFFECT = 0x0004;
     /**
-     * collisionGroup/collideWithGroups bitmask that represents group #4
+     * 代表受物理引擎控制的视觉效果的碰撞组 #4
+     * Represent the collision group for visual effects controlled by the physical engine #4
      */
-    final public static int COLLISION_GROUP_04 = 0x0008;
+    final public static int COLLISION_GROUP_VISUAL = 0x0008;
     /**
-     * collisionGroup/collideWithGroups bitmask that represents group #5
+     * 代表除了射线检测等操作外，不应与任何物体发生碰撞的碰撞组 #5
+     * Represent the collision group for any object that should not collide with anything except ray detection etc. #5
      */
-    final public static int COLLISION_GROUP_05 = 0x0010;
+    final public static int COLLISION_GROUP_UNUSED = 0x0010;
     /**
      * collisionGroup/collideWithGroups bitmask that represents group #6
      */
@@ -196,11 +200,11 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     /**
      * collision groups with which this object can collide
      */
-    private int collideWithGroups = COLLISION_GROUP_01;
+    private int collideWithGroups = COLLISION_GROUP_OBJECT;
     /**
      * collision group to which this object belongs
      */
-    private int collisionGroup = COLLISION_GROUP_01;
+    private int collisionGroup = COLLISION_GROUP_OBJECT;
     /**
      * scene object that's using this collision object
      */
@@ -1082,7 +1086,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * Directly alter the collision groups with which this object can collide.
      *
      * @param collisionGroups the desired groups, ORed together (bitmask,
-     *                        default=COLLISION_GROUP_01)
+     *                        default=COLLISION_GROUP_OBJECT)
      */
     public void setCollideWithGroups(int collisionGroups) {
         if (this.collideWithGroups != 0 && collisionGroups == 0)
@@ -1103,7 +1107,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      * other in its collideWithGroups set.
      *
      * @param collisionGroup the collisionGroup to apply (bitmask with exactly
-     *                       one bit set, default=COLLISION_GROUP_01)
+     *                       one bit set, default=COLLISION_GROUP_OBJECT)
      */
     public void setCollisionGroup(int collisionGroup) {
         Validate.require(

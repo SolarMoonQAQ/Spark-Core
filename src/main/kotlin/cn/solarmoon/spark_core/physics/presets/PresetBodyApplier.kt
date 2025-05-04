@@ -1,7 +1,5 @@
 package cn.solarmoon.spark_core.physics.presets
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.physics.collision.CollisionCallback
 import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithBoundingBoxTicker
@@ -35,7 +33,7 @@ object PresetBodyApplier {
                     body.setGravity(Vector3f.ZERO)
                     body.setEnableSleep(false)
                     body.isKinematic = true
-                    body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
+                    body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                     body.addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
                 }
             }
@@ -45,7 +43,7 @@ object PresetBodyApplier {
                 val body = PhysicsRigidBody("body", entity, BoxCollisionShape(size))
                 bindBody(body, event.level.physicsLevel) {
                     body.isContactResponse = false
-                    body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
+                    body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                     body.setGravity(Vector3f.ZERO)
                     body.setEnableSleep(false)
                     body.isKinematic = true

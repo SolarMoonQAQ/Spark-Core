@@ -26,7 +26,6 @@ import kotlinx.coroutines.runBlocking
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
-import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.chunk.ChunkAccess
 import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
@@ -70,7 +69,6 @@ abstract class PhysicsLevel(
     //地形碰撞相关
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
     val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
-
     suspend fun CoroutineScope.run() {
         val fixedStep = 1f / TPS
         val repeat = TPS / 20
@@ -116,9 +114,9 @@ abstract class PhysicsLevel(
                     scale.set(t.scale)
                 }
                 it.boundingBox(it.cachedBoundingBox)
-                if (it is PhysicsRigidBody && !it.isKinematic && it.isActive)
+                if ((it.collideWithGroups and PhysicsCollisionObject.COLLISION_GROUP_BLOCK != 0) && it.isActive)
                     BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
-            } else if (it.owner == mcLevel && it.name.equals("terrain") && it is PhysicsRigidBody) {
+            } else if (it.collisionGroup == PhysicsCollisionObject.COLLISION_GROUP_BLOCK && it is PhysicsRigidBody) {
                 if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
                     world.remove(it)
                     terrainBlockBodies.remove(it.blockPos)
