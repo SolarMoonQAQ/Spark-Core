@@ -111,14 +111,15 @@ object BlockCollisionHelper {
                             PPhase.PRE
                         ) { blockBody?.setUserIndex(0) }
                     } else {//重置销毁倒计时 Reset the destruction count
+                        //更新方块打滑属性(默认取决于方块类型，上方方块，和天气)
+                        if (Math.random()>0.95)
+                            blockBody?.setUserIndex2(BlockFricionUitl.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos))
                         physicsLevel.submitDeduplicatedTask(
                             blockPos.toString(),
                             PPhase.PRE
                         ) {
                             blockBody?.setUserIndex(40)
                             if (blockState != blockBody?.userObject) blockBody?.userObject = blockState
-                            //更新方块打滑属性(默认取决于方块类型，上方方块，和天气)
-                            blockBody?.setUserIndex2(BlockFricionUitl.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos))
                         }
                     }
                 } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象 Create a physics body for the block if it has not been recorded
@@ -127,6 +128,7 @@ object BlockCollisionHelper {
                             blockPos
                         ).isEmpty
                     ) {
+                        val slip = BlockFricionUitl.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos)
                         // 如果块不是空气或可替换方块，记录方块的状态和坐标 Record the block state and coordinates
                         physicsLevel.submitDeduplicatedTask(blockPos.toString(), PPhase.PRE) {
                             val blockBody =
@@ -145,7 +147,7 @@ object BlockCollisionHelper {
                             )
                             blockBody.userObject = blockState
                             blockBody.friction = BlockFricionUitl.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
-                            blockBody.setUserIndex2(BlockFricionUitl.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos))
+                            blockBody.setUserIndex2(slip)
                             blockBody.collisionGroup = PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                             blockBody.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
                             blockBody.tickTransform = blockBody.getTransform(null)
