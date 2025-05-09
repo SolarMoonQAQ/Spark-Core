@@ -9,28 +9,77 @@ import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
 
+/**
+ * AttackCollisionCallback 接口定义了攻击碰撞回调的标准流程。
+ * 推荐实现 onProcessed(o1, o2, manifoldId) 版本，确保 manifoldId 贯通。
+ */
 interface AttackCollisionCallback: CollisionCallback {
 
     val attackSystem: AttackSystem
 
-    fun preAttack(isFirst: Boolean, attacker: Entity, target: Entity, aBody: PhysicsCollisionObject, bBody: PhysicsCollisionObject, manifoldId: Long) {}
+    /**
+     * 攻击前回调，判断是否首次攻击。
+     * @param isFirst 是否首次攻击
+     * @param attacker 攻击者
+     * @param target 目标
+     * @param aBody 攻击者物理对象
+     * @param bBody 目标物理对象
+     * @param manifoldId 碰撞点ID
+     */
+    fun preAttack(
+        isFirst: Boolean,
+        attacker: Entity,
+        target: Entity,
+        aBody: PhysicsCollisionObject,
+        bBody: PhysicsCollisionObject,
+        manifoldId: Long
+    ) {
+    }
 
-    fun doAttack(attacker: Entity, target: Entity, aBody: PhysicsCollisionObject, bBody: PhysicsCollisionObject, manifoldId: Long): Boolean = true
+    /**
+     * 执行攻击回调，返回是否成功。
+     * @param attacker 攻击者
+     * @param target 目标
+     * @param aBody 攻击者物理对象
+     * @param bBody 目标物理对象
+     * @param manifoldId 碰撞点ID
+     * @return 是否成功
+     */
+    fun doAttack(
+        attacker: Entity,
+        target: Entity,
+        aBody: PhysicsCollisionObject,
+        bBody: PhysicsCollisionObject,
+        manifoldId: Long
+    ): Boolean = true
 
-    fun postAttack(attacker: Entity, target: Entity, aBody: PhysicsCollisionObject, bBody: PhysicsCollisionObject, manifoldId: Long) {}
+    /**
+     * 攻击后回调。
+     * @param attacker 攻击者
+     * @param target 目标
+     * @param aBody 攻击者物理对象
+     * @param bBody 目标物理对象
+     * @param manifoldId 碰撞点ID
+     */
+    fun postAttack(
+        attacker: Entity,
+        target: Entity,
+        aBody: PhysicsCollisionObject,
+        bBody: PhysicsCollisionObject,
+        manifoldId: Long
+    ) {
+    }
 
-    override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, hitPointWorld: com.jme3.math.Vector3f, hitNormalWorld: com.jme3.math.Vector3f, impulse: Float) {
+    override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
         val attacker = o1.owner as? Entity ?: return
         (o2.owner as? Entity)?.apply {
             attackSystem.customAttack(this) {
-                // TODO: CollisionHurtData 可能需要更新以包含新的碰撞信息，暂时移除 manifoldId
-                this@apply.pushHurtData(CollisionHurtData(o1, o2 /*, hitPointWorld, hitNormalWorld, impulse */))
-                preAttack(attackSystem.attackedEntities.isEmpty(), attacker, this@apply, o1, o2, 0L) // TODO: manifoldId 不再可用，暂时传递 0L 或考虑移除
-                if (!doAttack(attacker, this@apply, o1, o2, 0L)) return@customAttack false // TODO: manifoldId 不再可用，暂时传递 0L 或考虑移除
-                postAttack(attacker, this@apply, o1, o2, 0L) // TODO: manifoldId 不再可用，暂时传递 0L 或考虑移除
+                this@apply.pushHurtData(CollisionHurtData(o1, o2, manifoldId))
+                preAttack(attackSystem.attackedEntities.isEmpty(), attacker, this@apply, o1, o2, manifoldId)
+                if (!doAttack(attacker, this@apply, o1, o2, manifoldId)) return@customAttack false
+                postAttack(attacker, this@apply, o1, o2, manifoldId)
                 true
             }
         }
     }
-
 }

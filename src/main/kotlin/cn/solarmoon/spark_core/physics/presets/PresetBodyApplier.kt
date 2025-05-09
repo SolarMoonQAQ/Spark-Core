@@ -17,6 +17,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
+import cn.solarmoon.spark_core.physics.presets.callback.HitReactionCollisionCallback
 
 object PresetBodyApplier {
 
@@ -37,6 +38,7 @@ object PresetBodyApplier {
                     body.isKinematic = true
                     body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_01 or PhysicsCollisionObject.COLLISION_GROUP_02
                     body.addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
+                    body.addCollisionCallback(object : HitReactionCollisionCallback {})
                 }
             }
         } else {
@@ -50,6 +52,7 @@ object PresetBodyApplier {
                     body.setEnableSleep(false)
                     body.isKinematic = true
                     body.addPhysicsTicker(MoveWithBoundingBoxTicker(true))
+                    body.addCollisionCallback(object : HitReactionCollisionCallback {})
                 }
             }
         }
