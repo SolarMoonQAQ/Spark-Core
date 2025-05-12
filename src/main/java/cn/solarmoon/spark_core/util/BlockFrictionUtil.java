@@ -1,19 +1,16 @@
 package cn.solarmoon.spark_core.util;
 
-import cn.solarmoon.spark_core.SparkCore;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.ColoredFallingBlock;
 import net.minecraft.world.level.block.ConcretePowderBlock;
-import net.minecraft.world.level.block.FallingBlock;
-import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 import java.util.Objects;
 
-public class BlockFricionUitl {
+public class BlockFrictionUtil {
     /**
      * 获取方块的摩擦系数，可在此额外扩展逻辑，例如特定方块有特殊的摩擦系数<p>
      * Get the friction coefficient of the block, which can be extended by additional logic, such as a special friction coefficient for specific blocks

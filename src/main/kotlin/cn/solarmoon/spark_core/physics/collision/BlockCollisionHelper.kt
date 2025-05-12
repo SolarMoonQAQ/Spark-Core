@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.physics.collision
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.util.BlockFricionUitl
+import cn.solarmoon.spark_core.util.BlockFrictionUtil
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
@@ -113,7 +113,7 @@ object BlockCollisionHelper {
                     } else {//重置销毁倒计时 Reset the destruction count
                         //更新方块打滑属性(默认取决于方块类型，上方方块，和天气)
                         if (Math.random()>0.95)
-                            blockBody?.setUserIndex2(BlockFricionUitl.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos))
+                            blockBody?.setUserIndex2(BlockFrictionUtil.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos))
                         physicsLevel.submitDeduplicatedTask(
                             blockPos.toString(),
                             PPhase.PRE
@@ -128,7 +128,7 @@ object BlockCollisionHelper {
                             blockPos
                         ).isEmpty
                     ) {
-                        val slip = BlockFricionUitl.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos)
+                        val slip = BlockFrictionUtil.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos)
                         // 如果块不是空气或可替换方块，记录方块的状态和坐标 Record the block state and coordinates
                         physicsLevel.submitDeduplicatedTask(blockPos.toString(), PPhase.PRE) {
                             val blockBody =
@@ -146,7 +146,7 @@ object BlockCollisionHelper {
                                 )
                             )
                             blockBody.userObject = blockState
-                            blockBody.friction = BlockFricionUitl.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
+                            blockBody.friction = BlockFrictionUtil.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
                             blockBody.setUserIndex2(slip)
                             blockBody.collisionGroup = PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                             blockBody.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
