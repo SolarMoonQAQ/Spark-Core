@@ -1,0 +1,225 @@
+{
+  "tasks": [
+    {
+      "id": "1313e24f-397a-4bca-aecd-0a32b6ba26eb",
+      "name": "实现 HitData 结构体",
+      "description": "定义 HitData 结构体，用于存储基础击中事件所需的碰撞点、力向量、冲量、受击骨骼名、受击类型等数据，为后续击中事件处理提供数据基础。",
+      "status": "已完成",
+      "dependencies": [],
+      "createdAt": "2025-05-09T06:47:45.039Z",
+      "updatedAt": "2025-05-09T06:58:00.920Z",
+      "relatedFiles": [
+        {
+          "path": "tasks/task_001.txt",
+          "type": "REFERENCE",
+          "description": "原始任务文档"
+        }
+      ],
+      "implementationGuide": "pseudocode:\n- 定义 HitData 结构体，包含 impact_point、force_vector、impulse、hit_bone_name、hit_type 等字段\n- 确保所有字段与 PRD 需求一致\n- 提供基础构造与访问接口",
+      "verificationCriteria": "1. HitData 结构体字段齐全，符合 PRD 要求\n2. 能正确存储并访问所有受击相关数据\n3. 通过单元测试验证结构体功能完整性",
+      "summary": "HitData 结构体已按任务要求实现，包含所有受击数据字段，接口与单元测试均通过，完全满足设计与功能需求。",
+      "completedAt": "2025-05-09T06:58:00.920Z"
+    },
+    {
+      "id": "63867fd0-6166-48ba-a1f6-2d5c74370ac9",
+      "name": "集成物理引擎并实现碰撞检测",
+      "description": "基于 Spark-Core Physics，实现物理碰撞检测，采集碰撞点、法线、冲量、受击骨骼等数据。接口需兼容 AttackCollisionCallback/HitReactionCollisionCallback，事件监听与数据采集解耦。",
+      "status": "已完成",
+      "dependencies": [
+        {
+          "taskId": "1313e24f-397a-4bca-aecd-0a32b6ba26eb"
+        }
+      ],
+      "createdAt": "2025-05-09T07:25:02.581Z",
+      "updatedAt": "2025-05-09T07:27:57.796Z",
+      "relatedFiles": [
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/physics/presets/callback/AttackCollisionCallback.kt",
+          "type": "TO_MODIFY",
+          "description": "碰撞回调接口"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/physics/presets/callback/HitReactionCollisionCallback.kt",
+          "type": "TO_MODIFY",
+          "description": "受击回调实现"
+        }
+      ],
+      "implementationGuide": "1. 复用 ManifoldPoints 静态方法采集数据\n2. 监听物理事件并分发到回调\n3. 单元测试覆盖各类碰撞场景",
+      "verificationCriteria": "碰撞数据能被正确采集并传递到 HitData，支持多种碰撞类型，单元测试全部通过。",
+      "analysisResult": "本次受击反应系统任务规划结构完整、复用充分、性能优良、风格统一、架构集成良好，完全符合 PRD 及现有项目要求。建议后续关注策略抽象与测试覆盖，持续提升灵活性与稳定性。",
+      "summary": "物理引擎集成和碰撞检测已完全实现：物理层通过 AttackCollisionCallback/HitReactionCollisionCallback 回调和 ManifoldPoints 静态方法实现碰撞点、法线、冲量采集，事件系统已能分发 HitData；相关单元测试通过，功能与接口均满足设计要求。",
+      "completedAt": "2025-05-09T07:27:57.795Z"
+    },
+    {
+      "id": "a457d077-36d8-4f27-b143-854ef90c664d",
+      "name": "定义JS与引擎的核心受击反应接口规范",
+      "description": "设计并文档化JS节点与Kotlin/Java引擎之间核心的受击反应接口。此接口层将封装引擎的物理、动画播放、IK请求等操作，并定义从引擎到JS的事件回调。这是提供完备节点的基础。",
+      "status": "待處理",
+      "dependencies": [],
+      "createdAt": "2025-05-09T16:37:00.030Z",
+      "updatedAt": "2025-05-09T16:37:00.030Z",
+      "relatedFiles": [
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\UE5 受击运动计算.md",
+          "type": "REFERENCE",
+          "description": "UE5受击机制的核心参考。"
+        },
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\JS_Engine_Core_Hit_Reaction_Interface.md",
+          "type": "CREATE",
+          "description": "JS与引擎核心受击反应接口的详细规范文档。"
+        },
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\js\\JSEngineHitReactionBridge.kt",
+          "type": "CREATE",
+          "description": "Kotlin/Java中实现JS-Engine接口的桥接代码骨架。"
+        }
+      ],
+      "implementationGuide": "1. 根据 `UE5 受击运动计算.md` (82-450行)梳理受击反应全流程中引擎需要提供的能力。\n2. 定义引擎接口函数：例如 `engine.playAnimation(animName, slot, blendInTime, playRate)`, `engine.applyImpulseToBone(boneName, impulse, location, isVelChange)`, `engine.setBonePhysicsSimulation(boneName, simulate, includeChildren, wakeOnSet)`, `engine.setPhysicsBlendWeight(boneName, weight, includeChildren)`, `engine.getBoneWorldTransform(boneName)`, `engine.getBoneRelativeTransform(boneName, relativeToBone)`, `engine.requestFootIK(footBone, targetLocation, targetRotation)`, `engine.enableCharacterMovement(bool)`, `engine.getDeltaTime()`。\n3. 明确每个接口的参数（类型、含义）、返回值、同步/异步行为。\n4. 定义从引擎传递给JS节点的标准事件回调格式，例如 `onEngineEvent(eventType, eventData)`，其中 eventType 可以是 'HitReceived', 'AnimationEnded', 'PhysicsCollision' 等。",
+      "verificationCriteria": "产出清晰、完备的JS-Engine核心接口规范文档，覆盖受击反应的主要引擎交互点，并创建了Kotlin桥接代码的基本结构。"
+    },
+    {
+      "id": "75185418-1245-47f5-b15e-b386a6711c37",
+      "name": "设计并实现受击输入处理JS节点 (HandleHitInputNode)",
+      "description": "设计并实现一个JS节点，负责接收原始受击数据（如HitData），进行初步处理、转换，并准备好后续节点所需的数据。此节点体现了如何通过接口从引擎接收事件。",
+      "status": "待處理",
+      "dependencies": [
+        {
+          "taskId": "a457d077-36d8-4f27-b143-854ef90c664d"
+        }
+      ],
+      "createdAt": "2025-05-09T16:37:00.030Z",
+      "updatedAt": "2025-05-09T16:37:00.030Z",
+      "relatedFiles": [
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\JS_Engine_Core_Hit_Reaction_Interface.md",
+          "type": "REFERENCE",
+          "description": "参考接口规范文档。"
+        },
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\core_js\\statemachine\\nodes\\hit_reaction\\HandleHitInputNode.js",
+          "type": "CREATE",
+          "description": "处理受击输入的JS节点文件。"
+        }
+      ],
+      "implementationGuide": "1. JS节点应能通过 `onEngineEvent('HitReceived', hitData)` 接收引擎传递的受击事件。\n2. 节点内部逻辑：解析`hitData` (包含冲击力、方向、受击点、受击骨骼等)。\n3. 节点输出：处理后的受击信息，可供其他节点使用（例如，通过共享上下文或触发内部事件）。\n4. 定义此节点对外暴露的JS接口，以便状态机（未来实现时）调用。\n5. 实现JS侧的节点骨架。Kotlin/Java侧确保 `JSEngineHitReactionBridge` 能正确调用此节点的事件处理方法。",
+      "verificationCriteria": "HandleHitInputNode.js 创建完成，能够通过约定的接口接收和处理受击数据，并有清晰的输出供后续使用。"
+    },
+    {
+      "id": "b6c635d5-19a5-49e0-837f-0bae03d1bfdb",
+      "name": "设计并实现动画播放控制JS节点 (PlayAnimationNode)",
+      "description": "设计并实现一个JS节点，用于控制动画的播放、停止、混合等。此节点将调用引擎接口 `engine.playAnimation`。",
+      "status": "待處理",
+      "dependencies": [
+        {
+          "taskId": "a457d077-36d8-4f27-b143-854ef90c664d"
+        }
+      ],
+      "createdAt": "2025-05-09T16:37:00.030Z",
+      "updatedAt": "2025-05-09T16:37:00.030Z",
+      "relatedFiles": [
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\JS_Engine_Core_Hit_Reaction_Interface.md",
+          "type": "REFERENCE",
+          "description": "参考接口规范文档。"
+        },
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\core_js\\statemachine\\nodes\\animation\\PlayAnimationNode.js",
+          "type": "CREATE",
+          "description": "控制动画播放的JS节点文件。"
+        }
+      ],
+      "implementationGuide": "1. 节点JS接口：`play(animationName, slot, blendInTime, playRate)`, `stop(blendOutTime)`, `setWeight(weight)`。\n2. 内部逻辑：调用 `engine.playAnimation` 等相关引擎接口。\n3. 可选：处理 `onEngineEvent('AnimationEnded', eventData)` 回调。\n4. 实现JS侧的节点骨架。Kotlin/Java侧的 `JSEngineHitReactionBridge` 需实现对应的 `playAnimation` 等方法。",
+      "verificationCriteria": "PlayAnimationNode.js 创建完成，能够通过JS接口调用引擎播放动画。"
+    },
+    {
+      "id": "e622faf4-f7f3-444f-a2e9-95c4d0eed890",
+      "name": "设计并实现物理激活与控制JS节点 (PhysicsControlNode)",
+      "description": "设计并实现一个JS节点，用于激活/关闭骨骼物理模拟、施加冲量、设置物理混合权重。将调用 `engine.setBonePhysicsSimulation`, `engine.applyImpulseToBone`, `engine.setPhysicsBlendWeight`。",
+      "status": "待處理",
+      "dependencies": [
+        {
+          "taskId": "a457d077-36d8-4f27-b143-854ef90c664d"
+        }
+      ],
+      "createdAt": "2025-05-09T16:37:00.030Z",
+      "updatedAt": "2025-05-09T16:37:00.030Z",
+      "relatedFiles": [
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\JS_Engine_Core_Hit_Reaction_Interface.md",
+          "type": "REFERENCE",
+          "description": "参考接口规范文档。"
+        },
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\core_js\\statemachine\\nodes\\physics\\PhysicsControlNode.js",
+          "type": "CREATE",
+          "description": "控制物理行为的JS节点文件。"
+        }
+      ],
+      "implementationGuide": "1. JS节点接口：`setBoneSimulation(boneName, simulate, includeChildren)`, `applyImpulse(boneName, impulse, location)`, `setBlendWeight(boneName, weight, duration)` (duration可用于随时间渐变权重)。\n2. 内部逻辑：调用相应的引擎接口。\n3. 实现JS侧的节点骨架。Kotlin/Java侧的 `JSEngineHitReactionBridge` 需实现对应方法。",
+      "verificationCriteria": "PhysicsControlNode.js 创建完成，能够通过JS接口控制骨骼的物理模拟和受力。"
+    },
+    {
+      "id": "86d3e74b-7ee2-49aa-8736-247cab1021f8",
+      "name": "设计并实现IK请求JS节点 (IKRequestNode)",
+      "description": "设计并实现一个JS节点，用于向引擎请求IK调整（如足部IK）。将调用 `engine.requestFootIK`。",
+      "status": "待處理",
+      "dependencies": [
+        {
+          "taskId": "a457d077-36d8-4f27-b143-854ef90c664d"
+        }
+      ],
+      "createdAt": "2025-05-09T16:37:00.030Z",
+      "updatedAt": "2025-05-09T16:37:00.030Z",
+      "relatedFiles": [
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\JS_Engine_Core__Hit_Reaction_Interface.md",
+          "type": "REFERENCE",
+          "description": "参考接口规范文档。"
+        },
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\core_js\\statemachine\\nodes\\ik\\IKRequestNode.js",
+          "type": "CREATE",
+          "description": "请求IK调整的JS节点文件。"
+        }
+      ],
+      "implementationGuide": "1. JS节点接口：`requestFootPlacement(footBone, targetGroundLocation, targetNormal)`。\n2. 内部逻辑：调用 `engine.requestFootIK`。\n3. 实现JS侧的节点骨架。Kotlin/Java侧的 `JSEngineHitReactionBridge` 需实现对应方法。",
+      "verificationCriteria": "IKRequestNode.js 创建完成，能够通过JS接口向引擎请求IK调整。"
+    },
+    {
+      "id": "7f8964a9-564b-4c66-86ae-8c31a5d1ca3a",
+      "name": "设计并实现角色状态恢复与控制JS节点 (RecoveryControlNode)",
+      "description": "设计并实现一个JS节点，用于处理角色从受击状态恢复的逻辑，例如逐渐恢复角色控制权、播放恢复动画。将调用 `engine.enableCharacterMovement` 和 PlayAnimationNode。",
+      "status": "待處理",
+      "dependencies": [
+        {
+          "taskId": "a457d077-36d8-4f27-b143-854ef90c664d"
+        },
+        {
+          "taskId": "b6c635d5-19a5-49e0-837f-0bae03d1bfdb"
+        }
+      ],
+      "createdAt": "2025-05-09T16:37:00.030Z",
+      "updatedAt": "2025-05-09T16:37:00.030Z",
+      "relatedFiles": [
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\JS_Engine_Core_Hit_Reaction_Interface.md",
+          "type": "REFERENCE",
+          "description": "参考接口规范文档。"
+        },
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\core_js\\statemachine\\nodes\\utility\\RecoveryControlNode.js",
+          "type": "CREATE",
+          "description": "处理角色恢复的JS节点文件。"
+        },
+        {
+          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\core_js\\statemachine\\nodes\\animation\\PlayAnimationNode.js",
+          "type": "REFERENCE",
+          "description": "可能需要调用此节点。"
+        }
+      ],
+      "implementationGuide": "1. JS节点接口：`startRecovery(duration, recoveryAnimation)`。\n2. 内部逻辑：可能需要一个计时器（通过 `engine.getDeltaTime()` 和节点内部update模拟，或引擎提供timer事件）。在恢复过程中，可能调用 PlayAnimationNode 播放恢复动画，并在结束时调用 `engine.enableCharacterMovement(true)`。\n3. 实现JS侧的节点骨架。",
+      "verificationCriteria": "RecoveryControlNode.js 创建完成，能够协调恢复动画和角色控制权的恢复。"
+    }
+  ]
+}
