@@ -40,6 +40,7 @@ dependencies {
     implementation("com.google.code.gson:gson:[2.10.1,2.11.0)")
 
     compileOnly files("compileOnly/mcef-neoforge-2.1.6-1.21.1.jar")
+    compileOnly files("compileOnly/CustomNPCs-Unofficial-NeoForge-1.21.1.20241226.jar")
 
     files(fileTree(dir: 'libs', includes: ['*.jar']))
     additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
