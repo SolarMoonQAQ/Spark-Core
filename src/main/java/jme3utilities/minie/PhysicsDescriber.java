@@ -837,13 +837,13 @@ public class PhysicsDescriber extends Describer {
         StringBuilder result = new StringBuilder(40);
 
         int group = multiBody.collisionGroup();
-        if (group != PhysicsCollisionObject.COLLISION_GROUP_01) {
+        if (group != PhysicsCollisionObject.COLLISION_GROUP_OBJECT) {
             result.append(" group=0x");
             result.append(Integer.toHexString(group));
         }
 
         int groupMask = multiBody.collideWithGroups();
-        if (groupMask != PhysicsCollisionObject.COLLISION_GROUP_01) {
+        if (groupMask != PhysicsCollisionObject.COLLISION_GROUP_OBJECT) {
             result.append(" gMask=0x");
             result.append(Integer.toHexString(groupMask));
         }
@@ -862,13 +862,13 @@ public class PhysicsDescriber extends Describer {
         StringBuilder result = new StringBuilder(40);
 
         int group = pco.getCollisionGroup();
-        if (group != PhysicsCollisionObject.COLLISION_GROUP_01) {
+        if (group != PhysicsCollisionObject.COLLISION_GROUP_OBJECT) {
             result.append(" group=0x");
             result.append(Integer.toHexString(group));
         }
 
         int groupMask = pco.getCollideWithGroups();
-        if (groupMask != PhysicsCollisionObject.COLLISION_GROUP_01) {
+        if (groupMask != PhysicsCollisionObject.COLLISION_GROUP_OBJECT) {
             result.append(" gMask=0x");
             result.append(Integer.toHexString(groupMask));
         }

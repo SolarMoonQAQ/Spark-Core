@@ -31,6 +31,7 @@
  */
 package com.jme3.bullet.joints.motors;
 
+import cn.solarmoon.spark_core.SparkCore;
 import com.jme3.bullet.NativePhysicsObject;
 import jme3utilities.Validate;
 
@@ -191,6 +192,10 @@ public class RotationMotor extends NativePhysicsObject {
      * @param value the desired parameter value
      */
     public void set(MotorParam param, float value) {
+        if (Float.isNaN(value)) {
+            SparkCore.LOGGER.error("RotationMotor parameter {} value cannot be set to NaN", param.name());
+            return;
+        }
         long motorId = nativeId();
         switch (param) {
             case Bounce:
@@ -240,7 +245,7 @@ public class RotationMotor extends NativePhysicsObject {
      * m_springDampingLimited).
      *
      * @param limitDamping true&rarr;limit, false&rarr;don't limit
-     * (default=false)
+     *                     (default=false)
      */
     public void setDampingLimited(boolean limitDamping) {
         long motorId = nativeId();
@@ -327,7 +332,7 @@ public class RotationMotor extends NativePhysicsObject {
     native private static void setDamping(long motorId, float damping);
 
     native private static void
-            setDampingLimited(long motorId, boolean limitFlag);
+    setDampingLimited(long motorId, boolean limitFlag);
 
     native private static void setEquilibrium(long motorId, float angle);
 
@@ -335,24 +340,23 @@ public class RotationMotor extends NativePhysicsObject {
 
     native private static void setMaxMotorForce(long motorId, float force);
 
-    native private static void setMotorEnabled(long motorId,
-            boolean enableFlag);
+    native private static void setMotorEnabled(long motorId, boolean enableFlag);
 
     native private static void
-            setParameter(long motorId, int parameterIndex, float value);
+    setParameter(long motorId, int parameterIndex, float value);
 
     native private static void
-            setServoEnabled(long motorId, boolean enableFlag);
+    setServoEnabled(long motorId, boolean enableFlag);
 
     native private static void setServoTarget(long motorId, float target);
 
     native private static void
-            setSpringEnabled(long motorId, boolean enableFlag);
+    setSpringEnabled(long motorId, boolean enableFlag);
 
     native private static void setStiffness(long motorId, float stiffness);
 
     native private static void
-            setStiffnessLimited(long motorId, boolean limitFlag);
+    setStiffnessLimited(long motorId, boolean limitFlag);
 
     native private static void setTargetVelocity(long motorId, float velocity);
 

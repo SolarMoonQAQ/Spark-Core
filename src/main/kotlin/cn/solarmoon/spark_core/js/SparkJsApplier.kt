@@ -12,7 +12,7 @@ object SparkJsApplier {
     @SubscribeEvent
     private fun onLevelLoad(event: LevelEvent.Load) {
         val level = event.level as Level
-        val js = level.jsEngine
+        val js:SparkJS = level.jsEngine
         js.register()
         if (js is ServerSparkJS) js.loadAll()
         else {

@@ -22,11 +22,25 @@ class MoveWithBoundingBoxTicker(private val shapeOverride: Boolean = false) : Ph
     override fun mcTick(body: PhysicsCollisionObject, level: Level) {
         if (body is PhysicsBody) {
             val entity = body.getOwner<Entity>() ?: return
-            entity.level().physicsLevel.submitImmediateTask(PPhase.PRE) {
+            val physicsLevel: PhysicsLevel = entity.level().physicsLevel
+            physicsLevel.submitImmediateTask(PPhase.PRE) {
                 val bb = entity.boundingBox
-                val targetPos = bb.center.toBVector3f()
+                val pos = body.getPhysicsLocation(null)
+                var targetPos = bb.center.toBVector3f()
+                if (targetPos.subtract(pos).length() > body.ccdMotionThreshold.coerceAtLeast(1f)) {//手动的CCD检测，防止高速投射物隧穿
+                    val results = physicsLevel.world.rayTest(pos, targetPos)
+                    for (result in results) {
+                        if (result.collisionObject.isCollisionGroupContains(body) || body.isCollisionGroupContains(
+                                result.collisionObject
+                            )
+                        ) {
+                            targetPos = pos.add(targetPos.subtract(pos).mult(result.hitFraction))
+                        }
+                    }
+                }
                 body.setPhysicsLocation(targetPos)
-                if (shapeOverride) body.collisionShape = BoxCollisionShape(Vec3(bb.xsize, bb.ysize, bb.zsize).div(2.0).toBVector3f())
+                if (shapeOverride) body.collisionShape =
+                    BoxCollisionShape(Vec3(bb.xsize, bb.ysize, bb.zsize).div(2.0).toBVector3f())
             }
         }
     }

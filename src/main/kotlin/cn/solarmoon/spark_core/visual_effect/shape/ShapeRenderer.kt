@@ -6,7 +6,9 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toMatrix4f
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
+import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
+import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
@@ -35,9 +37,13 @@ class ShapeRenderer : VisualEffectRenderer() {
         if (!mc.entityRenderDispatcher.shouldRenderHitBoxes()) return
         val physLevel = level.physicsLevel as ClientPhysicsLevel
         physLevel.world.pcoList.forEach { body ->
-            if (body.collideWithGroups == 0) return@forEach
+            if (body.collideWithGroups == 0 && body.collisionGroup!=PhysicsCollisionObject.COLLISION_GROUP_BLOCK) return@forEach
             val shape = body.collisionShape
-            val transform = body.tickTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
+            val transform = if (body is PhysicsRigidBody && !body.isKinematic) {
+                body.lastTickTransform.lerp(body.tickTransform, partialTicks).toTransformMatrix().toMatrix4f()
+            } else {
+                body.tickTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
+            }
             if (shape is CompoundCollisionShape) {
                 shape.listChildren().forEach {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
