@@ -13,7 +13,7 @@ import java.util.LinkedHashMap
 import java.util.Optional
 
 /**
- * Represents a single IK constraint loaded from JSON
+ * 表示从JSON加载的单个IK约束
  */
 data class OIKConstraint(
     val armatureName: String,
@@ -80,8 +80,7 @@ data class OIKConstraint(
 
             val MAP_CODEC = Codec.unboundedMap(Codec.STRING, CODEC).xmap({ LinkedHashMap(it) }, { it })
 
-            // We need to implement a custom StreamCodec for BoneLimit because it has too many fields
-            // for the standard composite method
+            // 我们需要为BoneLimit实现自定义StreamCodec，因为它有太多字段
             val STREAM_CODEC = object : StreamCodec<net.minecraft.network.FriendlyByteBuf, BoneLimit> {
                 override fun decode(buffer: net.minecraft.network.FriendlyByteBuf): BoneLimit {
                     val name = ByteBufCodecs.STRING_UTF8.decode(buffer)
@@ -156,29 +155,29 @@ data class OIKConstraint(
         }
 
         fun toJointConstraint(): JointConstraint? {
-            // Convert BoneLimit to appropriate JointConstraint
+            // 将BoneLimit转换为适当的JointConstraint
             if (limitRotationX || limitRotationY || limitRotationZ) {
-                // For simplicity, we'll convert to a hinge constraint if any axis is limited
+                // 为简单起见，如果任何轴被限制，则将其转换为铰链约束
                 if (limitRotationX && minRotationXDeg != null && maxRotationXDeg != null) {
                     return JointConstraint.Hinge(
-                        Vec3f(1f, 0f, 0f), // X-axis rotation
+                        Vec3f(1f, 0f, 0f), // X轴旋转
                         minRotationXDeg,
                         maxRotationXDeg,
-                        Vec3f(0f, 1f, 0f) // Reference axis
+                        Vec3f(0f, 1f, 0f) // 参考轴
                     )
                 } else if (limitRotationY && minRotationYDeg != null && maxRotationYDeg != null) {
                     return JointConstraint.Hinge(
-                        Vec3f(0f, 1f, 0f), // Y-axis rotation
+                        Vec3f(0f, 1f, 0f), // Y轴旋转
                         minRotationYDeg,
                         maxRotationYDeg,
-                        Vec3f(1f, 0f, 0f) // Reference axis
+                        Vec3f(1f, 0f, 0f) // 参考轴
                     )
                 } else if (limitRotationZ && minRotationZDeg != null && maxRotationZDeg != null) {
                     return JointConstraint.Hinge(
-                        Vec3f(0f, 0f, 1f), // Z-axis rotation
+                        Vec3f(0f, 0f, 1f), // Z轴旋转
                         minRotationZDeg,
                         maxRotationZDeg,
-                        Vec3f(1f, 0f, 0f) // Reference axis
+                        Vec3f(1f, 0f, 0f) // 参考轴
                     )
                 }
             }
@@ -188,20 +187,20 @@ data class OIKConstraint(
 
     companion object {
         /**
-         * Get an IK constraint by its ID. Returns EMPTY if not found.
+         * 根据ID获取IK约束。如果未找到，则返回EMPTY。
          */
         @JvmStatic
         fun get(id: ResourceLocation) = ORIGINS[id] ?: EMPTY
 
         /**
-         * Map of all loaded IK constraints, populated by the IKConstraintListener.
-         * Key is the ResourceLocation ID, value is the OIKConstraint.
+         * 所有已加载的IK约束映射，由IKConstraintListener填充。
+         * 键是ResourceLocation ID，值是OIKConstraint。
          */
         @JvmStatic
         val ORIGINS = linkedMapOf<ResourceLocation, OIKConstraint>()
 
         /**
-         * Empty IK constraint for safe fallback
+         * 安全回退的空IK约束
          */
         @JvmStatic
         val EMPTY = OIKConstraint("", "", "", linkedMapOf(), null, null, null, null, 0, null, null, 20, true, false, 1.0f)
@@ -334,7 +333,7 @@ data class OIKConstraint(
         }
 
         /**
-         * Codec for serializing a map of ResourceLocation to OIKConstraint
+         * 序列化ResourceLocation到OIKConstraint映射的Codec
          */
         @JvmStatic
         val ORIGIN_MAP_STREAM_CODEC = object : StreamCodec<net.minecraft.network.FriendlyByteBuf, LinkedHashMap<ResourceLocation, OIKConstraint>> {

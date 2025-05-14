@@ -14,17 +14,17 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.Optional
 
 /**
- * Payload sent from Server -> Client to synchronize the authoritative IK target position for a chain.
+ * 服务器 -> 客户端发送的同步链的权威IK目标位置的负载。
  */
 class IKSyncTargetPayload(
     val targetEntityId: Int,
     val chainName: String,
-    val targetPosition: Vec3? // Nullable Vec3: null means clear the target
+    val targetPosition: Vec3? // 可空 Vec3: null 表示清除目标
 ) : CustomPacketPayload {
 
-    // Convenience constructor (optional, but can be useful)
+    // 方便构造函数（可选，但可能有用）
     constructor(host: IEntityAnimatable<*>, chainName: String, targetPosition: Vec3?) : this(
-        (host as? net.minecraft.world.entity.Entity)?.id ?: -1, // Safely get entity ID
+        (host as? net.minecraft.world.entity.Entity)?.id ?: -1, // 安全获取实体ID
         chainName,
         targetPosition
     )
@@ -36,7 +36,7 @@ class IKSyncTargetPayload(
         val TYPE = CustomPacketPayload.Type<IKSyncTargetPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "sync_ik_target"))
 
         @JvmStatic
-        // Codec
+        // 编解码器
         val STREAM_CODEC: StreamCodec<RegistryFriendlyByteBuf, IKSyncTargetPayload> = StreamCodec.composite(
             ByteBufCodecs.INT, { it.targetEntityId },
             ByteBufCodecs.STRING_UTF8, { it.chainName },
@@ -45,30 +45,30 @@ class IKSyncTargetPayload(
         )
 
         @JvmStatic
-        // Handler executed on the Client thread
+        // 在客户端线程执行的处理器
         fun handleInBothSide(payload: IKSyncTargetPayload, context: IPayloadContext) {
             context.enqueueWork {
                 val level = context.player().level() ?: return@enqueueWork
                 val targetEntity = level.getEntity(payload.targetEntityId)
 
                 if (targetEntity == null) {
-                    // Entity might not exist on client yet or was removed
-                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Target entity ${sync.targetEntityId} not found on client.")
+                    // 实体可能在客户端上尚未存在或已被移除
+                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: 未在客户端找到目标实体 ${sync.targetEntityId}")
                     return@enqueueWork
                 }
 
-                val host = targetEntity as? IEntityAnimatable<*> ?: return@enqueueWork // Check if it's an IEntityAnimatable
+                val host = targetEntity as? IEntityAnimatable<*> ?: return@enqueueWork // 检查是否为 IEntityAnimatable
 
-                // Update the client's target map based on the received authoritative state
+                // 根据接收到的权威状态更新客户端的目标映射
                 if (payload.targetPosition != null) {
                     host.ikTargetPositions[payload.chainName] = payload.targetPosition
-                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Set client target for chain '${sync.chainName}' on entity ${sync.targetEntityId}")
+                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: 为实体 ${sync.targetEntityId} 的链 '${sync.chainName}' 设置客户端目标")
                 } else {
                     host.ikTargetPositions.remove(payload.chainName)
-                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: Cleared client target for chain '${sync.chainName}' on entity ${sync.targetEntityId}")
+                    // SparkCore.LOGGER.debug("IKSyncTargetPayload: 清除实体 ${sync.targetEntityId} 的链 '${sync.chainName}' 的客户端目标")
                 }
             }.exceptionally {
-                SparkCore.LOGGER.error("Exception handling IKSyncTargetPayload", it)
+                SparkCore.LOGGER.error("处理 IKSyncTargetPayload 时发生异常", it)
                 null
             }
         }

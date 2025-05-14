@@ -11,8 +11,8 @@ import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener
 import net.minecraft.util.profiling.ProfilerFiller
 
 /**
- * Resource listener that loads IK constraints from JSON files.
- * Similar to EntityModelListener but for IK constraints.
+ * 资源监听器，用于从JSON文件加载IK约束
+ * 功能与EntityModelListener类似，但专用于IK约束
  */
 class IKConstraintListener : SimpleJsonListener("geo/ik_constraints") {
 
@@ -21,23 +21,23 @@ class IKConstraintListener : SimpleJsonListener("geo/ik_constraints") {
         resourceManager: ResourceManager,
         profiler: ProfilerFiller
     ) {
-        // Clear existing constraints before loading new ones
+        // 在加载新约束之前清除现有约束
         OIKConstraint.ORIGINS.clear()
 
         var loadedCount = 0
 
         reads.forEach { (id, jsonElement) ->
             try {
-                // Parse the JSON array of constraints
+                // 解析约束JSON数组
                 val constraintArray = jsonElement.asJsonArray
 
-                // For each constraint in the array
+                // 遍历数组中的每个约束
                 constraintArray.forEach { constraintJson ->
-                    // Decode the constraint using the CODEC
+                    // 使用CODEC解码约束
                     val constraintResult = OIKConstraint.CODEC.decode(JsonOps.INSTANCE, constraintJson)
                         .getOrThrow()
 
-                    // Store the constraint in the ORIGINS map
+                    // 将约束存储到ORIGINS映射中
                     OIKConstraint.ORIGINS[id] = constraintResult.first
 
                     loadedCount++

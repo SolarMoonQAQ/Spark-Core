@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.LinkedHashMap
 
-
 data class IKDataPayload(
     val constraints: LinkedHashMap<ResourceLocation, OIKConstraint>
 ) : CustomPacketPayload {
@@ -23,17 +22,17 @@ data class IKDataPayload(
         @JvmStatic
         fun handleInClient(payload: IKDataPayload, context: IPayloadContext) {
             context.enqueueWork {
-                // Clear existing constraints and replace with the ones from the server
+                // 清除现有约束并替换为服务器中的约束
                 OIKConstraint.ORIGINS.clear()
                 payload.constraints.forEach { (id, constraint) ->
                     OIKConstraint.ORIGINS[id] = constraint
                 }
-                SparkCore.LOGGER.info("Received ${payload.constraints.size} IK constraints from server")
+                SparkCore.LOGGER.info("从服务器接收了 ${payload.constraints.size} 个IK约束")
             }.exceptionally {
-                context.disconnect(Component.literal("Failed to receive IK constraint data"))
+                context.disconnect(Component.literal("接收IK约束数据失败"))
                 return@exceptionally null
             }.thenAccept {
-                // Send confirmation back to server
+                // 向服务器发送确认
                 context.reply(IKDataSendingTask.Return())
             }
         }

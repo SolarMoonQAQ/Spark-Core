@@ -12,12 +12,12 @@ import net.minecraft.server.level.ServerPlayer
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 /**
- * Payload sent from Client -> Server to request adding or removing an IK component.
+ * 客户端 -> 服务器发送的请求添加或移除IK组件的负载。
  */
 class RequestIKComponentChangePayload(
     val targetEntityId: Int,
     val componentTypeId: ResourceLocation,
-    val addComponent: Boolean // true to add, false to remove
+    val addComponent: Boolean // true 表示添加，false 表示移除
 ) : CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = TYPE
@@ -27,7 +27,7 @@ class RequestIKComponentChangePayload(
         val TYPE = CustomPacketPayload.Type<RequestIKComponentChangePayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "request_ik_change"))
 
         @JvmStatic
-        // Codec for serialization/deserialization
+        // 序列化/反序列化的编解码器
         val STREAM_CODEC: StreamCodec<RegistryFriendlyByteBuf, RequestIKComponentChangePayload> = StreamCodec.composite(
             ByteBufCodecs.INT, RequestIKComponentChangePayload::targetEntityId,
             ResourceLocation.STREAM_CODEC, RequestIKComponentChangePayload::componentTypeId,
@@ -36,11 +36,11 @@ class RequestIKComponentChangePayload(
         )
 
         @JvmStatic
-        // Handler executed on the Server thread
+        // 在服务器线程执行的处理器
         fun handleInServer(payload: RequestIKComponentChangePayload, context: IPayloadContext) {
             context.enqueueWork {
-                val player = context.player() as? ServerPlayer ?: return@enqueueWork // Ensure it's a server player
-                val level = player.serverLevel() // Get server level safely
+                val player = context.player() as? ServerPlayer ?: return@enqueueWork // 确保是服务器玩家
+                val level = player.serverLevel() // 安全获取服务器级别
 
                 // 调用 IKService 处理请求，而不是直接操作 IKManager
                 IKService.handleComponentChangeRequest(
@@ -51,8 +51,8 @@ class RequestIKComponentChangePayload(
                     payload.addComponent
                 )
 
-            }.exceptionally { // Add error handling
-                SparkCore.LOGGER.error("Exception handling RequestIKComponentChangePayload", it)
+            }.exceptionally { // 添加错误处理
+                SparkCore.LOGGER.error("处理 RequestIKComponentChangePayload 时发生异常", it)
                 null
             }
         }

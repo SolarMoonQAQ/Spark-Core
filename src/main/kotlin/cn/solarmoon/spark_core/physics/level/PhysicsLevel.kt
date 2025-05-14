@@ -100,8 +100,8 @@ abstract class PhysicsLevel(
 //                SparkCore.LOGGER.warn("{} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
             return
         }
-        if (world.pcoList.isNotEmpty() && mcLevel.gameTime % 20 == 0.toLong())
-            SparkCore.LOGGER.debug("{} last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
+//        if (world.pcoList.isNotEmpty() && mcLevel.gameTime % 20 == 0.toLong())
+//            SparkCore.LOGGER.debug("{} last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
         // 更新所有物体的位置姿态信息，处理地形碰撞
         val tp = Transform()
         world.pcoList.forEach {

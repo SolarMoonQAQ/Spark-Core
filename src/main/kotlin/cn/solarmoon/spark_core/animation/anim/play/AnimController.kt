@@ -139,4 +139,7 @@ class AnimController(
         }
     }
 
+    fun setAnimation(animationName: String, transTime: Int) {
+        setAnimation(animationName, transTime) {}
+    }
 }

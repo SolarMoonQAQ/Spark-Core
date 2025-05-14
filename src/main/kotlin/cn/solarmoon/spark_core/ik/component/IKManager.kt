@@ -12,85 +12,78 @@ import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
 import cn.solarmoon.spark_core.ik.util.IKCoordinateTransformer
 
 /**
- * Manages active IKComponents for a specific IEntityAnimatable.
+ * 管理特定IEntityAnimatable的活动IK组件
  */
-class IKManager(private val host: IEntityAnimatable<*>) { // Takes the host instance
+class IKManager(private val host: IEntityAnimatable<*>) {
 
-    internal val activeComponents = ConcurrentHashMap<String, IKComponent>() // Map chainName to component
+    internal val activeComponents = ConcurrentHashMap<String, IKComponent>()
 
     /**
-     * Adds and initializes an IK component based on its type.
-     * Returns true if successful, false otherwise (e.g., model not ready, build failed).
-     * This method should primarily be called on the logical server.
+     * 根据类型添加并初始化IK组件
+     * 返回true表示成功，false表示失败（例如模型未就绪，构建失败）
+     * 此方法主要应在服务器端调用
      */
     fun addComponent(type: IKComponentType): Boolean {
         if (activeComponents.containsKey(type.chainName)) {
-            // Already added locally, maybe due to client prediction or receiving sync packet again
-            // SparkCore.LOGGER.warn("IKManager: Component for chain '${type.chainName}' already exists on ${host.animatable}.")
-            return true // Already added
+            return true
         }
 
         val model = host.model
 
         val chain = type.buildChain(host, model) ?: run {
-            SparkCore.LOGGER.error("IKManager: Failed to build chain for component '${type.id}' on ${host.animatable}.")
+            SparkCore.LOGGER.error("IKManager: 构建组件'${type.id}'的链失败，位于${host.animatable}.")
             return false
         }
         host.ikChains[chain.name] = chain
         val component = IKComponent(type, chain, host)
         activeComponents[type.chainName] = component
-        SparkCore.LOGGER.info("IKManager: Added IK component '${type.id}' (chain: ${type.chainName}) to ${host.animatable}.")
+        SparkCore.LOGGER.info("IKManager: 已添加IK组件'${type.id}'（链：${type.chainName}）到${host.animatable}.")
 
-        // Sync change to clients (only if running on server)
         if (host.animLevel.isClientSide) {
             try {
-                // Ensure host can be treated as an Entity for tracking
-                val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable could not be cast to Entity for packet distribution")
+                val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable无法转换为Entity")
                 PacketDistributor.sendToServer(RequestIKComponentChangePayload(host.id, type.id, true))
             } catch (e: IllegalStateException) {
-                SparkCore.LOGGER.error("IKManager: Failed to send add component sync packet.", e)
+                SparkCore.LOGGER.error("IKManager: 发送添加C->S组件同步包失败。", e)
             }
         }
         if (!host.animLevel.isClientSide) {
             try {
-                // Ensure host can be treated as an Entity for tracking
-                val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable could not be cast to Entity for packet distribution")
+                val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable无法转换为Entity")
                 PacketDistributor.sendToPlayersTrackingEntity(entityHost, IKComponentSyncPayload(host, type, true))
             } catch (e: IllegalStateException) {
-                SparkCore.LOGGER.error("IKManager: Failed to send add component sync packet.", e)
+                SparkCore.LOGGER.error("IKManager: 发送S->C添加组件同步包失败。", e)
             }
         }
         return true
     }
 
     /**
-     * Removes an active IK component by its chain name.
-     * This method should primarily be called on the logical server.
+     * 通过链名移除活动的IK组件
+     * 此方法主要应在服务器端调用
      */
     fun removeComponent(chainName: String) {
         val removedComponent = activeComponents.remove(chainName)
         if (removedComponent != null) {
-            SparkCore.LOGGER.info("IKManager: Removed IK component for chain '$chainName' from ${host.animatable}.")
+            SparkCore.LOGGER.info("IKManager: 已移除链'$chainName'的IK组件，来自${host.animatable}.")
 
-            // Sync change to clients (only if running on server)
             if (!host.animLevel.isClientSide) {
                 try {
-                    // Ensure host can be treated as an Entity for tracking
-                    val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable could not be cast to Entity for packet distribution")
-                    PacketDistributor.sendToPlayersTrackingEntity(entityHost, IKComponentSyncPayload(host, removedComponent.type, false)) // Send removal sync
+                    val entityHost = host as? Entity ?: throw IllegalStateException("IEntityAnimatable无法转换为Entity")
+                    PacketDistributor.sendToPlayersTrackingEntity(entityHost, IKComponentSyncPayload(host, removedComponent.type, false))
                 } catch (e: IllegalStateException) {
-                    SparkCore.LOGGER.error("IKManager: Failed to send remove component sync packet.", e)
+                    SparkCore.LOGGER.error("IKManager: 发送移除组件同步包失败。", e)
                 }
             }
         }
     }
 
     /**
-     * Prepares IK targets by performing ground checks for relevant components.
-     * This method should be called BEFORE the physics step (e.g., on the main thread)
-     * after the desired target positions have been determined by animation/logic.
+     * 准备IK目标，对相关组件执行地面检查
+     * 此方法应在物理步骤之前调用（例如在主线程上）
+     * 在动画/逻辑确定目标位置后调用
      *
-     * @param physicsWorld The physics world instance for raycasting.
+     * @param physicsWorld 用于射线检测的物理世界实例
      */
     fun prepareTargetsForPhysics(physicsWorld: PhysicsWorld) {
         activeComponents.forEach { (chainName, component) ->
@@ -114,7 +107,7 @@ class IKManager(private val host: IEntityAnimatable<*>) { // Takes the host inst
                         component.updateGroundContact(physicsWorld, worldTargetJME)
                     }
                 } catch (e: Exception) {
-                    SparkCore.LOGGER.error("IKManager: Exception during preparing target for component '$chainName' for ${host.animatable}", e)
+                    SparkCore.LOGGER.error("IKManager: 处理组件'$chainName'目标时发生异常，位于${host.animatable}", e)
                 }
             }
         }

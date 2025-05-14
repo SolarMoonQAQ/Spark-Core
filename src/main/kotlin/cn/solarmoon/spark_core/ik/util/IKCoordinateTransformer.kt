@@ -20,65 +20,6 @@ import org.joml.Vector3f as JomlVector3f
  */
 object IKCoordinateTransformer {
 
-    var tmpPos = Vector3f.ZERO
-
-    /**
-     * 将世界坐标转换为模型的本地坐标空间。
-     *
-     * @param animatable 动画体实例
-     * @param worldPosition 世界坐标
-     * @return 模型本地坐标空间中的位置
-     */
-    fun worldToLocalSpace(animatable: IAnimatable<*>, worldPosition: Vec3): Vec3 {
-        // 获取动画体的世界变换矩阵的逆矩阵
-        val worldMatrix = animatable.getWorldPositionMatrix()
-        val inverseWorldMatrix = Matrix4f(worldMatrix).invert()
-
-        // 将世界坐标转换为本地坐标
-        val worldPosVector = JomlVector3f(
-            worldPosition.x.toFloat(),
-            worldPosition.y.toFloat(),
-            worldPosition.z.toFloat()
-        )
-
-        val localPosVector = JomlVector3f()
-        inverseWorldMatrix.transformPosition(worldPosVector, localPosVector)
-
-        return Vec3(
-            localPosVector.x.toDouble(),
-            localPosVector.y.toDouble(),
-            localPosVector.z.toDouble()
-        )
-    }
-
-    /**
-     * 将模型的本地坐标空间中的位置转换为世界坐标。
-     *
-     * @param animatable 动画体实例
-     * @param localPosition 本地坐标空间中的位置
-     * @return 世界坐标
-     */
-    fun localToWorldSpace(animatable: IAnimatable<*>, localPosition: Vec3): Vec3 {
-        // 获取动画体的世界变换矩阵
-        val worldMatrix = animatable.getWorldPositionMatrix()
-
-        // 将本地坐标转换为世界坐标
-        val localPosVector = JomlVector3f(
-            localPosition.x.toFloat(),
-            localPosition.y.toFloat(),
-            localPosition.z.toFloat()
-        )
-
-        val worldPosVector = JomlVector3f()
-        worldMatrix.transformPosition(localPosVector, worldPosVector)
-
-        return Vec3(
-            worldPosVector.x.toDouble(),
-            worldPosVector.y.toDouble(),
-            worldPosVector.z.toDouble()
-        )
-    }
-
     /**
      * 将JME Vector3f格式的世界坐标转换为模型的本地坐标空间。
      *

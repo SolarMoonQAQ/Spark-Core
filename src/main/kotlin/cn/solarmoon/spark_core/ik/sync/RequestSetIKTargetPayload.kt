@@ -14,7 +14,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.Optional
 
 /**
- * Payload sent from Client -> Server to request setting or clearing an IK target.
+ * 客户端 -> 服务器发送的请求设置或清除IK目标的负载。
  */
 class RequestSetIKTargetPayload(
     val targetEntityId: Int,
@@ -55,7 +55,7 @@ class RequestSetIKTargetPayload(
                 )
 
             }.exceptionally {
-                SparkCore.LOGGER.error("Exception handling RequestSetIKTargetPayload", it)
+                SparkCore.LOGGER.error("处理 RequestSetIKTargetPayload 时发生异常", it)
                 null
             }
         }

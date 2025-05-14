@@ -7,7 +7,7 @@
   "mixins": [
     "animation.EntityMixin",
     "animation.LivingEntityMixin",
-    "animation.animatable.CustomNpcInterfaceMixin",
+    "animation.animatable.EntityCustomNpcMixin",
     "animation.animatable.PlayerMixin",
     "animation.animatable.VindicatorMixin",
     "animation.animatable.ZombieMixin",

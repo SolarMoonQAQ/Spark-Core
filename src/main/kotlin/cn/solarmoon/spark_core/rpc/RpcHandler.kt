@@ -39,7 +39,7 @@ object RpcHandler : RpcService {
     private fun changeModel(modelName: String, entityId: Int, level: ServerLevel): Boolean {
         try {
             val animatable = level.getEntity(entityId) as? IAnimatable<*> ?: return false
-            val modelPath = ResourceLocation.parse("${modelName.substringBefore(":")}:${modelName.substringAfter(":")}")
+            val modelPath = ResourceLocation.parse(modelName)
             val entityName = modelName.substringAfter(":")
             val textureLocation = ResourceLocation.fromNamespaceAndPath("spark_core", "textures/entity/${entityName}.png")
 

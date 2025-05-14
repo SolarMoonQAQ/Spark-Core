@@ -14,8 +14,8 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 /**
- * Payload used to synchronize the active state of an IK component between server and client.
- * Typically sent Server -> Client.
+ * 用于在服务器和客户端之间同步IK组件激活状态的有效载荷。
+ * 通常由服务器发送到客户端。
  */
 class IKComponentSyncPayload private constructor(
     val syncerType: SyncerType,       // Identifies the host entity type
@@ -23,7 +23,7 @@ class IKComponentSyncPayload private constructor(
     val componentTypeId: ResourceLocation, // The ID of the IKComponentType being added/removed
     val active: Boolean             // True if the component should be active, false if inactive (removed)
 ) : CustomPacketPayload {
-    // Convenience constructor
+    // 便捷构造函数
     constructor(host: IEntityAnimatable<*>, type: IKComponentType, active: Boolean) : this(
         host.syncerType, // Assuming IEntityAnimatable provides these (inherited from IAnimatable/Syncer?)
         host.syncData,   // Assuming IEntityAnimatable provides these
@@ -38,7 +38,7 @@ class IKComponentSyncPayload private constructor(
         val TYPE = CustomPacketPayload.Type<IKComponentSyncPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "ik_component_sync"))
 
         @JvmStatic
-        // Use RegistryFriendlyByteBuf if SyncData or SyncerType codecs require it
+        // 如果SyncData或SyncerType编解码器需要，使用RegistryFriendlyByteBuf
         val STREAM_CODEC: StreamCodec<RegistryFriendlyByteBuf, IKComponentSyncPayload> = StreamCodec.composite(
             SyncerType.STREAM_CODEC, IKComponentSyncPayload::syncerType,
             SyncData.STREAM_CODEC, IKComponentSyncPayload::syncData,
@@ -48,26 +48,26 @@ class IKComponentSyncPayload private constructor(
         )
 
         @JvmStatic
-        // Handler executed on the client thread
+        // 处理器在客户端线程中执行
         fun handleInClient(payload: IKComponentSyncPayload, context: IPayloadContext) {
-            // Ensure execution on the main client thread
+            // 确保在主客户端线程中执行
             context.enqueueWork {
-                val level = context.player().level() ?: return@enqueueWork // Use safe call for player
-                // Find the host entity using the syncer info
+                val level = context.player().level() ?: return@enqueueWork // 使用安全调用获取玩家所在维度
+                // 查找主机实体
                 val host = payload.syncerType.getSyncer(level, payload.syncData) as? IEntityAnimatable<*> ?: return@enqueueWork
 
-                // Look up the component type from the registry
-                val componentType = SparkRegistries.IK_COMPONENT_TYPE.get(payload.componentTypeId) ?: run { // Access registry via .get()
+                // 从注册表中查找组件类型
+                val componentType = SparkRegistries.IK_COMPONENT_TYPE.get(payload.componentTypeId) ?: run { // 通过.get()访问注册表
                     return@enqueueWork
                 }
 
-                // Add or remove the component on the client-side manager
+                // 在客户端管理器中添加或移除组件
                 if (payload.active) {
-                    host.ikManager.addComponent(componentType) // Manager handles duplicates and chain building
+                    host.ikManager.addComponent(componentType) // 管理器处理重复项和链构建
                 } else {
-                    host.ikManager.removeComponent(componentType.chainName) // Remove using chainName
+                    host.ikManager.removeComponent(componentType.chainName) // 使用chainName移除
                 }
-            }.exceptionally { // Add error handling for the enqueued task
+            }.exceptionally { // 为入队任务添加错误处理
                 null
             }
         }

@@ -3,6 +3,8 @@ package cn.solarmoon.spark_core.npc_adapter
 import cn.solarmoon.spark_core.SparkCore // For logging
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
+import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import net.minecraft.resources.ResourceLocation
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import net.minecraft.world.entity.Entity
@@ -17,7 +19,7 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks
  * Provides functionalities like animation control, model swapping, and collision event handling,
  * independent of WebSocket and JS-bridge implementations.
  */
-object SparkApi {
+class SparkApiBak {
 
     // Stores collision event flags. Key: jsFlagVariable, Value: true if collision occurred
     private val collisionEventFlags = mutableMapOf<String, Boolean>()
@@ -94,7 +96,7 @@ object SparkApi {
      * @param animationName The name of the animation to play.
      * @param loop Whether the animation should loop.
      */
-    fun playAnimation(modelId: String, animationName: String, loop: Boolean) {
+    fun playAnimation(modelId: String, animationName: String) {
         val animatable = findAnimatable(modelId)
         if (animatable == null) {
             SparkCore.LOGGER.error("SparkApi.playAnimation: Animatable with id '$modelId' not found.")
@@ -109,18 +111,15 @@ object SparkApi {
 
         try {
             // Create a new OAnimation with the desired loop setting
-            val loopType = if (loop) Loop.TRUE else Loop.ONCE // Or Loop.HOLD_ON_LAST_FRAME if that's a desired default for non-looping
-            val modifiedOAnimation = originalOAnimation.copy(loop = loopType)
 
             // Create an AnimInstance with the modified OAnimation
             // The AnimInstance.create method does not require a modifier lambda here as loop is set on OAnimation
-            val animInstance = cn.solarmoon.spark_core.animation.anim.play.AnimInstance.create(animatable, animationName, modifiedOAnimation)
+            val animInstance = AnimInstance.create(animatable, animationName)
             
             // Set the animation using the AnimController
             // The transition time is set to 0 for immediate animation changes.
             animatable.animController.setAnimation(animInstance, 0)
-            
-            SparkCore.LOGGER.info("SparkApi.playAnimation: Animation '$animationName' (loop: $loop, type: $loopType) successfully set for model '$modelId'.")
+
         } catch (e: Exception) {
             SparkCore.LOGGER.error("SparkApi.playAnimation: Error playing animation '$animationName' on model '$modelId': ${e.message}", e)
         }
@@ -153,7 +152,7 @@ object SparkApi {
             // For now, let's create a simple texture path based on the model path. A more robust solution might be needed.
             val textureResLoc = ResourceLocation.fromNamespaceAndPath(modelResLoc.namespace, "textures/entity/${modelResLoc.path}.png")
             
-            val newIdx = cn.solarmoon.spark_core.animation.anim.play.ModelIndex(modelResLoc, modelResLoc, textureResLoc)
+            val newIdx = ModelIndex(modelResLoc, modelResLoc, textureResLoc)
 
             // This is the core action that should trigger a model update and ModelIndexChangeEvent
             animatable.modelIndex = newIdx

@@ -9,43 +9,43 @@ import com.jme3.math.Vector3f
 import net.minecraft.world.phys.Vec3
 
 /**
- * Represents an active instance of an IK setup on an IEntityAnimatable.
- * Holds the runtime state (the FabrikChain3D) and handles ground contact logic.
+ * 表示在IEntityAnimatable上的IK设置的活动实例
+ * 持有运行时状态（FabrikChain3D）并处理地面接触逻辑
  *
- * @property type The configuration type for this IK component.
- * @property chain The runtime FabrikChain3D instance used for solving.
+ * @property type 此IK组件的配置类型
+ * @property chain 用于求解的运行时FabrikChain3D实例
  */
 class IKComponent(
-    val type: IKComponentType, // Assuming IKComponentType exists in the same or imported package
-    val chain: FabrikChain3D, // The runtime IK chain instance
-    val host: IEntityAnimatable<*> // The host entity that owns this component
+    val type: IKComponentType,
+    val chain: FabrikChain3D,
+    val host: IEntityAnimatable<*>
 ) {
     val chainName: String get() = type.chainName
 
     // 末端执行器骨骼名称
     val endBoneName: String get() = type.endBoneName
 
-    // --- Terrain Interaction Properties ---
-    /** If true, the component will attempt to stick to the ground using raycasting. */
+    // --- 地形交互属性 ---
+    /** 如果为true，组件将通过射线检测尝试附着地面 */
     var stickToGround: Boolean = false
 
-    /** Vertical offset above the desired target to start the ground check raycast. */
+    /** 向下发射射线检测的垂直偏移量 */
     var groundCheckOffset: Vector3f = Vector3f(0f, 0.3f, 0f)
 
-    /** Maximum distance to cast the ray downwards to find the ground. */
+    /** 向下检测地面的最大距离 */
     var groundCheckDistance: Float = 1.0f
 
-    /** The desired target position before ground check (usually from animation/logic). */
+    /** 地面检测前的原始目标位置（通常来自动画/逻辑） */
     var desiredTargetPosition: Vector3f = Vector3f.ZERO.clone()
-        private set // Only allow setting via update methods
+        private set // 仅允许通过更新方法设置
 
-    /** The actual target position after considering ground contact. This is passed to the IK solver. */
+    /** 考虑地面接触后的实际目标位置（传递给IK求解器） */
     var actualTargetPosition: Vector3f = Vector3f.ZERO.clone()
-        private set // Only allow setting via update methods
+        private set // 仅允许通过更新方法设置
 
-    /** True if the ground check raycast found a valid ground surface below the target. */
+    /** 如果地面检测找到有效地面，则为true */
     var isGrounded: Boolean = false
-        private set // Only allow setting via update methods
+        private set // 仅允许通过更新方法设置
 
     /** 执行器到父骨骼的偏移量 */
     var offset: Vector3f = Vector3f.ZERO
@@ -147,9 +147,9 @@ class IKComponent(
         var minHitFraction = Float.MAX_VALUE
 
         for (result in results) {
-            // --- Raycast Filtering ---
-            // Adjust this filter based on your physics setup for terrain.
-            // Example: Only collide with static objects belonging to collision group 1 (assuming this is terrain).
+            // --- 射线投射过滤 ---
+            // 根据您的地形物理设置调整此过滤器。
+            // 示例：只与属于碰撞组 1 的静态物体碰撞（假设这就是地形）。
             val collisionObject = result.collisionObject
             if (collisionObject != null && collisionObject.isStatic && collisionObject.collisionGroup == 1) {
                 // Find the closest valid hit along the ray path
@@ -161,7 +161,7 @@ class IKComponent(
         }
 
         if (closestHit != null) {
-            // Found ground: Calculate hit point manually and set as actual target
+            // 找到地面：手动计算命中点并设置为实际目标
             // hitPoint = rayStart + (rayEnd - rayStart) * closestHit.hitFraction
 
             val direction = rayEnd.subtract(rayStart) // Calculate direction vector (end - start)
@@ -174,12 +174,10 @@ class IKComponent(
 
             // 设置本地空间中的实际目标位置
             this.actualTargetPosition.set(localHitPoint)
-
             this.isGrounded = true
-            // Optional: Store normal for orientation adjustments later
-            // this.groundNormal = closestHit.hitNormalLocal.normalizeLocal() // Or hitNormalWorld if available/needed
+            // 可选：存储法线，用于后续方向调整
+            // 或者在可用/需要时使用 hitNormalWorld
         } else {
-            // No ground found within range: Fallback to the desired position
             // 注意：我们保持当前的actualTargetPosition不变，因为它已经在updateTargetLocalPosition中设置了
             this.isGrounded = false
             // this.groundNormal = null

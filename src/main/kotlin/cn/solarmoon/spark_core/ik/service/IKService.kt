@@ -2,107 +2,107 @@ package cn.solarmoon.spark_core.ik.service
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.ik.sync.IKSyncTargetPayload // Import S2C sync sync
+import cn.solarmoon.spark_core.ik.sync.IKSyncTargetPayload // 导入S2C同步负载
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
-import net.neoforged.neoforge.network.PacketDistributor // Import PacketDistributor
+import net.neoforged.neoforge.network.PacketDistributor // 导入PacketDistributor
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.phys.Vec3 // Import Vec3
+import net.minecraft.world.phys.Vec3 // 导入Vec3
 import net.minecraft.world.entity.Entity
 
 /**
- * Central service for handling authoritative IK component logic on the server.
+ * 用于处理服务器上权威IK组件逻辑的中心服务。
  */
 object IKService {
 
     /**
-     * Handles a request (e.g., from a network packet or command) to add or remove an IK component.
-     * Performs validation and calls the IKManager.
+     * 处理添加或移除IK组件的请求（例如，来自网络数据包或命令）。
+     * 执行验证并调用IKManager。
      */
     fun handleComponentChangeRequest(
         level: ServerLevel,
-        requester: ServerPlayer?, // Optional: for permission checks
+        requester: ServerPlayer?, // 可选：用于权限检查
         targetEntityId: Int,
         componentTypeId: ResourceLocation,
         addComponent: Boolean
     ) {
         val targetEntity = level.getEntity(targetEntityId)
         if (targetEntity == null) {
-            SparkCore.LOGGER.warn("IKService: Cannot process request. Entity $targetEntityId not found in level ${level.dimension().location()}.")
+            SparkCore.LOGGER.warn("IKService: 无法处理请求。实体 $targetEntityId 在级别 ${level.dimension().location()} 中未找到。")
             return
         }
 
-        val host = targetEntity as? IEntityAnimatable<*> ?: run { // Use non-generic IEntityAnimatable
-            SparkCore.LOGGER.warn("IKService: Cannot process request. Entity $targetEntityId (${targetEntity.type.descriptionId}) is not an IEntityAnimatable.")
+        val host = targetEntity as? IEntityAnimatable<*> ?: run { // 使用非泛型IEntityAnimatable
+            SparkCore.LOGGER.warn("IKService: 无法处理请求。实体 $targetEntityId (${targetEntity.type.descriptionId}) 不是IEntityAnimatable。")
             return
         }
 
-        // TODO: Implement permission checks based on 'requester' if needed
-        // Example: if (requester == null || !requester.hasPermissions(REQUIRED_PERMISSION_LEVEL)) return
+        // TODO: 根据'requester'实现权限检查（如果需要）
+        // 示例：if (requester == null || !requester.hasPermissions(REQUIRED_PERMISSION_LEVEL)) return
 
-        val componentType = SparkRegistries.IK_COMPONENT_TYPE.get(componentTypeId) ?: run { // Access registry via .get()
-            SparkCore.LOGGER.warn("IKService: Cannot process request. Unknown IKComponentType ID: $componentTypeId")
+        val componentType = SparkRegistries.IK_COMPONENT_TYPE.get(componentTypeId) ?: run { // 通过.get()访问注册表
+            SparkCore.LOGGER.warn("IKService: 无法处理请求。未知的IKComponentType ID: $componentTypeId")
             return
         }
 
-        // Call the appropriate IKManager method (which handles sync packet sending)
+        // 调用适当的IKManager方法（处理同步数据包发送）
         if (addComponent) {
             host.ikManager.addComponent(componentType)
         } else {
-            // Ensure removal uses the correct identifier (chainName from type)
+            // 确保移除使用正确的标识符（类型中的chainName）
             host.ikManager.removeComponent(componentType.chainName)
         }
     }
 
     /**
-     * Handles a request to set or clear an IK target position for a specific chain.
-     * Updates the server-side authoritative target map.
+     * 处理为特定链设置或清除IK目标位置的请求。
+     * 更新服务器端权威目标映射。
      */
     fun handleSetIKTargetRequest(
         level: ServerLevel,
-        requester: ServerPlayer?, // Optional: for permission checks
+        requester: ServerPlayer?, // 可选：用于权限检查
         targetEntityId: Int,
         chainName: String,
-        targetPosition: Vec3? // Nullable: null means clear
+        targetPosition: Vec3? // 可空：null表示清除
     ) {
         val targetEntity = level.getEntity(targetEntityId)
         if (targetEntity == null) {
-            SparkCore.LOGGER.warn("IKService: Cannot set target. Entity $targetEntityId not found.")
+            SparkCore.LOGGER.warn("IKService: 无法设置目标。实体 $targetEntityId 未找到。")
             return
         }
         val host = targetEntity as? IEntityAnimatable<*> ?: run {
-             // Log if entity found but not IEntityAnimatable
-             SparkCore.LOGGER.warn("IKService: Cannot set target. Entity $targetEntityId (${targetEntity.type.descriptionId}) is not an IEntityAnimatable.")
+             // 如果找到实体但不是IEntityAnimatable，则记录日志
+             SparkCore.LOGGER.warn("IKService: 无法设置目标。实体 $targetEntityId (${targetEntity.type.descriptionId}) 不是IEntityAnimatable。")
              return
         }
 
-        // TODO: Implement permission checks if needed
+        // TODO: 如果需要，实现权限检查
 
         if (targetPosition != null) {
-            host.ikTargetPositions[chainName] = targetPosition // Update server map
-            SparkCore.LOGGER.debug("IKService: Set target for chain '$chainName' on entity $targetEntityId to $targetPosition")
+            host.ikTargetPositions[chainName] = targetPosition // 更新服务器映射
+            SparkCore.LOGGER.debug("IKService: 为链 '$chainName' 设置实体 $targetEntityId 的目标到 $targetPosition")
         } else {
-            host.ikTargetPositions.remove(chainName) // Clear target from server map
-            SparkCore.LOGGER.debug("IKService: Cleared target for chain '$chainName' on entity $targetEntityId")
+            host.ikTargetPositions.remove(chainName) // 从服务器映射中清除目标
+            SparkCore.LOGGER.debug("IKService: 清除链 '$chainName' 的目标，实体 $targetEntityId")
         }
 
-        // --- Send S2C IKSyncTargetPayload packet to sync clients ---
+        // --- 发送S2C IKSyncTargetPayload数据包以同步客户端 ---
         try {
-            // Explicitly get entity ID and call the primary constructor to avoid potential resolution issues
+            // 显式获取实体ID并调用主构造函数以避免潜在的解析问题
             val entityIdForPacket = (host as? Entity)?.id ?: run {
-                SparkCore.LOGGER.error("IKService: Could not get entity ID from IEntityAnimatable for sync packet.")
-                return // Don't proceed if we can't get a valid ID
+                SparkCore.LOGGER.error("IKService: 无法从IEntityAnimatable获取实体ID以用于同步数据包。")
+                return // 如果无法获取有效ID，则不继续
             }
-            // Call the primary constructor directly
+            // 直接调用主构造函数
             val syncPacket = IKSyncTargetPayload(entityIdForPacket, chainName, targetPosition)
             PacketDistributor.sendToPlayersTrackingEntity(targetEntity, syncPacket)
         } catch (e: Exception) {
-            SparkCore.LOGGER.error("IKService: Failed to send IKSyncTargetPayload for entity $targetEntityId, chain '$chainName'", e)
+            SparkCore.LOGGER.error("IKService: 为实体 $targetEntityId、链 '$chainName' 发送IKSyncTargetPayload失败", e)
         }
     }
 
-    // TODO: Add other server-side IK logic methods here as needed
-    // For example, methods triggered by AI, game events, commands, etc.
+    // TODO: 根据需要添加其他服务器端IK逻辑方法
+    // 例如，由AI、游戏事件、命令等触发的方法
     // fun addComponentFromServer(entity: Entity, typeId: ResourceLocation) { ... }
 }

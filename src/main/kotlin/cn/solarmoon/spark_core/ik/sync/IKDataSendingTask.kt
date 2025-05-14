@@ -12,13 +12,13 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.function.Consumer
 
 /**
- * Configuration task for sending IK constraint data from server to client.
- * Similar to ModelDataSendingTask but for IK constraints.
+ * 用于从服务器向客户端发送IK约束数据的配置任务。
+ * 类似于ModelDataSendingTask，但针对IK约束。
  */
 class IKDataSendingTask : ICustomConfigurationTask {
 
     override fun run(sender: Consumer<CustomPacketPayload?>) {
-        // Create a payload with all IK constraints
+        // 创建包含所有IK约束的负载
         val ikData = IKDataPayload(OIKConstraint.ORIGINS)
         sender.accept(ikData)
     }
@@ -35,7 +35,7 @@ class IKDataSendingTask : ICustomConfigurationTask {
     }
 
     /**
-     * Return payload sent from client to server to confirm receipt of IK data.
+     * 返回客户端发送到服务器以确认接收到IK数据的负载。
      */
     data class Return(val dummy: Int = 0) : CustomPacketPayload {
         override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -45,7 +45,7 @@ class IKDataSendingTask : ICustomConfigurationTask {
         companion object {
             @JvmStatic
             fun onAct(payload: Return, context: IPayloadContext) {
-                // Mark the task as complete
+                // 将任务标记为完成
                 context.finishCurrentTask(IKDataSendingTask.TYPE)
             }
 
