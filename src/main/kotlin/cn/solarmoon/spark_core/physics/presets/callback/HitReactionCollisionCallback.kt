@@ -6,6 +6,7 @@ import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.common.NeoForge
+import com.jme3.math.Vector3f as JmeVector3f
 import org.joml.Vector3f
 
 /**
@@ -39,8 +40,8 @@ interface HitReactionCollisionCallback : AttackCollisionCallback {
         val entity2 = o2.owner as? Entity
         if (entity1 == null || entity2 == null) return
         // 正确用法：直接用 ManifoldPoints 的静态方法获取碰撞信息
-        val hitPointWorldJme = com.jme3.math.Vector3f()
-        val hitNormalWorldJme = com.jme3.math.Vector3f()
+        val hitPointWorldJme = JmeVector3f()
+        val hitNormalWorldJme = JmeVector3f()
         ManifoldPoints.getPositionWorldOnB(manifoldId, hitPointWorldJme)
         ManifoldPoints.getNormalWorldOnB(manifoldId, hitNormalWorldJme)
         val impulse = ManifoldPoints.getAppliedImpulse(manifoldId)

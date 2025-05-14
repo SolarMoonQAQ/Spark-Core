@@ -150,22 +150,22 @@ object PlayerIKPresets {
             val ikManager = ikhost.ikManager
 
             // 0. 更新所有IK组件的默认目标位置（从当前动画姿势中获取）
-            ikManager.activeComponents.forEach { (chainName, component) ->
-                try {
-                    // 获取末端执行器骨骼名称
-                    val endBoneName = component.targetBoneName
-
-                    // 从当前动画姿势中获取末端执行器的本地位置
-                    val worldPos = ikhost.getWorldBonePivot(endBoneName)
-
-                    component.updateTargetWorldPosition(worldPos.toBVector3f())
-
-                    // 将本地位置存入Map
-                    ikhost.ikTargetPositions[chainName] = worldPos.toVec3()
-                } catch (e: Exception) {
-                    SparkCore.LOGGER.error("Failed to update default target for component '$chainName' on ${entity.displayName?.string ?: entity.stringUUID}", e)
-                }
-            }
+//            ikManager.activeComponents.forEach { (chainName, component) ->
+//                try {
+//                    // 获取末端执行器骨骼名称
+//                    val endBoneName = component.targetBoneName
+//
+//                    // 从当前动画姿势中获取末端执行器的本地位置
+//                    val worldPos = ikhost.getWorldBonePivot(endBoneName)
+//
+//                    component.updateTargetWorldPosition(worldPos.toBVector3f())
+//
+//                    // 将本地位置存入Map
+//                    ikhost.ikTargetPositions[chainName] = worldPos.toVec3()
+//                } catch (e: Exception) {
+//                    SparkCore.LOGGER.error("Failed to update default target for component '$chainName' on ${entity.displayName?.string ?: entity.stringUUID}", e)
+//                }
+//            }
 
             // 1. Prepare targets (perform ground checks)
             try {
