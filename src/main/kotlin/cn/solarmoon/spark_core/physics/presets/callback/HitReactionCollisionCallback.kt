@@ -7,6 +7,7 @@ import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.math.Vector3f as JmeVector3f
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.common.NeoForge
+import com.jme3.math.Vector3f as JmeVector3f
 import org.joml.Vector3f
 
 /**
