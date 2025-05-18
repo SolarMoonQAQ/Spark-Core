@@ -96,12 +96,10 @@ abstract class PhysicsLevel(
     fun requestStep() {
         // 如果物理线程已经在运行，跳过本次请求
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
-//            if (mcLevel.gameTime % 20 == 0.toLong())
-//                SparkCore.LOGGER.warn("{} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
+            if (mcLevel.gameTime % 20 == 0.toLong())
+                SparkCore.LOGGER.warn("{} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
             return
         }
-        if (world.pcoList.isNotEmpty() && mcLevel.gameTime % 20 == 0.toLong())
-            SparkCore.LOGGER.debug("{} last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
         // 更新所有物体的位置姿态信息，处理地形碰撞
         val tp = Transform()
         world.pcoList.forEach {

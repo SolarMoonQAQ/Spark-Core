@@ -27,7 +27,9 @@ class MoveWithBoundingBoxTicker(private val shapeOverride: Boolean = false) : Ph
                 val bb = entity.boundingBox
                 val pos = body.getPhysicsLocation(null)
                 var targetPos = bb.center.toBVector3f()
-                if (targetPos.subtract(pos).length() > body.ccdMotionThreshold.coerceAtLeast(1f)) {//手动的CCD检测，防止高速投射物隧穿
+                if (pos.lengthSquared() != 0f &&
+                    targetPos.subtract(pos).length() >  body.ccdMotionThreshold.coerceAtLeast(1f)
+                ) {//手动的CCD检测，防止高速投射物隧穿
                     val results = physicsLevel.world.rayTest(pos, targetPos)
                     for (result in results) {
                         if (result.collisionObject.isCollisionGroupContains(body) || body.isCollisionGroupContains(
@@ -35,6 +37,7 @@ class MoveWithBoundingBoxTicker(private val shapeOverride: Boolean = false) : Ph
                             )
                         ) {
                             targetPos = pos.add(targetPos.subtract(pos).mult(result.hitFraction))
+                            break
                         }
                     }
                 }
