@@ -104,6 +104,7 @@ abstract class PhysicsLevel(
         val tp = Transform()
         world.pcoList.forEach {
             if (!it.isStatic) {//仅更新非静态的物体
+                if (!it.isActive) return@forEach
                 it.lastTickTransform = it.tickTransform.clone()
                 it.tickTransform.apply {
                     val t = it.getTransform(tp)
@@ -111,8 +112,12 @@ abstract class PhysicsLevel(
                     rotation.set(t.rotation)
                     scale.set(t.scale)
                 }
-                it.boundingBox(it.cachedBoundingBox)
-                if ((it.collideWithGroups and PhysicsCollisionObject.COLLISION_GROUP_BLOCK != 0) && it.isActive)
+                try{
+                    it.boundingBox(it.cachedBoundingBox)
+                }catch (e: Exception){
+                    SparkCore.LOGGER.error("{}碰撞箱计算结果异常：", it.name, e)
+                }
+                if ((it.collideWithGroups and PhysicsCollisionObject.COLLISION_GROUP_BLOCK != 0))
                     BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
             } else if (it.collisionGroup == PhysicsCollisionObject.COLLISION_GROUP_BLOCK && it is PhysicsRigidBody) {
                 if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象

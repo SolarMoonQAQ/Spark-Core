@@ -68,7 +68,7 @@ object BlockCollisionHelper {
     }
 
     fun addNearbyTerrainBlocksToWorld(pco: PhysicsCollisionObject, physicsLevel: PhysicsLevel) {
-        val boundingBox = pco.boundingBox(null)
+        val boundingBox = pco.cachedBoundingBox
         val min = boundingBox.getMin(null)
         val max = boundingBox.getMax(null)
         val blocks = HashSet<BlockPos>()
@@ -151,8 +151,9 @@ object BlockCollisionHelper {
                             blockBody.setUserIndex2(slip)
                             blockBody.collisionGroup = PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                             blockBody.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
-                            blockBody.tickTransform = blockBody.getTransform(null)
+                            blockBody.getTransform(blockBody.tickTransform)
                             blockBody.lastTickTransform = blockBody.tickTransform
+                            blockBody.boundingBox(blockBody.cachedBoundingBox)
                             physicsLevel.terrainBlockBodies[blockPos] = blockBody
                             physicsLevel.world.add(blockBody)
                         }

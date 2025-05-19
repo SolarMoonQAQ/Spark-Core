@@ -144,13 +144,18 @@ abstract public class CollisionShape extends NativePhysicsObject {
         Validate.nonNull(rotation, "rotation");
         BoundingBox result
                 = (storeResult == null) ? new BoundingBox() : storeResult;
-
+        Vector3f oldMaxima = new Vector3f();
+        Vector3f oldMinima = new Vector3f();
+        getAabb(nativeId(), translation, rotation, oldMinima, oldMaxima);
         recalculateAabb();
 
         long shapeId = nativeId();
         Vector3f maxima = new Vector3f();
         Vector3f minima = new Vector3f();
         getAabb(shapeId, translation, rotation, minima, maxima);
+        if (maxima.lengthSquared()>1e15 || minima.lengthSquared()>1e15) {
+            throw new RuntimeException("abnormal aabb: " + minima + " " + maxima);
+        }
         result.setMinMax(minima, maxima);
 
         return result;
