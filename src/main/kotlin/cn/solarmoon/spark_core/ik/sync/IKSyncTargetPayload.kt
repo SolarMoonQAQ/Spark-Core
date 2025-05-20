@@ -14,7 +14,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.Optional
 
 /**
- * 服务器 -> 客户端发送的同步链的权威IK目标位置的负载。
+ * 服务器 <-> 客户端发送的IK目标位置的负载。
  */
 class IKSyncTargetPayload(
     val targetEntityId: Int,

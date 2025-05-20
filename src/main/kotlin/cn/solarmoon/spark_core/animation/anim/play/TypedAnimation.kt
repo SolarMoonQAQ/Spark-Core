@@ -53,12 +53,18 @@ class TypedAnimation(
         PacketDistributor.sendToServer(TypedAnimPayload(id, this.id, transTime, fromAnimatable))
     }
 
+    // 缓存计算的哈希值，避免每次都调用 getId
+    private val cachedHashCode = System.identityHashCode(this)
+
     override fun equals(other: Any?): Boolean {
-        return (other as? TypedAnimation)?.id == id
+        // 使用对象引用相等而不是 ID 相等
+        // 这避免了循环调用 getId
+        return other === this
     }
 
     override fun hashCode(): Int {
-        return id.hashCode()
+        // 使用预计算的哈希值，避免调用 getId
+        return cachedHashCode
     }
 
 }

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.presets
 
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithBoundingBoxTicker
@@ -16,6 +17,8 @@ import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import cn.solarmoon.spark_core.physics.presets.callback.HitReactionCollisionCallback
+import noppes.npcs.CustomEntities
+import noppes.npcs.entity.EntityCustomNpc
 
 object PresetBodyApplier {
 
@@ -28,7 +31,7 @@ object PresetBodyApplier {
             entity.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {
                 val body = PhysicsRigidBody(it.name, entity, CompoundCollisionShape())
 
-                entity.bindBody(body, event.level.physicsLevel, true) {
+                entity.bindBody(body, level.physicsLevel, true) {
                     (body.collisionShape as CompoundCollisionShape).initWithAnimatedBone(it)
                     body.isContactResponse = false
                     body.setGravity(Vector3f.ZERO)
@@ -43,7 +46,7 @@ object PresetBodyApplier {
             entity.apply {
                 val size = Vec3(boundingBox.xsize, boundingBox.ysize, boundingBox.zsize).div(2.0).toBVector3f()
                 val body = PhysicsRigidBody("body", entity, BoxCollisionShape(size))
-                bindBody(body, event.level.physicsLevel) {
+                bindBody(body, level.physicsLevel) {
                     body.isContactResponse = false
                     body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                     body.setGravity(Vector3f.ZERO)

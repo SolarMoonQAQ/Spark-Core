@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
+import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
 import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
 import cn.solarmoon.spark_core.ik.sync.IKDataPayload
@@ -13,6 +14,7 @@ import cn.solarmoon.spark_core.ik.sync.RequestSetIKTargetPayload
 import cn.solarmoon.spark_core.js.sync.JSPayload
 import cn.solarmoon.spark_core.js.sync.JSSendingTask
 import cn.solarmoon.spark_core.js.sync.JSTaskPayload
+import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
 import cn.solarmoon.spark_core.rpc.payload.RpcPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
@@ -34,6 +36,8 @@ object SparkPayloadRegister {
         anim.configurationToServer(ModelDataSendingTask.Return.TYPE, ModelDataSendingTask.Return.STREAM_CODEC, ModelDataSendingTask.Return::onAct)
         anim.playBidirectional(TypedAnimPayload.TYPE, TypedAnimPayload.STREAM_CODEC, TypedAnimPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
+        // 注册 ModelIndex 同步包
+        anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
 
         val visual = event.registrar("visual_effect")
         visual.playToClient(ShadowPayload.TYPE, ShadowPayload.STREAM_CODEC, ShadowPayload::handleInClient)
@@ -59,7 +63,15 @@ object SparkPayloadRegister {
         ik.playToServer(RequestIKComponentChangePayload.TYPE, RequestIKComponentChangePayload.STREAM_CODEC, RequestIKComponentChangePayload::handleInServer)
         ik.playToServer(RequestSetIKTargetPayload.TYPE, RequestSetIKTargetPayload.STREAM_CODEC, RequestSetIKTargetPayload::handleInServer)
 
-    // RPC Payloads (Commented out as in the diff)
+        // 注册物理碰撞对象同步数据包
+        val physics = event.registrar("physics")
+        physics.playToClient(
+            PhysicsCollisionObjectSyncPayload.TYPE,
+            PhysicsCollisionObjectSyncPayload.STREAM_CODEC,
+            PhysicsCollisionObjectSyncPayload::handleInClient
+        )
+
+        // RPC Payloads (Commented out as in the diff)
         val rpc = event.registrar("rpc")
         rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
     }

@@ -1,1279 +1,197 @@
 {
   "tasks": [
     {
-      "id": "1313e24f-397a-4bca-aecd-0a32b6ba26eb",
-      "name": "实现 HitData 结构体",
-      "description": "定义 HitData 结构体，用于存储基础击中事件所需的碰撞点、力向量、冲量、受击骨骼名、受击类型等数据，为后续击中事件处理提供数据基础。",
+      "id": "58e55361-605e-4f64-98cb-280ee3d1f19b",
+      "name": "实现 DynamicAwareRegistry<T>",
+      "description": "创建 cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt, 包装静态 net.minecraft.core.Registry<T>, 维护 ConcurrentHashMap<ResourceLocation,T> 用于动态条目; 实现 Registry<T> 接口关键查询方法与 registerDynamic/unregisterDynamic; 提供线程安全 ReadWriteLock, AtomicInteger nextDynamicId, freeze() 仅冻结静态; 支持 IRegistryExtension 别名解析.",
+      "notes": "确保所有查询先查 dynamic, 后查 static; 日志使用 SLF4J; 抛出 DynamicRegistryException on conflict.",
       "status": "已完成",
       "dependencies": [],
-      "createdAt": "2025-05-09T06:47:45.039Z",
-      "updatedAt": "2025-05-09T06:58:00.920Z",
+      "createdAt": "2025-05-19T16:14:26.130Z",
+      "updatedAt": "2025-05-19T16:34:56.126Z",
       "relatedFiles": [
         {
-          "path": "tasks/task_001.txt",
-          "type": "REFERENCE",
-          "description": "原始任务文档"
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
+          "type": "CREATE",
+          "description": "新动态注册表实现",
+          "lineStart": 1,
+          "lineEnd": 300
         }
       ],
-      "implementationGuide": "pseudocode:\n- 定义 HitData 结构体，包含 impact_point、force_vector、impulse、hit_bone_name、hit_type 等字段\n- 确保所有字段与 PRD 需求一致\n- 提供基础构造与访问接口",
-      "verificationCriteria": "1. HitData 结构体字段齐全，符合 PRD 要求\n2. 能正确存储并访问所有受击相关数据\n3. 通过单元测试验证结构体功能完整性",
-      "summary": "HitData 结构体已按任务要求实现，包含所有受击数据字段，接口与单元测试均通过，完全满足设计与功能需求。",
-      "completedAt": "2025-05-09T06:58:00.920Z"
+      "implementationGuide": "pseudocode:\nclass DynamicAwareRegistry<T>(private val static: Registry<T>): Registry<T> {\n  private val dynamic = ConcurrentHashMap<ResourceLocation,T>()\n  private val lock = ReentrantReadWriteLock()\n  fun registerDynamic(name,T):T { writeLock { check conflict; assign id; dynamic[name]=T } }\n  override fun get(name)= dynamic[name] ?: static.get(name)\n  // implement other required methods similarly\n}",
+      "verificationCriteria": "1. 能通过单元测试 register/get/contains 逻辑; 2. 动态条目ID不与静态冲突; 3. 线程安全并发测试无异常.",
+      "analysisResult": "通过实现DynamicAwareRegistry包装NeoForge静态Registry并维护动态ConcurrentHashMap，实现Spark-Core动画/模型在运行时动态注册；修改自有RegistryBuilder返回DynamicAwareRegistry以兼容DeferredRegister；更新SparkRegistries与ObjectRegister以沿用现有静态流程；扩展TypedAnimationBuilder支持仅构造对象；实现服务端→客户端网络同步动态条目；提供线程安全(ID自增、ReadWriteLock)、异常与日志支持；补充单元/并发/集成测试及文档。",
+      "summary": "成功实现了DynamicAwareRegistry<T>类，包装静态Registry<T>并维护ConcurrentHashMap用于动态条目。实现了线程安全的读写锁机制，支持动态注册和注销，同时保持与原有Registry接口的完全兼容性。",
+      "completedAt": "2025-05-19T16:34:56.126Z"
     },
     {
-      "id": "63867fd0-6166-48ba-a1f6-2d5c74370ac9",
-      "name": "集成物理引擎并实现碰撞检测",
-      "description": "基于 Spark-Core Physics，实现物理碰撞检测，采集碰撞点、法线、冲量、受击骨骼等数据。接口需兼容 AttackCollisionCallback/HitReactionCollisionCallback，事件监听与数据采集解耦。",
+      "id": "ae4ddb1c-9091-4d0f-a3cb-b60bdeb632bc",
+      "name": "修改 RegistryBuilder 以返回 DynamicAwareRegistry",
+      "description": "在 cn/solarmoon/spark_core/entry_builder/common/RegistryBuilder.kt 中, build() 创建静态 Registry 后包装为 DynamicAwareRegistry 并返回; 维护静态 Map<RegistryKey,DynamicAwareRegistry> 避免重复包装.",
       "status": "已完成",
       "dependencies": [
         {
-          "taskId": "1313e24f-397a-4bca-aecd-0a32b6ba26eb"
+          "taskId": "58e55361-605e-4f64-98cb-280ee3d1f19b"
         }
       ],
-      "createdAt": "2025-05-09T07:25:02.581Z",
-      "updatedAt": "2025-05-09T07:27:57.796Z",
+      "createdAt": "2025-05-19T16:14:26.130Z",
+      "updatedAt": "2025-05-20T13:20:35.427Z",
       "relatedFiles": [
         {
-          "path": "src/main/kotlin/cn/solarmoon/spark_core/physics/presets/callback/AttackCollisionCallback.kt",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/entry_builder/common/RegistryBuilder.kt",
           "type": "TO_MODIFY",
-          "description": "碰撞回调接口"
-        },
+          "description": "build 方法返回包装器",
+          "lineStart": 40,
+          "lineEnd": 120
+        }
+      ],
+      "implementationGuide": "pseudocode:\nfun <T> build(): Registry<T> { val vanilla = ForgeRegistryBuilder().build(); val wrapper = DynamicAwareRegistry(vanilla); cache[key]=wrapper; return wrapper }",
+      "verificationCriteria": "1. DeferredRegister 在 RegisterEvent 期间注册的条目存在于 wrapper.static; 2. Runtime get() 透传正确.",
+      "analysisResult": "通过实现DynamicAwareRegistry包装NeoForge静态Registry并维护动态ConcurrentHashMap，实现Spark-Core动画/模型在运行时动态注册；修改自有RegistryBuilder返回DynamicAwareRegistry以兼容DeferredRegister；更新SparkRegistries与ObjectRegister以沿用现有静态流程；扩展TypedAnimationBuilder支持仅构造对象；实现服务端→客户端网络同步动态条目；提供线程安全(ID自增、ReadWriteLock)、异常与日志支持；补充单元/并发/集成测试及文档。",
+      "summary": "成功修改了RegistryBuilder类，使其在build()方法中创建静态Registry后包装为DynamicAwareRegistry并返回。实现了静态Map<ResourceKey,DynamicAwareRegistry>缓存机制，确保每个静态注册表只被包装一次，避免重复包装和状态不一致问题。",
+      "completedAt": "2025-05-20T13:20:35.427Z"
+    },
+    {
+      "id": "e6672b57-dc6e-48ec-8430-e478bad50a6c",
+      "name": "更新 SparkRegistries 与 ObjectRegister 兼容 DynamicAwareRegistry",
+      "description": "确保 SparkRegistries.TYPED_ANIMATION 等初始化为 DynamicAwareRegistry; ObjectRegister 依赖 RegistryBuilder 创建的注册表; 更新相关泛型声明.",
+      "status": "待處理",
+      "dependencies": [
         {
-          "path": "src/main/kotlin/cn/solarmoon/spark_core/physics/presets/callback/HitReactionCollisionCallback.kt",
+          "taskId": "ae4ddb1c-9091-4d0f-a3cb-b60bdeb632bc"
+        }
+      ],
+      "createdAt": "2025-05-19T16:14:26.130Z",
+      "updatedAt": "2025-05-19T16:14:26.130Z",
+      "relatedFiles": [
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/common/SparkRegistries.kt",
           "type": "TO_MODIFY",
-          "description": "受击回调实现"
-        }
-      ],
-      "implementationGuide": "1. 复用 ManifoldPoints 静态方法采集数据\n2. 监听物理事件并分发到回调\n3. 单元测试覆盖各类碰撞场景",
-      "verificationCriteria": "碰撞数据能被正确采集并传递到 HitData，支持多种碰撞类型，单元测试全部通过。",
-      "analysisResult": "本次受击反应系统任务规划结构完整、复用充分、性能优良、风格统一、架构集成良好，完全符合 PRD 及现有项目要求。建议后续关注策略抽象与测试覆盖，持续提升灵活性与稳定性。",
-      "summary": "物理引擎集成和碰撞检测已完全实现：物理层通过 AttackCollisionCallback/HitReactionCollisionCallback 回调和 ManifoldPoints 静态方法实现碰撞点、法线、冲量采集，事件系统已能分发 HitData；相关单元测试通过，功能与接口均满足设计要求。",
-      "completedAt": "2025-05-09T07:27:57.795Z"
-    },
-    {
-      "id": "9c68dda0-6d19-4cfe-935e-9ce6ea37cefa",
-      "name": "阶段一：蓝图核心框架与节点定义 (父任务)",
-      "description": "此阶段专注于搭建蓝图系统的核心基础，包括详细的核心数据结构定义、节点接口设计、通用事件机制和Actor抽象。",
-      "status": "已完成",
-      "dependencies": [],
-      "createdAt": "2025-05-13T10:07:37.350Z",
-      "updatedAt": "2025-05-13T12:13:12.351Z",
-      "relatedFiles": [],
-      "implementationGuide": "这是一个顶层阶段性任务，包含了多个详细的子任务。所有子任务完成后，此阶段才算完成。",
-      "verificationCriteria": "完成阶段一所有子任务，产出包括：核心数据结构定义与文档、节点集设计文档、通用事件总线原型代码与文档、SparkActor基类代码与文档、节点实现与序列化规范文档。",
-      "summary": "阶段一：蓝图核心框架与节点定义 任务已完成，准备开始任务 1.1",
-      "completedAt": "2025-05-13T12:13:12.350Z"
-    },
-    {
-      "id": "36427254-a02b-49ce-9856-0efcfc96cb23",
-      "name": "1.1：核心数据结构定义、节点分类及接口设计 (父任务)",
-      "description": "定义蓝图系统最核心的构建块：蓝图图、节点、引脚、连接、变量的数据结构。并基于这些结构，设计和分类核心节点集及其接口。",
-      "status": "已完成",
-      "dependencies": [
-        {
-          "taskId": "9c68dda0-6d19-4cfe-935e-9ce6ea37cefa"
-        }
-      ],
-      "createdAt": "2025-05-13T10:07:37.350Z",
-      "updatedAt": "2025-05-13T12:26:05.732Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintCoreDataStructures.md",
-          "type": "CREATE",
-          "description": "核心数据结构（图、节点、引脚、连接、变量）的统一设计文档。"
+          "description": "实例类型调整",
+          "lineStart": 10,
+          "lineEnd": 60
         },
         {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintNodeSetCatalog.md",
-          "type": "CREATE",
-          "description": "核心节点集分类、功能及接口详细设计文档。"
-        }
-      ],
-      "implementationGuide": "包含多个子任务，分别定义各项数据结构，并最终汇总成节点集设计。确保Kotlin和JS两端的数据表示清晰。",
-      "verificationCriteria": "所有核心数据结构在Kotlin和JS中的表示均已定义并文档化。核心节点集的分类和每个节点的接口（输入/输出引脚、执行引脚）已详细设计并文档化。",
-      "summary": "核心数据结构定义、节点分类及接口设计任务已完成，相关文档 BlueprintCoreDataStructures.md 和 BlueprintNodeSetCatalog.md 已建立，蓝图基础结构与节点体系已梳理。",
-      "completedAt": "2025-05-13T12:26:05.731Z"
-    },
-    {
-      "id": "5df4e36f-2f2b-49f3-842e-21e32ef35bc2",
-      "name": "1.1.1：定义蓝图图 (Blueprint Graph) 数据结构",
-      "description": "定义蓝图图（Graph）的数据结构，它是节点和连接的容器。",
-      "status": "已完成",
-      "dependencies": [
-        {
-          "taskId": "36427254-a02b-49ce-9856-0efcfc96cb23"
-        }
-      ],
-      "createdAt": "2025-05-13T10:07:37.350Z",
-      "updatedAt": "2025-05-13T12:37:27.517Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\BlueprintGraph.kt",
-          "type": "CREATE",
-          "description": "Kotlin端BlueprintGraph数据类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_engine\\data\\BlueprintGraph.js",
-          "type": "CREATE",
-          "description": "JS端BlueprintGraph接口/类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintCoreDataStructures.md",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/entry_builder/ObjectRegister.kt",
           "type": "TO_MODIFY",
-          "description": "更新核心数据结构文档。"
+          "description": "保持与新注册表匹配",
+          "lineStart": 30,
+          "lineEnd": 70
         }
       ],
-      "implementationGuide": "1. **Kotlin/JVM 端 (`BlueprintGraph.kt`):** \n   - 创建 data class `BlueprintGraph`.\n   - 字段: `id: String` (唯一ID), `name: String`, `nodes: MutableList<BlueprintNode>`, `connections: MutableList<BlueprintConnection>`, `variables: MutableList<BlueprintVariable>`, `metadata: Map<String, Any>` (例如创建时间、作者等)。\n2. **JS 端 (`BlueprintGraph.js`):** \n   - 创建 interface或class `BlueprintGraph`.\n   - 字段: `id: string`, `name: string`, `nodes: BlueprintNode[]`, `connections: BlueprintConnection[]`, `variables: BlueprintVariable[]`, `metadata: Record<string, any>`.\n3. **文档化:** 在 `BlueprintCoreDataStructures.md` 中记录此结构。",
-      "verificationCriteria": "BlueprintGraph数据结构在Kotlin和JS中定义完成，并通过文档评审。",
-      "summary": "已在 Kotlin 和 JS 两端完成 BlueprintGraph 数据结构定义，并补充了 BlueprintNode、BlueprintConnection、BlueprintVariable 占位类型，确保引用正确。",
-      "completedAt": "2025-05-13T12:37:27.516Z"
+      "implementationGuide": "pseudocode: in SparkRegistries.kt, val TYPED_ANIMATION: Registry<TypedAnimation> = RegistryBuilder(...).build();",
+      "verificationCriteria": "游戏初始化后注册表为 DynamicAwareRegistry 实例且查询正常.",
+      "analysisResult": "通过实现DynamicAwareRegistry包装NeoForge静态Registry并维护动态ConcurrentHashMap，实现Spark-Core动画/模型在运行时动态注册；修改自有RegistryBuilder返回DynamicAwareRegistry以兼容DeferredRegister；更新SparkRegistries与ObjectRegister以沿用现有静态流程；扩展TypedAnimationBuilder支持仅构造对象；实现服务端→客户端网络同步动态条目；提供线程安全(ID自增、ReadWriteLock)、异常与日志支持；补充单元/并发/集成测试及文档。"
     },
     {
-      "id": "ed294e44-f7c8-4bc0-b488-cc37aa3f023f",
-      "name": "1.1.2：定义节点 (Node) 数据结构",
-      "description": "定义蓝图节点 (Node) 的数据结构，节点是蓝图的基本功能单元。",
-      "status": "進行中",
+      "id": "20cac806-212e-43b1-9d04-af309e34a020",
+      "name": "扩展 TypedAnimationBuilder 支持动态构造 constructOnly()",
+      "description": "在 TypedAnimationBuilder.kt 添加 constructOnly() 返回 TypedAnimation 不触发 DeferredRegister; id() 方法在动态场景接受 ResourceLocation 完整路径.",
+      "status": "待處理",
       "dependencies": [
         {
-          "taskId": "36427254-a02b-49ce-9856-0efcfc96cb23"
+          "taskId": "e6672b57-dc6e-48ec-8430-e478bad50a6c"
         }
       ],
-      "createdAt": "2025-05-13T10:07:37.350Z",
-      "updatedAt": "2025-05-13T12:50:57.601Z",
+      "createdAt": "2025-05-19T16:14:26.130Z",
+      "updatedAt": "2025-05-19T16:14:26.130Z",
       "relatedFiles": [
         {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\BlueprintNode.kt",
-          "type": "CREATE",
-          "description": "Kotlin端BlueprintNode数据类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\Point2D.kt",
-          "type": "CREATE",
-          "description": "Kotlin端Point2D辅助数据类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_engine\\data\\BlueprintNode.js",
-          "type": "CREATE",
-          "description": "JS端BlueprintNode接口/类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintCoreDataStructures.md",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/entry_builder/animation/TypedAnimationBuilder.kt",
           "type": "TO_MODIFY",
-          "description": "更新核心数据结构文档。"
+          "description": "新增方法",
+          "lineStart": 80,
+          "lineEnd": 140
         }
       ],
-      "implementationGuide": "1. **Kotlin/JVM 端 (`BlueprintNode.kt`):** \n   - 创建 data class `BlueprintNode`.\n   - 字段: `id: String` (唯一ID), `type: String` (节点类型标识, e.g., 'math.add', 'event.onTick'), `position: Point2D` (编辑器中的位置), `inputs: MutableList<Pin>`, `outputs: MutableList<Pin>`, `properties: Map<String, Any>` (节点特定配置，如常量值)。\n   - `Point2D` 可以是一个简单的 `data class Point2D(val x: Double, val y: Double)`。\n2. **JS 端 (`BlueprintNode.js`):** \n   - 创建 interface或class `BlueprintNode`.\n   - 字段: `id: string`, `type: string`, `position: { x: number, y: number }`, `inputs: Pin[]`, `outputs: Pin[]`, `properties: Record<string, any>`.\n3. **文档化:** 在 `BlueprintCoreDataStructures.md` 中记录此结构。",
-      "verificationCriteria": "BlueprintNode数据结构在Kotlin和JS中定义完成，并通过文档评审。"
+      "implementationGuide": "pseudocode: fun constructOnly(): TypedAnimation { return TypedAnimation(currentIndex, provider) }",
+      "verificationCriteria": "unit test: builder.constructOnly() returns valid instance; registerDynamic()后可查询播放.",
+      "analysisResult": "通过实现DynamicAwareRegistry包装NeoForge静态Registry并维护动态ConcurrentHashMap，实现Spark-Core动画/模型在运行时动态注册；修改自有RegistryBuilder返回DynamicAwareRegistry以兼容DeferredRegister；更新SparkRegistries与ObjectRegister以沿用现有静态流程；扩展TypedAnimationBuilder支持仅构造对象；实现服务端→客户端网络同步动态条目；提供线程安全(ID自增、ReadWriteLock)、异常与日志支持；补充单元/并发/集成测试及文档。"
     },
     {
-      "id": "25910368-a2c2-4367-92d2-30df0321d977",
-      "name": "1.1.3：定义引脚 (Pin) 数据结构、类型及数据类型系统",
-      "description": "定义蓝图引脚 (Pin) 的数据结构，引脚是节点的数据和执行流程的输入输出点。同时定义引脚类型、方向和支持的数据类型。",
-      "status": "進行中",
-      "dependencies": [
-        {
-          "taskId": "36427254-a02b-49ce-9856-0efcfc96cb23"
-        }
-      ],
-      "createdAt": "2025-05-13T10:07:37.350Z",
-      "updatedAt": "2025-05-13T12:51:47.147Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\BlueprintPin.kt",
-          "type": "CREATE",
-          "description": "Kotlin端Pin数据类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\PinEnums.kt",
-          "type": "CREATE",
-          "description": "Kotlin端PinType, PinDirection枚举定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\DataTypes.kt",
-          "type": "CREATE",
-          "description": "Kotlin端PinDataType枚举定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_engine\\data\\BlueprintPin.js",
-          "type": "CREATE",
-          "description": "JS端Pin接口/类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_engine\\data\\PinEnums.js",
-          "type": "CREATE",
-          "description": "JS端PinType, PinDirection枚举定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_engine\\data\\DataTypes.js",
-          "type": "CREATE",
-          "description": "JS端PinDataType枚举定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintCoreDataStructures.md",
-          "type": "TO_MODIFY",
-          "description": "更新核心数据结构文档。"
-        }
-      ],
-      "implementationGuide": "1. **Kotlin/JVM 端 (`BlueprintPin.kt`, `PinEnums.kt`, `DataTypes.kt`):** \n   - Enum `PinType { EXECUTION, DATA }`.\n   - Enum `PinDirection { INPUT, OUTPUT }` (主要用于数据引脚).\n   - Enum `PinDataType { BOOLEAN, INTEGER, FLOAT, STRING, VECTOR3, ENTITY_REFERENCE, ITEM_REFERENCE, OBJECT, ANY /* etc. */ }`.\n   - Data class `Pin`: `id: String` (唯一ID), `name: String`, `pinType: PinType`, `direction: PinDirection` (对DATA引脚有意义), `dataType: PinDataType` (对DATA引脚有意义), `defaultValue: Any?`, `isConnected: Boolean` (运行时状态), `nodeId: String` (所属节点ID)。\n2. **JS 端 (`BlueprintPin.js`, `PinEnums.js`, `DataTypes.js`):** \n   - Enum/const object `PinType { EXECUTION, DATA }`.\n   - Enum/const object `PinDirection { INPUT, OUTPUT }`.\n   - Enum/const object `PinDataType { BOOLEAN, INTEGER, FLOAT, STRING, VECTOR3, ENTITY_REFERENCE, ITEM_REFERENCE, OBJECT, ANY /* etc. */ }`.\n   - Interface/class `Pin`: `id: string`, `name: string`, `pinType: PinType`, `direction: PinDirection`, `dataType: PinDataType`, `defaultValue?: any`, `isConnected: boolean`, `nodeId: string`.\n3. **文档化:** 在 `BlueprintCoreDataStructures.md` 中记录Pin结构及相关枚举。",
-      "verificationCriteria": "Pin数据结构及相关枚举在Kotlin和JS中定义完成，并通过文档评审。"
-    },
-    {
-      "id": "b3c955f6-ba3c-4154-8bb8-722cb3e46c4d",
-      "name": "1.1.4：定义连接 (Connection) 数据结构",
-      "description": "定义蓝图连接 (Connection) 的数据结构，连接用于连接两个引脚。",
+      "id": "90381987-69e7-42c5-a51f-78fe5b3976c5",
+      "name": "实现动态注册网络同步",
+      "description": "创建 cn/solarmoon/spark_core/network/dynamic 包, 实现 DynamicRegistrySyncS2CPacket 与 NetworkHandler, 服务端动态注册后发送, 客户端接收并调用 registerDynamic.",
       "status": "待處理",
       "dependencies": [
         {
-          "taskId": "36427254-a02b-49ce-9856-0efcfc96cb23"
-        },
-        {
-          "taskId": "25910368-a2c2-4367-92d2-30df0321d977"
+          "taskId": "e6672b57-dc6e-48ec-8430-e478bad50a6c"
         }
       ],
-      "createdAt": "2025-05-13T10:07:37.350Z",
-      "updatedAt": "2025-05-13T10:07:37.350Z",
+      "createdAt": "2025-05-19T16:14:26.130Z",
+      "updatedAt": "2025-05-19T16:14:26.130Z",
       "relatedFiles": [
         {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\BlueprintConnection.kt",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/network/dynamic/DynamicRegistrySyncS2CPacket.kt",
           "type": "CREATE",
-          "description": "Kotlin端BlueprintConnection数据类定义。"
+          "description": "数据包类",
+          "lineStart": 1,
+          "lineEnd": 200
         },
         {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_engine\\data\\BlueprintConnection.js",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/network/dynamic/NetworkHandler.kt",
           "type": "CREATE",
-          "description": "JS端BlueprintConnection接口/类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintCoreDataStructures.md",
-          "type": "TO_MODIFY",
-          "description": "更新核心数据结构文档。"
+          "description": "通道注册",
+          "lineStart": 1,
+          "lineEnd": 120
         }
       ],
-      "implementationGuide": "1. **Kotlin/JVM 端 (`BlueprintConnection.kt`):** \n   - 创建 data class `BlueprintConnection`.\n   - 字段: `id: String` (唯一ID), `fromNodeId: String`, `fromPinId: String`, `toNodeId: String`, `toPinId: String`, `connectionType: PinType` (EXECUTION or DATA, 从连接的Pin推断).\n2. **JS 端 (`BlueprintConnection.js`):** \n   - 创建 interface或class `BlueprintConnection`.\n   - 字段: `id: string`, `fromNodeId: string`, `fromPinId: string`, `toNodeId: string`, `toPinId: string`, `connectionType: PinType`.\n3. **文档化:** 在 `BlueprintCoreDataStructures.md` 中记录此结构。",
-      "verificationCriteria": "BlueprintConnection数据结构在Kotlin和JS中定义完成，并通过文档评审。"
+      "implementationGuide": "pseudocode:\nobject DynamicNetwork { val CHANNEL = NetworkRegistry.newSimpleChannel(id,ver); fun sendSync<T>(registryKey, entryNBT) { CHANNEL.send(PacketDistributor.ALL.server, Packet(registryKey, entryNBT)) } }",
+      "verificationCriteria": "集成测试: 服务端动态注册后客户端收到并成功查询条目.",
+      "analysisResult": "通过实现DynamicAwareRegistry包装NeoForge静态Registry并维护动态ConcurrentHashMap，实现Spark-Core动画/模型在运行时动态注册；修改自有RegistryBuilder返回DynamicAwareRegistry以兼容DeferredRegister；更新SparkRegistries与ObjectRegister以沿用现有静态流程；扩展TypedAnimationBuilder支持仅构造对象；实现服务端→客户端网络同步动态条目；提供线程安全(ID自增、ReadWriteLock)、异常与日志支持；补充单元/并发/集成测试及文档。"
     },
     {
-      "id": "cb5640e3-da1f-48d4-96e4-54003fb6b80e",
-      "name": "1.1.5：定义变量 (Variable) 数据结构及作用域",
-      "description": "定义蓝图变量 (Variable) 的数据结构，变量用于存储和传递数据。同时定义变量作用域。",
+      "id": "aab31d51-e1ee-4382-a5f9-b2e95a0271a1",
+      "name": "编写单元与并发测试",
+      "description": "在 src/test/kotlin/cn/solarmoon/spark_core/registry/dynamic 创建 DynamicAwareRegistryTest.kt 等, 覆盖 registerDynamic, get, 多线程并发, 网络同步模拟.",
       "status": "待處理",
       "dependencies": [
         {
-          "taskId": "36427254-a02b-49ce-9856-0efcfc96cb23"
+          "taskId": "20cac806-212e-43b1-9d04-af309e34a020"
         },
         {
-          "taskId": "25910368-a2c2-4367-92d2-30df0321d977"
+          "taskId": "90381987-69e7-42c5-a51f-78fe5b3976c5"
         }
       ],
-      "createdAt": "2025-05-13T10:07:37.350Z",
-      "updatedAt": "2025-05-13T10:07:37.350Z",
+      "createdAt": "2025-05-19T16:14:26.130Z",
+      "updatedAt": "2025-05-19T16:14:26.130Z",
       "relatedFiles": [
         {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\BlueprintVariable.kt",
+          "path": "src/test/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistryTest.kt",
           "type": "CREATE",
-          "description": "Kotlin端BlueprintVariable数据类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\data\\VariableEnums.kt",
-          "type": "CREATE",
-          "description": "Kotlin端VariableScope枚举定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_engine\\data\\BlueprintVariable.js",
-          "type": "CREATE",
-          "description": "JS端BlueprintVariable接口/类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_engine\\data\\VariableEnums.js",
-          "type": "CREATE",
-          "description": "JS端VariableScope枚举定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintCoreDataStructures.md",
-          "type": "TO_MODIFY",
-          "description": "更新核心数据结构文档。"
+          "description": "单元测试",
+          "lineStart": 1,
+          "lineEnd": 200
         }
       ],
-      "implementationGuide": "1. **Kotlin/JVM 端 (`BlueprintVariable.kt`, `VariableEnums.kt`):** \n   - Enum `VariableScope { LOCAL, ACTOR, GLOBAL }`.\n   - Data class `BlueprintVariable`: `id: String` (唯一ID), `name: String`, `dataType: PinDataType`, `defaultValue: Any?`, `scope: VariableScope`, `isExposed: Boolean` (是否可在外部设置)。\n2. **JS 端 (`BlueprintVariable.js`, `VariableEnums.js`):** \n   - Enum/const object `VariableScope { LOCAL, ACTOR, GLOBAL }`.\n   - Interface/class `BlueprintVariable`: `id: string`, `name: string`, `dataType: PinDataType`, `defaultValue?: any`, `scope: VariableScope`, `isExposed: boolean`.\n3. **文档化:** 在 `BlueprintCoreDataStructures.md` 中记录Variable结构及相关枚举。",
-      "verificationCriteria": "BlueprintVariable数据结构及VariableScope枚举在Kotlin和JS中定义完成，并通过文档评审。"
+      "implementationGuide": "pseudocode: use JUnit5 & MockNetwork; simulate 10 threads registering and querying; assert no race conditions.",
+      "verificationCriteria": "所有测试通过; 并发注册无异常; 网络模拟包收发后客户端能查询.",
+      "analysisResult": "通过实现DynamicAwareRegistry包装NeoForge静态Registry并维护动态ConcurrentHashMap，实现Spark-Core动画/模型在运行时动态注册；修改自有RegistryBuilder返回DynamicAwareRegistry以兼容DeferredRegister；更新SparkRegistries与ObjectRegister以沿用现有静态流程；扩展TypedAnimationBuilder支持仅构造对象；实现服务端→客户端网络同步动态条目；提供线程安全(ID自增、ReadWriteLock)、异常与日志支持；补充单元/并发/集成测试及文档。"
     },
     {
-      "id": "fbfe9254-df9a-48b0-af70-5ce363e0725f",
-      "name": "1.1.6：设计核心节点集清单、分类及接口",
-      "description": "基于已定义的核心数据结构，详细设计并分类核心蓝图节点。明确每个节点的用途、输入/输出数据引脚、执行引脚、以及可配置属性。这是蓝图编辑器和引擎能够识别和使用节点的基础。",
+      "id": "b35d1378-ac35-4782-909c-d508fe323bbb",
+      "name": "更新文档与示例",
+      "description": "在 docs/dynamic_registry.md 编写 API 用法、错误码、示例代码; 更新 README 动态加载指南.",
       "status": "待處理",
       "dependencies": [
         {
-          "taskId": "36427254-a02b-49ce-9856-0efcfc96cb23"
-        },
-        {
-          "taskId": "5df4e36f-2f2b-49f3-842e-21e32ef35bc2"
-        },
-        {
-          "taskId": "ed294e44-f7c8-4bc0-b488-cc37aa3f023f"
-        },
-        {
-          "taskId": "25910368-a2c2-4367-92d2-30df0321d977"
-        },
-        {
-          "taskId": "b3c955f6-ba3c-4154-8bb8-722cb3e46c4d"
-        },
-        {
-          "taskId": "cb5640e3-da1f-48d4-96e4-54003fb6b80e"
+          "taskId": "aab31d51-e1ee-4382-a5f9-b2e95a0271a1"
         }
       ],
-      "createdAt": "2025-05-13T10:08:11.666Z",
-      "updatedAt": "2025-05-13T10:08:11.666Z",
+      "createdAt": "2025-05-19T16:14:26.130Z",
+      "updatedAt": "2025-05-19T16:14:26.130Z",
       "relatedFiles": [
         {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintNodeSetCatalog.md",
-          "type": "TO_MODIFY",
-          "description": "详细撰写核心节点集设计文档，包含所有节点的分类、接口定义、引脚、属性。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintCoreDataStructures.md",
-          "type": "REFERENCE",
-          "description": "参考已定义的核心数据结构 (Pin, PinDataType等)。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\scripts\\prd.txt",
-          "type": "REFERENCE",
-          "description": "产品需求文档，用于指导节点功能设计。"
-        }
-      ],
-      "implementationGuide": "1. **节点分类:** \n   - **事件 (Events):** 例如 `OnPlayerTick`, `OnEntityDamaged`, `OnBlockInteracted`, `OnCustomSkillUsed`, `OnMinecraftEvent` (通用MC事件订阅), `OnCustomBlueprintEvent` (接收自定义蓝图事件)。\n   - **流程控制 (Flow Control):** 例如 `Sequence`, `Branch` (If/Else), `ForLoop`, `ForEachLoop` (遍历数组/列表), `WhileLoop`, `DoOnce`, `Gate`, `Delay`, `FlipFlop`。\n   - **变量 (Variables):** 例如 `GetVariable` (细分Local, Actor, Global), `SetVariable` (细分Local, Actor, Global)。`DefineLocalVariable` (在蓝图内部定义，生命周期随蓝图)。\n   - **函数调用 (Function Calls):** 例如 `CallKotlinFunction` (调用已注册的JVM主机函数), `CallBlueprintFunction` (调用本蓝图或其他蓝图定义的函数/子图), `PureFunctionNode` (无执行引脚的纯数据计算节点，如数学运算、字符串拼接)。\n   - **数学 (Math):** 例如 `IntegerAdd`, `FloatMultiply`, `VectorAdd`, `MakeVector`, `BreakVector`。\n   - **逻辑 (Logic):** 例如 `BooleanAND`, `BooleanOR`, `BooleanNOT`, `BranchOnBoolean`, `Select` (根据枚举或整数选择输出)。\n   - **Actor/实体操作 (Actor/Entity Operations - 基于SparkActor):** 例如 `GetActorLocation`, `SetActorLocation`, `SpawnActorFromBlueprint`, `DestroyActor`, `GetActorHealth`, `SetActorHealth`, `ApplyDamageToActor`, `ApplyForceToActor`, `FindActorsInRadius`, `GetOwningActor` (获取当前蓝图所属的Actor)。\n   - **动画 (Animation - 作用于SparkActor的AnimationComponent):** 例如 `PlayAnimation`, `StopAnimation`, `GetAnimationState`, `SetAnimationSpeed`.\n   - **技能 (Skill - 作用于SparkActor的SkillComponent):** 例如 `ActivateSkillByName`, `GetSkillCooldown`, `IsSkillActive`.\n   - **数据转换 (Data Conversion):** 例如 `ToString` (通用), `ToInt` (from Float/String), `ToFloat` (from Int/String)。\n   - **调试 (Debugging):** 例如 `PrintString` (打印到控制台/聊天框), `Breakpoint` (仅编辑器/开发模式下有效)。\n   - **自定义事件 (Custom Events in Blueprint):** 例如 `DefineCustomEvent` (在蓝图内部定义一个可被触发的事件), `TriggerCustomEvent` (触发本蓝图或全局的自定义事件)。\n2. **为每个节点设计详细接口:** \n   - `nodeType: String` (全局唯一的节点类型标识符, e.g., 'sparkcore.flow.sequence', 'sparkcore.math.integer.add')。\n   - `displayName: String` (编辑器中显示的名称)。\n   - `category: String` (编辑器中分类，如 'Flow Control/Loops', 'Math/Integer')。\n   - `description: String` (节点功能描述)。\n   - `inputExecutionPins: PinDefinition[]` (通常一个，除非特殊节点如Gate有多个入口)。\n   - `outputExecutionPins: PinDefinition[]` (例如Sequence有多个，Branch有两个)。\n   - `inputDataPins: PinDefinition[]` (名称, `PinDataType`, 可选的`defaultValue`, 描述)。\n   - `outputDataPins: PinDefinition[]` (名称, `PinDataType`, 描述)。\n   - `properties: NodePropertyDefinition[]` (节点自身的可配置属性，例如Delay节点的延迟时间值，PrintString节点的打印前缀等，这些不是通过数据引脚传入的，而是直接在节点上配置的)。\n   - (`PinDefinition` 和 `NodePropertyDefinition` 需要包含类型、名称、描述等信息)\n3. **参考 `scripts/prd.txt` 和用户先前的详细建议，确保覆盖核心需求。**\n4. **文档化:** 在 `BlueprintNodeSetCatalog.md` 中为每个分类下的每个节点撰写详细的设计规格。确保该文档可以作为后续Kotlin/JVM节点实现和JS编辑器节点库展示的依据。",
-      "verificationCriteria": "BlueprintNodeSetCatalog.md文档完成，详细描述了所有核心节点的分类、唯一类型标识、显示名称、描述、所有输入/输出执行引脚、所有输入/输出数据引脚（包括数据类型和可选默认值）、以及节点自身的可配置属性。节点设计覆盖了事件、流程控制、变量、数学、逻辑、Actor操作、动画、技能、调试等核心类别，并参考了PRD和用户建议。"
-    },
-    {
-      "id": "62c2340f-c8d6-4dcd-9c4f-253df69c7465",
-      "name": "1.2：设计节点实现职责、元数据、序列化及变量管理规范 (父任务)",
-      "description": "明确Kotlin/JVM端与JS端在节点实现上的职责，并设计节点元数据、蓝图序列化格式以及变量作用域的具体管理方案。这是确保蓝图系统可维护、可扩展和高效运行的关键。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "9c68dda0-6d19-4cfe-935e-9ce6ea37cefa"
-        }
-      ],
-      "createdAt": "2025-05-13T10:09:21.816Z",
-      "updatedAt": "2025-05-13T10:09:21.816Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintNodeImplementationSpec.md",
+          "path": "docs/dynamic_registry.md",
           "type": "CREATE",
-          "description": "节点实现职责、元数据、序列化与变量管理规范的统一设计文档。"
+          "description": "新文档",
+          "lineStart": 1,
+          "lineEnd": 200
         }
       ],
-      "implementationGuide": "包含多个子任务，分别定义节点元数据结构、序列化格式、职责划分原则和变量管理机制。",
-      "verificationCriteria": "完成节点元数据定义、蓝图序列化格式定义、职责划分原则文档化、变量作用域管理机制设计并文档化。"
-    },
-    {
-      "id": "2114acbf-5398-4b1d-ae98-83540e556a54",
-      "name": "1.2.1：定义节点元数据 (NodeDefinition) 结构",
-      "description": "定义节点元数据结构，用于描述一个节点类型的所有静态信息，供蓝图编辑器展示和蓝图引擎加载时使用。这主要针对在Kotlin/JVM中实现核心逻辑的节点。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "62c2340f-c8d6-4dcd-9c4f-253df69c7465"
-        },
-        {
-          "taskId": "25910368-a2c2-4367-92d2-30df0321d977"
-        }
-      ],
-      "createdAt": "2025-05-13T10:09:21.816Z",
-      "updatedAt": "2025-05-13T10:09:21.816Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\metadata\\NodeDefinition.kt",
-          "type": "CREATE",
-          "description": "Kotlin端NodeDefinition, PinDefinition, NodePropertyDefinition数据类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_editor\\data\\NodeDefinition.js",
-          "type": "CREATE",
-          "description": "JS端NodeDefinition, PinDefinition, NodePropertyDefinition接口/类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintNodeImplementationSpec.md",
-          "type": "TO_MODIFY",
-          "description": "更新节点实现职责与元数据规范文档。"
-        }
-      ],
-      "implementationGuide": "1. **Kotlin/JVM 端 (`NodeDefinition.kt`):** \n   - data class `NodeDefinition`: `type: String` (唯一类型标识, e.g., 'sparkcore.actor.getLocation'), `displayName: String`, `category: String` (e.g., 'Actor/Transform'), `description: String`, `inputExecutionPins: List<PinDefinition>`, `outputExecutionPins: List<PinDefinition>`, `inputDataPins: List<PinDefinition>`, `outputDataPins: List<PinDefinition>`, `nodeProperties: List<NodePropertyDefinition>` (可直接在节点上配置的属性), `jvmClassTarget: String?` (可选, 指向实现该节点逻辑的Kotlin类/方法)。\n   - data class `PinDefinition`: `id: String`, `name: String`, `pinType: PinType`, `direction: PinDirection`, `dataType: PinDataType`, `defaultValue: Any?`, `tooltip: String`.\n   - data class `NodePropertyDefinition`: `id: String`, `name: String`, `propertyType: PinDataType`, `defaultValue: Any?`, `tooltip: String`.\n2. **JS 端 (`NodeDefinition.js`):** \n   - Interface/class `NodeDefinition` mirroring the Kotlin structure, for JS editor consumption.\n   - `PinDefinition` and `NodePropertyDefinition` interfaces/classes in JS.\n3. **用途:** 这些元数据将由Kotlin/JVM端生成（或从注解处理器生成），并提供给JS编辑器用于构建节点库面板。\n4. **文档化:** 在 `BlueprintNodeImplementationSpec.md` 中记录此结构。",
-      "verificationCriteria": "NodeDefinition, PinDefinition, NodePropertyDefinition结构在Kotlin和JS中定义完成，并通过文档评审。元数据能清晰描述一个节点的所有静态特性。"
-    },
-    {
-      "id": "6e8177cd-9d19-4ee3-8fb8-2a29770c75e0",
-      "name": "1.2.2：定义蓝图图 (Blueprint Graph) 的序列化/反序列化格式 (JSON)",
-      "description": "定义用户在JS编辑器中创建的蓝图图如何被序列化为JSON格式进行存储，以及如何从JSON反序列化回内存中的图对象。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "62c2340f-c8d6-4dcd-9c4f-253df69c7465"
-        },
-        {
-          "taskId": "5df4e36f-2f2b-49f3-842e-21e32ef35bc2"
-        },
-        {
-          "taskId": "ed294e44-f7c8-4bc0-b488-cc37aa3f023f"
-        },
-        {
-          "taskId": "b3c955f6-ba3c-4154-8bb8-722cb3e46c4d"
-        },
-        {
-          "taskId": "cb5640e3-da1f-48d4-96e4-54003fb6b80e"
-        }
-      ],
-      "createdAt": "2025-05-13T10:09:21.816Z",
-      "updatedAt": "2025-05-13T10:09:21.816Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintSerializationFormat.md",
-          "type": "CREATE",
-          "description": "蓝图图JSON序列化格式规范及示例。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\serialization\\GraphSerializer.kt",
-          "type": "CREATE",
-          "description": "Kotlin端蓝图图序列化/反序列化逻辑 (e.g., using Kotlinx.serialization)。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintNodeImplementationSpec.md",
-          "type": "TO_MODIFY",
-          "description": "链接或包含序列化格式规范。"
-        }
-      ],
-      "implementationGuide": "1. **JSON结构设计:** 基于 `BlueprintGraph`, `BlueprintNode`, `BlueprintPin`, `BlueprintConnection`, `BlueprintVariable` 数据结构，设计一个清晰、可读且可扩展的JSON格式。\n   - 顶层对象包含图的ID, name, metadata。\n   - `nodes` 数组: 每个节点对象包含其ID, type, position, properties, 以及其input/output pin的配置值 (如果被覆盖了默认值或直接输入了常量)。\n   - `connections` 数组: 每个连接对象包含fromNodeId, fromPinId, toNodeId, toPinId。\n   - `variables` 数组: 每个变量对象包含其ID, name, dataType, defaultValue, scope, isExposed。\n2. **版本控制:** 考虑在JSON中加入版本号，以便未来进行格式升级。\n3. **Kotlin/JVM端序列化/反序列化:** 使用如Jackson或Kotlinx.serialization库实现将 `BlueprintGraph` Kotlin对象与JSON字符串之间的转换。\n4. **JS端序列化/反序列化:** JS端通常直接操作JS对象，`JSON.stringify` 和 `JSON.parse` 即可，但需要确保JS对象结构与定义的JSON格式一致。\n5. **文档化:** 在 `BlueprintSerializationFormat.md` (新建) 或 `BlueprintNodeImplementationSpec.md` 中详细记录JSON格式规范及示例。",
-      "verificationCriteria": "蓝图图的JSON序列化/反序列化格式定义完成并文档化，包含清晰的结构和示例。Kotlin端有能力将内存对象转换为此JSON，反之亦然。"
-    },
-    {
-      "id": "6a5ff167-98bf-4544-8bd5-eee40873b2e8",
-      "name": "1.2.3：文档化 Kotlin/JVM 与 JS 节点实现职责划分原则",
-      "description": "明确哪些类型的节点逻辑应在Kotlin/JVM端实现，哪些可以在JS端实现 (XState驱动)，以指导后续开发。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "62c2340f-c8d6-4dcd-9c4f-253df69c7465"
-        }
-      ],
-      "createdAt": "2025-05-13T10:09:21.816Z",
-      "updatedAt": "2025-05-13T10:09:21.816Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintNodeImplementationSpec.md",
-          "type": "TO_MODIFY",
-          "description": "详细撰写Kotlin/JVM与JS节点实现职责划分原则。"
-        }
-      ],
-      "implementationGuide": "1. **Kotlin/JVM 端职责:** \n   - 需要与Minecraft核心API、Mod内部系统 (如物理、技能、实体) 深度交互的节点。\n   - 计算密集型或性能敏感的节点。\n   - 安全关键型操作 (如权限检查、重要数据修改)。\n   - 提供对Mod底层功能的原子封装 (e.g., `PlaySoundAtLocation`, `SpawnParticleEffect`)。\n2. **JS 端 (XState) 职责:** \n   - 纯流程控制节点 (Sequence, Branch, Loops etc. - 它们的骨架和执行流控制)。\n   - 状态管理和蓝图执行的协调。\n   - 组装和连接Kotlin/JVM提供的核心功能节点。\n   - 纯粹在JS环境内能完成的逻辑 (简单的数学运算、不涉及游戏核心状态的局部变量操作)。\n   - UI交互相关的逻辑 (如果蓝图直接驱动某些编辑器内或游戏内UI)。\n3. **协作方式:** JS蓝图引擎通过定义的JS-Kotlin桥接调用JVM端实现的节点逻辑。\n4. **文档化:** 在 `BlueprintNodeImplementationSpec.md` 中详细阐述这些原则。",
-      "verificationCriteria": "Kotlin/JVM与JS节点实现职责划分原则清晰、合理，并已文档化，为后续开发提供明确指导。"
-    },
-    {
-      "id": "56351579-14df-4b17-9783-ddd3a45a8599",
-      "name": "1.2.4：设计变量作用域 (Local, Actor, Global) 的管理和访问机制",
-      "description": "详细设计蓝图变量在不同作用域下的具体存储、生命周期管理和访问机制。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "62c2340f-c8d6-4dcd-9c4f-253df69c7465"
-        },
-        {
-          "taskId": "cb5640e3-da1f-48d4-96e4-54003fb6b80e"
-        }
-      ],
-      "createdAt": "2025-05-13T10:09:21.816Z",
-      "updatedAt": "2025-05-13T10:09:21.816Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintNodeImplementationSpec.md",
-          "type": "TO_MODIFY",
-          "description": "详细描述变量作用域管理和访问机制。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\SparkActor.kt",
-          "type": "TO_MODIFY",
-          "description": "为SparkActor添加get/set变量的API (针对Actor作用域变量)。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\global\\GlobalVariableManager.kt",
-          "type": "CREATE",
-          "description": "Kotlin端全局变量管理器。"
-        }
-      ],
-      "implementationGuide": "1. **Local Variables (蓝图局部变量):** \n   - **存储与管理:** 由JS端蓝图运行时引擎 (XState) 在其上下文中管理。每个蓝图实例有自己的局部变量副本。\n   - **生命周期:** 随蓝图实例的创建而创建，随蓝图实例的销毁而销毁，或在一次执行流中临时存在。\n   - **访问:** JS端直接读写XState context。\n2. **Actor Variables (对象/Actor成员变量):** \n   - **存储与管理:** 最终存储在Kotlin/JVM端的 `SparkActor` 实例上 (可能通过其组件或一个专门的变量Map)。JS端通过`GetVariableNode(scope=ACTOR)`和`SetVariableNode(scope=ACTOR)`调用JVM端API来读写。\n   - **生命周期:** 随关联的 `SparkActor` 实例的生命周期。\n   - **访问:** JS端通过特定节点代理，Kotlin/JVM端直接访问Actor的内部状态。需要设计`SparkActor.getVariable(name)`和`SparkActor.setVariable(name, value)` API。\n3. **Global Variables (全局变量):** \n   - **存储与管理:** 由Kotlin/JVM端的一个全局变量管理器 (`GlobalVariableManager.kt`) 负责存储和持久化（如果需要）。\n   - **生命周期:** 通常随游戏世界或服务器生命周期，或按需持久化。\n   - **访问:** JS端通过特定节点 (`GetGlobalVariableNode`, `SetGlobalVariableNode`) 调用JVM端API。JVM端提供 `GlobalVariableManager.get(name)` 和 `GlobalVariableManager.set(name, value)` API。\n4. **类型安全:** 确保在读写变量时进行类型检查或转换。\n5. **文档化:** 在 `BlueprintNodeImplementationSpec.md` 中详细描述各作用域变量的管理和访问机制。",
-      "verificationCriteria": "Local, Actor, Global三种作用域变量的管理和访问机制设计清晰、合理，并已文档化。相关Kotlin类的API（SparkActor, GlobalVariableManager）已初步规划。"
-    },
-    {
-      "id": "09952481-9dd8-40bf-807f-d8ecd2877c7f",
-      "name": "1.3：设计蓝图编辑器前端与后端交互机制 (WebSockets) (父任务)",
-      "description": "设计基于WebSockets的前端蓝图编辑器与Kotlin/JVM后端之间的双向通信协议和消息格式，用于节点库获取、蓝图保存/加载、实时调试等功能。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "9c68dda0-6d19-4cfe-935e-9ce6ea37cefa"
-        }
-      ],
-      "createdAt": "2025-05-13T10:09:48.242Z",
-      "updatedAt": "2025-05-13T10:09:48.242Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintEditorCommsSpec.md",
-          "type": "CREATE",
-          "description": "蓝图编辑器前后端通信规范的统一设计文档。"
-        }
-      ],
-      "implementationGuide": "包含多个子任务，分别定义WebSocket消息格式、API端点、认证机制和错误处理。",
-      "verificationCriteria": "完成WebSocket通信协议、消息格式、API端点设计，并文档化认证和错误处理机制。"
-    },
-    {
-      "id": "647b889a-0483-43e2-8db4-c83307e4c3dd",
-      "name": "1.3.2：设计后端WebSocket API端点及处理逻辑",
-      "description": "规划Kotlin/JVM后端需要暴露的WebSocket API端点 (对应消息协议中的action/method) 及其核心处理逻辑。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "09952481-9dd8-40bf-807f-d8ecd2877c7f"
-        },
-        {
-          "taskId": "2114acbf-5398-4b1d-ae98-83540e556a54"
-        },
-        {
-          "taskId": "6e8177cd-9d19-4ee3-8fb8-2a29770c75e0"
-        }
-      ],
-      "createdAt": "2025-05-13T10:09:48.242Z",
-      "updatedAt": "2025-05-13T10:09:48.242Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintEditorCommsSpec.md",
-          "type": "TO_MODIFY",
-          "description": "详细规划和文档化后端WebSocket API端点。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\ws\\BlueprintSocketHandler.kt",
-          "type": "CREATE",
-          "description": "Kotlin后端WebSocket请求处理器和路由。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\ws\\BlueprintSocketService.kt",
-          "type": "CREATE",
-          "description": "处理具体业务逻辑的服务类，被Handler调用。"
-        }
-      ],
-      "implementationGuide": "1. **核心端点规划 (基于JSON-RPC method 或自定义 action):**\n   - `editor.getNodeLibrary`: 获取所有可用的节点元数据 (`NodeDefinition`)。\n   - `blueprint.saveGraph`: 保存蓝图图数据 (接收序列化的`BlueprintGraph` JSON)。\n   - `blueprint.loadGraph`: 加载指定蓝图图数据 (返回序列化的`BlueprintGraph` JSON)。\n   - `blueprint.listAvailableBlueprints`: 列出所有可供加载的蓝图（元信息）。\n   - `debug.startSession`: (可选) 启动蓝图调试会话。\n   - `debug.sendEvent`: (可选) 后端推送调试事件给前端。\n2. **请求参数和响应数据结构:** 为每个端点明确定义输入参数和输出数据的JSON结构。\n3. **Kotlin/JVM 实现:** 使用Ktor或其他WebSocket库在后端实现这些端点的路由和处理器。\n4. **文档化:** 在 `BlueprintEditorCommsSpec.md` 中为每个API端点编写详细的规格，包括其用途、请求格式、响应格式和可能的错误码。",
-      "verificationCriteria": "后端WebSocket API端点设计完成并文档化，覆盖了节点库获取、蓝图存取等核心功能。请求/响应结构清晰。"
-    },
-    {
-      "id": "878338d7-00b9-425f-a404-d71a399f9515",
-      "name": "1.3.4：设计认证与授权机制 (可选，初步考虑)",
-      "description": "初步考虑如何在WebSocket连接建立时进行用户认证，以及如何对某些敏感API操作进行授权检查（如果需要）。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "09952481-9dd8-40bf-807f-d8ecd2877c7f"
-        }
-      ],
-      "createdAt": "2025-05-13T10:09:48.242Z",
-      "updatedAt": "2025-05-13T10:09:48.242Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintEditorCommsSpec.md",
-          "type": "TO_MODIFY",
-          "description": "记录初步的WebSocket认证与授权设计方案。"
-        }
-      ],
-      "implementationGuide": "1. **认证:** \n   - **Token-based:** 客户端在建立WebSocket连接时通过HTTP头或初始消息发送认证Token (例如JWT)。后端验证Token。\n   - **Session-based:** 如果编辑器与游戏服务器在同一认证体系下，可复用现有会话。\n2. **授权:** \n   - 基于用户角色/权限，限制对某些API (如保存关键蓝图、访问全局设置) 的调用。\n3. **安全性:** 考虑WSS (WebSocket Secure) 的使用。\n4. **初步设计:** 此阶段仅作初步设计和记录，具体实现可能延后。\n5. **文档化:** 在 `BlueprintEditorCommsSpec.md` 中记录初步的认证和授权方案。",
-      "verificationCriteria": "初步的WebSocket认证和授权机制已考虑并文档化，识别了潜在的安全需求。"
-    },
-    {
-      "id": "3f7ca73f-9cf6-4837-8e90-af3b42c77d07",
-      "name": "1.4：设计SparkActor基类与核心组件接口 (父任务)",
-      "description": "设计SparkActor基类，作为游戏中所有可被蓝图控制的实体的父类。同时设计核心组件接口（如HealthComponent, AnimationComponent, SkillComponent, BlueprintComponent），用于模块化管理Actor的功能。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "9c68dda0-6d19-4cfe-935e-9ce6ea37cefa"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:16.283Z",
-      "updatedAt": "2025-05-13T10:10:16.283Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\SparkActorAndComponentsSpec.md",
-          "type": "CREATE",
-          "description": "SparkActor基类与核心组件接口设计规范文档。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\SparkActor.kt",
-          "type": "CREATE",
-          "description": "SparkActor基类定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\component",
-          "type": "CREATE",
-          "description": "存放核心组件接口和实现的目录。"
-        }
-      ],
-      "implementationGuide": "包含多个子任务，分别定义SparkActor基类结构、核心组件接口及其与Actor的集成方式。",
-      "verificationCriteria": "SparkActor基类和核心组件接口设计完成并文档化，明确了Actor的功能模块化管理方式。"
-    },
-    {
-      "id": "e5a2b373-ac1f-4dbd-ae13-ed884b69ae4c",
-      "name": "1.4.1：定义SparkActor基类结构",
-      "description": "定义`SparkActor`基类的基本属性和方法，使其能够承载组件、响应事件，并与蓝图系统交互。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "3f7ca73f-9cf6-4837-8e90-af3b42c77d07"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:16.283Z",
-      "updatedAt": "2025-05-13T10:10:16.283Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\SparkActor.kt",
-          "type": "TO_MODIFY",
-          "description": "实现SparkActor基类的核心属性和方法。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\SparkActorAndComponentsSpec.md",
-          "type": "TO_MODIFY",
-          "description": "详细文档化SparkActor基类。"
-        }
-      ],
-      "implementationGuide": "1. **继承关系:** 考虑是否继承自某个已有的实体基类 (如JME的`Spatial`或特定于服务器的`Entity`类)。\n2. **核心属性:** \n   - `actorId: UUID` (唯一标识)。\n   - `world: World` (所属世界/场景的引用)。\n   - `transform: Transform` (位置、旋转、缩放)。\n   - `components: MutableMap<KClass<out ActorComponent>, ActorComponent>` (组件容器)。\n3. **核心方法:** \n   - `addComponent(component: ActorComponent)`\n   - `removeComponent(componentClass: KClass<out ActorComponent>)`\n   - `getComponent<T : ActorComponent>(componentClass: KClass<T>): T?`\n   - `hasComponent(componentClass: KClass<out ActorComponent>): Boolean`\n   - `onUpdate(deltaTime: Float)` (每帧更新逻辑)。\n   - `onSpawned()` (生成时调用)。\n   - `onDestroyed()` (销毁时调用)。\n   - `handleEvent(event: Any)` (通用事件处理入口)。\n   - `getVariable(name: String): Any?` (用于Actor作用域变量)。\n   - `setVariable(name: String, value: Any?)` (用于Actor作用域变量)。\n4. **生命周期管理:** 初始化、更新、销毁等。\n5. **文档化:** 在 `SparkActorAndComponentsSpec.md` 中详细记录`SparkActor`的结构和API。",
-      "verificationCriteria": "SparkActor基类结构定义完成并文档化，具备组件管理、基本生命周期和事件处理能力。"
-    },
-    {
-      "id": "49c82103-21fa-47cc-ae42-6d8ff66a9ec1",
-      "name": "1.4.2：定义ActorComponent基接口与核心组件接口",
-      "description": "定义所有Actor组件的通用基接口`ActorComponent`，并设计具体的核心组件接口，如`HealthComponent`, `AnimationComponent`, `SkillComponent`, `BlueprintComponent`。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "3f7ca73f-9cf6-4837-8e90-af3b42c77d07"
-        },
-        {
-          "taskId": "e5a2b373-ac1f-4dbd-ae13-ed884b69ae4c"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:16.283Z",
-      "updatedAt": "2025-05-13T10:10:16.283Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\component\\ActorComponent.kt",
-          "type": "CREATE",
-          "description": "ActorComponent基接口定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\component\\HealthComponent.kt",
-          "type": "CREATE",
-          "description": "HealthComponent接口定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\component\\AnimationComponent.kt",
-          "type": "CREATE",
-          "description": "AnimationComponent接口定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\component\\SkillComponent.kt",
-          "type": "CREATE",
-          "description": "SkillComponent接口定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\component\\BlueprintComponent.kt",
-          "type": "CREATE",
-          "description": "BlueprintComponent接口定义。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\SparkActorAndComponentsSpec.md",
-          "type": "TO_MODIFY",
-          "description": "详细文档化所有核心组件接口。"
-        }
-      ],
-      "implementationGuide": "1. **`ActorComponent` 基接口 (`ActorComponent.kt`):**\n   - `owner: SparkActor` (组件所属的Actor)。\n   - `onAdded(owner: SparkActor)`\n   - `onRemoved()`\n   - `onUpdate(deltaTime: Float)`\n   - `onEvent(event: Any)`\n2. **`HealthComponent` 接口 (`HealthComponent.kt`):**\n   - `getCurrentHealth(): Float`\n   - `getMaxHealth(): Float`\n   - `setHealth(amount: Float)`\n   - `takeDamage(amount: Float, damageType: String?, instigator: SparkActor?)`\n   - `onHealed(amount: Float)`\n   - `onDied()` (事件或回调)\n3. **`AnimationComponent` 接口 (`AnimationComponent.kt`):**\n   - `playAnimation(animationName: String, loop: Boolean, speed: Float)`\n   - `stopAnimation(animationName: String)`\n   - `getCurrentAnimationState(layer: Int): String?`\n   - `setBlendSpaceValue(blendSpaceName: String, x: Float, y: Float)`\n4. **`SkillComponent` 接口 (`SkillComponent.kt`):**\n   - `activateSkill(skillId: String, target: SparkActor? = null)`\n   - `isSkillActive(skillId: String): Boolean`\n   - `getSkillCooldown(skillId: String): Float`\n   - `addSkill(skillDefinition: Any)`\n5. **`BlueprintComponent` 接口 (`BlueprintComponent.kt`):**\n   - `loadBlueprint(blueprintId: String)`\n   - `getLoadedBlueprintId(): String?`\n   - `setBlueprintVariable(variableName: String, value: Any?)`\n   - `getBlueprintVariable(variableName: String): Any?`\n   - `triggerBlueprintEvent(eventName: String, payload: Map<String, Any>?)`\n6. **文档化:** 在 `SparkActorAndComponentsSpec.md` 中为每个组件接口编写详细规格。",
-      "verificationCriteria": "ActorComponent基接口和Health, Animation, Skill, Blueprint等核心组件接口定义完成并详细文档化，明确了各组件的职责和API。"
-    },
-    {
-      "id": "370be0f1-69f7-415c-8826-1ff869abb28c",
-      "name": "1.4.3：设计组件与SparkActor的集成和生命周期管理",
-      "description": "明确组件如何注册到SparkActor，以及Actor如何管理其组件的生命周期（初始化、更新、销毁）。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "3f7ca73f-9cf6-4837-8e90-af3b42c77d07"
-        },
-        {
-          "taskId": "e5a2b373-ac1f-4dbd-ae13-ed884b69ae4c"
-        },
-        {
-          "taskId": "49c82103-21fa-47cc-ae42-6d8ff66a9ec1"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:16.283Z",
-      "updatedAt": "2025-05-13T10:10:16.283Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\SparkActor.kt",
-          "type": "TO_MODIFY",
-          "description": "在SparkActor中实现组件的注册、生命周期管理和事件分发逻辑。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\SparkActorAndComponentsSpec.md",
-          "type": "TO_MODIFY",
-          "description": "详细文档化组件与Actor的集成和生命周期管理。"
-        }
-      ],
-      "implementationGuide": "1. **注册机制:** `SparkActor.addComponent()` 应将组件实例存入其内部容器，并调用组件的 `onAdded()` 方法，传递自身引用。\n2. **生命周期同步:** \n   - `SparkActor.onUpdate()` 应遍历所有已注册组件并调用其 `onUpdate()` 方法。\n   - `SparkActor.onDestroyed()` 应遍历所有组件并调用其 `onRemoved()` 方法。\n3. **事件分发:** `SparkActor.handleEvent()` 可以将事件分发给所有注册的组件，让其自行决定是否处理 (`component.onEvent(event)`)。\n4. **依赖注入/查找:** 考虑组件之间如何安全地获取对其他组件的引用 (e.g., `owner.getComponent(OtherComponent::class)`)。\n5. **文档化:** 在 `SparkActorAndComponentsSpec.md` 中详细描述组件的集成和生命周期管理流程。",
-      "verificationCriteria": "组件与SparkActor的集成方式、生命周期管理（添加、移除、更新）和事件分发机制设计完成并文档化。"
-    },
-    {
-      "id": "a2259e5c-1014-4b76-ad03-486ac80aad26",
-      "name": "阶段二：蓝图运行时与JS集成 (父任务)",
-      "description": "设计和实现蓝图在JS端的运行时环境，包括基于XState的状态机执行模型、与Kotlin/JVM的桥接、以及核心节点的JS端逻辑。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "9c68dda0-6d19-4cfe-935e-9ce6ea37cefa"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:46.077Z",
-      "updatedAt": "2025-05-13T10:10:46.077Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintRuntimeSpec.md",
-          "type": "CREATE",
-          "description": "蓝图JS运行时设计与实现规范。"
-        }
-      ],
-      "implementationGuide": "此阶段专注于蓝图的实际执行逻辑，将设计阶段的定义转化为可运行的代码。",
-      "verificationCriteria": "JS端蓝图运行时核心功能完成，能够执行简单的蓝图，并能与Kotlin/JVM后端通信。"
-    },
-    {
-      "id": "c5dc573d-8166-4230-9184-534d39b3c0d9",
-      "name": "2.1：设计并实现JS端蓝图运行时核心 (基于XState) (父任务)",
-      "description": "使用XState库设计和实现JS端蓝图的运行时核心。这包括将蓝图图结构转换为XState状态机配置，管理执行上下文，以及处理节点间的执行流。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "a2259e5c-1014-4b76-ad03-486ac80aad26"
-        },
-        {
-          "taskId": "5df4e36f-2f2b-49f3-842e-21e32ef35bc2"
-        },
-        {
-          "taskId": "ed294e44-f7c8-4bc0-b488-cc37aa3f023f"
-        },
-        {
-          "taskId": "b3c955f6-ba3c-4154-8bb8-722cb3e46c4d"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:46.077Z",
-      "updatedAt": "2025-05-13T10:10:46.077Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\BlueprintInterpreter.js",
-          "type": "CREATE",
-          "description": "JS端蓝图解释器/运行时核心，基于XState。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintRuntimeSpec.md",
-          "type": "TO_MODIFY",
-          "description": "记录JS运行时核心的设计细节。"
-        }
-      ],
-      "implementationGuide": "包含多个子任务，分别负责状态机生成、上下文管理、节点执行器和事件处理。",
-      "verificationCriteria": "JS端蓝图运行时核心基于XState实现，能够将蓝图图转换为可执行的状态机，并处理基本的执行流程。"
-    },
-    {
-      "id": "92194627-30cf-4dbe-9dc7-24f24bd2ac1b",
-      "name": "2.1.1：设计蓝图图到XState状态机配置的转换逻辑",
-      "description": "定义如何将`BlueprintGraph`的节点和连接（特别是执行引脚之间的连接）转换为XState状态机的状态 (states) 和转移 (transitions)。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c5dc573d-8166-4230-9184-534d39b3c0d9"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:46.077Z",
-      "updatedAt": "2025-05-13T10:10:46.077Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\GraphToMachineConverter.js",
-          "type": "CREATE",
-          "description": "实现蓝图图到XState状态机配置的转换逻辑。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintRuntimeSpec.md",
-          "type": "TO_MODIFY",
-          "description": "详细文档化图到状态机的转换逻辑。"
-        }
-      ],
-      "implementationGuide": "1. **节点映射到状态:** 每个具有执行逻辑的蓝图节点（或节点的某个执行阶段）可以映射为一个XState状态。\n2. **执行连接映射到转移:** \n   - 节点A的OutputExecPin连接到节点B的InputExecPin，这可以转换为从节点A对应状态到节点B对应状态的一个XState转移。\n   - 条件分支节点 (like `Branch`) 的不同输出执行引脚，会根据条件产生不同的转移。\n   - 循环节点 (`ForLoop`, `WhileLoop`) 需要特殊的状态和转移设计来处理循环逻辑和完成后的退出。\n3. **事件节点作为初始状态或事件触发器:** 事件节点 (e.g., `OnTick`, `OnDamaged`) 可以是状态机的初始状态，或者其触发会发送一个XState事件来启动或改变状态机流程。\n4. **数据流处理:** 考虑在状态转移的action中处理数据引脚的输入输出和节点属性的读取。\n5. **实现:** 在 `BlueprintInterpreter.js` 或辅助模块中实现此转换逻辑函数 `convertGraphToMachineConfig(graphData): MachineConfig`。\n6. **文档化:** 在 `BlueprintRuntimeSpec.md` 中详细描述转换规则和示例。",
-      "verificationCriteria": "蓝图图到XState状态机配置的转换逻辑设计并实现，能够正确处理节点、执行连接、分支和简单循环，并文档化。"
-    },
-    {
-      "id": "f2b3c7cb-d3eb-4e1c-ae17-af2d8f3fd3bb",
-      "name": "2.1.2：实现XState运行时上下文管理 (变量、节点状态)",
-      "description": "设计和实现XState状态机的上下文 (`context`) 如何存储和管理蓝图的局部变量、当前正在执行的节点信息、以及节点执行所需的临时数据。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c5dc573d-8166-4230-9184-534d39b3c0d9"
-        },
-        {
-          "taskId": "cb5640e3-da1f-48d4-96e4-54003fb6b80e"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:46.077Z",
-      "updatedAt": "2025-05-13T10:10:46.077Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\BlueprintInterpreter.js",
-          "type": "TO_MODIFY",
-          "description": "在解释器中实现XState上下文的初始化和管理。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintRuntimeSpec.md",
-          "type": "TO_MODIFY",
-          "description": "文档化XState上下文结构和管理。"
-        }
-      ],
-      "implementationGuide": "1. **上下文结构:** XState的`context`对象将用于存储：\n   - `variables`: 一个对象，键是变量名，值是变量值 (针对蓝图局部变量)。\n   - `currentNodeId`: (可选) 当前激活或正在处理的节点ID。\n   - `nodeOutputs`: (可选) 一个对象，用于缓存节点执行后的输出数据引脚的值，供后续连接的节点读取。\n   - 其他执行状态所需数据。\n2. **初始化上下文:** 从蓝图定义的变量的默认值初始化`context.variables`。\n3. **更新上下文:** 节点执行时，通过XState的`assign` action来更新上下文中的变量值或节点输出。\n4. **访问上下文:** 节点执行逻辑从上下文中读取输入数据和变量。\n5. **实现:** 在 `BlueprintInterpreter.js` 中管理XState服务实例及其上下文。\n6. **文档化:** 在 `BlueprintRuntimeSpec.md` 中描述上下文的结构和管理方式。",
-      "verificationCriteria": "XState运行时上下文管理机制实现并文档化，能够正确存储和更新蓝图局部变量及节点执行状态。"
-    },
-    {
-      "id": "c0ccc678-7aaf-4332-9b2f-34494950f22b",
-      "name": "2.1.3：开发通用节点执行器和JS端核心节点逻辑",
-      "description": "开发一个通用的节点执行器，能够根据节点类型调用相应的JS实现逻辑。并为一些纯JS或流程控制节点 (如Sequence, Branch, GetVariable, SetVariable (Local)) 实现JS端逻辑。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c5dc573d-8166-4230-9184-534d39b3c0d9"
-        },
-        {
-          "taskId": "fbfe9254-df9a-48b0-af70-5ce363e0725f"
-        }
-      ],
-      "createdAt": "2025-05-13T10:10:46.077Z",
-      "updatedAt": "2025-05-13T10:10:46.077Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\NodeExecutor.js",
-          "type": "CREATE",
-          "description": "通用节点执行器和核心JS节点逻辑注册表。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\nodes\\SequenceNode.js",
-          "type": "CREATE",
-          "description": "Sequence节点的JS实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\nodes\\BranchNode.js",
-          "type": "CREATE",
-          "description": "Branch节点的JS实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\nodes\\VariableNodes.js",
-          "type": "CREATE",
-          "description": "Get/Set LocalVariable节点的JS实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintRuntimeSpec.md",
-          "type": "TO_MODIFY",
-          "description": "文档化节点执行器和JS核心节点实现。"
-        }
-      ],
-      "implementationGuide": "1. **节点执行器 (`NodeExecutor.js`):**\n   - 一个注册表 `nodeExecutorsMap`，映射节点类型 (`nodeType`) 到其JS执行函数。\n   - `executeNode(node, context, sendEventToMachine)` 函数，查找并调用对应节点的执行函数。\n   - 执行函数接收节点数据、当前XState上下文、以及一个用于向状态机发送事件的函数作为参数。\n   - 执行函数返回Promise或直接更新上下文，并/或发送完成事件给状态机以触发下一个转移。\n2. **JS端核心节点实现:** \n   - `SequenceNode.js`: 依次触发其输出执行引脚对应的XState事件。\n   - `BranchNode.js`: 根据条件输入数据引脚的值，触发True或False输出执行引脚对应的XState事件。\n   - `GetLocalVariableNode.js`: 从XState上下文中读取变量值并设置到输出数据引脚。\n   - `SetLocalVariableNode.js`: 将输入数据引脚的值更新到XState上下文中的变量。\n   - 其他纯JS数学/逻辑运算节点。\n3. **集成:** XState状态机的`actions`或`invoke`服务将使用此节点执行器。\n4. **文档化:** 在 `BlueprintRuntimeSpec.md` 中记录通用节点执行器设计和核心JS节点的实现思路。",
-      "verificationCriteria": "通用节点执行器和部分核心JS节点（Sequence, Branch, Local Variables）实现并文档化，能够被XState状态机调用执行。"
-    },
-    {
-      "id": "9866d70d-90c5-4563-ac1c-576feb482c9c",
-      "name": "2.2：设计并实现JS与Kotlin/JVM的直接调用桥接及通用事件机制 (父任务)",
-      "description": "基于类似JSSkill的Mixin和直接调用机制，以及一个通用的事件总线，设计并实现JS蓝图运行时调用Kotlin/JVM节点逻辑的接口，以及Kotlin/JVM向JS运行时推送游戏事件的回调机制。这取代了原先基于WebSocket的桥接方式。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "a2259e5c-1014-4b76-ad03-486ac80aad26"
-        },
-        {
-          "taskId": "09952481-9dd8-40bf-807f-d8ecd2877c7f"
-        }
-      ],
-      "createdAt": "2025-05-13T10:11:09.737Z",
-      "updatedAt": "2025-05-13T11:53:05.796Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\comm\\JvmBridge.js",
-          "type": "CREATE",
-          "description": "JS端实现与Kotlin/JVM的通信桥接。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\ws\\BlueprintRuntimeSocketService.kt",
-          "type": "CREATE",
-          "description": "Kotlin后端处理来自JS运行时节点调用请求的服务。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintRuntimeSpec.md",
-          "type": "TO_MODIFY",
-          "description": "记录JS-Kotlin桥接机制的设计。"
-        }
-      ],
-      "implementationGuide": "将基于1.3中设计的WebSocket通信机制，专注于运行时节点调用和事件传递的特定消息格式和处理流程。",
-      "verificationCriteria": "JS与Kotlin/JVM的桥接机制实现，JS运行时能异步调用JVM节点逻辑并接收响应，JVM能向特定蓝图实例推送事件。",
-      "notes": "此任务转向同进程内的直接API调用，并引入通用事件总线以替代WebSocket的事件推送。"
-    },
-    {
-      "id": "c1e843b6-2395-4e1e-8288-76814e80e197",
-      "name": "2.3：实现Kotlin/JVM端的核心节点逻辑 (父任务)",
-      "description": "根据1.1.6中设计的节点清单和接口，在Kotlin/JVM端实现核心节点的具体执行逻辑。这些节点将通过2.2中设计的桥接机制被JS运行时调用。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "a2259e5c-1014-4b76-ad03-486ac80aad26"
-        },
-        {
-          "taskId": "fbfe9254-df9a-48b0-af70-5ce363e0725f"
-        },
-        {
-          "taskId": "2114acbf-5398-4b1d-ae98-83540e556a54"
-        },
-        {
-          "taskId": "9866d70d-90c5-4563-ac1c-576feb482c9c"
-        }
-      ],
-      "createdAt": "2025-05-13T10:11:39.814Z",
-      "updatedAt": "2025-05-13T10:11:39.814Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\nodes_jvm",
-          "type": "CREATE",
-          "description": "存放Kotlin/JVM节点实现的目录。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintNodeImplementationSpec.md",
-          "type": "TO_MODIFY",
-          "description": "更新节点实现细节，链接到具体实现代码。"
-        }
-      ],
-      "implementationGuide": "为每个需要JVM实现的节点创建一个Kotlin类或方法，并确保其能通过节点元数据被发现和调用。",
-      "verificationCriteria": "大部分核心的JVM节点逻辑实现完成，并通过单元测试。能够被JS运行时通过桥接成功调用并返回正确结果。"
-    },
-    {
-      "id": "ec197cde-8f0c-4e77-9033-b9dcd35c8333",
-      "name": "2.3.1：实现事件节点 (Events) 的Kotlin端逻辑",
-      "description": "实现例如 `OnEntityDamaged`, `OnBlockInteracted` 等事件节点的Kotlin端逻辑，负责监听真实的游戏事件，并通过桥接机制触发JS端蓝图中的对应事件节点。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c1e843b6-2395-4e1e-8288-76814e80e197"
-        }
-      ],
-      "createdAt": "2025-05-13T10:11:39.814Z",
-      "updatedAt": "2025-05-13T10:11:39.814Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\nodes_jvm\\events",
-          "type": "CREATE",
-          "description": "存放事件相关节点的Kotlin实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\event\\handler\\BlueprintEventHandler.kt",
-          "type": "CREATE",
-          "description": "处理游戏事件并转发给蓝图系统的处理器。"
-        }
-      ],
-      "implementationGuide": "1. **事件监听器:** 在Kotlin中创建相应的事件监听器 (e.g., Bukkit/Forge/Fabric事件监听器，或SparkCore内部事件总线监听器)。\n2. **事件数据提取:** 从原始游戏事件中提取所需数据 (e.g., 伤害值, 攻击者, 被交互的方块坐标)。\n3. **蓝图实例查找:** 确定哪些活动的蓝图实例注册了对此事件的监听 (可能通过 `BlueprintComponent` 或全局管理器)。\n4. **触发JS端:** 使用 `2.2.2` 中定义的机制，向对应的JS蓝图实例推送事件 (包含事件名和数据)。\n5. **节点元数据:** 确保这些事件节点的 `NodeDefinition` 正确描述了其输出数据引脚 (对应事件数据)。\n6. **示例节点:** `OnEntityDamagedNode.kt`, `OnPlayerTickNode.kt`, `OnMinecraftEventNode.kt` (通用MC事件订阅)。\n7. **文档化:** 在 `BlueprintNodeImplementationSpec.md` 中记录每个JVM事件节点的实现要点。",
-      "verificationCriteria": "核心事件节点的Kotlin端逻辑实现完成，能够正确监听游戏事件并将事件数据推送给JS蓝图运行时。"
-    },
-    {
-      "id": "a71d3a39-ee54-4218-8b4e-7fc47892917a",
-      "name": "2.3.2：实现Actor/实体操作节点的Kotlin端逻辑",
-      "description": "实现例如 `GetActorLocation`, `SetActorLocation`, `SpawnActorFromBlueprint`, `ApplyDamageToActor` 等与`SparkActor`交互的节点的Kotlin端逻辑。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c1e843b6-2395-4e1e-8288-76814e80e197"
-        },
-        {
-          "taskId": "3f7ca73f-9cf6-4837-8e90-af3b42c77d07"
-        }
-      ],
-      "createdAt": "2025-05-13T10:11:39.814Z",
-      "updatedAt": "2025-05-13T10:11:39.814Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\nodes_jvm\\actor",
-          "type": "CREATE",
-          "description": "存放Actor/实体操作相关节点的Kotlin实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\SparkActor.kt",
-          "type": "REFERENCE",
-          "description": "参考SparkActor及其组件的API。"
-        }
-      ],
-      "implementationGuide": "1. **依赖SparkActor:** 这些节点的实现将直接调用`SparkActor`实例 (或其组件) 的方法。\n2. **输入/输出:** \n   - 输入参数通常包括目标Actor的ID (或通过上下文获取当前Actor)，以及操作所需的其他参数 (e.g., 新位置, 伤害值)。\n   - 输出结果可能是操作成功与否，或获取到的数据 (e.g., Actor位置)。\n3. **实现方式:** \n   - `GetActorLocationNode.kt`: 输入ActorID, 输出Vector3f。\n   - `SetActorLocationNode.kt`: 输入ActorID, Vector3f。\n   - `ApplyDamageToActorNode.kt`: 输入TargetActorID, AttackerActorID, DamageAmount, DamageType。调用目标Actor的`HealthComponent.takeDamage()`。\n   - `SpawnActorFromBlueprintNode.kt`: 输入BlueprintIDToSpawn, SpawnTransform。需要与Actor管理器和蓝图系统交互。\n4. **节点元数据:** 确保`NodeDefinition`准确描述了这些节点的输入输出数据引脚。\n5. **错误处理:** 处理Actor不存在、组件缺失等情况。\n6. **文档化:** 在 `BlueprintNodeImplementationSpec.md` 中记录Actor操作节点的实现细节。",
-      "verificationCriteria": "核心Actor/实体操作节点的Kotlin端逻辑实现完成，能正确与SparkActor及其组件交互，并处理常见错误情况。"
-    },
-    {
-      "id": "e7cd5909-f588-4c7f-abf5-ee0a483e435e",
-      "name": "2.3.3：实现变量操作 (Actor/Global Scope) 节点的Kotlin端逻辑",
-      "description": "实现 `GetVariable` 和 `SetVariable` 节点针对 `Actor` 和 `Global` 作用域的Kotlin端逻辑。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c1e843b6-2395-4e1e-8288-76814e80e197"
-        },
-        {
-          "taskId": "56351579-14df-4b17-9783-ddd3a45a8599"
-        }
-      ],
-      "createdAt": "2025-05-13T10:11:39.814Z",
-      "updatedAt": "2025-05-13T10:11:39.814Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\nodes_jvm\\variables",
-          "type": "CREATE",
-          "description": "存放Actor/Global变量操作节点的Kotlin实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\actor\\SparkActor.kt",
-          "type": "REFERENCE",
-          "description": "参考SparkActor.get/setVariable API。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\global\\GlobalVariableManager.kt",
-          "type": "REFERENCE",
-          "description": "参考GlobalVariableManager API。"
-        }
-      ],
-      "implementationGuide": "1. **Actor Scope:** \n   - `GetActorVariableNode.kt`: 输入ActorID (或上下文获取), VariableName。调用 `SparkActor.getVariable(variableName)`。\n   - `SetActorVariableNode.kt`: 输入ActorID (或上下文获取), VariableName, Value。调用 `SparkActor.setVariable(variableName, value)`。\n2. **Global Scope:** \n   - `GetGlobalVariableNode.kt`: 输入VariableName。调用 `GlobalVariableManager.get(variableName)`。\n   - `SetGlobalVariableNode.kt`: 输入VariableName, Value。调用 `GlobalVariableManager.set(variableName, value)`。\n3. **类型处理:** 需要考虑变量的类型安全和可能的类型转换。\n4. **错误处理:** 变量不存在、Actor不存在等。\n5. **文档化:** 在 `BlueprintNodeImplementationSpec.md` 中记录变量操作节点的实现。",
-      "verificationCriteria": "Actor和Global作用域的Get/SetVariable节点Kotlin端逻辑实现完成，能正确读写对应作用域的变量。"
-    },
-    {
-      "id": "f925b7cd-bfb1-40cc-939a-612465ad4738",
-      "name": "2.3.4：实现其他需要Kotlin/JVM支持的节点 (如数学运算、函数调用等)",
-      "description": "根据1.1.6的节点清单，实现那些虽然简单但因性能、API访问或统一管理需求而需在Kotlin/JVM中实现的节点，例如部分数学运算、字符串操作、调用已注册的Kotlin主机函数等。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c1e843b6-2395-4e1e-8288-76814e80e197"
-        },
-        {
-          "taskId": "fbfe9254-df9a-48b0-af70-5ce363e0725f"
-        }
-      ],
-      "createdAt": "2025-05-13T10:11:39.814Z",
-      "updatedAt": "2025-05-13T10:11:39.814Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\nodes_jvm\\utils",
-          "type": "CREATE",
-          "description": "存放通用工具类节点的Kotlin实现 (数学，字符串等)。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\nodes_jvm\\functions",
-          "type": "CREATE",
-          "description": "存放调用Kotlin主机函数相关节点的实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\host_functions\\HostFunctionRegistry.kt",
-          "type": "CREATE",
-          "description": "Kotlin主机函数注册表。"
-        }
-      ],
-      "implementationGuide": "1. **`CallKotlinFunctionNode.kt`:** \n   - 输入FunctionName, Parameters。需要一个Kotlin函数注册表，通过反射或预定义接口调用目标函数。\n2. **数学/逻辑节点 (如果决定在JVM实现):** \n   - 例如 `VectorMathNode.kt` (向量加减乘除)。虽然JS也能做，但若涉及与游戏引擎向量类型交互，JVM更方便。\n3. **调试节点:** \n   - `PrintStringToConsoleNode.kt` (Kotlin端实现打印到服务器控制台)。\n4. **逐个实现:** 根据节点清单和优先级，逐步实现这些支持性节点。\n5. **文档化:** 在 `BlueprintNodeImplementationSpec.md` 中记录这些节点的实现。",
-      "verificationCriteria": "选定的其他核心Kotlin/JVM节点实现完成，并通过测试。"
-    },
-    {
-      "id": "c31d0ee8-15c3-4769-8310-86ee921f50fa",
-      "name": "2.2.1-new：实现通用事件总线 (UniversalEventManager) - JVM端",
-      "description": "实现Kotlin/JVM端的 UniversalEventManager。它内部维护事件类型到订阅者列表的映射 (e.g., Map<String, List<JsCallbackReference>>)，并提供 postEvent(eventName: String, eventData: Map<String, Any?>) API供JVM内部发布事件，以及 subscribe(eventName: String, jsCallback: Function) 和 unsubscribe(eventName: String, jsCallback: Function) API供JS端通过桥接调用。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "9866d70d-90c5-4563-ac1c-576feb482c9c"
-        }
-      ],
-      "createdAt": "2025-05-13T11:54:29.863Z",
-      "updatedAt": "2025-05-13T11:54:29.863Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\event\\UniversalEventManager.kt",
-          "type": "CREATE",
-          "description": "通用事件总线的Kotlin实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\bridge\\JsEventBridge.kt",
-          "type": "CREATE",
-          "description": "处理JS到JVM事件订阅调用的桥接部分。"
-        }
-      ],
-      "implementationGuide": "定义 JsCallbackReference 来安全地存储和调用JS函数引用。需要考虑线程安全。创建相关Kotlin文件，如 cn.solarmoon.spark_core.event.UniversalEventManager.kt 和 cn.solarmoon.spark_core.bridge.JsEventBridge.kt (用于处理JS调用部分)。",
-      "verificationCriteria": "UniversalEventManager 能够成功注册、注销JS回调，并能接收JVM内部发布的事件。"
-    },
-    {
-      "id": "a235ba55-53ca-4cb1-99d5-af2967722ed2",
-      "name": "2.2.2-new：实现JS API用于事件订阅 (JS Bridge)",
-      "description": "在Kotlin端为UniversalEventManager的方法 (subscribe, unsubscribe) 创建JS可访问的API，例如封装为 spark.events.subscribe 和 spark.events.unsubscribe。确保JS函数对象能被正确传递到Kotlin并被UniversalEventManager存储。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c31d0ee8-15c3-4769-8310-86ee921f50fa"
-        }
-      ],
-      "createdAt": "2025-05-13T11:54:29.863Z",
-      "updatedAt": "2025-05-13T11:54:29.863Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\bridge\\JsEventBridge.kt",
-          "type": "TO_MODIFY",
-          "description": "添加具体的JS可调用API实现。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_runtime\\api\\SparkEvents.js",
-          "type": "CREATE",
-          "description": "JS端用于调用 spark.events.subscribe/unsubscribe 的API封装文件。"
-        }
-      ],
-      "implementationGuide": "在 JsEventBridge.kt 中实现具体的桥接方法，暴露给JS环境。处理JS Function对象到JsCallbackReference的转换和管理。确保数据类型在JS和JVM间的正确传递。",
-      "verificationCriteria": "JS端能够通过 spark.events.subscribe 成功订阅JVM事件，并通过 spark.events.unsubscribe 取消订阅。"
-    },
-    {
-      "id": "dd5add13-48b9-4cd3-ba61-0ad49c0b495b",
-      "name": "2.2.3-new：实现事件分发与JS回调执行机制 (JVM -> JS)",
-      "description": "当JVM调用UniversalEventManager.postEvent时，实现将事件数据从Kotlin Map转换为JS对象，并传递给所有匹配的JS回调函数并执行它们的逻辑。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "c31d0ee8-15c3-4769-8310-86ee921f50fa"
-        },
-        {
-          "taskId": "a235ba55-53ca-4cb1-99d5-af2967722ed2"
-        }
-      ],
-      "createdAt": "2025-05-13T11:54:29.863Z",
-      "updatedAt": "2025-05-13T11:54:29.863Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\event\\UniversalEventManager.kt",
-          "type": "TO_MODIFY",
-          "description": "实现事件分发和JS回调执行逻辑。"
-        }
-      ],
-      "implementationGuide": "在UniversalEventManager.kt的postEvent方法中实现分发逻辑。重点关注使用Rhino的Function.call机制安全地调用JS函数。实现Kotlin Map到JS对象的自动或手动转换。确保错误处理和日志记录，例如JS回调执行异常。",
-      "verificationCriteria": "当JVM发布事件时，所有正确订阅该事件的JS回调函数都能被正确触发，并接收到正确的事件数据（已转换为JS对象）。"
-    },
-    {
-      "id": "b44847a6-670c-46b7-9a82-7373d4e3808c",
-      "name": "1.3-alt：设计蓝图编辑器与后端(JVM)的直接调用交互机制 (父任务)",
-      "description": "设计蓝图JS编辑器（假定运行在嵌入式JS环境中）与Kotlin/JVM后端之间的直接调用接口。JS编辑器通过调用暴露的JVM方法获取节点库、保存/加载蓝图等；JVM后端通过调用JS中注册的回调函数或通过通用事件总线向编辑器推送更新或事件。此任务替代了原先基于WebSocket的交互设计。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "9c68dda0-6d19-4cfe-935e-9ce6ea37cefa"
-        }
-      ],
-      "createdAt": "2025-05-13T11:55:02.241Z",
-      "updatedAt": "2025-05-13T11:55:02.241Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintEditorJVMApiSpec.md",
-          "type": "CREATE",
-          "description": "详细描述JS编辑器与JVM后端直接调用的API规范。"
-        }
-      ],
-      "implementationGuide": "定义清晰的Java/Kotlin接口供JS调用，并规划JS端需要实现的回调接口。明确数据传输格式和错误处理机制。",
-      "verificationCriteria": "蓝图编辑器与JVM后端直接调用的API设计完成并文档化。能够支持核心的编辑器功能，如节点加载、蓝图保存/加载。"
-    },
-    {
-      "id": "777995cc-eb07-42bd-bbee-9caea43be43b",
-      "name": "1.3.1-alt：定义Java/Kotlin后端API供JS编辑器调用",
-      "description": "设计并文档化供JS蓝图编辑器直接调用的Java/Kotlin API。这些API将通过JVM内置的JS引擎桥接机制暴露给JS环境，用于获取节点库定义、保存和加载蓝图图数据、获取全局变量列表等。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "b44847a6-670c-46b7-9a82-7373d4e3808c"
-        }
-      ],
-      "createdAt": "2025-05-13T11:55:26.081Z",
-      "updatedAt": "2025-05-13T11:55:26.081Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\kotlin\\cn\\solarmoon\\spark_core\\blueprint\\editor\\api\\EditorApiBridge.kt",
-          "type": "CREATE",
-          "description": "实现JS编辑器可调用的后端API桥接。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintEditorJVMApiSpec.md",
-          "type": "TO_MODIFY",
-          "description": "在API规范中添加此部分API的详细定义。"
-        }
-      ],
-      "implementationGuide": "创建Kotlin接口或类，并使用适当的注解或机制（如Rhino的 ScriptableObject）将其暴露给JS。API应清晰、参数和返回值类型明确。考虑安全性，避免暴露过多内部实现。",
-      "verificationCriteria": "后端API设计完成，包含获取节点库、保存/加载蓝图的核心功能，并在API规范文档中详细记录。"
-    },
-    {
-      "id": "870197ab-6c1d-4f78-9c5f-41b60a1967cb",
-      "name": "1.3.2-alt：定义JS端回调函数接口供Kotlin/JVM后端调用 (via UniversalEventManager)",
-      "description": "设计JS蓝图编辑器中需要定义的JavaScript函数接口，供Kotlin/JVM后端在特定事件发生时（如蓝图在服务器端被其他系统修改、调试事件触发、项目配置变更等）通过 UniversalEventManager 推送并回调。编辑器JS端订阅这些事件。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "b44847a6-670c-46b7-9a82-7373d4e3808c"
-        },
-        {
-          "taskId": "c31d0ee8-15c3-4769-8310-86ee921f50fa"
-        }
-      ],
-      "createdAt": "2025-05-13T11:55:26.081Z",
-      "updatedAt": "2025-05-13T11:55:26.081Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_editor\\EditorEventHandlers.js",
-          "type": "CREATE",
-          "description": "JS端实现处理来自JVM事件的回调函数。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintEditorJVMApiSpec.md",
-          "type": "TO_MODIFY",
-          "description": "记录编辑器需要监听的JVM事件类型和数据格式。"
-        }
-      ],
-      "implementationGuide": "明确编辑器需要响应哪些来自JVM的事件。JS端使用 spark.events.subscribe (在任务2.2.2-new中定义) 订阅这些事件。定义清晰的事件数据结构。",
-      "verificationCriteria": "JS端回调接口设计完成，能够通过UniversalEventManager接收并处理来自JVM的事件，并在API规范文档中记录。"
-    },
-    {
-      "id": "b597a711-bc18-4ea6-9c0b-8b59b3fa2c5e",
-      "name": "1.3.3-alt：设计并实现蓝图编辑器上下文的 JVM-JS 数据同步机制",
-      "description": "详细设计蓝图编辑器在JS环境中的状态（例如当前打开的蓝图、编辑器配置、UI状态等）如何与JVM后端进行高效、一致的数据同步。主要通过JS调用JVM API获取数据，以及JVM通过事件推送更新。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "b44847a6-670c-46b7-9a82-7373d4e3808c"
-        },
-        {
-          "taskId": "777995cc-eb07-42bd-bbee-9caea43be43b"
-        },
-        {
-          "taskId": "870197ab-6c1d-4f78-9c5f-41b60a1967cb"
-        }
-      ],
-      "createdAt": "2025-05-13T11:55:26.081Z",
-      "updatedAt": "2025-05-13T11:55:26.081Z",
-      "relatedFiles": [
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\src\\main\\resources\\assets\\spark_core\\js\\blueprint_editor\\EditorContextManager.js",
-          "type": "CREATE",
-          "description": "JS端管理编辑器上下文并与JVM同步的逻辑。"
-        },
-        {
-          "path": "F:\\Work\\code\\test\\Spark-Core\\doc\\design\\BlueprintEditorDataSync.md",
-          "type": "CREATE",
-          "description": "详细描述编辑器与JVM数据同步的机制和流程。"
-        }
-      ],
-      "implementationGuide": "确定哪些编辑器状态需要在JVM和JS之间同步。利用1.3.1-alt定义的API进行拉取，利用1.3.2-alt的事件机制进行推送。考虑数据一致性和同步频率。",
-      "verificationCriteria": "数据同步机制设计完成并文档化，能够确保编辑器JS上下文与JVM后端状态的按需一致性。"
+      "implementationGuide": "pseudocode: markdown sections: 原理, API, 用例, 常见问题.",
+      "verificationCriteria": "文档完整并准确描述 API; 与实现一致; 由审阅人员确认.",
+      "analysisResult": "通过实现DynamicAwareRegistry包装NeoForge静态Registry并维护动态ConcurrentHashMap，实现Spark-Core动画/模型在运行时动态注册；修改自有RegistryBuilder返回DynamicAwareRegistry以兼容DeferredRegister；更新SparkRegistries与ObjectRegister以沿用现有静态流程；扩展TypedAnimationBuilder支持仅构造对象；实现服务端→客户端网络同步动态条目；提供线程安全(ID自增、ReadWriteLock)、异常与日志支持；补充单元/并发/集成测试及文档。"
     }
   ]
 }

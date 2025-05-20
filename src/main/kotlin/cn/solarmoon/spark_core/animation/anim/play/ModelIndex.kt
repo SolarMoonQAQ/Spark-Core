@@ -137,7 +137,7 @@ class ModelIndex (
 
         @JvmStatic
         fun of(type: EntityType<*>): ModelIndex {
-            val key = BuiltInRegistries.ENTITY_TYPE.getKey(type) ?: return EMPTY // 处理注册表键可能为空的情况
+            val key = BuiltInRegistries.ENTITY_TYPE.getKey(type) // 处理注册表键可能为空的情况
             val texture = ResourceLocation.fromNamespaceAndPath(key.namespace, "textures/entity/${key.path}.png")
             val ikPath = getDefaultIkPath(key) // 尝试获取默认 IK 路径
             return ModelIndex(key, key, texture, ikPath)

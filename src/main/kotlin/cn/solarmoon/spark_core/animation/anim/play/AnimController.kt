@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
+import net.minecraft.world.entity.Entity
 
 class AnimController(
     val animatable: IAnimatable<*>
@@ -31,7 +32,7 @@ class AnimController(
             if (valid.isNotEmpty()) {
                 anim.isCancelled = false
                 anim.cancel()
-                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：$valid")
+                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：$valid,UUID为 ${(animatable.animatable as Entity).stringUUID}, 名称为 ${(animatable.animatable as Entity).name} 的entity的动画 ${anim.name} 无法播放")
                 return
             }
         }
@@ -139,6 +140,7 @@ class AnimController(
         }
     }
 
+    // java访问兼容方法
     fun setAnimation(animationName: String, transTime: Int) {
         setAnimation(animationName, transTime) {}
     }

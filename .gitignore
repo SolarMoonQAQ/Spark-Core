@@ -45,7 +45,7 @@ webdisplays
 .cursorignore
 .trae
 .vscode
-/CustomNPCs-Unofficial/
+/plan/
 
 # Added by Claude Task Master
 # Logs
@@ -67,3 +67,4 @@ node_modules/
 *.sw?
 # OS specific
 .DS_Store!/plan/
+/.lingma/

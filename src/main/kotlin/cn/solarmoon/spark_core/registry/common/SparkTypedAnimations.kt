@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.EntityType
-import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
 
@@ -53,6 +52,12 @@ object SparkTypedAnimations {
     fun createStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
         .id(name)
         .animIndex(AnimIndex(index, "EntityState/$name"))
+        .provider(provider)
+        .build()
+
+    fun createCommonAnim(animationId: String, animIndex: AnimIndex, provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
+        .id(animationId)
+        .animIndex(animIndex)
         .provider(provider)
         .build()
 

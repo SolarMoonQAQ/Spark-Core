@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core;
 
 import cn.solarmoon.spark_core.config.SparkConfig;
 import cn.solarmoon.spark_core.js.JSHelperKt;
-import cn.solarmoon.spark_core.js.SparkJS;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 //import cn.solarmoon.spark_core.physics.sync.PhysicsSyncConfigKt;
@@ -12,18 +11,14 @@ import cn.solarmoon.spark_core.registry.common.SparkRegistries;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
 import cn.solarmoon.spark_core.registry.common.*;
+import cn.solarmoon.spark_core.registry.common.SparkNetworkRegister;
 import cn.solarmoon.spark_core.rpc.WebSocketRpcServer;
 // import net.minecraft.core.registries.Registries; // No longer needed here
-import com.cinemamod.mcef.MCEF;
-import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
 // import net.neoforged.bus.api.SubscribeEvent; // No longer needed here
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.registries.RegisterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 @Mod(SparkCore.MOD_ID)
@@ -54,6 +49,7 @@ public class SparkCore {
         SparkAttachments.register();
         SparkCommonEventRegister.register();
         SparkPayloadRegister.register(modEventBus);
+        SparkNetworkRegister.register(modEventBus); // 注册动态注册表网络同步
         SparkDataRegister.register();
         SparkTypedAnimations.register();
         SparkDataComponents.register();

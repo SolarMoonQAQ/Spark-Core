@@ -10,10 +10,10 @@ import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import noppes.npcs.entity.EntityCustomNpc;
+import noppes.npcs.entity.EntityNPCFlying;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,81 +24,74 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mixin(value = EntityCustomNpc.class, priority = 990)
-public abstract class EntityCustomNpcMixin extends PathfinderMob implements IEntityAnimatable<EntityCustomNpc> {
+@Mixin(value = EntityCustomNpc.class)
+public abstract class EntityCustomNpcMixin extends EntityNPCFlying implements IEntityAnimatable<EntityCustomNpc> {
 
-    private final EntityCustomNpc npcInterface = (EntityCustomNpc) (Object) this;
-    private final AnimController sparkController = new AnimController(this);
-    private final BoneGroup sparkBoneGroup = new BoneGroup(this);
-    private final IKManager sparkIkManager = new IKManager(this); // 'this' refers to IEntityAnimatable
-    private final Map<String, Vec3> sparkIkTargetPositions = new ConcurrentHashMap<>();
-    private final Map<String, FabrikChain3D> sparkIkChains = new ConcurrentHashMap<>();
-    private final ITempVariableStorage sparkTempStorage = new VariableStorage();
-    private final IScopedVariableStorage sparkScopedStorage = new VariableStorage();
-    private final IForeignVariableStorage sparkForeignStorage = new VariableStorage();
+    private final EntityCustomNpc npc = (EntityCustomNpc) (Object) this;
+    private final AnimController animController = new AnimController(this);
+    private final BoneGroup boneGroup = new BoneGroup(this);
+    private final IKManager ikManager = new IKManager(this); // 'this' refers to IEntityAnimatable
+    private final Map<String, Vec3> ikTargetPositions = new ConcurrentHashMap<>();
+    private final Map<String, FabrikChain3D> ikChains = new ConcurrentHashMap<>();
+    private final ITempVariableStorage tempStorage = new VariableStorage();
+    private final IScopedVariableStorage scopedStorage = new VariableStorage();
+    private final IForeignVariableStorage foreignStorage = new VariableStorage();
 
-    protected EntityCustomNpcMixin(EntityType<? extends PathfinderMob> entityType, Level level) {
+    protected EntityCustomNpcMixin(EntityType<? extends EntityNPCFlying> entityType, Level level) {
         super(entityType, level);
-    }
-
-    // Constructor injection can remain for any other setup or to ensure base class is fully constructed.
-    @Inject(method = "<init>(Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/world/level/Level;)V", at = @At("RETURN"))
-    private void sparkCore$constructorInit(EntityType<?> entityType, Level level, CallbackInfo ci) {
-        // Fields are now initialized directly in their declarations as per ZombieMixin pattern.
-        // This injection point can be used for other post-construction logic if needed.
     }
 
     @Override
     public EntityCustomNpc getAnimatable() {
-        return this.npcInterface;
+        return this.npc;
     }
 
     @NotNull
     @Override
     public AnimController getAnimController() {
-        return this.sparkController;
+        return this.animController;
     }
 
     @NotNull
     @Override
     public BoneGroup getBones() {
-        return this.sparkBoneGroup;
+        return this.boneGroup;
     }
 
     @NotNull
     @Override
     public IKManager getIkManager() {
-        return this.sparkIkManager;
+        return this.ikManager;
     }
 
     @NotNull
     @Override
     public Map<String, Vec3> getIkTargetPositions() {
-        return this.sparkIkTargetPositions;
+        return this.ikTargetPositions;
     }
 
     @NotNull
     @Override
     public Map<String, FabrikChain3D> getIkChains() {
-        return this.sparkIkChains;
+        return this.ikChains;
     }
 
     @NotNull
     @Override
     public ITempVariableStorage getTempStorage() {
-        return this.sparkTempStorage;
+        return this.tempStorage;
     }
 
     @NotNull
     @Override
     public IScopedVariableStorage getScopedStorage() {
-        return this.sparkScopedStorage;
+        return this.scopedStorage;
     }
 
     @NotNull
     @Override
     public IForeignVariableStorage getForeignStorage() {
-        return this.sparkForeignStorage;
+        return this.foreignStorage;
     }
 
     @Nullable
