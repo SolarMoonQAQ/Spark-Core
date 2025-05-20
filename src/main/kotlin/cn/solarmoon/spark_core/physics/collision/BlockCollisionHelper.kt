@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.physics.collision
 
+import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.util.BlockFrictionUtil
+import cn.solarmoon.spark_core.physics.level.ServerPhysicsLevel
+import cn.solarmoon.spark_core.util.BlockCollisionUtil
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
@@ -23,6 +25,7 @@ import kotlin.math.floor
 
 object BlockCollisionHelper {
     private val SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
+    private val SERVER_SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
     private val DEFAULT_SHAPE = BoxCollisionShape(0.5f)
 
     private fun generateShapeCache(blockState: BlockState): CollisionShape {
@@ -33,10 +36,15 @@ object BlockCollisionHelper {
     }
 
     // 直接通过BlockState获取缓存的CollisionShape
-    fun getCollisionShape(state: BlockState): CollisionShape {
-        return SHAPE_CACHE.computeIfAbsent(state) {
-            generateShapeCache(it)
-        }
+    fun getCollisionShape(state: BlockState, physicsLevel: PhysicsLevel): CollisionShape {
+        if (physicsLevel is ServerPhysicsLevel)
+            return SERVER_SHAPE_CACHE.computeIfAbsent(state) {
+                generateShapeCache(it)
+            }
+        else
+            return SHAPE_CACHE.computeIfAbsent(state) {
+                generateShapeCache(it)
+            }
     }
 
     private fun convertVoxelToCollisionShape(voxel: VoxelShape): CollisionShape {
@@ -68,7 +76,7 @@ object BlockCollisionHelper {
     }
 
     fun addNearbyTerrainBlocksToWorld(pco: PhysicsCollisionObject, physicsLevel: PhysicsLevel) {
-        val boundingBox = pco.boundingBox(null)
+        val boundingBox = pco.cachedBoundingBox
         val min = boundingBox.getMin(null)
         val max = boundingBox.getMax(null)
         val blocks = HashSet<BlockPos>()
@@ -112,8 +120,14 @@ object BlockCollisionHelper {
                         ) { blockBody?.setUserIndex(0) }
                     } else {//重置销毁倒计时 Reset the destruction count
                         //更新方块打滑属性(默认取决于方块类型，上方方块，和天气)
-                        if (Math.random()>0.95)
-                            blockBody?.setUserIndex2(BlockFrictionUtil.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos))
+                        if (Math.random() > 0.95)
+                            blockBody?.setUserIndex2(
+                                BlockCollisionUtil.getSlip(
+                                    physicsLevel.terrainChunks[chunkPos],
+                                    blockState,
+                                    blockPos
+                                )
+                            )
                         physicsLevel.submitDeduplicatedTask(
                             blockPos.toString(),
                             PPhase.PRE
@@ -128,13 +142,14 @@ object BlockCollisionHelper {
                             blockPos
                         ).isEmpty
                     ) {
-                        val slip = BlockFrictionUtil.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos)
+                        val slip =
+                            BlockCollisionUtil.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos)
                         // 如果块不是空气或可替换方块，记录方块的状态和坐标 Record the block state and coordinates
                         physicsLevel.submitDeduplicatedTask(blockPos.toString(), PPhase.PRE) {
                             val blockBody =
                                 PhysicsRigidBody(
                                     physicsLevel.mcLevel,
-                                    blockState.getBulletCollisionShape(),
+                                    blockState.getBulletCollisionShape(physicsLevel),
                                     blockPos
                                 )
                             blockBody.setUserIndex(40) //设定销毁倒计时(2秒，40主线程tick) Set the destruction count (2 seconds, 40 main thread ticks)
@@ -146,12 +161,19 @@ object BlockCollisionHelper {
                                 )
                             )
                             blockBody.userObject = blockState
-                            blockBody.friction = BlockFrictionUtil.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
+                            blockBody.friction =
+                                BlockCollisionUtil.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
+                            blockBody.restitution = BlockCollisionUtil.getRestitution(
+                                physicsLevel.terrainChunks[chunkPos],
+                                blockState,
+                                blockPos
+                            )
                             blockBody.setUserIndex2(slip)
                             blockBody.collisionGroup = PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                             blockBody.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
-                            blockBody.tickTransform = blockBody.getTransform(null)
+                            blockBody.getTransform(blockBody.tickTransform)
                             blockBody.lastTickTransform = blockBody.tickTransform
+                            blockBody.boundingBox(blockBody.cachedBoundingBox)
                             physicsLevel.terrainBlockBodies[blockPos] = blockBody
                             physicsLevel.world.add(blockBody)
                         }
@@ -163,6 +185,6 @@ object BlockCollisionHelper {
 
 }
 
-fun BlockState.getBulletCollisionShape(): CollisionShape {
-    return BlockCollisionHelper.getCollisionShape(this)
+fun BlockState.getBulletCollisionShape(level: PhysicsLevel): CollisionShape {
+    return BlockCollisionHelper.getCollisionShape(this, level)
 }

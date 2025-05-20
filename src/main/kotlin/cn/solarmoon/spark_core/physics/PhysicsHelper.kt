@@ -33,6 +33,7 @@ fun initBullet() {
 
     if (!targetDir.exists()) { targetDir.mkdirs() }
 
+//    val destFile = File(targetDir,  "${platform}DebugSpMt_$libName")
     val destFile = File(targetDir,  "${platform}ReleaseSpMt_$libName")
 
     val resourceStream = SparkCore::class.java.getResourceAsStream("/natives/$libName")
