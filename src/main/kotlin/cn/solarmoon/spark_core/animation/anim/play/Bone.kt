@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.animation.anim.play
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.physics.rotLerp
-import net.minecraft.world.phys.Vec3
 import net.neoforged.neoforge.common.NeoForge
 
 class Bone(
@@ -38,7 +37,7 @@ class Bone(
 
     fun getRotation(partialTicks: Number = 1.0) = oData.rotation.rotLerp(data.rotation, partialTicks.toDouble())
 
-    fun getScale(partialTicks: Number = 1.0): Vec3 = oData.scale.lerp(data.scale, partialTicks.toDouble())
+    fun getScale(partialTicks: Number = 1.0) = oData.scale.lerp(data.scale, partialTicks.toDouble())
 
     fun copy() = Bone(holder, name).apply {
         this@apply.data = this@Bone.data

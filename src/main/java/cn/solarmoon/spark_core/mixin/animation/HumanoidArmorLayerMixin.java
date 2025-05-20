@@ -37,13 +37,12 @@ public class HumanoidArmorLayerMixin<
         }
     }
 
-    @Inject(method = "renderArmorPiece(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/entity/EquipmentSlot;ILnet/minecraft/client/model/HumanoidModel;FFFFFF)V", at = @At("HEAD"), cancellable = true)
-    private void cancelHead(PoseStack poseStack, MultiBufferSource bufferSource, T livingEntity, EquipmentSlot slot, int packedLight, A p_model, float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
-        if (
-                slot == EquipmentSlot.HEAD
-                        && livingEntity instanceof AbstractClientPlayer player
-                        && PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(player).getShouldRender()
-        ) ci.cancel();
-    }
-
+//    @Inject(method = "renderArmorPiece(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/entity/EquipmentSlot;ILnet/minecraft/client/model/HumanoidModel;FFFFFF)V", at = @At("HEAD"), cancellable = true)
+//    private void cancelHead(PoseStack poseStack, MultiBufferSource bufferSource, T livingEntity, EquipmentSlot slot, int packedLight, A p_model, float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
+//        if (
+//                slot == EquipmentSlot.HEAD
+//                        && livingEntity instanceof AbstractClientPlayer player
+//                        && PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(player).getShouldRender()
+//        ) ci.cancel();
+//    }
 }

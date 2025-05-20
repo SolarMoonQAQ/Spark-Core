@@ -37,11 +37,9 @@ public class SparkCore {
         if (FMLEnvironment.dist.isClient()) {
             SparkClientEventRegister.register();
             SparkModelRegister.register(modEventBus);
-            // 注册键位映射
             SparkKeyMappings.register();
-            // 启动 WebSocket 服务器
-            WebSocketRpcServer rpcServer = new WebSocketRpcServer();
-            rpcServer.start(8080); // 启动服务器
+//            WebSocketRpcServer rpcServer = new WebSocketRpcServer();
+//            rpcServer.start(8080); // 启动服务器
         }
 
         SparkRegistries.register();
@@ -60,10 +58,8 @@ public class SparkCore {
         SparkDataGenerator.register(modEventBus);
         SparkCapabilities.register(modEventBus);
         SparkJSApiRegister.register(modEventBus);
-
         // 注册配置
         SparkConfig.INSTANCE.register(modContainer);
-
         PhysicsHelperKt.initBullet();
         JSHelperKt.loadDefaultScripts(getClass());
     }

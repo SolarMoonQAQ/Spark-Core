@@ -55,12 +55,6 @@ object SparkTypedAnimations {
         .provider(provider)
         .build()
 
-    fun createCommonAnim(animationId: String, animIndex: AnimIndex, provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
-        .id(animationId)
-        .animIndex(animIndex)
-        .provider(provider)
-        .build()
-
     fun createMoveStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = createStateAnim(name, index) {
         onEvent<AnimEvent.Tick> {
             if (holder is Player) {

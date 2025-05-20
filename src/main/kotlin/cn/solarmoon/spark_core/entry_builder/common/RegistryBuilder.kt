@@ -38,7 +38,7 @@ class RegistryBuilder<T>(private val modId: String, private val modBus: IEventBu
         val staticReg = builder.invoke(this.builder!!)
         modBus.addListener { event: NewRegistryEvent -> register(staticReg, event) }
 
-        // 包装为动态感知注册表
+        // 包装为动态注册表
         return getOrCreateDynamicRegistry(staticReg)
     }
 

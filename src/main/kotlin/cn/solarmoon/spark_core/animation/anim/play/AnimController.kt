@@ -139,9 +139,4 @@ class AnimController(
             if (!anim.isCancelled) anim.tick()
         }
     }
-
-    // java访问兼容方法
-    fun setAnimation(animationName: String, transTime: Int) {
-        setAnimation(animationName, transTime) {}
-    }
 }

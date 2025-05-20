@@ -36,7 +36,7 @@ object SparkRegistries {
     @JvmStatic
     val MODEL_EDITOR_WAND = SparkCore.REGISTER.item<Item>() // Specify Item type explicitly
         .id("model_editor_wand") // 设置物品 ID
-        .bound(Supplier { Item(Item.Properties().rarity(Rarity.EPIC)) }) // 提供 Item 实例的 Supplier
+        .bound { Item(Item.Properties().rarity(Rarity.EPIC)) } // 提供 Item 实例的 Supplier
         .build() // 构建 DeferredHolder<Item, Item>
 
     @JvmStatic

@@ -247,9 +247,16 @@ class DynamicAwareRegistry<T>(private val staticRegistry: Registry<T>) : Registr
         return Optional.of(ResourceKey.create(key(), key))
     }
 
-    // 用于避免递归调用的标记
+    // 用于避免递归调用的标记, 用于处理之前无限递归的情况
     private val processingIds = ThreadLocal.withInitial { HashSet<Int>() }
 
+    /**
+     * 当 DynamicAwareRegistry.getId(value) 被调用时，它尝试在 dynamicValueToKey 中查找 value
+     * 这个查找操作会调用 value.hashCode() 方法（ConcurrentHashMap 需要计算哈希值）
+     * 在 TypedAnimation 类中，hashCode() 方法之前会调用 getId() 方法
+     * 而 TypedAnimation.getId() 又会调用 DynamicAwareRegistry.getId(this)
+     * 这样就形成了无限递归
+     */
     override fun getId(value: T?): Int {
         if (value == null) return -1
 

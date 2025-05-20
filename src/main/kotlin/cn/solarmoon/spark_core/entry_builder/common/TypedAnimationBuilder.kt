@@ -45,7 +45,7 @@ class TypedAnimationBuilder(private val register: DeferredRegister<TypedAnimatio
     fun provider(provider: TypedAnimProvider) = apply { this.provider = provider }
 
     /**
-     * 构建并注册动画
+     * 构建并静态注册动画
      *
      * @return 注册的动画的 DeferredHolder
      */

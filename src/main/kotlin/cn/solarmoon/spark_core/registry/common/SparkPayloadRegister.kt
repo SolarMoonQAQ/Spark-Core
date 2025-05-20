@@ -36,7 +36,6 @@ object SparkPayloadRegister {
         anim.configurationToServer(ModelDataSendingTask.Return.TYPE, ModelDataSendingTask.Return.STREAM_CODEC, ModelDataSendingTask.Return::onAct)
         anim.playBidirectional(TypedAnimPayload.TYPE, TypedAnimPayload.STREAM_CODEC, TypedAnimPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
-        // 注册 ModelIndex 同步包
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
 
         val visual = event.registrar("visual_effect")
@@ -54,7 +53,7 @@ object SparkPayloadRegister {
         js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
         js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
 
-        // IK Payloads (Added based on diff)
+        // IK Payloads
         val ik = event.registrar("ik")
         ik.configurationToClient(IKDataPayload.TYPE, IKDataPayload.STREAM_CODEC, IKDataPayload::handleInClient)
         ik.configurationToServer(IKDataSendingTask.Return.TYPE, IKDataSendingTask.Return.STREAM_CODEC, IKDataSendingTask.Return::onAct)
@@ -71,9 +70,8 @@ object SparkPayloadRegister {
             PhysicsCollisionObjectSyncPayload::handleInClient
         )
 
-        // RPC Payloads (Commented out as in the diff)
-        val rpc = event.registrar("rpc")
-        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
+//        val rpc = event.registrar("rpc")
+//        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

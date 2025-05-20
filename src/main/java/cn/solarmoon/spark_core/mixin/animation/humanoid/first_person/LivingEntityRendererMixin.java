@@ -44,7 +44,7 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
             at = @At("HEAD")
     )
     private void h(T entity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
-        if (entity instanceof AbstractClientPlayer player && !PlayerAnimatorCompat.INSTANCE.isLoaded()) {
+        if (entity instanceof AbstractClientPlayer player) {
             boolean shouldRender = PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(player).getShouldRender();
             if (shouldRender != lastShouldRender) {
                 // 仅在条件变化时重新过滤

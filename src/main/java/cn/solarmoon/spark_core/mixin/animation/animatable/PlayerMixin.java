@@ -62,8 +62,7 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     }
 
     @Override
-    @NotNull
-    public BoneGroup getBones() {
+    public @NotNull BoneGroup getBones() {
         return boneGroup;
     }
 
