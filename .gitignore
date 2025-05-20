@@ -68,3 +68,5 @@ node_modules/
 # OS specific
 .DS_Store!/plan/
 /.lingma/
+/plan/
+/.lingma/
