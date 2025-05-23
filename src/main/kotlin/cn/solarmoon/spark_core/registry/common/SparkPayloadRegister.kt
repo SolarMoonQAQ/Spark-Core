@@ -14,6 +14,9 @@ import cn.solarmoon.spark_core.ik.sync.RequestSetIKTargetPayload
 import cn.solarmoon.spark_core.js.sync.JSPayload
 import cn.solarmoon.spark_core.js.sync.JSSendingTask
 import cn.solarmoon.spark_core.js.sync.JSTaskPayload
+import cn.solarmoon.spark_core.network.payload.resource_sync.AnimationUpdatedPayload
+import cn.solarmoon.spark_core.network.payload.resource_sync.IKConstraintUpdatedPayload
+import cn.solarmoon.spark_core.network.payload.resource_sync.ModelUpdatedPayload
 import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
 import cn.solarmoon.spark_core.rpc.payload.RpcPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
@@ -37,6 +40,8 @@ object SparkPayloadRegister {
         anim.playBidirectional(TypedAnimPayload.TYPE, TypedAnimPayload.STREAM_CODEC, TypedAnimPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
+        anim.playToClient(ModelUpdatedPayload.TYPE, ModelUpdatedPayload.STREAM_CODEC, ModelUpdatedPayload::handleInClient)
+        anim.playToClient(AnimationUpdatedPayload.TYPE, AnimationUpdatedPayload.STREAM_CODEC, AnimationUpdatedPayload::handleInClient)
 
         val visual = event.registrar("visual_effect")
         visual.playToClient(ShadowPayload.TYPE, ShadowPayload.STREAM_CODEC, ShadowPayload::handleInClient)
@@ -53,7 +58,6 @@ object SparkPayloadRegister {
         js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
         js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
 
-        // IK Payloads
         val ik = event.registrar("ik")
         ik.configurationToClient(IKDataPayload.TYPE, IKDataPayload.STREAM_CODEC, IKDataPayload::handleInClient)
         ik.configurationToServer(IKDataSendingTask.Return.TYPE, IKDataSendingTask.Return.STREAM_CODEC, IKDataSendingTask.Return::onAct)
@@ -61,14 +65,15 @@ object SparkPayloadRegister {
         ik.playToClient(IKComponentSyncPayload.TYPE, IKComponentSyncPayload.STREAM_CODEC, IKComponentSyncPayload::handleInClient)
         ik.playToServer(RequestIKComponentChangePayload.TYPE, RequestIKComponentChangePayload.STREAM_CODEC, RequestIKComponentChangePayload::handleInServer)
         ik.playToServer(RequestSetIKTargetPayload.TYPE, RequestSetIKTargetPayload.STREAM_CODEC, RequestSetIKTargetPayload::handleInServer)
+        ik.playToClient(IKConstraintUpdatedPayload.TYPE, IKConstraintUpdatedPayload.STREAM_CODEC, IKConstraintUpdatedPayload::handleInClient)
 
-        // 注册物理碰撞对象同步数据包
         val physics = event.registrar("physics")
         physics.playToClient(
             PhysicsCollisionObjectSyncPayload.TYPE,
             PhysicsCollisionObjectSyncPayload.STREAM_CODEC,
             PhysicsCollisionObjectSyncPayload::handleInClient
         )
+
 
 //        val rpc = event.registrar("rpc")
 //        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)

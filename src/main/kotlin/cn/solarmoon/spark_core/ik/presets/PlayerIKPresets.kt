@@ -5,14 +5,10 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
 import cn.solarmoon.spark_core.ik.caliko.IKApplier
 import cn.solarmoon.spark_core.ik.caliko.IKResolver
-import cn.solarmoon.spark_core.ik.component.IKComponentType
+import cn.solarmoon.spark_core.ik.component.TypedIKComponent
 import cn.solarmoon.spark_core.ik.origin.OIKConstraint
-import cn.solarmoon.spark_core.ik.util.IKCoordinateTransformer
-import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.physics.toVec3
 import com.jme3.math.Vector3f
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
@@ -102,7 +98,7 @@ object PlayerIKPresets {
     /**
      * 从OIKConstraint创建IKComponentType
      */
-    private fun createIKComponentTypeFromConstraint(constraint: OIKConstraint): IKComponentType? {
+    private fun createIKComponentTypeFromConstraint(constraint: OIKConstraint): TypedIKComponent? {
         // 检查必要的字段
         if (constraint.constraintTargetBone.isBlank() || constraint.ikChainBoneLimits.isEmpty()) {
             SparkCore.LOGGER.warn("IK约束缺少必要字段: ${constraint.constraintName}")
@@ -123,7 +119,7 @@ object PlayerIKPresets {
         )
 
         // 创建IKComponentType
-        return IKComponentType(
+        return TypedIKComponent(
             id = componentId,
             chainName = constraint.constraintName,
             startBoneName = bonePathNames.first(),

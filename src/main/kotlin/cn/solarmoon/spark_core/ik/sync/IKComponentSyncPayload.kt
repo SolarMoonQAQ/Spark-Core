@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.ik.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.ik.component.IKComponentType
+import cn.solarmoon.spark_core.ik.component.TypedIKComponent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
@@ -20,11 +20,11 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 class IKComponentSyncPayload private constructor(
     val syncerType: SyncerType,       // Identifies the host entity type
     val syncData: SyncData,         // Identifies the specific host entity instance
-    val componentTypeId: ResourceLocation, // The ID of the IKComponentType being added/removed
+    val componentTypeId: ResourceLocation, // The ID of the TypedIKComponent being added/removed
     val active: Boolean             // True if the component should be active, false if inactive (removed)
 ) : CustomPacketPayload {
     // 便捷构造函数
-    constructor(host: IEntityAnimatable<*>, type: IKComponentType, active: Boolean) : this(
+    constructor(host: IEntityAnimatable<*>, type: TypedIKComponent, active: Boolean) : this(
         host.syncerType, // Assuming IEntityAnimatable provides these (inherited from IAnimatable/Syncer?)
         host.syncData,   // Assuming IEntityAnimatable provides these
         type.id,

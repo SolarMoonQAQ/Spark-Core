@@ -29,7 +29,7 @@ sealed interface JointConstraint {
  * Defines the configuration for a type of IK component. Acts as a blueprint.
  * Instances should be registered in a dedicated registry.
  */
-data class IKComponentType(
+data class TypedIKComponent(
     val id: ResourceLocation,
     val chainName: String,
     val startBoneName: String,

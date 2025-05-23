@@ -1,11 +1,11 @@
 package cn.solarmoon.spark_core.js.ik
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.ik.component.IKComponentType
+import cn.solarmoon.spark_core.ik.component.TypedIKComponent
 import net.minecraft.resources.ResourceLocation
 
 /**
- * Builder used by JS scripts to configure a new IKComponentType.
+ * Builder used by JS scripts to configure a new TypedIKComponent.
  */
 class JSIKComponentTypeBuilder {
     // Properties settable from JS
@@ -30,17 +30,17 @@ class JSIKComponentTypeBuilder {
      fun setMaxIterations(v: Int) { defaultMaxIterations = v }
      fun setIKPriority(v: Int) { priority = v }
 
-    // Creates the IKComponentType instance from the collected data. Registration happens elsewhere.
-    fun build(): IKComponentType? {
+    // Creates the TypedIKComponent instance from the collected data. Registration happens elsewhere.
+    fun build(): TypedIKComponent? {
         // Basic validation
         if (!::id.isInitialized || !::chainName.isInitialized || !::startBoneName.isInitialized || !::endBoneName.isInitialized) {
             SparkCore.LOGGER.error("JS IKComponentTypeBuilder: Missing required fields (id, chainName, startBoneName, endBoneName) for potential ID $id")
             return null
         }
-        // Pass all collected data to the IKComponentType constructor
+        // Pass all collected data to the TypedIKComponent constructor
         // Note: Assumes jointConstraints are handled separately or default to emptyMap() for now.
         // If constraints need to be built here, add relevant properties and methods.
-        val type = IKComponentType(
+        val type = TypedIKComponent(
             id = id,
             chainName = chainName,
             startBoneName = startBoneName,

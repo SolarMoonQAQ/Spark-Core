@@ -5,8 +5,6 @@ import au.edu.federation.utils.Vec3f
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.ik.util.CalikoUtils.toCalikoVec3f
-import cn.solarmoon.spark_core.ik.component.IKComponentType
-import cn.solarmoon.spark_core.ik.util.IKCoordinateTransformer
 import net.minecraft.world.phys.Vec3
 import au.edu.federation.utils.Vec3f as CalikoVec3f
 

@@ -25,7 +25,6 @@ public abstract class LivingEntityMixin extends Entity {
     @Inject(method = "tick", at = @At("TAIL"))
     private void tick(CallbackInfo ci) {
         if (entity instanceof IEntityAnimatable<?> animatable) {
-            // TODO: 解决预览界面头部锁定问题
             // 播放指定动画时将身体转到目视方向
             var anim = animatable.getAnimController().getPlayingAnim();
             if (anim != null && anim.getShouldTurnBody()) {

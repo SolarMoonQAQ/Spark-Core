@@ -2,14 +2,13 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
-import cn.solarmoon.spark_core.ik.component.IKComponentType
+import cn.solarmoon.spark_core.ik.component.TypedIKComponent
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.Rarity
-import java.util.function.Supplier
 
 object SparkRegistries {
 
@@ -29,7 +28,7 @@ object SparkRegistries {
         .build { it.sync(true).create() }
 
     @JvmStatic
-    val IK_COMPONENT_TYPE = SparkCore.REGISTER.registry<IKComponentType>()
+    val IK_COMPONENT_TYPE = SparkCore.REGISTER.registry<TypedIKComponent>()
         .id("ik_component_type") // Registry name
         .build { it.sync(true).create() } // Sync to client if needed
 

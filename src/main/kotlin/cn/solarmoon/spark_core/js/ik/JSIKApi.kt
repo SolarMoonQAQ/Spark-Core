@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.js.ik
 
 // import cn.solarmoon.spark_core.js.put // Removed as per diff logic (put is used in onRegister)
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.ik.component.IKComponentType
+import cn.solarmoon.spark_core.ik.component.TypedIKComponent
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.JSComponent
 import cn.solarmoon.spark_core.js.call
@@ -34,36 +34,36 @@ object JSIKApi: JSApi,JSComponent() {
                 // Configuration is done, registration will happen in onLoad
                 // builder.buildAndRegister() // Removed registration call here
             } catch (e: Exception) {
-                logger.error("Error configuring IKComponentType '$idStr' from JS:", e) // Use logger
+                logger.error("Error configuring TypedIKComponent '$idStr' from JS:", e) // Use logger
             }
         })
-        logger.debug("JS queued IKComponentType definition: $idStr") // Use logger
+        logger.debug("JS queued TypedIKComponent definition: $idStr") // Use logger
     }
 
     override fun onLoad() {
-        logger.info("Processing ${pendingRegistrations.size} pending JS IKComponentType registrations...") // Use logger
+        logger.info("Processing ${pendingRegistrations.size} pending JS TypedIKComponent registrations...") // Use logger
         // Sort by priority if needed, then register
         pendingRegistrations.sortByDescending { it.first.priority } // Assuming 'priority' exists
         // pendingRegistrations.forEach { it.second.invoke() } // Removed direct invocation here
         pendingRegistrations.forEach { (builder, configureAction) ->
             try {
                 configureAction.invoke() // Ensure configuration is applied
-                val typeToRegister: IKComponentType? = builder.build() // Build the type instance, assuming build() exists and returns IKComponentType?
+                val typeToRegister: TypedIKComponent? = builder.build() // Build the type instance, assuming build() exists and returns TypedIKComponent?
                 if (typeToRegister != null) {
                     // Use the DeferredRegister pattern via SparkCore.REGISTER
-                    // Assuming SparkCore.REGISTER.ikComponentType() returns a DeferredRegister<IKComponentType>
+                    // Assuming SparkCore.REGISTER.ikComponentType() returns a DeferredRegister<TypedIKComponent>
                     // And it has a build method accepting path and supplier
                     SparkCore.REGISTER.ikComponentType().build(typeToRegister.id.path) { typeToRegister }
-                    logger.info("JS submitted IKComponentType for registration: ${typeToRegister.id}") // Use logger
+                    logger.info("JS submitted TypedIKComponent for registration: ${typeToRegister.id}") // Use logger
                 } else {
-                     logger.error("Failed to build IKComponentType from JS definition: ${builder.id}")
+                     logger.error("Failed to build TypedIKComponent from JS definition: ${builder.id}")
                 }
             } catch (e: Exception) {
-                 logger.error("Error processing JS IKComponentType registration for '${builder.id ?: "unknown"}':", e)
+                 logger.error("Error processing JS TypedIKComponent registration for '${builder.id ?: "unknown"}':", e)
             }
         }
         pendingRegistrations.clear()
-        logger.info("Finished processing JS IKComponentType registrations.") // Use logger
+        logger.info("Finished processing JS TypedIKComponent registrations.") // Use logger
     }
 
     override fun onReload() {

@@ -6,7 +6,6 @@ import cn.solarmoon.spark_core.ik.util.IKCoordinateTransformer
 import cn.solarmoon.spark_core.physics.level.PhysicsWorld
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.math.Vector3f
-import net.minecraft.world.phys.Vec3
 
 /**
  * 表示在IEntityAnimatable上的IK设置的活动实例
@@ -16,7 +15,7 @@ import net.minecraft.world.phys.Vec3
  * @property chain 用于求解的运行时FabrikChain3D实例
  */
 class IKComponent(
-    val type: IKComponentType,
+    val type: TypedIKComponent,
     val chain: FabrikChain3D,
     val host: IEntityAnimatable<*>
 ) {

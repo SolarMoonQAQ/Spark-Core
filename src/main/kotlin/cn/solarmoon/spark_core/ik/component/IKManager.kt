@@ -23,7 +23,7 @@ class IKManager(private val host: IEntityAnimatable<*>) {
      * 返回true表示成功，false表示失败（例如模型未就绪，构建失败）
      * 此方法主要应在服务器端调用, 此处客户端调用是为了测试
      */
-    fun addComponent(type: IKComponentType): Boolean {
+    fun addComponent(type: TypedIKComponent): Boolean {
         if (activeComponents.containsKey(type.chainName)) {
             return true
         }
