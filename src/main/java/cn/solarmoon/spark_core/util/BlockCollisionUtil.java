@@ -42,11 +42,11 @@ public class BlockCollisionUtil {
         if (state.is(BlockTags.SNOW)) {//雪块视作湿滑，疏松多孔，更易打滑
             result += 35 - (int) (20 * humidity);
         } else if (state.getBlock() instanceof ColoredFallingBlock) {//可掉落方块视作颗粒状，疏松多孔，更易打滑
-            result += (int) (35 + 40 * humidity);
+            result += (int) (35 + 30 * humidity);
         } else if (state.getBlock() instanceof ConcretePowderBlock) {
             result += 35 - (int) (50 * humidity);
         } else {//常规方块仅根据湿度调整摩擦系数
-            result += (int) (50 * humidity);
+            result += (int) (30 * humidity);
         }
         return Math.min(100, result);
     }
@@ -60,10 +60,10 @@ public class BlockCollisionUtil {
     public static float getRestitution(ChunkAccess chunk, BlockState state, BlockPos pos) {
         if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) return 0.3f;
         else if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) return 0.9f;
-        else if (state.is(BlockTags.MINEABLE_WITH_AXE)) return 0.7f;
+        else if (state.is(BlockTags.MINEABLE_WITH_AXE)) return 0.8f;
         else if (state.is(BlockTags.MINEABLE_WITH_HOE)) return 0.0f;
         else if (state.is(BlockTags.WOOL)) return 0.1f;//吸能方块
-        else if (state.isSlimeBlock()) return 0.9999f;
+        else if (state.isSlimeBlock()) return 5f;
         else if (state.isStickyBlock()) return 0.0f;
         else return 0.5f;
     }

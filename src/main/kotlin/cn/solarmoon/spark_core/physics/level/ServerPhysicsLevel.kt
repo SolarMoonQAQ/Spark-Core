@@ -13,8 +13,10 @@ class ServerPhysicsLevel(
 
     override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
         super.prePhysicsTick(space, timeStep)
-        mcLevel.allEntities.filterNotNull().forEach {
-            NeoForge.EVENT_BUS.post(PhysicsEntityTickEvent(it))
+        val entities = mcLevel.allEntities
+        entities.filterNotNull().forEach {
+            if (!it.isRemoved && it.isAlive)
+                NeoForge.EVENT_BUS.post(PhysicsEntityTickEvent(it))
         }
     }
 
