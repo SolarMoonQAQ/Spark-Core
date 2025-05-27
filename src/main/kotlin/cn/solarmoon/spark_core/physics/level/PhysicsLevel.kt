@@ -120,7 +120,7 @@ abstract class PhysicsLevel(
                 if ((it.collideWithGroups and PhysicsCollisionObject.COLLISION_GROUP_BLOCK != 0))
                     BlockCollisionHelper.addNearbyTerrainBlocksToWorld(it, this@PhysicsLevel)
             } else if (it.collisionGroup == PhysicsCollisionObject.COLLISION_GROUP_BLOCK && it is PhysicsRigidBody) {
-                if (it.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
+                if (it.userIndex() <= 0) {//移除过久未被访问的块记录及其刚体对象
                     world.remove(it)
                     terrainBlockBodies.remove(it.blockPos)
                 } else it.setUserIndex(it.userIndex() - 1) //销毁倒计时推进
