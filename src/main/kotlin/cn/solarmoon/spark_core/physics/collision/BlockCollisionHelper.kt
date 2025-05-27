@@ -118,10 +118,10 @@ object BlockCollisionHelper {
                             blockPos.toString(),
                             PPhase.PRE
                         ) { blockBody?.setUserIndex(0) }
-                    } else if (blockBody?.userIndex()!! > 0f) {//重置销毁倒计时 Reset the destruction count
+                    } else {//重置销毁倒计时 Reset the destruction count
                         //更新方块打滑属性(默认取决于方块类型，上方方块，和天气)
                         if (Math.random() > 0.95)
-                            blockBody.setUserIndex2(
+                            blockBody?.setUserIndex2(
                                 BlockCollisionUtil.getSlip(
                                     physicsLevel.terrainChunks[chunkPos],
                                     blockState,
@@ -132,8 +132,8 @@ object BlockCollisionHelper {
                             blockPos.toString(),
                             PPhase.PRE
                         ) {
-                            blockBody.setUserIndex(40)
-                            if (blockState != blockBody.userObject) blockBody.userObject = blockState
+                            blockBody?.setUserIndex(40)
+                            if (blockState != blockBody?.userObject) blockBody?.userObject = blockState
                         }
                     }
                 } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象 Create a physics body for the block if it has not been recorded
@@ -182,6 +182,7 @@ object BlockCollisionHelper {
             }
         }
     }
+
 }
 
 fun BlockState.getBulletCollisionShape(level: PhysicsLevel): CollisionShape {

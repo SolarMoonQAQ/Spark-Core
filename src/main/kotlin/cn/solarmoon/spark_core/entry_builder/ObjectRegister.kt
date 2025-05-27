@@ -87,7 +87,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     /**
      * @throws java.lang.NullPointerException 该类型的注册必须放在所有自定义注册类型之前
      */
-    fun <T> registry() = RegistryBuilder<T>(modId, modBus!!)
+    fun <T : Any> registry() = RegistryBuilder<T>(modId, modBus!!)
     fun <I: Item> item() = ItemBuilder<I>(itemDeferredRegister, modBus!!)
     fun <B: Block> block() = BlockBuilder<B>(blockDeferredRegister)
     fun <B: BlockEntity> blockentity() = BlockEntityBuilder<B>(blockEntityDeferredRegister, modBus!!)

@@ -3,10 +3,10 @@ package com.jme3.npc_adapter;
 import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation;
-import cn.solarmoon.spark_core.network.dynamic.NetworkHandler;
+import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager;
+import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.registry.common.SparkRegistries;
 import cn.solarmoon.spark_core.registry.common.SparkTypedAnimations;
@@ -22,38 +22,36 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker;
-import cn.solarmoon.spark_core.physics.presets.callback.HitReactionCollisionCallback;
+import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.jetbrains.annotations.NotNull;
-
-
 
 /**
  * Spark Core Native API for NPC Adapters.
  * Provides functionalities like animation control, model swapping, and collision event handling,
  * independent of WebSocket and JS-bridge implementations.
  */
-public class SparkApi {
+public class SparkCustomnpcApi {
 
     // Stores collision event flags. Key: jsFlagVariable, Value: true if collision occurred
     private final Map<String, Boolean> collisionEventFlags = new HashMap<>();
 
-    public SparkApi() {
+    public SparkCustomnpcApi() {
         // Initialization logic, if any (e.g., logging)
-        // SparkCore.LOGGER.info("SparkApi (Native NPC Adapter) initialized.");
+        // SparkCore.LOGGER.info("SparkCustomnpcApi (Native NPC Adapter) initialized.");
     }
 
     // Placeholder - needs actual implementation
     private IAnimatable<?> findAnimatable(String modelId) {
         net.minecraft.server.MinecraftServer server = ServerLifecycleHooks.getCurrentServer(); // Use NeoForge API
         if (server == null) {
-            SparkCore.LOGGER.error("SparkApi.findAnimatable: MinecraftServer instance not available via ServerLifecycleHooks.");
+            SparkCore.LOGGER.error("SparkCustomnpcApi.findAnimatable: MinecraftServer instance not available via ServerLifecycleHooks.");
             return null;
         }
 
@@ -64,7 +62,7 @@ public class SparkApi {
             int entityIdInt = Integer.parseInt(modelId);
             Entity entity = level.getEntity(entityIdInt);
             if (entity instanceof IAnimatable) {
-                SparkCore.LOGGER.debug("SparkApi.findAnimatable: Found animatable by Int ID '{}'.", modelId);
+                SparkCore.LOGGER.debug("SparkCustomnpcApi.findAnimatable: Found animatable by Int ID '{}'.", modelId);
                 return (IAnimatable<?>) entity;
             }
         } catch (NumberFormatException e) {
@@ -76,7 +74,7 @@ public class SparkApi {
             UUID uuid = UUID.fromString(modelId);
             Entity entity = level.getEntity(uuid);
             if (entity instanceof IAnimatable) {
-                SparkCore.LOGGER.debug("SparkApi.findAnimatable: Found animatable by UUID '{}'.", modelId);
+                SparkCore.LOGGER.debug("SparkCustomnpcApi.findAnimatable: Found animatable by UUID '{}'.", modelId);
                 return (IAnimatable<?>) entity;
             }
         } catch (IllegalArgumentException e) {
@@ -90,18 +88,18 @@ public class SparkApi {
             if (entity instanceof IAnimatable) {
                 // Check custom name
                 if (entity.getCustomName() != null && entity.getCustomName().getString().equals(modelId)) {
-                    SparkCore.LOGGER.debug("SparkApi.findAnimatable: Found animatable by custom name '{}'.", modelId);
+                    SparkCore.LOGGER.debug("SparkCustomnpcApi.findAnimatable: Found animatable by custom name '{}'.", modelId);
                     return (IAnimatable<?>) entity;
                 }
                 // Check tags
                 if (entity.getTags().contains(modelId)) {
-                    SparkCore.LOGGER.debug("SparkApi.findAnimatable: Found animatable by tag '{}'.", modelId);
+                    SparkCore.LOGGER.debug("SparkCustomnpcApi.findAnimatable: Found animatable by tag '{}'.", modelId);
                     return (IAnimatable<?>) entity;
                 }
             }
         }
 
-        SparkCore.LOGGER.warn("SparkApi.findAnimatable: Animatable with modelId '{}' not found in default level (overworld) as Int ID, UUID, custom name, or tag.", modelId);
+        SparkCore.LOGGER.warn("SparkCustomnpcApi.findAnimatable: Animatable with modelId '{}' not found in default level (overworld) as Int ID, UUID, custom name, or tag.", modelId);
         return null;
     }
 
@@ -114,14 +112,14 @@ public class SparkApi {
     public void changeModel(String modelId, String newModelPath) {
         IAnimatable<?> animatable = findAnimatable(modelId);
         if (animatable == null) {
-            SparkCore.LOGGER.error("SparkApi.changeModel: Animatable with id '{}' not found.", modelId);
+            SparkCore.LOGGER.error("SparkCustomnpcApi.changeModel: Animatable with id '{}' not found.", modelId);
             return;
         }
 
         try {
             ResourceLocation modelResLoc = ResourceLocation.tryParse(newModelPath);
             if (modelResLoc == null) {
-                SparkCore.LOGGER.error("SparkApi.changeModel: Invalid newModelPath format '{}'. Expected 'namespace:path'.", newModelPath);
+                SparkCore.LOGGER.error("SparkCustomnpcApi.changeModel: Invalid newModelPath format '{}'. Expected 'namespace:path'.", newModelPath);
                 return;
             }
             String entityName = newModelPath.split(":")[1];
@@ -132,10 +130,10 @@ public class SparkApi {
             // This is the core action that should trigger a model update and ModelIndexChangeEvent
             animatable.setModelIndex(newIdx);
 
-            SparkCore.LOGGER.info("SparkApi.changeModel: Successfully requested to change model for '{}' to '{}' (ModelIndex: {}). findAnimatable is still a placeholder.", modelId, newModelPath, newIdx);
+            SparkCore.LOGGER.info("SparkCustomnpcApi.changeModel: Successfully requested to change model for '{}' to '{}' (ModelIndex: {}). findAnimatable is still a placeholder.", modelId, newModelPath, newIdx);
 
         } catch (Exception e) {
-            SparkCore.LOGGER.error("SparkApi.changeModel: Error changing model for '{}' to '{}': {}", modelId, newModelPath, e.getMessage(), e);
+            SparkCore.LOGGER.error("SparkCustomnpcApi.changeModel: Error changing model for '{}' to '{}': {}", modelId, newModelPath, e.getMessage(), e);
         }
     }
 
@@ -145,7 +143,7 @@ public class SparkApi {
     private PhysicsCollisionObject findPhysicsObjectForBox(IAnimatable<?> animatable, String boxName) {
         Entity targetEntity = (Entity) animatable.getAnimatable();
         if (targetEntity == null) {
-            SparkCore.LOGGER.warn("SparkApi.findPhysicsObjectForBox: Animatable's underlying object (modelId: '{}') is not an Entity or is null.", animatable.getModelIndex().getModelPath());
+            SparkCore.LOGGER.warn("SparkCustomnpcApi.findPhysicsObjectForBox: Animatable's underlying object (modelId: '{}') is not an Entity or is null.", animatable.getModelIndex().getModelPath());
             return null;
         }
 
@@ -167,7 +165,7 @@ public class SparkApi {
                 }
             }
         }
-        SparkCore.LOGGER.warn("SparkApi.findPhysicsObjectForBox: No PhysicsCollisionObject found for entity {} and boxName '{}'.", targetEntity.getId(), boxName);
+        SparkCore.LOGGER.warn("SparkCustomnpcApi.findPhysicsObjectForBox: No PhysicsCollisionObject found for entity {} and boxName '{}'.", targetEntity.getId(), boxName);
         return null;
     }
     /**
@@ -188,14 +186,14 @@ public class SparkApi {
                                              float offsetX, float offsetY, float offsetZ) {
         IAnimatable<?> animatable = findAnimatable(modelId);
         if (animatable == null) {
-            SparkCore.LOGGER.error("SparkApi.createCollisionBoxBoundToBone: Animatable with id '{}' not found.", modelId);
+            SparkCore.LOGGER.error("SparkCustomnpcApi.createCollisionBoxBoundToBone: Animatable with id '{}' not found.", modelId);
             return null;
         }
 
         try {
             // 检查animatable是否为IEntityAnimatable类型
             if (!(animatable instanceof IEntityAnimatable)) {
-                SparkCore.LOGGER.error("SparkApi.createCollisionBoxBoundToBone: Animatable must be an entity type!");
+                SparkCore.LOGGER.error("SparkCustomnpcApi.createCollisionBoxBoundToBone: Animatable must be an entity type!");
                 return null;
             }
 
@@ -213,11 +211,11 @@ public class SparkApi {
                 Entity entity = (Entity) ((IEntityAnimatable<?>) animatable).getAnimatable();
 
                 // 创建同步数据包
-                cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload payload =
-                    new cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload(
+                PhysicsCollisionObjectSyncPayload payload =
+                    new PhysicsCollisionObjectSyncPayload(
                         entity.getSyncerType(),
                         entity.getSyncData(),
-                        cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload.Operation.CREATE,
+                        PhysicsCollisionObjectSyncPayload.Operation.CREATE,
                         collisionBoxId,
                         boneName,
                         size,
@@ -227,13 +225,13 @@ public class SparkApi {
                 // 发送到所有跟踪该实体的玩家
                 net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntity(entity, payload);
 
-                SparkCore.LOGGER.info("SparkApi.createCollisionBoxBoundToBone: Synchronized collision box '{}' to clients", collisionBoxId);
+                SparkCore.LOGGER.info("SparkCustomnpcApi.createCollisionBoxBoundToBone: Synchronized collision box '{}' to clients", collisionBoxId);
             }
 
             // 返回碰撞盒的唯一标识符
             return collisionBoxId;
         } catch (Exception e) {
-            SparkCore.LOGGER.error("SparkApi.createCollisionBoxBoundToBone: Error creating collision box", e);
+            SparkCore.LOGGER.error("SparkCustomnpcApi.createCollisionBoxBoundToBone: Error creating collision box", e);
             return null;
         }
     }
@@ -247,7 +245,7 @@ public class SparkApi {
     private PhysicsCollisionObject findPhysicsObjectByName(String name) {
         net.minecraft.server.MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) {
-            SparkCore.LOGGER.error("SparkApi.findPhysicsObjectByName: MinecraftServer instance not available via ServerLifecycleHooks.");
+            SparkCore.LOGGER.error("SparkCustomnpcApi.findPhysicsObjectByName: MinecraftServer instance not available via ServerLifecycleHooks.");
             return null;
         }
 
@@ -266,7 +264,7 @@ public class SparkApi {
         }
 
         // 如果未找到则返回null
-        SparkCore.LOGGER.warn("SparkApi.findPhysicsObjectByName: No PhysicsCollisionObject found with name '{}'.", name);
+        SparkCore.LOGGER.warn("SparkCustomnpcApi.findPhysicsObjectByName: No PhysicsCollisionObject found with name '{}'.", name);
         return null;
     }
 
@@ -291,7 +289,50 @@ public class SparkApi {
         Vec3 pos = JSPhysicsHelper.INSTANCE.getContactPosB(manifoldId);
         return new double[] { pos.x, pos.y, pos.z };
     }
+    /**
+     * 播放已注册的TypedAnimation
+     *
+     * @param UUID 实体 UUID
+     * @param animationId 动画ID，由registerTypedAnimation方法返回
+     * @param transTime 动画持续时间（单位：tick）
+     * @return 是否成功播放动画
+     */
+    public boolean playTypedAnimation(String UUID, String animationId, int transTime) {
+        IAnimatable<?> animatable = findAnimatable(UUID);
+        if (animatable == null) {
+            SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Animatable with id '{}' not found", UUID);
+            return false;
+        }
 
+        if (!(animatable instanceof IEntityAnimatable)) {
+            SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Animatable must be an entity type");
+            return false;
+        }
+
+        try {
+            // 查找注册的TypedAnimation
+            ResourceLocation animationResLoc = ResourceLocation.parse(animationId);
+            TypedAnimation animation = SparkRegistries.getTYPED_ANIMATION().get(animationResLoc);
+            if (animation == null) {
+                SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Animation with id '{}' not found", animationId);
+                return false;
+            }
+
+            // 播放动画
+            animation.play(animatable, transTime, false);
+
+            // 如果是服务端，同步到客户端
+            if (!animatable.getAnimLevel().isClientSide()) {
+                Entity entity = ((IEntityAnimatable<?>) animatable).getAnimatable();
+                animation.syncToClient(entity.getId(), transTime, false, null);
+            }
+
+            return true;
+        } catch (Exception e) {
+            SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Error playing animation", e);
+            return false;
+        }
+    }
     /**
      * 为碰撞盒注册碰撞回调
      *
@@ -302,7 +343,7 @@ public class SparkApi {
         // 查找碰撞盒
         PhysicsCollisionObject pco = findPhysicsObjectByName(collisionBoxId);
         if (pco == null) {
-            SparkCore.LOGGER.error("SparkApi.registerCollisionCallback: PhysicsCollisionObject with id '{}' not found.", collisionBoxId);
+            SparkCore.LOGGER.error("SparkCustomnpcApi.registerCollisionCallback: PhysicsCollisionObject with id '{}' not found.", collisionBoxId);
             return;
         }
 
@@ -367,10 +408,10 @@ public class SparkApi {
                 }
             });
 
-            SparkCore.LOGGER.info("SparkApi.registerCollisionCallback: Successfully registered collision callback for '{}' with event ID {}",
+            SparkCore.LOGGER.info("SparkCustomnpcApi.registerCollisionCallback: Successfully registered collision callback for '{}' with event ID {}",
                 collisionBoxId, eventId);
         } catch (Exception e) {
-            SparkCore.LOGGER.error("SparkApi.registerCollisionCallback: Error registering collision callback", e);
+            SparkCore.LOGGER.error("SparkCustomnpcApi.registerCollisionCallback: Error registering collision callback", e);
         }
     }
 
@@ -386,7 +427,7 @@ public class SparkApi {
         // 查找碰撞盒
         PhysicsCollisionObject pco = findPhysicsObjectByName(collisionBoxId);
         if (pco == null) {
-            SparkCore.LOGGER.error("SparkApi.registerAttackCollisionCallback: PhysicsCollisionObject with id '{}' not found.", collisionBoxId);
+            SparkCore.LOGGER.error("SparkCustomnpcApi.registerAttackCollisionCallback: PhysicsCollisionObject with id '{}' not found.", collisionBoxId);
             return;
         }
 
@@ -487,156 +528,65 @@ public class SparkApi {
                 }
             });
 
-            SparkCore.LOGGER.info("SparkApi.registerAttackCollisionCallback: Successfully registered attack collision callback for '{}' with event ID {}, attack animation ID {} and hit animation ID {}",
+            SparkCore.LOGGER.info("SparkCustomnpcApi.registerAttackCollisionCallback: Successfully registered attack collision callback for '{}' with event ID {}, attack animation ID {} and hit animation ID {}",
                 collisionBoxId, eventId, attackAnimationId != null ? attackAnimationId : "none", hitAnimationId != null ? hitAnimationId : "none");
         } catch (Exception e) {
-            SparkCore.LOGGER.error("SparkApi.registerAttackCollisionCallback: Error registering attack collision callback", e);
+            SparkCore.LOGGER.error("SparkCustomnpcApi.registerAttackCollisionCallback: Error registering attack collision callback", e);
         }
     }
 
-    /**
-     * 注册TypedAnimation，允许在JavaScript中创建和播放自定义动画
-     * 使用动态注册系统，可以在运行时注册和卸载动画
-     *
-     * @param animationId 动画的唯一标识符
-     * @param namespace 资源命名空间，默认为"player"
-     * @param path 动画资源路径, 如"EntityState/attack"
-     * @return 注册的动画ID，用于后续引用，如果注册失败则返回null
-     */
-    public String registerTypedAnimation(String animationId, String namespace, String path) {
-        // 检查参数
-        if (animationId == null || animationId.isEmpty()) {
-            SparkCore.LOGGER.error("SparkApi.registerTypedAnimation: Animation ID cannot be empty");
-            return null;
-        }
-
-        if (path == null || path.isEmpty()) {
-            SparkCore.LOGGER.error("SparkApi.registerTypedAnimation: Animation path cannot be empty");
-            return null;
-        }
-
-        try {
-            // 处理可能包含非法字符的动画ID
-            // 先检查是否包含冒号，如果包含则可能是已经是完整的ResourceLocation格式
-            String safeAnimationId = animationId;
-            if (animationId.contains(":")) {
-                // 如果包含冒号，取最后一个冒号后的部分作为路径
-                int lastColonIndex = animationId.lastIndexOf(':');
-                safeAnimationId = animationId.substring(lastColonIndex + 1);
-
-                // 如果还有冒号，则替换为下划线
-                safeAnimationId = safeAnimationId.replace(':', '_');
-
-                SparkCore.LOGGER.warn("SparkApi.registerTypedAnimation: Animation ID '{}' contains colon, using '{}' as path",
-                        animationId, safeAnimationId);
-            }
-
-            // 创建完整的ResourceLocation用于动态注册
-            ResourceLocation fullId = ResourceLocation.fromNamespaceAndPath(namespace, safeAnimationId);
-
-            // 创建模型的ResourceLocation
-            ResourceLocation modelRL = ResourceLocation.withDefaultNamespace(namespace);
-
-            // 创建 AnimIndex
-            AnimIndex animIndex = new AnimIndex(modelRL, path);
-
-            // 使用 TypedAnimationBuilder 创建并动态注册 TypedAnimation
-            TypedAnimation animation = SparkCore.REGISTER.typedAnimation()
-                .id(fullId) // 设置完整的资源位置
-                .animIndex(animIndex)
-                .provider(receiver -> {
-                    // 可以在这里添加动画播放时的逻辑
-                    return Unit.INSTANCE;
-                })
-                .registerDynamic(fullId); // 动态注册
-
-            // 同步到客户端（如果在服务端注册）
-            if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-                NetworkHandler.INSTANCE.syncTypedAnimationToClients(fullId, animation);
-            }
-
-            SparkCore.LOGGER.info("SparkApi.registerTypedAnimation: Successfully dynamically registered animation '{}' with path '{}'", animationId, path);
-
-            // 返回动画ID
-            return fullId.toString();
-        } catch (Exception e) {
-            SparkCore.LOGGER.error("SparkApi.registerTypedAnimation: Error registering animation", e);
-            return null;
-        }
-    }
-
-    /**
-     * 播放已注册的TypedAnimation
-     *
-     * @param UUID 实体 UUID
-     * @param animationId 动画ID，由registerTypedAnimation方法返回
-     * @param duration 动画持续时间（单位：tick）
-     * @return 是否成功播放动画
-     */
-    public boolean playTypedAnimation(String UUID, String animationId, int duration) {
-        IAnimatable<?> animatable = findAnimatable(UUID);
-        if (animatable == null) {
-            SparkCore.LOGGER.error("SparkApi.playTypedAnimation: Animatable with id '{}' not found", UUID);
-            return false;
-        }
-
-        if (!(animatable instanceof IEntityAnimatable)) {
-            SparkCore.LOGGER.error("SparkApi.playTypedAnimation: Animatable must be an entity type");
-            return false;
-        }
-
-        try {
-            // 查找注册的TypedAnimation
-            ResourceLocation animationResLoc = ResourceLocation.parse(animationId);
-            TypedAnimation animation = SparkRegistries.getTYPED_ANIMATION().get(animationResLoc);
-            if (animation == null) {
-                SparkCore.LOGGER.error("SparkApi.playTypedAnimation: Animation with id '{}' not found", animationId);
-                return false;
-            }
-
-            // 播放动画
-            animation.play(animatable, duration, false);
-
-            // 如果是服务端，同步到客户端
-            if (!animatable.getAnimLevel().isClientSide()) {
-                Entity entity = ((IEntityAnimatable<?>) animatable).getAnimatable();
-                animation.syncToClient(entity.getId(), duration, false, null);
-            }
-
-            return true;
-        } catch (Exception e) {
-            SparkCore.LOGGER.error("SparkApi.playTypedAnimation: Error playing animation", e);
-            return false;
+    public void registerEntityAnimationOverride(String UUID, String animationStateKey, String animationId) {
+        animationStateKey = "spark_core:" + animationStateKey;
+        ResourceLocation animationResLoc = ResourceLocation.parse(animationId);
+        TypedAnimation animation = SparkRegistries.getTYPED_ANIMATION().get(animationResLoc);
+        if (animation != null) {
+            AnimStateMachineManager.INSTANCE.registerEntityAnimationOverride(UUID, animationStateKey, animation);
         }
     }
 
 
-    /**
-     * Plays an animation for a specified model.
-     *
-     * @param modelId The unique identifier of the model/entity to animate.
-     * @param animationName The name of the animation to play.
-     */
     /**
      * 播放模型动画
      *
      * @param UUID entity的UUID
      * @param namespace 资源命名空间，默认为"player"
      * @param animationName 动画名称，如 "attack"
+     * @param transTime 动画持续时间（单位：tick）
      */
-    public void playAnimation(String UUID, String namespace, String animationName) {
+    public Boolean playAnimation(String UUID, String namespace, String animationName, int transTime) {
         IAnimatable<?> animatable = findAnimatable(UUID);
-        if (animatable != null) {
-            // 生成唯一的动画ID，格式为 namespace:animationName
-            String animationId = namespace + "_" + animationName;
+        if (animatable == null) {
+            SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Animatable with id '{}' not found", UUID);
+            return false;
+        }
+        if (!(animatable instanceof IEntityAnimatable)) {
+            SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Animatable must be an entity type");
+            return false;
+        }
+        // 生成唯一的动画ID，格式为 namespace:animationName
+        String animationId = namespace + "/" + animationName;
+        try {
+            // 查找注册的TypedAnimation
+            ResourceLocation animationResLoc = ResourceLocation.withDefaultNamespace(animationId);
+            TypedAnimation animation = SparkRegistries.getTYPED_ANIMATION().get(animationResLoc);
 
-            // 注册动画（如果已注册则会返回已注册的动画）
-            String fullId =  registerTypedAnimation(animationId, namespace, animationName);
+            if (animation == null) {
+                SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Animation with id '{}' not found", animationId);
+                return false;
+            }
 
             // 播放动画
-            playTypedAnimation(UUID, fullId, 0);
-        } else {
-            SparkCore.LOGGER.error("Cannot play animation: model '{}' not found", UUID);
+            animation.play(animatable, transTime, false);
+
+            // 如果是服务端，同步到客户端
+            if (!animatable.getAnimLevel().isClientSide()) {
+                Entity entity = ((IEntityAnimatable<?>) animatable).getAnimatable();
+                animation.syncToClient(entity.getId(), transTime, false, null);
+            }
+            return true;
+        } catch (Exception e) {
+            SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Error playing animation", e);
+            return false;
         }
     }
 }

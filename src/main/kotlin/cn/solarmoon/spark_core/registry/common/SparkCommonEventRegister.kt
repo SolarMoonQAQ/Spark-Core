@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.animation.anim.play.AnimApplier
 import cn.solarmoon.spark_core.animation.presets.CommonAnimApplier
+import cn.solarmoon.spark_core.animation.presets.DynamicStateAnimApplier
 import cn.solarmoon.spark_core.animation.presets.PoseAnimApplier
 import cn.solarmoon.spark_core.animation.presets.UseAnimApplier
 import cn.solarmoon.spark_core.animation.vanilla.BoneModifier
@@ -31,6 +32,7 @@ object SparkCommonEventRegister {
         add(CommonAnimApplier)
         add(UseAnimApplier)
         add(PoseAnimApplier)
+        add(DynamicStateAnimApplier)
         add(BoneModifier)
         add(CollisionFuncApplier)
         add(SkillApplier)

@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.host.getBody
+import cn.solarmoon.spark_core.physics.presets.callback.HitReactionCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
@@ -122,9 +123,11 @@ class PhysicsCollisionObjectSyncPayload(
                         host.bindBody(body) {
                             isContactResponse = false
                             isKinematic = true
-                            collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
+                            collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                             setGravity(Vector3f())
                             addPhysicsTicker(MoveWithAnimatedBoneTicker(payload.boneName, offset))
+                            body.setEnableSleep(false)
+                            body.addCollisionCallback(object : HitReactionCollisionCallback {})
                         }
 
                         SparkCore.LOGGER.info("PhysicsCollisionObjectSyncPayload: Created collision box '${payload.collisionBoxId}' bound to bone '${payload.boneName}'")

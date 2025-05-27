@@ -37,11 +37,7 @@ class TypedAnimationBuilder(private val register: DeferredRegister<TypedAnimatio
      */
     fun animIndex(index: AnimIndex) = apply { this.index = index }
 
-    /**
-     * 设置动画提供者
-     *
-     * @param provider 动画提供者
-     */
+
     fun provider(provider: TypedAnimProvider) = apply { this.provider = provider }
 
     /**
@@ -65,7 +61,7 @@ class TypedAnimationBuilder(private val register: DeferredRegister<TypedAnimatio
     }
 
     /**
-     * 构造并动态注册动画
+     * 构造并在注册阶段过后动态注册
      *
      * @param fullId 完整的资源位置（包含命名空间）
      * @return 注册的动画实例
@@ -73,15 +69,7 @@ class TypedAnimationBuilder(private val register: DeferredRegister<TypedAnimatio
     fun registerDynamic(fullId: ResourceLocation): TypedAnimation {
         val animation = constructOnly()
         val registry = SparkRegistries.TYPED_ANIMATION
-
-        // 尝试将注册表转换为 DynamicAwareRegistry
-        if (registry is DynamicAwareRegistry<*>) {
-            @Suppress("UNCHECKED_CAST")
-            (registry as DynamicAwareRegistry<TypedAnimation>).registerDynamic(fullId, animation)
-        } else {
-            throw IllegalStateException("TYPED_ANIMATION registry is not a DynamicAwareRegistry")
-        }
-
+        registry.registerDynamic(fullId, animation)
         return animation
     }
 

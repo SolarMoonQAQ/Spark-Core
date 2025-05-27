@@ -1,10 +1,9 @@
-package cn.solarmoon.spark_core.network.dynamic
+package cn.solarmoon.spark_core.resource.payload.registry
 
 import cn.solarmoon.spark_core.SparkCore
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
-import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
 
 data class DynamicRegistryUnsyncS2CPacket(

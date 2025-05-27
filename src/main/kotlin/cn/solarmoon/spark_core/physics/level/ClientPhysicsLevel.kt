@@ -14,15 +14,14 @@ class ClientPhysicsLevel(
     override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
         super.prePhysicsTick(space, timeStep)
 
+        val renderDistance = Minecraft.getInstance().gameRenderer.renderDistance
         Minecraft.getInstance().also { mc ->
             mc.player?.let { player ->
                 val level = mc.level ?: return@let
-                val entities = level.entities.all
-
-                entities.filterNotNull().forEach {
-                    if (!it.isRemoved && it.isAlive)
+                level.getEntities(null, player.boundingBox.inflate(renderDistance.toDouble()))
+                    .filterNotNull().forEach {
                         NeoForge.EVENT_BUS.post(PhysicsEntityTickEvent(it))
-                }
+                    }
             }
         }
     }

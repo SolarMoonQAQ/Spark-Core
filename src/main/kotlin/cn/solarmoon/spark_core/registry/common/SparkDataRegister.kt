@@ -11,8 +11,8 @@ object SparkDataRegister {
 
     private fun reg(event: AddReloadListenerEvent) {
         event.addListener(EntityModelListener())
-        event.addListener(EntityAnimListener())
-        event.addListener(IKConstraintListener())
+//        event.addListener(EntityAnimListener())
+//        event.addListener(IKConstraintListener())
     }
 
     @JvmStatic

@@ -1,264 +1,128 @@
 {
   "tasks": [
     {
-      "id": "0951999b-27e6-4f6a-bbc6-9aa4066c061b",
-      "name": "Analyze NeoForge Registry API & Behavior",
-      "description": "Thoroughly analyze Registry.java, MappedRegistry.java, and BaseMappedRegistry.java from NeoForge 1.21 sources (F:\\temp\\spark-core-test\\neoforge-21.1.95-minecraft-sources\\net\\neoforged\\neoforge\\registries\\) to compile a comprehensive list of all public methods and their expected behaviors. This list will serve as the specification for DynamicAwareRegistry.",
-      "notes": "This foundational analysis is critical for ensuring API compatibility.",
+      "id": "abf7354d-547b-4da8-8ad7-e232cdcb4dd5",
+      "name": "增强AnimStateMachineManager以支持实体动画覆盖",
+      "description": "修改AnimStateMachineManager.kt，使其能够存储和管理每个实体（通过UUID识别）的状态动画覆盖。动画状态键将来源于EntityStates中定义的各状态的名称（即SparkTypedAnimations的注册表键字符串）。",
+      "notes": "动画状态键的生成和使用必须一致。考虑实体卸载时清理相关数据，防止内存泄漏。",
       "status": "已完成",
       "dependencies": [],
-      "createdAt": "2025-05-21T19:00:58.489Z",
-      "updatedAt": "2025-05-22T10:57:44.131Z",
+      "createdAt": "2025-05-26T19:16:15.731Z",
+      "updatedAt": "2025-05-26T19:35:50.127Z",
       "relatedFiles": [
         {
-          "path": "F:\\temp\\spark-core-test\\neoforge-21.1.95-minecraft-sources\\net\\neoforged\\neoforge\\registries\\Registry.java",
-          "type": "REFERENCE",
-          "description": "NeoForge Registry interface definition."
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/anim/state/AnimStateMachineManager.kt",
+          "type": "TO_MODIFY",
+          "description": "主要修改文件，添加数据结构和API"
         },
         {
-          "path": "F:\\temp\\spark-core-test\\neoforge-21.1.95-minecraft-sources\\net\\neoforged\\neoforge\\registries\\MappedRegistry.java",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/presets/EntityStates.kt",
           "type": "REFERENCE",
-          "description": "NeoForge MappedRegistry implementation."
+          "description": "动画状态键的来源参考"
         },
         {
-          "path": "F:\\temp\\spark-core-test\\neoforge-21.1.95-minecraft-sources\\net\\neoforged\\neoforge\\registries\\BaseMappedRegistry.java",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/registry/common/SparkTypedAnimations.kt",
           "type": "REFERENCE",
-          "description": "NeoForge BaseMappedRegistry implementation."
+          "description": "动画注册表键的来源"
+        },
+        {
+          "path": "src/main/java/net/minecraft/world/entity/Entity.java",
+          "type": "REFERENCE",
+          "description": "获取实体ID"
+        },
+        {
+          "path": "src/main/java/dev/kosmx/playerAnim/core/animation/Animation.java",
+          "type": "REFERENCE",
+          "description": "动画对象的类型"
         }
       ],
-      "implementationGuide": "Read the source code. Document method signatures, return types, typical usage patterns, and any special conditions or error handling. Pay attention to methods related to object lifecycle, retrieval, iteration, and tagging.",
-      "verificationCriteria": "A detailed document or internal checklist of all relevant Registry API methods and their observed/documented behavior is produced and internally reviewed.",
-      "analysisResult": "Refined plan for DynamicAwareRegistry: Ensure full Registry API compatibility by analyzing NeoForge sources (Registry.java, MappedRegistry.java, BaseMappedRegistry.java). Implement all missing methods in DynamicAwareRegistry.kt. Unify registration logic to be game-phase aware, and ensure all registration paths return DeferredHolder.",
-      "summary": "对Registry.java, MappedRegistry.java, 和 BaseMappedRegistry.java 进行了详细分析，梳理了所有公开方法签名、预期行为、内部数据结构以及关键机制（如Holders、Tags、生命周期、序列化、NeoForge扩展如Callbacks、Aliases、DataMaps）。这些信息将作为DynamicAwareRegistry实现API兼容性的基础规范。",
-      "completedAt": "2025-05-22T10:57:44.131Z"
+      "implementationGuide": "1. 在AnimStateMachineManager中定义一个新的私有成员变量，例如 `private val entityAnimationOverrides: MutableMap<Int, MutableMap<String, Animation>> = ConcurrentHashMap()`。外层Map的键是 `entity.id`，内层Map的键是动画状态的字符串表示（例如 `EntityStates.Idle().name` 或直接使用 `SparkTypedAnimations.IDLE.get().registryKey.toString()`），值是 `Animation` 对象。\n2. 实现公共API函数用于注册、注销和查询实体的动画覆盖：\n   - `fun registerEntityAnimationOverride(entityId: Int, animationStateKey: String, animation: Animation)`\n   - `fun unregisterEntityAnimationOverride(entityId: Int, animationStateKey: String)`\n   - `fun clearAllEntityAnimationOverrides(entityId: Int)`\n   - `fun getEntityAnimationOverride(entityId: Int, animationStateKey: String): Animation?`\n3. 考虑在实体从世界卸载时（例如监听 `EntityLeaveLevelEvent`）自动调用 `clearAllEntityAnimationOverrides` 清理相关数据，以防止内存泄漏。",
+      "verificationCriteria": "1. 能够成功为实体ID注册一个或多个状态的自定义动画。\n2. 能够成功查询已注册的自定义动画。\n3. 能够成功注销特定状态的自定义动画或实体所有自定义动画。\n4. 在并发访问时数据结构保持一致性。\n5. 实体卸载时，其动画覆盖数据能被清理（如果实现了此逻辑）。",
+      "summary": "成功增强了 AnimStateMachineManager 以支持实体动画覆盖。主要改动包括：\n1. 添加了 `entityAnimationOverrides` (类型为 `MutableMap<Int, MutableMap<String, TypedAnimation>>`) 用于存储每个实体基于动画状态键的 TypedAnimation 覆盖。\n2. 实现了 `registerEntityAnimationOverride` 方法，用于注册特定实体的动画覆盖。\n3. 实现了 `unregisterEntityAnimationOverride` 方法，用于注销特定实体特定状态的动画覆盖，并在该实体无其他覆盖时清理其条目。\n4. 实现了 `clearAllEntityAnimationOverrides` 方法，用于清除特定实体的所有动画覆盖。\n5. 实现了 `getEntityAnimationOverride` 方法，该方法会检索指定的 `TypedAnimation`。关键在于，此方法会通过 `SparkRegistries.TYPED_ANIMATION.getKey()` 检查 `TypedAnimation` 的有效性（是否仍注册）。如果动画无效，则会将其从管理器中移除并返回 `null`。\n6. 添加了对 `EntityLeaveLevelEvent` 的监听，在实体离开世界时自动调用 `clearAllEntityAnimationOverrides` 和清理相关的状态机，以防止内存泄漏。\n7. 确保了所有操作都使用正确的 `TypedAnimation` 类型，并处理了其注册状态的校验。\n\n代码经过多次迭代修正，解决了导入问题和类型问题，最终版本符合设计要求。",
+      "completedAt": "2025-05-26T19:35:50.127Z"
     },
     {
-      "id": "04e0ebf0-686d-4bfb-ac6f-f28456dcb733",
-      "name": "Implement Missing Registry Methods in DynamicAwareRegistry",
-      "description": "Based on the analysis from 'Analyze NeoForge Registry API & Behavior', implement all missing net.minecraft.core.Registry interface methods in cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry.kt. Methods should correctly delegate to internalRegistry or operate on dynamicEntries as appropriate, ensuring thread safety using the existing ReadWriteLock.",
+      "id": "97640ef0-0453-4418-a962-a7f0b93ab127",
+      "name": "创建DynamicStateAnimApplier以应用实体动画覆盖",
+      "description": "创建一个新的Kotlin文件DynamicStateAnimApplier.kt。它将监听ChangePresetAnimEvent.EntityState事件，并根据AnimStateMachineManager中存储的覆盖信息，动态替换所有EntityStates中定义的状态的动画。",
+      "notes": "此应用器将处理所有EntityStates中定义的状态。关键是正确使用state.name作为查询AnimStateMachineManager的键。",
+      "status": "已完成",
+      "dependencies": [
+        {
+          "taskId": "abf7354d-547b-4da8-8ad7-e232cdcb4dd5"
+        }
+      ],
+      "createdAt": "2025-05-26T19:16:15.731Z",
+      "updatedAt": "2025-05-26T19:41:22.614Z",
+      "relatedFiles": [
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/vanilla/custom/DynamicStateAnimApplier.kt",
+          "type": "CREATE",
+          "description": "新创建的应用器文件"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/anim/state/AnimStateMachineManager.kt",
+          "type": "REFERENCE",
+          "description": "调用其API获取实体动画覆盖"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/presets/EntityStates.kt",
+          "type": "REFERENCE",
+          "description": "明确所有需要检查和可能被覆盖的状态"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/event/ChangePresetAnimEvent.kt",
+          "type": "REFERENCE",
+          "description": "监听此事件类型"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/vanilla/vindicator/VindicatorStateAnimApplier.kt",
+          "type": "REFERENCE",
+          "description": "参考其事件监听和动画替换的实现方式"
+        }
+      ],
+      "implementationGuide": "1. 创建一个名为 `DynamicStateAnimApplier` 的Kotlin object。\n2. 在该object中创建一个 `@SubscribeEvent` 注解的方法，用于监听 `ChangePresetAnimEvent.EntityState` 事件，类似于 `VindicatorStateAnimApplier`。\n3. 在事件处理方法中：\n   a. 获取事件中的实体 `event.entity` 和状态 `event.state`。\n   b. 使用 `event.state.name` (这将是类似 `spark_core:idle` 的字符串) 作为 `animationStateKey`。\n   c. 调用 `AnimStateMachineManager.getEntityAnimationOverride(event.entity.id, animationStateKey)` 来检查是否有覆盖动画。\n   d. 如果返回的 `animation` 不为 `null`，则设置 `event.newAnim = animation`。\n4. 确保此Applier在Mod初始化时被注册到事件总线。",
+      "verificationCriteria": "1. 对于没有在AnimStateMachineManager中注册自定义动画的实体，其动画播放不受影响。\n2. 对于为任何EntityStates中的状态注册了自定义动画的实体，在播放对应状态的动画时，实际播放的是自定义动画。\n3. DynamicStateAnimApplier能正确处理来自EntityStateAnimMachine发布的针对所有EntityStates中定义的状态的事件。\n4. 事件监听和处理逻辑正确，没有导致游戏崩溃或明显的性能问题。",
+      "summary": "成功创建了 `DynamicStateAnimApplier.kt` 文件，并实现了 `DynamicStateAnimApplier` object。\n主要功能包括：\n1. 在 `cn.solarmoon.spark_core.animation.applier` 包下创建了该文件。\n2. `DynamicStateAnimApplier` object 在其 `init` 块中注册到 `NeoForge.EVENT_BUS`。\n3. 实现了一个 `@SubscribeEvent` 注解的方法 `onEntityStateAnimationChange`，用于监听 `ChangePresetAnimEvent.EntityState` 事件。\n4. 在事件处理方法中，通过 `event.entity.id` 和 `event.state.name` (作为动画状态键) 从 `AnimStateMachineManager.getEntityAnimationOverride()` 获取已注册的动画覆盖 (`TypedAnimation`)。\n5. 如果找到有效的 `TypedAnimation` 覆盖，则将其赋值给 `event.newAnim`，从而动态替换实体即将播放的动画。\n6. 解决了导入路径问题 (将 `ChangePresetAnimEvent` 的导入从 `...animation.event` 改为 `...event`)。\n7. 解决了获取动画状态键的问题 (从 `state.defaultAnim` 改为 `state.name`)，并添加了必要的空检查。\n8. 移除了未使用的导入语句。\n\n该 applier 现在能够根据 `AnimStateMachineManager` 中存储的配置，在实体状态改变时应用自定义动画。",
+      "completedAt": "2025-05-26T19:41:22.613Z"
+    },
+    {
+      "id": "d2767871-81fe-4f9c-a368-f5cf8a8e17f9",
+      "name": "集成并测试DynamicStateAnimApplier",
+      "description": "确保DynamicStateAnimApplier正确注册到事件总线，并与AnimStateMachineManager和EntityStateAnimMachine协同工作，以实现对所有EntityStates中状态的动态动画替换。",
+      "notes": "重点是全面测试所有EntityStates中的状态，确保动态替换逻辑的普适性和正确性。确保AnimStateMachineManager中的数据清理逻辑（如实体卸载时）按预期工作。",
       "status": "進行中",
       "dependencies": [
         {
-          "taskId": "0951999b-27e6-4f6a-bbc6-9aa4066c061b"
+          "taskId": "97640ef0-0453-4418-a962-a7f0b93ab127"
         }
       ],
-      "createdAt": "2025-05-21T19:00:58.489Z",
-      "updatedAt": "2025-05-22T10:58:12.249Z",
+      "createdAt": "2025-05-26T19:16:15.731Z",
+      "updatedAt": "2025-05-26T19:46:06.768Z",
       "relatedFiles": [
         {
-          "path": "cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/SparkCore.kt",
           "type": "TO_MODIFY",
-          "description": "Main class for implementing registry methods."
-        }
-      ],
-      "implementationGuide": "Iterate through the method list from the analysis task. For each method, determine if its logic should primarily concern internalRegistry (static entries), dynamicEntries, or a combination. Implement the logic, ensuring proper locking (read or write lock). Examples: getOptional(RL), getKey(T), keySet(), entrySet(), holders(), tags(), getHolder(RL), getHolderOrThrow(ResourceKey), wrapAsHolder(T). Also consider lifecycle methods like freeze(), isFrozen(), createRegistrationLookup().",
-      "verificationCriteria": "All methods from the Registry interface (as identified in the analysis task) are implemented in DynamicAwareRegistry.kt. Code compiles, and a peer review confirms correct delegation and locking strategies.",
-      "analysisResult": "Refined plan for DynamicAwareRegistry: Ensure full Registry API compatibility by analyzing NeoForge sources (Registry.java, MappedRegistry.java, BaseMappedRegistry.java). Implement all missing methods in DynamicAwareRegistry.kt. Unify registration logic to be game-phase aware, and ensure all registration paths return DeferredHolder."
-    },
-    {
-      "id": "377f1648-8ce7-46d1-8dde-3cef61cc50aa",
-      "name": "Implement Game Phase Detection Mechanism",
-      "description": "Research and implement a reliable mechanism within the Spark Core framework to determine the current game registration phase (e.g., before static registration, during static registration events, after static registration/runtime). This mechanism will be used by DynamicAwareRegistry to guide its registration logic.",
-      "status": "待處理",
-      "dependencies": [],
-      "createdAt": "2025-05-21T19:00:58.489Z",
-      "updatedAt": "2025-05-21T19:00:58.489Z",
-      "relatedFiles": [
+          "description": "注册DynamicStateAnimApplier到事件总线"
+        },
         {
-          "path": "cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/vanilla/custom/DynamicStateAnimApplier.kt",
           "type": "REFERENCE",
-          "description": "Consumer of the game phase detection."
+          "description": "被注册的应用器"
         },
         {
-          "path": "cn/solarmoon/spark_core/core_init/GamePhaseTracker.kt",
-          "type": "CREATE",
-          "description": "Proposed new class for tracking game phases, or integrate into an existing suitable core component."
-        }
-      ],
-      "implementationGuide": "Investigate NeoForge events (e.g., RegisterEvent, NewRegistryEvent, specific ModLoader state changes) or other reliable indicators. Implement a helper class or a method (e.g., GamePhaseTracker.isStaticRegistrationAllowed()) that returns the current phase status. This might involve subscribing to NeoForge's event bus. The implementation should be placed in an appropriate shared location if not solely used by DynamicAwareRegistry.",
-      "verificationCriteria": "The implemented mechanism can correctly report whether static registration is currently allowed/appropriate, verifiable through logging or debug breakpoints during different game startup stages.",
-      "analysisResult": "Refined plan for DynamicAwareRegistry: Ensure full Registry API compatibility by analyzing NeoForge sources (Registry.java, MappedRegistry.java, BaseMappedRegistry.java). Implement all missing methods in DynamicAwareRegistry.kt. Unify registration logic to be game-phase aware, and ensure all registration paths return DeferredHolder."
-    },
-    {
-      "id": "cfc5a114-99f8-490b-a0bd-51dd526197a0",
-      "name": "Unify Registration Logic and DeferredHolder Return",
-      "description": "Modify or create registration methods in DynamicAwareRegistry.kt (e.g., enhancing 'register' and 'registerDynamic') to: 1. Use the game phase detection (from 'Implement Game Phase Detection Mechanism') to decide whether to register to internalRegistry (static) or dynamicEntries (dynamic). 2. Ensure that all registration paths (both static and dynamic) return a cn.solarmoon.spark_core.common.holder.DeferredHolder<T>.",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "04e0ebf0-686d-4bfb-ac6f-f28456dcb733"
-        },
-        {
-          "taskId": "377f1648-8ce7-46d1-8dde-3cef61cc50aa"
-        }
-      ],
-      "createdAt": "2025-05-21T19:00:58.489Z",
-      "updatedAt": "2025-05-21T19:00:58.489Z",
-      "relatedFiles": [
-        {
-          "path": "cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
-          "type": "TO_MODIFY",
-          "description": "Modify registration methods here."
-        },
-        {
-          "path": "cn/solarmoon/spark_core/common/holder/DeferredHolder.kt",
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/anim/state/AnimStateMachineManager.kt",
           "type": "REFERENCE",
-          "description": "The target return type for registrations."
-        }
-      ],
-      "implementationGuide": "Define the primary registration method(s) in DynamicAwareRegistry. Inside these methods, query the game phase. If static registration is allowed, call internalRegistry.register(...). If this returns a Holder.Reference, it must be wrapped or adapted into a DeferredHolder. If dynamic registration is chosen, add to dynamicEntries and create a DeferredHolder that resolves to this dynamic entry. The existing registerDynamic might be refactored or serve as a base.",
-      "verificationCriteria": "Registration methods correctly choose static/dynamic paths based on simulated game phases. All registration methods consistently return DeferredHolder<T>. Behavior confirmed via unit tests and debugging.",
-      "analysisResult": "Refined plan for DynamicAwareRegistry: Ensure full Registry API compatibility by analyzing NeoForge sources (Registry.java, MappedRegistry.java, BaseMappedRegistry.java). Implement all missing methods in DynamicAwareRegistry.kt. Unify registration logic to be game-phase aware, and ensure all registration paths return DeferredHolder."
-    },
-    {
-      "id": "5cbced15-cfa7-423d-a92f-201d6bac1e36",
-      "name": "Write Comprehensive Unit Tests for DynamicAwareRegistry",
-      "description": "Create or update unit tests for DynamicAwareRegistry in src/test/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistryTest.kt to cover: 1. All newly implemented Registry interface methods, verifying behavior with both static and dynamic entries. 2. The unified registration logic under different simulated game phases. 3. Correct creation and resolution of DeferredHolder for both static and dynamic registrations. 4. Concurrency scenarios to ensure thread safety.",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "cfc5a114-99f8-490b-a0bd-51dd526197a0"
-        }
-      ],
-      "createdAt": "2025-05-21T19:00:58.489Z",
-      "updatedAt": "2025-05-21T19:00:58.489Z",
-      "relatedFiles": [
-        {
-          "path": "src/test/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistryTest.kt",
-          "type": "TO_MODIFY",
-          "description": "Unit test file for DynamicAwareRegistry."
-        }
-      ],
-      "implementationGuide": "Use a testing framework like JUnit and MockK. Mock the game phase detection mechanism to test different registration paths. Test edge cases, error conditions, and concurrent access patterns for key methods.",
-      "verificationCriteria": "All unit tests pass, achieving high code coverage for the new and modified logic in DynamicAwareRegistry. Test report reviewed.",
-      "analysisResult": "Refined plan for DynamicAwareRegistry: Ensure full Registry API compatibility by analyzing NeoForge sources (Registry.java, MappedRegistry.java, BaseMappedRegistry.java). Implement all missing methods in DynamicAwareRegistry.kt. Unify registration logic to be game-phase aware, and ensure all registration paths return DeferredHolder."
-    },
-    {
-      "id": "de3dac5a-61fe-4256-8081-d58a440fe283",
-      "name": "实现核心 Holder.Reference 检索方法",
-      "description": "在 DynamicAwareRegistry.kt 中实现 getHolder(id: Int)、getHolder(location: ResourceLocation)、getHolder(key: ResourceKey<T>)、getHolderOrThrow(key: ResourceKey<T>) 和 getAny()。这些方法需正确处理静态与动态条目，并返回 Registry 接口指定的 Optional<Holder.Reference<T>> 或 Holder.Reference<T>。",
-      "notes": "为动态条目创建合适的 Holder.Reference 实例是关键。",
-      "status": "已完成",
-      "dependencies": [],
-      "createdAt": "2025-05-22T11:23:40.808Z",
-      "updatedAt": "2025-05-22T11:25:17.991Z",
-      "relatedFiles": [
-        {
-          "path": "src/main/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
-          "type": "TO_MODIFY",
-          "description": "实现核心 Holder.Reference 检索方法"
-        }
-      ],
-      "implementationGuide": "1. 对于 getHolder(id): 检查 dynamicIdToKey 和 dynamicEntries。若找到动态条目，为其创建或获取 Holder.Reference。否则，委托给 staticRegistry.getHolder(id)。 2. 对于 getHolder(location) 和 getHolder(key): 类似地，先检查 dynamicEntries。 3. 对于 getHolderOrThrow(key): 基于 getHolder(key) 实现。 4. 对于 getAny(): 优先从 dynamicEntries 中选择一个条目并返回其 Holder.Reference；若动态为空，则委托给 staticRegistry。 5. 所有操作需使用读锁保证线程安全。",
-      "verificationCriteria": "单元测试验证这些方法能为动态和静态条目返回正确的 Holder.Reference 实例，覆盖条目存在于动态、静态或均不存在等场景。",
-      "analysisResult": "Implement Missing Registry Methods in DynamicAwareRegistry: Based on the analysis from 'Analyze NeoForge Registry API & Behavior', implement all missing net.minecraft.core.Registry interface methods in cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry.kt. Methods should correctly delegate to internalRegistry or operate on dynamicEntries as appropriate, ensuring thread safety using the existing ReadWriteLock.",
-      "summary": "在 DynamicAwareRegistry.kt 中成功实现了 getHolder(id), getHolder(location), getHolder(key), getHolderOrThrow(key) 和 getAny() 方法。这些方法现在能够为动态条目正确创建和返回 DeferredHolder 实例，并在找不到动态条目时委托给静态注册表。已添加必要的导入并确保了线程安全。",
-      "completedAt": "2025-05-22T11:25:17.990Z"
-    },
-    {
-      "id": "2f434617-7047-4305-9a71-c9fb1f6cb1f0",
-      "name": "实现 Holder 创建与包装方法",
-      "description": "在 DynamicAwareRegistry.kt 中实现 createIntrusiveHolder(T value) 和 wrapAsHolder(T value) 方法。这些方法需要为动态或静态条目正确创建 Holder.Reference<T> 实例。",
-      "status": "已完成",
-      "dependencies": [
-        {
-          "taskId": "de3dac5a-61fe-4256-8081-d58a440fe283"
-        }
-      ],
-      "createdAt": "2025-05-22T11:23:40.808Z",
-      "updatedAt": "2025-05-22T11:53:23.178Z",
-      "relatedFiles": [
-        {
-          "path": "src/main/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
-          "type": "TO_MODIFY",
-          "description": "实现 Holder 创建与包装方法"
-        }
-      ],
-      "implementationGuide": "1. createIntrusiveHolder(value): 若 value 是动态条目（通过 dynamicValueToKey检查），则为其创建特定的 Holder.Reference。否则，委托给 staticRegistry.createIntrusiveHolder(value)。 2. wrapAsHolder(value): 逻辑与 createIntrusiveHolder 类似。 3. 确保线程安全。",
-      "verificationCriteria": "单元测试确保为动态和静态值正确创建 Holder.Reference。",
-      "analysisResult": "Implement Missing Registry Methods in DynamicAwareRegistry: Based on the analysis from 'Analyze NeoForge Registry API & Behavior', implement all missing net.minecraft.core.Registry interface methods in cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry.kt. Methods should correctly delegate to internalRegistry or operate on dynamicEntries as appropriate, ensuring thread safety using the existing ReadWriteLock.",
-      "summary": "已实现 createIntrusiveHolder 和 wrapAsHolder 方法。对于动态条目，它们现在会使用 dynamicValueToKey 查找并通过 Holder.Reference.createStandAlone(this.dynamicOwner, dynamicKey) 创建 Holder；对于未知条目，则委托给 staticRegistry。线程安全已通过读锁保证。",
-      "completedAt": "2025-05-22T11:53:23.177Z"
-    },
-    {
-      "id": "f2ca1815-661c-4606-b853-ce084f2075ef",
-      "name": "实现标签管理方法",
-      "description": "在 DynamicAwareRegistry.kt 中实现 getTag(TagKey<T>)、getOrCreateTag(TagKey<T>)、getTagOrEmpty(TagKey<T>)、getTags()、getTagNames()、resetTags() 和 bindTags(Map)。确保标签系统同时支持动态和静态条目。",
-      "notes": "可能需要为动态条目维护独立的标签数据结构，并与静态注册表的标签合并。",
-      "status": "已完成",
-      "dependencies": [
-        {
-          "taskId": "de3dac5a-61fe-4256-8081-d58a440fe283"
-        }
-      ],
-      "createdAt": "2025-05-22T11:23:40.808Z",
-      "updatedAt": "2025-05-22T11:58:47.502Z",
-      "relatedFiles": [
-        {
-          "path": "src/main/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
-          "type": "TO_MODIFY",
-          "description": "实现标签管理方法"
-        }
-      ],
-      "implementationGuide": "1. 设计动态条目标签的存储（例如 Map<TagKey<T>, MutableList<Holder<T>>>）。 2. getOrCreateTag, getTag, getTagOrEmpty: 优先检查动态标签，然后是静态标签；结果可能需要合并或创建自定义的 HolderSet.Named。 3. getTags, getTagNames: 合并动态与静态的结果。 4. bindTags: 应用于动态标签并委托给静态注册表。 5. resetTags: 清理动态标签并委托。 6. 保证线程安全。",
-      "verificationCriteria": "单元测试覆盖涉及动态条目、静态条目及其组合的标签创建、检索和绑定操作。",
-      "analysisResult": "Implement Missing Registry Methods in DynamicAwareRegistry: Based on the analysis from 'Analyze NeoForge Registry API & Behavior', implement all missing net.minecraft.core.Registry interface methods in cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry.kt. Methods should correctly delegate to internalRegistry or operate on dynamicEntries as appropriate, ensuring thread safety using the existing ReadWriteLock.",
-      "summary": "已实现所有标签管理方法 (getTag, getOrCreateTag, getTagOrEmpty, getTags, getTagNames, bindTags, resetTags)。动态标签存储在 dynamicTagToHolders 中。方法会适当地处理动态和静态标签，并在需要时（如 getTags）提供合并视图。bindTags 会区分动态和静态 Holder 并分别处理。线程安全通过读写锁保证。",
-      "completedAt": "2025-05-22T11:58:47.501Z"
-    },
-    {
-      "id": "ecc83d98-6483-4881-b95f-ebff9a9420a5",
-      "name": "实现 NeoForge 扩展方法",
-      "description": "在 DynamicAwareRegistry.kt 中实现 NeoForge 特有的扩展方法，如 addAlias(...)、addCallback(...)、getDataMap(...)、getData(...)、holderOwner()、doesSync()、getMaxId()，并确保它们能正确处理动态条目。",
-      "status": "已完成",
-      "dependencies": [
-        {
-          "taskId": "de3dac5a-61fe-4256-8081-d58a440fe283"
-        }
-      ],
-      "createdAt": "2025-05-22T11:23:40.808Z",
-      "updatedAt": "2025-05-22T12:05:10.059Z",
-      "relatedFiles": [
-        {
-          "path": "src/main/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
-          "type": "TO_MODIFY",
-          "description": "实现 NeoForge 扩展方法"
-        }
-      ],
-      "implementationGuide": "1. addAlias, addCallback: 决定是否适用于动态条目。若是，则内部存储；否则委托。 2. getDataMap, getData: 优先查询动态存储，若未找到则委托。 3. holderOwner(): 通常返回 this。 4. doesSync(): 委托，除非动态条目影响同步行为。 5. getMaxId(): 考虑 nextDynamicId。 6. 保证线程安全。",
-      "verificationCriteria": "单元测试验证别名解析、回调调用、DataMap 访问在包含动态条目时的正确性。",
-      "analysisResult": "Implement Missing Registry Methods in DynamicAwareRegistry: Based on the analysis from 'Analyze NeoForge Registry API & Behavior', implement all missing net.minecraft.core.Registry interface methods in cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry.kt. Methods should correctly delegate to internalRegistry or operate on dynamicEntries as appropriate, ensuring thread safety using the existing ReadWriteLock.",
-      "summary": "已在 DynamicAwareRegistry.kt 中实现 NeoForge 特有的扩展方法：addAlias, addCallback (两个重载), getData (两个重载), holderOwner, doesSync, getMaxId。\n- addAlias 和 addCallback 目前委托给 staticRegistry。\n- getData(key, type) 会优先查询动态存储 (dynamicDataMapValues)，然后委托。\n- getData(type) 直接委托。\n- holderOwner 返回 this.dynamicOwner。\n- doesSync 委托。\n- getMaxId 结合动态ID和静态ID的最大值。\n所有操作均考虑了线程安全。",
-      "completedAt": "2025-05-22T12:05:10.058Z"
-    },
-    {
-      "id": "77579349-8fc4-4686-8d37-14a539bab98c",
-      "name": "审查并完成其余核心 Registry 方法",
-      "description": "审查并完成 DynamicAwareRegistry.kt 中其余 Registry 接口方法的实现，包括各种检索方法、集合视图、生命周期管理、Codecs 和 Lookup 方法。确保它们能正确处理动态和静态条目，并保证线程安全。",
-      "status": "待處理",
-      "dependencies": [
-        {
-          "taskId": "de3dac5a-61fe-4256-8081-d58a440fe283"
+          "description": "用于注册测试动画"
         },
         {
-          "taskId": "f2ca1815-661c-4606-b853-ce084f2075ef"
-        },
-        {
-          "taskId": "ecc83d98-6483-4881-b95f-ebff9a9420a5"
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/presets/EntityStateAnimMachine.kt",
+          "type": "REFERENCE",
+          "description": "验证其事件发布是否依然正常"
         }
       ],
-      "createdAt": "2025-05-22T11:23:40.808Z",
-      "updatedAt": "2025-05-22T11:23:40.808Z",
-      "relatedFiles": [
-        {
-          "path": "src/main/kotlin/cn/solarmoon/spark_core/registry/dynamic/DynamicAwareRegistry.kt",
-          "type": "TO_MODIFY",
-          "description": "审查并完成其余核心 Registry 方法"
-        }
-      ],
-      "implementationGuide": "1. 检索方法 (如 getOptional, getOrThrow, byId): 基于已实现的 get 或 getId 构建，并处理动态/静态情况。 2. 集合视图 (keySet, entrySet, stream, iterator, size, holders): 确保正确合并和反映组合状态。 3. 生命周期 (freeze, isFrozen, registrationInfo, registryLifecycle): freeze 方法可能需要选项来冻结动态部分；registryLifecycle 可能需要聚合两部分状态。 4. Codecs 和 Lookups (holderByNameCodec, asLookup): 确保它们能与组合的注册表视图一同工作。 5. 保证线程安全。",
-      "verificationCriteria": "针对所有剩余方法编写全面的单元测试，覆盖各种涉及动态和静态条目的场景。",
-      "analysisResult": "Implement Missing Registry Methods in DynamicAwareRegistry: Based on the analysis from 'Analyze NeoForge Registry API & Behavior', implement all missing net.minecraft.core.Registry interface methods in cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry.kt. Methods should correctly delegate to internalRegistry or operate on dynamicEntries as appropriate, ensuring thread safety using the existing ReadWriteLock."
+      "implementationGuide": "1. 在Mod的主初始化类中（例如 `SparkCore.kt`），将 `DynamicStateAnimApplier` 注册到NeoForge的事件总线 ( `NeoForge.EVENT_BUS.register(DynamicStateAnimApplier)` )。\n2. 编写测试代码或通过游戏内操作，为不同实体的不同 `EntityStates` 状态（例如 Idle, Walk, Sprinting, Fall, Swim等）注册自定义动画到 `AnimStateMachineManager`。\n3. 在游戏中触发这些实体的相应状态，观察动画是否按预期被替换为自定义动画。\n4. 验证没有自定义动画的实体或状态是否仍播放默认动画。\n5. 检查 `EntityStateAnimMachine` 是否继续正常工作，并在状态转换时正确发布事件。",
+      "verificationCriteria": "1. `DynamicStateAnimApplier` 已成功注册到事件总线。\n2. 对 `EntityStates` 中定义的任一状态，如果实体有自定义动画，则该动画被播放。\n3. 如果实体对某个状态没有自定义动画，则播放默认动画。\n4. 系统整体稳定，没有因为新的应用器导致崩溃或错误。\n5. `AnimStateMachineManager` 的数据管理（包括可能的清理逻辑）按预期工作。"
     }
   ]
 }

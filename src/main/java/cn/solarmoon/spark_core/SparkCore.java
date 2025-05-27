@@ -11,7 +11,8 @@ import cn.solarmoon.spark_core.registry.common.SparkRegistries;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
 import cn.solarmoon.spark_core.registry.common.*;
-import cn.solarmoon.spark_core.registry.common.SparkNetworkRegister;
+import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService;
+import cn.solarmoon.spark_core.resource.presets.DynamicResourceApplier;
 import cn.solarmoon.spark_core.rpc.WebSocketRpcServer;
 // import net.minecraft.core.registries.Registries; // No longer needed here
 import net.neoforged.bus.api.IEventBus;
@@ -42,12 +43,12 @@ public class SparkCore {
 //            rpcServer.start(8080); // 启动服务器
         }
 
+        HandlerDiscoveryService.INSTANCE.discoverAndInitializeHandlers(getClass());
         SparkRegistries.register();
         SparkVisualEffects.register();
         SparkAttachments.register();
         SparkCommonEventRegister.register();
         SparkPayloadRegister.register(modEventBus);
-        SparkNetworkRegister.register(modEventBus); // 注册动态注册表网络同步
         SparkDataRegister.register();
         SparkTypedAnimations.register();
         SparkDataComponents.register();

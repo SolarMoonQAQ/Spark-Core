@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.network.payload.resource_sync
+package cn.solarmoon.spark_core.resource.payload.resource_sync
 
 enum class ChangeType {
     ADDED,

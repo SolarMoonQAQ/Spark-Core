@@ -26,8 +26,20 @@ class AnimController(
 
     val blendSpace = BlendSpace()
 
+    /**
+     * 设置当前动画并处理动画切换逻辑
+     * @param anim 要设置的新动画实例（可为空）
+     * @param transTime 动画过渡时间（单位：tick）
+     * 
+     * 处理流程：
+     * 1. 验证动画有效性，若骨骼缺失则记录警告并终止
+     * 2. 处理主动画的拒绝策略和事件触发
+     * 3. 更新动画状态并维护骨骼混合空间
+     * 4. 重置过渡时间计数器
+     */
     fun setAnimation(anim: AnimInstance?, transTime: Int) {
         if (anim != null) {
+            /** 检查动画所需的骨骼有效性 */
             val valid = testAnimValidity(anim)
             if (valid.isNotEmpty()) {
                 anim.isCancelled = false
@@ -36,6 +48,7 @@ class AnimController(
                 return
             }
         }
+        /** 处理动画切换逻辑 */
         if (mainAnim?.rejectNewAnim?.invoke(anim) == true && mainAnim?.isCancelled != true) return
         mainAnim?.cancel()
         mainAnim?.triggerEvent(AnimEvent.SwitchOut(anim))
@@ -43,6 +56,7 @@ class AnimController(
         mainAnim = anim
         anim?.isCancelled = false
         anim?.triggerEvent(AnimEvent.SwitchIn(mainAnim))
+        /** 维护骨骼混合空间 */
         lastBlendResult = animatable.model.bones.mapValues { blendSpace.blendBone(it.key, animatable) }
         anim?.let {
             val removeList = blendSpace.filter { it.value.shouldClearWhenResetAnim }.map { it.key }

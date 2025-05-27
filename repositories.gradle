@@ -38,6 +38,7 @@ dependencies {
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
     implementation("com.google.code.gson:gson:[2.10.1,2.11.0)")
+    implementation 'commons-io:commons-io:2.11.0'
 
     compileOnly files("compileOnly/mcef-neoforge-2.1.6-1.21.1.jar")
     compileOnly files("compileOnly/CustomNPCs-Unofficial-NeoForge-1.21.1.20241226.jar")

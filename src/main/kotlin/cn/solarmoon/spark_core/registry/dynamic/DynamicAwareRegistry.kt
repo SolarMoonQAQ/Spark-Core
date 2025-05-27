@@ -22,6 +22,7 @@ import java.util.stream.Collectors
 import java.util.stream.Stream
 import kotlin.concurrent.withLock
 import kotlin.math.max
+import kotlin.reflect.KClass
 
 /**
  * 动态感知注册表
@@ -30,8 +31,12 @@ import kotlin.math.max
  * 实现 Registry<T> 接口的关键查询方法，并提供 registerDynamic/unregisterDynamic 方法
  *
  * @param staticRegistry 被包装的静态注册表
+ * @param valueType 注册表存储的元素的 KClass
  */
-class DynamicAwareRegistry<T>(private val staticRegistry: Registry<T>) : Registry<T>, WritableRegistry<T> {
+class DynamicAwareRegistry<T: Any>(
+    private val staticRegistry: Registry<T>,
+    val valueType: KClass<T>
+) : Registry<T>, WritableRegistry<T> {
 
     private var isStaticPhaseOver: Boolean = false
 
@@ -72,19 +77,21 @@ class DynamicAwareRegistry<T>(private val staticRegistry: Registry<T>) : Registr
         return maxId
     }
 
-    fun registerDynamic(key: ResourceLocation, value: T): T {
+    fun registerDynamic(key: ResourceLocation, value: T, replace: Boolean = false): T {
         lock.writeLock().lock()
         try {
-            // 检查是否已存在于静态注册表
-            if (staticRegistry.containsKey(key)) {
-                SparkCore.LOGGER.info("Cannot register dynamic entry with key $key: already exists in static registry")
-                return value
-            }
+            if (!replace){
+                // 检查是否已存在于静态注册表
+                if (staticRegistry.containsKey(key)) {
+                    SparkCore.LOGGER.info("Cannot register dynamic entry with key $key: already exists in static registry")
+                    return value
+                }
 
-            // 检查是否已存在于动态注册表
-            if (dynamicEntries.containsKey(key)) {
-                SparkCore.LOGGER.info("Cannot register dynamic entry with key $key: already exists in dynamic registry")
-                return value
+                // 检查是否已存在于动态注册表
+                if (dynamicEntries.containsKey(key)) {
+                    SparkCore.LOGGER.info("Cannot register dynamic entry with key $key: already exists in dynamic registry")
+                    return value
+                }
             }
 
             // 分配ID并存储

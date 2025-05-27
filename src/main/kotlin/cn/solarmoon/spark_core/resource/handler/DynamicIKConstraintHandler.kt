@@ -1,25 +1,44 @@
 package cn.solarmoon.spark_core.resource.handler
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.ik.component.TypedIKComponent
 import cn.solarmoon.spark_core.ik.origin.OIKConstraint
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
+import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
+import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
 import net.minecraft.resources.ResourceLocation
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.isDirectory
+import java.nio.file.Paths
 import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.readText
 
-class DynamicIKConstraintHandler(private val baseIKPath: Path) : IDynamicResourceHandler {
+@AutoRegisterHandler
+class DynamicIKConstraintHandler(
+    private val ikComponentRegistry: DynamicAwareRegistry<TypedIKComponent>
+) : IDynamicResourceHandler {
+    private val baseIKPath: Path
+    private val directoryIdString = "ik_constraints"
 
     init {
-        if (!Files.isDirectory(baseIKPath)) {
-            throw IllegalArgumentException("Base path '$baseIKPath' must be a directory and exist.")
+        val dynamicResourcesRoot = Paths.get("config", "spark_core", "dynamic_resources")
+        baseIKPath = dynamicResourcesRoot.resolve(directoryIdString)
+
+        try {
+            if (!Files.exists(baseIKPath)) {
+                Files.createDirectories(baseIKPath)
+                SparkCore.LOGGER.info("Created directory for DynamicIKConstraintHandler: {}", baseIKPath)
+            }
+        } catch (e: IOException) {
+            throw IllegalStateException("Failed to create directory for DynamicIKConstraintHandler: $baseIKPath.${e.message}")
         }
-        SparkCore.LOGGER.info("DynamicIKConstraintHandler initialized for path: $baseIKPath")
+
+        if (!Files.isDirectory(baseIKPath)) {
+            throw IllegalArgumentException("Base path '{}' must be a directory.", )
+        }
+        SparkCore.LOGGER.info("DynamicIKConstraintHandler initialized for path: {}, using IKComponentRegistry: {}", baseIKPath, ikComponentRegistry.key().location().toString())
     }
 
     override fun getDirectoryPath(): String {
@@ -32,22 +51,22 @@ class DynamicIKConstraintHandler(private val baseIKPath: Path) : IDynamicResourc
 
     private fun determineResourceLocationRoot(file: Path): ResourceLocation? {
         if (!file.startsWith(baseIKPath)) {
-            SparkCore.LOGGER.warn("File $file is not under base path $baseIKPath. Cannot determine ResourceLocation.")
+            SparkCore.LOGGER.warn("File {} is not under the base path {}, unable to determine ResourceLocation.", file, baseIKPath)
             return null
         }
 
         val relativePath = baseIKPath.relativize(file)
         
-        // IK constraints are typically flat in their directory, e.g., geo/ik_constraints/player_ik.json
-        // So, the filename without extension becomes the path of the ResourceLocation.
+        // IK 约束通常是平铺在目录中的，例如 geo/ik_constraints/player_ik.json
+        // 所以，文件名（不包括扩展名）将成为 ResourceLocation 的路径。
         if (relativePath.parent == null) { 
-            val namespace = ResourceLocation.DEFAULT_NAMESPACE // Or your mod's namespace
+            val namespace = ResourceLocation.DEFAULT_NAMESPACE // 或者是你的模组命名空间
             val pathName = file.nameWithoutExtension.lowercase().replace(" ", "_")
             return ResourceLocation.fromNamespaceAndPath(namespace, pathName)
         } else { 
-            // This case should ideally not happen based on IKConstraintListener.kt structure.
-            // If it does, we'll use the first directory component as the root.
-            SparkCore.LOGGER.warn("File $file is in a subdirectory ${relativePath.parent} under $baseIKPath. This is unusual for IK constraints. Using first directory as root.")
+            // 基于 IKConstraintListener.kt 的结构，这种情况理论上不应该发生。
+            // 如果发生了，我们将使用第一个目录组件作为根。
+            SparkCore.LOGGER.warn("File {} is in a subdirectory {} of the base path {}, this is unusual for IK constraints. Using the first directory as the root.", file, relativePath.parent, baseIKPath)
             val rootDirName = relativePath.getName(0).toString().lowercase().replace(" ", "_")
             val namespace = ResourceLocation.DEFAULT_NAMESPACE 
             return ResourceLocation.fromNamespaceAndPath(namespace, rootDirName)
@@ -55,9 +74,9 @@ class DynamicIKConstraintHandler(private val baseIKPath: Path) : IDynamicResourc
     }
 
     override fun onResourceAdded(file: Path) {
-        SparkCore.LOGGER.debug("Attempting to add IK constraint(s) from file: $file")
+        SparkCore.LOGGER.debug("Attempting to add IK constraint from file: {}", file)
         val root = determineResourceLocationRoot(file) ?: run {
-            SparkCore.LOGGER.error("Could not determine ResourceLocation for added file: $file")
+            SparkCore.LOGGER.error("Unable to determine ResourceLocation for added file: {}", file)
             return
         }
 
@@ -66,12 +85,12 @@ class DynamicIKConstraintHandler(private val baseIKPath: Path) : IDynamicResourc
             val jsonElement = JsonParser.parseString(jsonString)
             
             if (!jsonElement.isJsonArray) {
-                SparkCore.LOGGER.error("IK constraint file $file for root '$root' is not a JSON array. Skipping.")
+                SparkCore.LOGGER.error("IK constraint file {} for root '{}' is not a JSON array, skipping.", file, root)
                 return
             }
             val jsonArray = jsonElement.asJsonArray
             if (jsonArray.isEmpty) {
-                 SparkCore.LOGGER.warn("IK constraint file $file for root '$root' is an empty JSON array. No constraints to load.")
+                 SparkCore.LOGGER.warn("IK constraint file {} for root '{}' is an empty JSON array, no constraints to load.", file, root)
                 return
             }
 
@@ -79,45 +98,53 @@ class DynamicIKConstraintHandler(private val baseIKPath: Path) : IDynamicResourc
             jsonArray.forEach { constraintJsonElement ->
                 val parsedConstraint = OIKConstraint.CODEC.decode(JsonOps.INSTANCE, constraintJsonElement).orThrow.first
                 
-                // This will overwrite previous constraints from the same file for the same root.
+                // 这将覆盖来自同一文件的同一根的先前约束。
                 OIKConstraint.ORIGINS[root] = parsedConstraint
                 constraintCount++
             }
 
             if (constraintCount > 0) {
-                SparkCore.LOGGER.info("Successfully loaded $constraintCount IK constraint(s) for '$root' from $file. The last one in the file is active for this root.")
+                SparkCore.LOGGER.info("Successfully loaded {} IK constraints from file: {}", constraintCount, file)
                 if (constraintCount > 1) {
-                    SparkCore.LOGGER.warn("File $file contained $constraintCount IK constraints for root '$root'. Only the last one defined in the JSON array is stored in OIKConstraint.ORIGINS for this root.")
+                    SparkCore.LOGGER.warn("File {} contains {} IK constraints for root '{}', only the last constraint in the JSON array is stored in OIKConstraint.ORIGINS for this root.", file, constraintCount, root)
                 }
-                SparkCore.LOGGER.info("IK Constraint added/updated: $root. Network sync placeholder.")
+                SparkCore.LOGGER.info("IK constraint added/updated: {}. Network sync placeholder.", root)
             } else {
-                 SparkCore.LOGGER.warn("No IK constraints were successfully parsed from $file for root '$root'.")
+                 SparkCore.LOGGER.warn("No IK constraints successfully parsed from file: {} for root '{}'.", file, root)
             }
 
         } catch (e: Exception) {
-            SparkCore.LOGGER.error("Error processing IK constraint file for addition $file (root: $root): ${e.message}", e)
+            SparkCore.LOGGER.error("Error processing IK constraint file (add {}): {}", file, e.message, e)
         }
     }
 
     override fun onResourceModified(file: Path) {
-        SparkCore.LOGGER.debug("Attempting to update IK constraint(s) from file: $file")
-        // Modification is handled the same way as addition: re-read and replace.
+        SparkCore.LOGGER.debug("Attempting to update IK constraint from file: {}", file)
+        // Modification handling is the same as addition: re-read and replace.
         onResourceAdded(file) 
     }
 
     override fun onResourceRemoved(file: Path) {
-        SparkCore.LOGGER.debug("Attempting to remove IK constraint from file: $file")
+        SparkCore.LOGGER.debug("Attempting to remove IK constraint from file: {}", file)
         val root = determineResourceLocationRoot(file) ?: run {
-            SparkCore.LOGGER.error("Could not determine ResourceLocation for removed file: $file. Cannot process removal.")
+            SparkCore.LOGGER.error("Unable to determine ResourceLocation for removed file: {}. Unable to process removal.", file)
             return
         }
 
         val removedConstraint = OIKConstraint.ORIGINS.remove(root)
         if (removedConstraint != null) {
-            SparkCore.LOGGER.info("Removed IK constraint for root '$root' due to file removal: $file.")
+            SparkCore.LOGGER.info("IK constraint removed: {} due to file removal: {}", root, file)
         } else {
-            SparkCore.LOGGER.warn("Attempted to remove IK constraint for root '$root' (from file $file), but no constraint was found for this root.")
+            SparkCore.LOGGER.warn("Attempted to remove IK constraint {} but it was not found.", root)
         }
-        SparkCore.LOGGER.info("IK Constraint removed: $root. Network sync placeholder.")
+        SparkCore.LOGGER.info("IK constraint removed: {}. Network sync placeholder.", root)
+    }
+
+    override fun getDirectoryId(): String {
+        return directoryIdString
+    }
+
+    override fun getRegistryIdentifier(): ResourceLocation? {
+        return ikComponentRegistry.key().location()
     }
 }

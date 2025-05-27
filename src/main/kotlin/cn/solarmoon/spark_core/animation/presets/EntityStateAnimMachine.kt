@@ -51,7 +51,7 @@ object EntityStateAnimMachine {
 
         val choice = initialChoiceState("choice") {
             when {
-                checkPlayingOtherAnim(animatable) -> none
+//                checkPlayingOtherAnim(animatable) -> none
                 entity.vehicle != null -> sit
                 entity.isSleeping -> sleeping
                 entity.isSwimming -> swimming
