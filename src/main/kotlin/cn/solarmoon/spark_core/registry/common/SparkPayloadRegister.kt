@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.registry.common
 
+import cn.solarmoon.spark_core.animation.sync.AnimShouldTurnPayload
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.AnimationDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.AnimationDataSyncPayload
@@ -42,6 +43,7 @@ object SparkPayloadRegister {
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
         anim.playToClient(ModelUpdatedPayload.TYPE, ModelUpdatedPayload.STREAM_CODEC, ModelUpdatedPayload::handleInClient)
+        anim.playToClient(AnimShouldTurnPayload.TYPE, AnimShouldTurnPayload.STREAM_CODEC, AnimShouldTurnPayload::handleInClient)
 
         anim.configurationToClient(AnimationDataSyncPayload.TYPE, AnimationDataSyncPayload.STREAM_CODEC, AnimationDataSyncPayload::handleInClient)
         anim.configurationToServer(AnimationDataSendingTask.AckPayload.TYPE, AnimationDataSendingTask.AckPayload.STREAM_CODEC, AnimationDataSendingTask.AckPayload::handleOnServer)

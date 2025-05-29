@@ -32,6 +32,7 @@ class AnimInstance private constructor(
     var totalTime = 0.0
     var maxLength = origin.animationLength
     var shouldTurnBody = false
+    var shouldTurnHead = false
     var rejectNewAnim: (AnimInstance?) -> Boolean = { false }
     var isCancelled = true
         internal set
@@ -73,6 +74,7 @@ class AnimInstance private constructor(
         copy.speed = speed
         copy.totalTime = totalTime
         copy.shouldTurnBody = shouldTurnBody
+        copy.shouldTurnHead = shouldTurnHead
         copy.rejectNewAnim = rejectNewAnim
         copy.eventHandlers = eventHandlers.toMutableMap()
         return copy

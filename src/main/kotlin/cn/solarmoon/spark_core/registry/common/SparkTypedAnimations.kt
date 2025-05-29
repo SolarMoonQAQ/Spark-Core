@@ -55,11 +55,6 @@ object SparkTypedAnimations {
         .provider(provider)
         .build()
 
-    fun replaceStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
-        .id(name)
-        .animIndex(AnimIndex(index, "EntityState/$name"))
-        .provider(provider)
-        .registerDynamic(index)
 
     fun createMoveStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = createStateAnim(name, index) {
         onEvent<AnimEvent.Tick> {

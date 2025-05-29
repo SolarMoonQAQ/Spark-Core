@@ -1,10 +1,12 @@
 package com.jme3.npc_adapter;
 
 import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation;
 import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager;
+import cn.solarmoon.spark_core.animation.sync.AnimShouldTurnPayload;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback;
 import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload;
@@ -23,8 +25,10 @@ import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -42,6 +46,15 @@ public class SparkCustomnpcApi {
     public SparkCustomnpcApi() {
         // Initialization logic, if any (e.g., logging)
         // SparkCore.LOGGER.info("SparkCustomnpcApi (Native NPC Adapter) initialized.");
+    }
+
+    public void shouldTurnBody(String modelId, boolean shouldTurnBody, boolean shouldTurnHead) {
+        IAnimatable<?> entity = findAnimatable(modelId);
+        if (entity != null) {
+            Objects.requireNonNull(entity.getAnimController().getMainAnim()).setShouldTurnBody(shouldTurnBody);
+            Objects.requireNonNull(entity.getAnimController().getMainAnim()).setShouldTurnHead(shouldTurnHead);
+            PacketDistributor.sendToAllPlayers(new AnimShouldTurnPayload(entity, shouldTurnBody, shouldTurnHead));
+        }
     }
 
     // Placeholder - needs actual implementation
@@ -222,7 +235,7 @@ public class SparkCustomnpcApi {
                         offset1
                     );
                 // 发送到所有跟踪该实体的玩家
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntity(entity, payload);
+                PacketDistributor.sendToPlayersTrackingEntity(entity, payload);
                 SparkCore.LOGGER.info("SparkCustomnpcApi.createCollisionBoxBoundToBone: Synchronized collision box '{}' to clients", collisionBoxId);
             }
 
@@ -346,7 +359,7 @@ public class SparkCustomnpcApi {
      * @param animationName 动画名称，如 "attack"
      * @param transTime 动画持续时间（单位：tick）
      */
-    public Boolean playAnimation(String UUID, String namespace, String animationName, int transTime) {
+    public Boolean playAnimation(String UUID, String namespace, String animationName, int transTime, float speed, float speedChangeDuration) {
         IEntityAnimatable<?> animatable = findAnimatable(UUID);
         if (animatable == null) {
             SparkCore.LOGGER.error("SparkCustomnpcApi.playTypedAnimation: Animatable with id '{}' not found", UUID);
@@ -366,7 +379,9 @@ public class SparkCustomnpcApi {
 
             // 播放动画
             animation.play(animatable, transTime, false);
-
+            // speed转成int
+            int speedInt = (int) (speed * 20);
+            animatable.changeSpeed(speedInt, speedChangeDuration);
             // 如果是服务端，同步到客户端
             if (!animatable.getAnimLevel().isClientSide()) {
                 Entity entity = animatable.getAnimatable();

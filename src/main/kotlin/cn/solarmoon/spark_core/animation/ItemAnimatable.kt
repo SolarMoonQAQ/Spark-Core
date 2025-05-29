@@ -42,7 +42,7 @@ open class ItemAnimatable(
     override val foreignStorage: IForeignVariableStorage = VariableStorage()
     override val animatable = itemStack
     override val animController: AnimController = AnimController(this)
-    override val bones: BoneGroup = BoneGroup(this)
+    override var bones: BoneGroup = BoneGroup(this)
     override val ikTargetPositions: MutableMap<String, Vec3> = mutableMapOf()
     override val ikChains: MutableMap<String, FabrikChain3D> = mutableMapOf()
 

@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.sync.AnimationDataSyncPayload
-import cn.solarmoon.spark_core.animation.sync.AnimationSyncType
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
