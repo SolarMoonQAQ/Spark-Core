@@ -87,7 +87,15 @@ data class OCube(
      * 在客户端渲染各个顶点
      */
     @OnlyIn(Dist.CLIENT)
-    fun renderVertexes(matrix4f: Matrix4f, normal3f: Matrix3f, buffer: VertexConsumer, packedLight: Int, packedOverlay: Int, color: Int) {
+    fun renderVertexes(
+        matrix4f: Matrix4f,
+        normal3f: Matrix3f,
+        buffer: VertexConsumer,
+        packedLight: Int,
+        packedOverlay: Int,
+        color: Int,
+        gui: Boolean = false //控制是否应用相机偏移
+    ) {
         matrix4f.translate(pivot.toVector3f())
         matrix4f.rotateZYX(rotation.toVector3f())
         matrix4f.translate(pivot.div(-1.0).toVector3f())
@@ -98,7 +106,8 @@ data class OCube(
             fixInvertedFlatCube(normal)
 
             for (vertex in polygon.vertexes) {
-                val cam = Minecraft.getInstance().gameRenderer.mainCamera.position.toVector3f()
+                var cam = Vector3f()
+                if (!gui) cam = Minecraft.getInstance().gameRenderer.mainCamera.position.toVector3f()
                 val vector3f2 = matrix4f.transformPosition(vertex.x, vertex.y, vertex.z, Vector3f()).sub(cam)
                 buffer.addVertex(
                     vector3f2.x(), vector3f2.y(), vector3f2.z(), color,
@@ -169,7 +178,8 @@ data class OCube(
         }
 
         @JvmStatic
-        val LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.collection { mutableListOf() }).map({ it.toList() }, { it.toMutableList() })
+        val LIST_STREAM_CODEC = STREAM_CODEC.apply(ByteBufCodecs.collection { mutableListOf() })
+            .map({ it.toList() }, { it.toMutableList() })
     }
 
 }

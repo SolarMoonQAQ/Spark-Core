@@ -19,11 +19,28 @@ fun OBone.render(
     packedLight: Int,
     packedOverlay: Int,
     color: Int,
-    partialTick: Float
+    partialTick: Float,
+    gui: Boolean = false
 ) {
     applyTransformWithParents(bones, ma, partialTick)
     cubes.forEach {
-        it.renderVertexes(Matrix4f(ma), normal3f, buffer, packedLight, packedOverlay, color)
+        it.renderVertexes(Matrix4f(ma), normal3f, buffer, packedLight, packedOverlay, color, gui)
+    }
+}
+
+fun OModel.render(
+    iBones: BoneGroup,
+    matrix4f: Matrix4f,
+    normal3f: Matrix3f,
+    buffer: VertexConsumer,
+    packedLight: Int,
+    packedOverlay: Int,
+    color: Int,
+    partialTick: Float,
+    gui: Boolean = false
+) {
+    bones.values.forEach {
+        it.render(iBones, Matrix4f(matrix4f), normal3f, buffer, packedLight, packedOverlay, color, partialTick, gui)
     }
 }
 
@@ -37,9 +54,7 @@ fun OModel.render(
     color: Int,
     partialTick: Float
 ) {
-    bones.values.forEach {
-        it.render(iBones, Matrix4f(matrix4f), normal3f, buffer, packedLight, packedOverlay, color, partialTick)
-    }
+    this.render(iBones, matrix4f, normal3f, buffer, packedLight, packedOverlay, color, partialTick, false)
 }
 
 fun IAnimatable<*>.render(

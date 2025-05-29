@@ -171,6 +171,7 @@ object BlockCollisionHelper {
                             blockBody.setUserIndex2(slip)
                             blockBody.collisionGroup = PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                             blockBody.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
+                            blockBody.contactStiffness = 1e20f
                             blockBody.getTransform(blockBody.tickTransform)
                             blockBody.lastTickTransform = blockBody.tickTransform
                             blockBody.boundingBox(blockBody.cachedBoundingBox)

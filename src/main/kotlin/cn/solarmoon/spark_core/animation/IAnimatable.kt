@@ -67,7 +67,7 @@ interface IAnimatable<T> : JSAnimatable, Syncer {
     /**
      * 实际可用的骨骼组
      */
-    val bones: BoneGroup
+    var bones: BoneGroup
 
     /**
      * 该动画体的原始模型

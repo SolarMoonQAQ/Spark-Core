@@ -25,7 +25,7 @@ import net.minecraft.world.phys.Vec3
 open class ItemAnimatable(
     val itemStack: ItemStack,
     override val animLevel: Level
-): IAnimatable<ItemStack> {
+) : IAnimatable<ItemStack> {
 
     var position = Vec3.ZERO
     var oPosition = Vec3.ZERO
@@ -33,6 +33,10 @@ open class ItemAnimatable(
     var oYRot = 0f
 
     override var modelIndex: ModelIndex = ModelIndex.of(EntityType.PLAYER)
+        set(value) {
+            field = value
+            bones = BoneGroup(this)//重设模型时更新骨骼组
+        }
     override val tempStorage: ITempVariableStorage = VariableStorage()
     override val scopedStorage: IScopedVariableStorage = VariableStorage()
     override val foreignStorage: IForeignVariableStorage = VariableStorage()

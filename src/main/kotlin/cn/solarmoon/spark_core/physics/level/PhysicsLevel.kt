@@ -80,7 +80,7 @@ abstract class PhysicsLevel(
             stateFlow.value = PhysicsLevelState.RUNNING
             //TODO:根据负载压力调节步进频率，高负载时减少步进次数
             repeat(repeat) {
-                world.update(fixedStep, 5, false, true, false)
+                world.update(fixedStep, 0, false, true, false)
             }
             stateFlow.value = PhysicsLevelState.IDLE
             // 通知主线程计算完成
