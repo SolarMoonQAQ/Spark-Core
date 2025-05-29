@@ -5,8 +5,6 @@ import cn.solarmoon.spark_core.js.ISparkJSHolder;
 import cn.solarmoon.spark_core.js.ServerSparkJS;
 import cn.solarmoon.spark_core.js.SparkJS;
 import cn.solarmoon.spark_core.js.extension.JSLevel;
-import cn.solarmoon.spark_core.resource.ResHotReloadService;
-import cn.solarmoon.spark_core.resource.IHotReloadSvcHolder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;

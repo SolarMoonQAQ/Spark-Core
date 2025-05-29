@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
-import cn.solarmoon.spark_core.physics.presets.callback.HitReactionCollisionCallback
+import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.initWithAnimatedBone
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.sync.SyncData
@@ -63,7 +63,7 @@ data class ModelIndexSyncPayload(
                         body.isKinematic = true
                         body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                         body.addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
-                        body.addCollisionCallback(object : HitReactionCollisionCallback {})
+                        body.addCollisionCallback(CustomnpcCollisionCallback())
                     }
                 }
                 SparkCore.LOGGER.info("接收到实体同步 ModelIndex 完成")

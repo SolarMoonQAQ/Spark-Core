@@ -14,6 +14,7 @@ object VindicatorStateAnimApplier {
         val state = event.state
         val entity = event.entity as? Vindicator ?: return
         val crossed = entity.armPose == AbstractIllager.IllagerArmPose.CROSSED
+
         when(state) {
             is EntityStates.Idle -> if (!crossed) event.newAnim = SparkTypedAnimations.VINDICATOR_IDLE_COMBAT.get()
             is EntityStates.Walk -> if (!crossed) event.newAnim = SparkTypedAnimations.VINDICATOR_WALK_COMBAT.get()

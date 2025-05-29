@@ -23,12 +23,7 @@ interface IEntityAnimatable<T: Entity>: IAnimatable<T> {
         set(value) {
             val oldValue = modelIndex
             animatable.setData(SparkAttachments.MODEL_INDEX, value)
-
-            // 如果模型索引发生变化，触发事件
-            if (oldValue != value) {
-                val event = ModelIndexChangeEvent(this, oldValue, value)
-                NeoForge.EVENT_BUS.post(event)
-            }
+            NeoForge.EVENT_BUS.post(ModelIndexChangeEvent(this, oldValue, value))
         }
 
     override fun getWorldPosition(partialTick: Float): Vec3 {

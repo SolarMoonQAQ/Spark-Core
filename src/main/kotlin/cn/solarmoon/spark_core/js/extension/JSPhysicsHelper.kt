@@ -25,7 +25,8 @@ object JSPhysicsHelper: JSComponent() {
         val animatable = animatable as? IEntityAnimatable<*> ?: throw IllegalArgumentException("动画体必须是实体类型！")
         val entity = animatable.animatable
         return entity.bindBody(
-            PhysicsRigidBody(UUID.randomUUID().toString(), entity, BoxCollisionShape(size.div(2.0).toBVector3f()))) {
+            PhysicsRigidBody(UUID.randomUUID().toString(), entity, BoxCollisionShape(size.div(2.0).toBVector3f()))
+        ) {
             isContactResponse = false
             isKinematic = true
             collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE or PhysicsCollisionObject.COLLISION_GROUP_BLOCK

@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.host.getBody
-import cn.solarmoon.spark_core.physics.presets.callback.HitReactionCollisionCallback
+import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
@@ -18,12 +18,10 @@ import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec3
 import net.neoforged.neoforge.network.handling.IPayloadContext
-import java.util.Optional
+import java.util.*
 import java.util.function.Function
-import java.util.function.BiFunction
 
 /**
  * 用于同步物理碰撞对象的网络数据包
@@ -127,7 +125,7 @@ class PhysicsCollisionObjectSyncPayload(
                             setGravity(Vector3f())
                             addPhysicsTicker(MoveWithAnimatedBoneTicker(payload.boneName, offset))
                             body.setEnableSleep(false)
-                            body.addCollisionCallback(object : HitReactionCollisionCallback {})
+                            body.addCollisionCallback(CustomnpcCollisionCallback())
                         }
 
                         SparkCore.LOGGER.info("PhysicsCollisionObjectSyncPayload: Created collision box '${payload.collisionBoxId}' bound to bone '${payload.boneName}'")

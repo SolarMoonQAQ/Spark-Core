@@ -29,11 +29,15 @@ open class MoveWithAnimatedBoneTicker(
                 val currentPos = entity.position().toBVector3f()
                 val previousPos = lastPos
                 lastPos.set(currentPos)
-                body.setPhysicsTransform(Transform(
-                    animatable.getWorldBonePivot(boneName, offset.toVec3()).toBVector3f(),
-                    animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion(),
-                    animatable.getBone(boneName).getScale().toBVector3f()
-                ))
+                try {
+                    body.setPhysicsTransform(Transform(
+                        animatable.getWorldBonePivot(boneName, offset.toVec3()).toBVector3f(),
+                        animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion(),
+                        animatable.getBone(boneName).getScale().toBVector3f()
+                    ))
+                } catch (e: Exception) {
+                    println(e)
+                }
                 val v = currentPos.subtract(previousPos).mult(20f)
                 body.setLinearVelocity(v)
             }

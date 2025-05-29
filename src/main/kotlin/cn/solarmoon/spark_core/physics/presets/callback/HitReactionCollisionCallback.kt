@@ -36,6 +36,7 @@ interface HitReactionCollisionCallback : AttackCollisionCallback {
 
     // 新实现：manifoldId 版本的 onProcessed，确保物理上下文贯通
     override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
+        super.onProcessed(o1, o2, manifoldId)
         val entity1 = o1.owner as? Entity
         val entity2 = o2.owner as? Entity
         if (entity1 == null || entity2 == null) return

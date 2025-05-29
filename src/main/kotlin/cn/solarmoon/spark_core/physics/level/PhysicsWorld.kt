@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
 import com.jme3.bullet.CollisionConfiguration
@@ -10,6 +11,7 @@ import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Vector3f
+import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.common.NeoForge
 //TODO:将计算线程数量改为通过配置文件设置
 class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
@@ -35,7 +37,10 @@ class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
-    /**
+    override fun onContactStarted(manifoldId: Long) {
+        super.onContactStarted(manifoldId)
+    }
+            /**
      * 处理接触点
      */
     override fun onContactProcessed(

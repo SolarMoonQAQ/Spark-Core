@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
 import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
+import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.callback.HitReactionCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.initWithAnimatedBone
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
@@ -88,7 +89,6 @@ object CommonAnimApplier {
 
         entityHost.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {
             val body = PhysicsRigidBody(it.name, entityHost as PhysicsHost, CompoundCollisionShape())
-
             entityHost.bindBody(body, entityHost.physicsLevel, true) {
                 (body.collisionShape as CompoundCollisionShape).initWithAnimatedBone(it)
                 body.isContactResponse = false
@@ -97,7 +97,7 @@ object CommonAnimApplier {
                 body.isKinematic = true
                 body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                 body.addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
-                body.addCollisionCallback(object : HitReactionCollisionCallback {})
+                body.addCollisionCallback(CustomnpcCollisionCallback())
             }
         }
         PacketDistributor.sendToPlayersTrackingEntity(

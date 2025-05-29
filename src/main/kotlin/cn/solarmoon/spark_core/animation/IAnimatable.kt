@@ -110,8 +110,7 @@ interface IAnimatable<T> : JSAnimatable, Syncer {
      * 获取动画体到其当前世界位置的变换矩阵
      * @param partialTick 主线程客户端的tick时间
      */
-    fun getWorldPositionMatrix(partialTick: Float = 1f) =
-        Matrix4f().translate(getWorldPosition(partialTick).toVector3f()).rotateY(getRootYRot(partialTick))
+    fun getWorldPositionMatrix(partialTick: Float = 1f) = Matrix4f().translate(getWorldPosition(partialTick).toVector3f()).rotateY(getRootYRot(partialTick))
 
     /**
      * 获取动画体指定骨骼在世界位置的变换矩阵
