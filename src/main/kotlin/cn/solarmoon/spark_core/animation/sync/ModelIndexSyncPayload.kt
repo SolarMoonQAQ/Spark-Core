@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 /**
@@ -52,18 +53,27 @@ data class ModelIndexSyncPayload(
                 val host = payload.syncerType.getSyncer(level, payload.syncData) as? IEntityAnimatable<*> ?: return@enqueueWork
                 host.modelIndex = payload.modelIndex
 
-                host.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {
-                    val body = PhysicsRigidBody(it.name, host as PhysicsHost, CompoundCollisionShape())
+                host.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach { bone ->
+                    val body = PhysicsRigidBody(bone.name, host as PhysicsHost, CompoundCollisionShape())
+
+                    val entity = host as? Entity ?: run {
+                        SparkCore.LOGGER.error("ModelIndexSyncPayload: host cannot be cast to Entity.")
+                        return@forEach
+                    }
 
                     host.bindBody(body, level.physicsLevel, true) {
-                        (body.collisionShape as CompoundCollisionShape).initWithAnimatedBone(it)
-                        body.isContactResponse = false
-                        body.setGravity(Vector3f.ZERO)
-                        body.setEnableSleep(false)
-                        body.isKinematic = true
-                        body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
-                        body.addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
-                        body.addCollisionCallback(CustomnpcCollisionCallback())
+                        (this.collisionShape as CompoundCollisionShape).initWithAnimatedBone(bone)
+                        this.isContactResponse = false
+                        this.setGravity(Vector3f.ZERO)
+                        this.setEnableSleep(false)
+                        this.isKinematic = true
+                        this.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
+                        this.addPhysicsTicker(MoveWithAnimatedBoneTicker(bone.name))
+                        this.addCollisionCallback(CustomnpcCollisionCallback(
+                            owner = entity,
+                            cbName = body.name,
+                            collisionBoxId = body.name
+                        ))
                     }
                 }
                 SparkCore.LOGGER.info("接收到实体同步 ModelIndex 完成")

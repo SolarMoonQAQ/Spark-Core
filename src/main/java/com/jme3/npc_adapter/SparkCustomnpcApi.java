@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation;
 import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager;
 import cn.solarmoon.spark_core.animation.sync.AnimShouldTurnPayload;
+import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback;
 import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload;
@@ -23,15 +24,13 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import cn.solarmoon.spark_core.physics.sync.AddCollisionCallbackPayload;
 
 /**
  * Spark Core Native API for NPC Adapters.
@@ -125,7 +124,6 @@ public class SparkCustomnpcApi {
             SparkCore.LOGGER.error("SparkCustomnpcApi.changeModel: Animatable with id '{}' not found.", modelId);
             return;
         }
-
         try {
             ResourceLocation modelResLoc = ResourceLocation.tryParse(newModelPath);
             if (modelResLoc == null) {
@@ -154,10 +152,10 @@ public class SparkCustomnpcApi {
         Entity targetEntity = animatable.getAnimatable();
         PhysicsLevel physicsLevel = targetEntity.level().getPhysicsLevel();
         // physicsLevel.world should be PhysicsWorld, which has pcoList
-        Object physicsWorld = physicsLevel.getWorld();
+        PhysicsWorld physicsWorld = physicsLevel.getWorld();
 
         // Assuming pcoList is obtained from physicsWorld
-        java.util.List<PhysicsCollisionObject> pcoList = (java.util.List<PhysicsCollisionObject>) ((PhysicsWorld) physicsWorld).getPcoList();
+        Collection<PhysicsCollisionObject> pcoList = physicsWorld.getPcoList();
         for (PhysicsCollisionObject pco : pcoList) { // pcoList is from PhysicsWorld
             Object pcoOwner = pco.getOwner(); // Assumes pco.owner gives the Entity
             if (pcoOwner == targetEntity) {
@@ -186,9 +184,9 @@ public class SparkCustomnpcApi {
      * @param offsetZ 相对于骨骼原点的Z轴偏移量（单位：米）
      * @return 碰撞盒ID，用于后续引用，如果创建失败则返回null
      */
-    public String createCollisionBoxBoundToBone(String modelId, String boneName,
+    public String createCollisionBoxBoundToBone(String modelId, String boneName, String cbName,
                                              float sizeX, float sizeY, float sizeZ,
-                                             float offsetX, float offsetY, float offsetZ, Integer eventId) {
+                                             float offsetX, float offsetY, float offsetZ) {
         IEntityAnimatable<?> animatable = findAnimatable(modelId);
         if (animatable == null) {
             SparkCore.LOGGER.error("SparkCustomnpcApi.createCollisionBoxBoundToBone: Animatable with id '{}' not found.", modelId);
@@ -209,9 +207,14 @@ public class SparkCustomnpcApi {
                 ((PhysicsHost) animatable).getPhysicsLevel(),
                 true,
                 t -> {
-                    t.addCollisionCallback(new CustomnpcCollisionCallback());
+                    t.addCollisionCallback(new CustomnpcCollisionCallback(
+                            cbName,
+                            animatable.getAnimatable(),
+                            collisionBoxId
+                    ));
                     t.setContactResponse(false);
                     t.setKinematic(true);
+                    t.setEnableSleep(false);
                     t.setCollideWithGroups(PhysicsCollisionObject.COLLISION_GROUP_OBJECT | PhysicsCollisionObject.COLLISION_GROUP_BLOCK);
                     t.setGravity(Vector3f.ZERO);
                     t.addPhysicsTicker(new MoveWithAnimatedBoneTicker(boneName, offset));
@@ -247,8 +250,58 @@ public class SparkCustomnpcApi {
         }
     }
 
+    public void addCollisionCallback(String collisionBoxId, String cbName, String UUID, Boolean autoReset, Integer ticks) {
+        IEntityAnimatable<?> iAnimatable = findAnimatable(UUID);
+        PhysicsCollisionObject pco = findPhysicsObjectForBox(iAnimatable, collisionBoxId);
+        Entity entity = iAnimatable.getAnimatable();
+        ticks = ticks * 24;
+        if (pco != null) {
+            // Add callback locally on the server
+            pco.addCollisionCallback(new CustomnpcCollisionCallback(cbName, entity, collisionBoxId, autoReset != null ? autoReset : false, ticks != null ? ticks : 0));
+            SparkCore.LOGGER.debug("Server: Added CustomnpcCollisionCallback '{}' to PCO '{}' for entity {}.", cbName, collisionBoxId, entity.getStringUUID());
+
+            // If on server, send packet to clients
+            if (!entity.level().isClientSide()) {
+                AddCollisionCallbackPayload payload = new AddCollisionCallbackPayload(
+                        entity.getSyncerType(),
+                        entity.getSyncData(),
+                        collisionBoxId,
+                        cbName,
+                        autoReset != null ? autoReset : false, // Ensure non-null for payload
+                        ticks // Can be null for Int? in payload
+                );
+                PacketDistributor.sendToPlayersTrackingEntity(entity, payload);
+                SparkCore.LOGGER.debug("Server: Sent AddCollisionCallbackPayload for PCO '{}', CB '{}' on entity {}.", collisionBoxId, cbName, entity.getStringUUID());
+            }
+        } else {
+            SparkCore.LOGGER.warn("SparkCustomnpcApi.addCollisionCallback: PhysicsCollisionObject with ID '{}' not found.", collisionBoxId);
+        }
+    }
+
+    public void resetEntityByCbname(String UUID, String cbName, String collisionBoxId){
+        IEntityAnimatable<?> iAnimatable = findAnimatable(UUID);
+        if (iAnimatable != null) {
+            PhysicsCollisionObject pco = findPhysicsObjectForBox(iAnimatable, collisionBoxId);
+            if (pco != null) {
+                for (CollisionCallback callback : pco.collisionListeners){
+                    if (callback instanceof CustomnpcCollisionCallback && ((CustomnpcCollisionCallback) callback).getCbName().equals(cbName)) {
+                        ((CustomnpcCollisionCallback) callback).getAttackSystem().reset();
+                    }
+                }
+            }
+        }
+    }
+
+    private void removeCollisionCallback(String collisionBoxId, String cbName) {
+        PhysicsCollisionObject pco = findPhysicsObjectByName(collisionBoxId);
+        if (pco != null) {
+            pco.collisionListeners.removeIf(callback -> callback instanceof CustomnpcCollisionCallback && ((CustomnpcCollisionCallback) callback).getCbName().equals(cbName));
+        }
+    }
+
     /**
      * 根据名称查找PhysicsCollisionObject对象
+     *
      *
      * @param name 碰撞对象的名称
      * @return 找到的PhysicsCollisionObject对象，如果未找到则返回null

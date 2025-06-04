@@ -6,11 +6,8 @@ import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
-import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
-import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
-import cn.solarmoon.spark_core.physics.presets.callback.HitReactionCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.initWithAnimatedBone
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import com.jme3.bullet.collision.PhysicsCollisionObject
@@ -18,6 +15,7 @@ import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
@@ -27,7 +25,6 @@ import net.neoforged.neoforge.event.entity.living.LivingEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 import net.neoforged.neoforge.network.PacketDistributor
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
-import javax.sound.sampled.Clip
 
 object CommonAnimApplier {
 
@@ -66,6 +63,8 @@ object CommonAnimApplier {
 //                val animName = "Common/jump_land"
 //                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.Common(entity, animName, CommonState.JUMP_LAND))
 //                entity.animController.blendSpace.put(BlendAnimation(entity.newAnimInstance(event.newAnim ?: event.originAnim)))
+
+
 //            }
         }
 
@@ -87,19 +86,35 @@ object CommonAnimApplier {
         val entityHost = event.animatable as? IEntityAnimatable<*> ?: return
         if(entityHost.animLevel is ClientLevel) return
 
-        entityHost.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {
-            val body = PhysicsRigidBody(it.name, entityHost as PhysicsHost, CompoundCollisionShape())
+        // Ensure entityHost is an Entity
+        val entity = entityHost as? Entity ?: run {
+            // Log an error or handle the case where entityHost is not an Entity
+            // For now, we'll just return if it's not an Entity, though this implies a logic error elsewhere
+            // if IEntityAnimatable is not always an Entity.
+            println("[CommonAnimApplier] Error: entityHost could not be cast to Entity in onModelIndexChange.")
+            return
+        }
+
+        entityHost.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach { bone ->
+            val body = PhysicsRigidBody(bone.name, entityHost as PhysicsHost, CompoundCollisionShape())
             entityHost.bindBody(body, entityHost.physicsLevel, true) {
-                (body.collisionShape as CompoundCollisionShape).initWithAnimatedBone(it)
-                body.isContactResponse = false
-                body.setGravity(Vector3f.ZERO)
-                body.setEnableSleep(false)
-                body.isKinematic = true
-                body.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
-                body.addPhysicsTicker(MoveWithAnimatedBoneTicker(it.name))
-                body.addCollisionCallback(CustomnpcCollisionCallback())
+                (this.collisionShape as CompoundCollisionShape).initWithAnimatedBone(bone)
+                this.isContactResponse = false
+                this.setGravity(Vector3f.ZERO)
+                this.setEnableSleep(false)
+                this.isKinematic = true
+                this.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
+                this.addPhysicsTicker(MoveWithAnimatedBoneTicker(bone.name))
+                this.addCollisionCallback(CustomnpcCollisionCallback(
+                    owner = entityHost,
+                    cbName = body.name,
+                    collisionBoxId = body.name
+                ))
             }
         }
+
+
+
         PacketDistributor.sendToPlayersTrackingEntity(
             entityHost.animatable,
             ModelIndexSyncPayload(entityHost.syncerType, entityHost.syncData, event.newModelIndex)

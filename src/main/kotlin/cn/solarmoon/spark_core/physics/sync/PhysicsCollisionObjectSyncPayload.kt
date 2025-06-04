@@ -19,6 +19,7 @@ import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.phys.Vec3
+import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.*
 import java.util.function.Function
@@ -124,8 +125,17 @@ class PhysicsCollisionObjectSyncPayload(
                             collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                             setGravity(Vector3f())
                             addPhysicsTicker(MoveWithAnimatedBoneTicker(payload.boneName, offset))
-                            body.setEnableSleep(false)
-                            body.addCollisionCallback(CustomnpcCollisionCallback())
+                            this.setEnableSleep(false) // 'this' refers to PhysicsRigidBody (body)
+                            // Ensure host is an Entity for the callback
+                            val entity = host as? Entity ?: run {
+                                SparkCore.LOGGER.error("PhysicsCollisionObjectSyncPayload: host cannot be cast to Entity for CustomnpcCollisionCallback.")
+                                return@bindBody // or handle error appropriately
+                            }
+                            this.addCollisionCallback(CustomnpcCollisionCallback(
+                                owner = entity,
+                                cbName = body.name,
+                                collisionBoxId = body.name
+                            ))
                         }
 
                         SparkCore.LOGGER.info("PhysicsCollisionObjectSyncPayload: Created collision box '${payload.collisionBoxId}' bound to bone '${payload.boneName}'")

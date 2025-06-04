@@ -18,10 +18,12 @@ import cn.solarmoon.spark_core.ik.sync.RequestSetIKTargetPayload
 import cn.solarmoon.spark_core.js.sync.JSPayload
 import cn.solarmoon.spark_core.js.sync.JSSendingTask
 import cn.solarmoon.spark_core.js.sync.JSTaskPayload
+import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
+import cn.solarmoon.spark_core.physics.sync.AddCollisionCallbackPayload
+import cn.solarmoon.spark_core.physics.sync.AttackSystemSyncPayload
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
 import cn.solarmoon.spark_core.resource.payload.resource_sync.IKConstraintUpdatedPayload
 import cn.solarmoon.spark_core.resource.payload.resource_sync.ModelUpdatedPayload
-import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -75,6 +77,8 @@ object SparkPayloadRegister {
 
         val physics = event.registrar("physics")
         physics.playToClient(PhysicsCollisionObjectSyncPayload.TYPE, PhysicsCollisionObjectSyncPayload.STREAM_CODEC, PhysicsCollisionObjectSyncPayload::handleInClient)
+        physics.playToClient(AttackSystemSyncPayload.TYPE, AttackSystemSyncPayload.STREAM_CODEC, AttackSystemSyncPayload::handleInClient)
+        physics.playToClient(AddCollisionCallbackPayload.TYPE, AddCollisionCallbackPayload.STREAM_CODEC, AddCollisionCallbackPayload::handleInClient)
 
         val registrar = event.registrar("registry")
         registrar.playToClient(DynamicRegistrySyncS2CPacket.TYPE, DynamicRegistrySyncS2CPacket.CODEC, DynamicRegistrySyncS2CPacket::handleInClient)

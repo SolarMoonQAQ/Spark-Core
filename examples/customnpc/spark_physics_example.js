@@ -91,16 +91,21 @@ function trigger(event) {
         var Name2 = event.arguments[2];  // 另一个碰撞体的名称
         var manifoldId = event.arguments[3]; // 碰撞点ID
         if (type === "start") {
-            npc.say("武器开始碰撞: " + otherName);
+            entity.say("武器开始碰撞: " + otherName);
         } else if (type === "processed") {
             // 获取碰撞点位置
             print(Name1, Name2)
         } else if (type === "end") {
-            npc.say("武器结束碰撞: " + otherName);
+            entity.say("武器结束碰撞: " + otherName);
         }
     }
 }
-
+function init(event) {
+    var npc = event.npc;
+    var uuid = event.npc.getUUID();
+    npc.say("初始化物理碰撞系统...");
+    spark_api.changeModel(uuid, "minecraft:steve");
+}
 /**
  * 攻击函数，当NPC攻击时调用
  * 在这里可以添加攻击相关的逻辑

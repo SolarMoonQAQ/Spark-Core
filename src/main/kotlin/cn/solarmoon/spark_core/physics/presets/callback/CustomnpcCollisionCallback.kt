@@ -1,8 +1,6 @@
 package cn.solarmoon.spark_core.physics.presets.callback
 
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
-import cn.solarmoon.spark_core.js.call
-import cn.solarmoon.spark_core.js.getFunctionMember
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.npc_adapter.event.SparkPhysicsEvent.CollisionProcessedEvent
@@ -18,8 +16,22 @@ import noppes.npcs.entity.EntityCustomNpc
  *
  * 负责检测有效的受击事件，提取碰撞信息，并触发相应的受击事件。
  */
-class CustomnpcCollisionCallback : HitReactionCollisionCallback {
+
+class CustomnpcCollisionCallback @JvmOverloads constructor(
+    val cbName: String,
+    val owner: Entity,
+    collisionBoxId: String,
+    autoResetEnabled: Boolean = false,
+    resetAfterTicks: Int = 0,
+    val eventId: Int = 1001,
+) : HitReactionCollisionCallback {
+
     override val attackSystem: AttackSystem = AttackSystem()
+
+    init {
+        // 在回调初始化时，直接初始化 AttackSystem 的上下文
+        attackSystem.initializeContext(owner, collisionBoxId, cbName, autoResetEnabled = autoResetEnabled, resetAfterTicks = resetAfterTicks)
+    }
 
     override fun preAttack(
         isFirst: Boolean,
@@ -30,29 +42,18 @@ class CustomnpcCollisionCallback : HitReactionCollisionCallback {
         manifoldId: Long
     ) {
         if (!isFirst) return
-        if ((attacker.level().isClientSide || !(attacker is EntityCustomNpc || target is EntityCustomNpc))) return
+        if (owner.level().isClientSide) return
         attacker.level().submitImmediateTask(PPhase.POST) {
             val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
             NpcAPI.Instance().events().post(event)
             // 触发脚本事件
-
-            if (attacker is EntityCustomNpc) {
-                EventHooks.onScriptTriggerEvent(
-                    1001,
-                    NpcAPI.Instance().getIWorld(attacker.level() as ServerLevel),
-                    NpcAPI.Instance().getIPos(attacker.x, attacker.y, attacker.z),
-                    NpcAPI.Instance().getIEntity(attacker),
-                    arrayOf<Any?>("preAttack",attacker.name.string+"_"+aBody.name, target.name.string+"_"+bBody.name, manifoldId)
-                )
-            }else {
-                EventHooks.onScriptTriggerEvent(
-                    1001,
-                    NpcAPI.Instance().getIWorld(target.level() as ServerLevel),
-                    NpcAPI.Instance().getIPos(target.x, target.y, target.z),
-                    NpcAPI.Instance().getIEntity(target),
-                    arrayOf<Any?>("preAttack", attacker.name.string+"_"+aBody.name, target.name.string+"_"+bBody.name, manifoldId)
-                )
-            }
+            EventHooks.onScriptTriggerEvent(
+                eventId,
+                NpcAPI.Instance().getIWorld(owner.level() as ServerLevel),
+                NpcAPI.Instance().getIPos(owner.x, owner.y, owner.z),
+                NpcAPI.Instance().getIEntity(owner),
+                arrayOf<Any?>("preAttack", cbName, attacker.name.string, attacker.stringUUID, aBody.name, target.name.string, target.stringUUID, bBody.name, manifoldId)
+            )
         }
     }
 
@@ -63,28 +64,18 @@ class CustomnpcCollisionCallback : HitReactionCollisionCallback {
         bBody: PhysicsCollisionObject,
         manifoldId: Long
     ): Boolean {
-        if (attacker.level().isClientSide || !(attacker is EntityCustomNpc || target is EntityCustomNpc)) return false
+        if (attacker.level().isClientSide) return false
         attacker.level().submitImmediateTask(PPhase.POST) {
             val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
             NpcAPI.Instance().events().post(event)
             // 触发脚本事件
-            if (attacker is EntityCustomNpc) {
-                EventHooks.onScriptTriggerEvent(
-                    1001,
-                    NpcAPI.Instance().getIWorld(attacker.level() as ServerLevel),
-                    NpcAPI.Instance().getIPos(attacker.x, attacker.y, attacker.z),
-                    NpcAPI.Instance().getIEntity(attacker),
-                    arrayOf<Any?>("doAttack",attacker.name.string+"_"+aBody.name, attacker.name.string+"_"+bBody.name, manifoldId)
-                )
-            }else {
-                EventHooks.onScriptTriggerEvent(
-                    1001,
-                    NpcAPI.Instance().getIWorld(target.level() as ServerLevel),
-                    NpcAPI.Instance().getIPos(target.x, target.y, target.z),
-                    NpcAPI.Instance().getIEntity(target),
-                    arrayOf<Any?>("doAttack", target.name.string+"_"+aBody.name, target.name.string+"_"+bBody.name, manifoldId)
-                )
-            }
+            EventHooks.onScriptTriggerEvent(
+                eventId,
+                NpcAPI.Instance().getIWorld(owner.level() as ServerLevel),
+                NpcAPI.Instance().getIPos(owner.x, owner.y, owner.z),
+                NpcAPI.Instance().getIEntity(owner),
+                arrayOf<Any?>("doAttack", cbName, attacker.name.string, attacker.stringUUID, aBody.name, target.name.string, target.stringUUID, bBody.name, manifoldId)
+            )
         }
         return true
     }
@@ -96,30 +87,18 @@ class CustomnpcCollisionCallback : HitReactionCollisionCallback {
         bBody: PhysicsCollisionObject,
         manifoldId: Long
     ) {
-        if (attacker.level().isClientSide || !(attacker is EntityCustomNpc || target is EntityCustomNpc)) return
+        if (attacker.level().isClientSide) return
         attacker.level().submitImmediateTask(PPhase.POST) {
             val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
             NpcAPI.Instance().events().post(event)
             // 触发脚本事件
-            if (attacker is EntityCustomNpc) {
-                EventHooks.onScriptTriggerEvent(
-                    1001,
-                    NpcAPI.Instance().getIWorld(attacker.level() as ServerLevel),
-                    NpcAPI.Instance().getIPos(attacker.x, attacker.y, attacker.z),
-                    NpcAPI.Instance().getIEntity(attacker),
-                    arrayOf<Any?>("postAttack",attacker.name.string+"_"+aBody.name, attacker.name.string+"_"+bBody.name, manifoldId)
-                )
-            }else {
-                EventHooks.onScriptTriggerEvent(
-                    1001,
-                    NpcAPI.Instance().getIWorld(target.level() as ServerLevel),
-                    NpcAPI.Instance().getIPos(target.x, target.y, target.z),
-                    NpcAPI.Instance().getIEntity(target),
-                    arrayOf<Any?>("postAttack", target.name.string+"_"+aBody.name, target.name.string+"_"+bBody.name, manifoldId)
-                )
-            }
+            EventHooks.onScriptTriggerEvent(
+                eventId,
+                NpcAPI.Instance().getIWorld(owner.level() as ServerLevel),
+                NpcAPI.Instance().getIPos(owner.x, owner.y, owner.z),
+                NpcAPI.Instance().getIEntity(owner),
+                arrayOf<Any?>("postAttack",cbName, attacker.name.string, attacker.stringUUID, aBody.name, target.name.string, target.stringUUID, bBody.name, manifoldId)
+            )
         }
     }
-
-
 }
