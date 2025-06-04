@@ -163,6 +163,8 @@ object BlockCollisionHelper {
                             blockBody.userObject = blockState
                             blockBody.friction =
                                 BlockCollisionUtil.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
+                            blockBody.rollingFriction =
+                                BlockCollisionUtil.getBlockRollingFriction(physicsLevel.mcLevel, blockState, blockPos)
                             blockBody.restitution = BlockCollisionUtil.getRestitution(
                                 physicsLevel.terrainChunks[chunkPos],
                                 blockState,

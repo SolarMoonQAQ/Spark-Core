@@ -22,6 +22,16 @@ public class BlockCollisionUtil {
         return 2 * (1 - state.getFriction(level, pos, null));
     }
 
+    public static float getBlockRollingFriction(Level level, BlockState state, BlockPos pos) {
+        if (state.isStickyBlock()) return 15.0f; //粘性块拥有极大摩擦系数
+        else if (state.is(BlockTags.SNOW)) return 5.0f;
+        else if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) return 3.0f;
+        else if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) return 0.1f;
+        else if (state.is(BlockTags.MINEABLE_WITH_AXE)) return 0.9f;
+        else if (state.is(BlockTags.MINEABLE_WITH_HOE)) return 2.0f;
+        else return 1f / state.getBlock().getSpeedFactor();
+    }
+
     /**
      * 获取方块的滑动系数，影响不同速度下摩擦系数的变化规律。可在此通过mixin额外扩展逻辑<p>
      * Get the sliding coefficient of the block, which affects the friction coefficient change under different speeds. It can be extended by additional logic with mixin

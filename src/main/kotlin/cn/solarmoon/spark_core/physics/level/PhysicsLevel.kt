@@ -96,6 +96,12 @@ abstract class PhysicsLevel(
     fun requestStep() {
         // 如果物理线程已经在运行，跳过本次请求
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
+            world.pcoList.forEach {
+                if (!it.isStatic) {//仅更新非静态的物体
+                    if (!it.isActive) return@forEach
+                    it.lastTickTransform = it.tickTransform.clone()
+                }
+            }
             if (mcLevel.gameTime % 20 == 0.toLong())
                 SparkCore.LOGGER.warn("{} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
             return
