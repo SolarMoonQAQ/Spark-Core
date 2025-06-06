@@ -65,6 +65,7 @@ abstract class PhysicsLevel(
     override val immediateQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>()
     var lastPhysicsTickTime = System.nanoTime()
     var lastStepTickTime = 0L
+    var overloadWarnCooldown = 0
 
     //地形碰撞相关
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
@@ -95,6 +96,7 @@ abstract class PhysicsLevel(
      */
     fun requestStep() {
         // 如果物理线程已经在运行，跳过本次请求
+        if (overloadWarnCooldown > 0) overloadWarnCooldown--
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
             world.pcoList.forEach {
                 if (!it.isStatic) {//仅更新非静态的物体
@@ -102,8 +104,10 @@ abstract class PhysicsLevel(
                     it.lastTickTransform = it.tickTransform.clone()
                 }
             }
-            if (mcLevel.gameTime % 20 == 0.toLong())
+            if (overloadWarnCooldown <= 0) {
                 SparkCore.LOGGER.warn("{} overloaded, last tick time: {}ms", name, (lastStepTickTime / 1000000).toInt())
+                overloadWarnCooldown = 40
+            }
             return
         }
         // 更新所有物体的位置姿态信息，处理地形碰撞
@@ -118,9 +122,9 @@ abstract class PhysicsLevel(
                     rotation.set(t.rotation)
                     scale.set(t.scale)
                 }
-                try{
+                try {
                     it.boundingBox(it.cachedBoundingBox)
-                }catch (e: Exception){
+                } catch (e: Exception) {
                     SparkCore.LOGGER.error("{}碰撞箱计算结果异常：", it.name, e)
                 }
                 if ((it.collideWithGroups and PhysicsCollisionObject.COLLISION_GROUP_BLOCK != 0))

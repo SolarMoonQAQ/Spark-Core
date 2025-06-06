@@ -25,6 +25,7 @@ import kotlin.math.floor
 
 object BlockCollisionHelper {
     private val SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
+    //TODO:服务端不同维度仍需作出区分
     private val SERVER_SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
     private val DEFAULT_SHAPE = BoxCollisionShape(0.5f)
 
@@ -32,6 +33,7 @@ object BlockCollisionHelper {
         val voxel: VoxelShape =
             blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
         val shape = convertVoxelToCollisionShape(voxel)
+        shape.margin = 0.01f
         return shape
     }
 
@@ -132,7 +134,7 @@ object BlockCollisionHelper {
                             blockPos.toString(),
                             PPhase.PRE
                         ) {
-                            blockBody.setUserIndex(40)
+                            blockBody.setUserIndex(10)
                             if (blockState != blockBody.userObject) blockBody.userObject = blockState
                         }
                     }
@@ -152,7 +154,7 @@ object BlockCollisionHelper {
                                     blockState.getBulletCollisionShape(physicsLevel),
                                     blockPos
                                 )
-                            blockBody.setUserIndex(40) //设定销毁倒计时(2秒，40主线程tick) Set the destruction count (2 seconds, 40 main thread ticks)
+                            blockBody.setUserIndex(10) //设定销毁倒计时(0.5秒，10主线程tick) Set the destruction count (0.5 seconds, 10 main thread ticks)
                             blockBody.setPhysicsLocation(
                                 Vector3f(
                                     blockPos.x.toFloat() + 0.5f,

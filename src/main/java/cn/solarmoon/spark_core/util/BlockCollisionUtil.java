@@ -23,13 +23,13 @@ public class BlockCollisionUtil {
     }
 
     public static float getBlockRollingFriction(Level level, BlockState state, BlockPos pos) {
-        if (state.isStickyBlock()) return 15.0f; //粘性块拥有极大摩擦系数
-        else if (state.is(BlockTags.SNOW)) return 5.0f;
-        else if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) return 3.0f;
-        else if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) return 0.1f;
+        if (state.isStickyBlock()) return 9.0f; //粘性块拥有极大摩擦系数
+        else if (state.is(BlockTags.SNOW)) return 7.0f;
+        else if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) return 5.0f;
+        else if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) return 0.5f;
         else if (state.is(BlockTags.MINEABLE_WITH_AXE)) return 0.9f;
-        else if (state.is(BlockTags.MINEABLE_WITH_HOE)) return 2.0f;
-        else return 1f / state.getBlock().getSpeedFactor();
+        else if (state.is(BlockTags.MINEABLE_WITH_HOE)) return 3.0f;
+        else return 2f / state.getBlock().getSpeedFactor();
     }
 
     /**

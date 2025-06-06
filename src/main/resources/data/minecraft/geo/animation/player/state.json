@@ -2727,15 +2727,15 @@
 				"root": {
 					"rotation": {
 						"0.0": {
-							"post": ["5+q.ground_speed*5", 0, 0],
+							"post": ["5+q.ground_speed*2", 0, 0],
 							"lerp_mode": "catmullrom"
 						},
 						"1.0": {
-							"post": ["5+q.ground_speed*5", 0, 0],
+							"post": ["5+q.ground_speed*2", 0, 0],
 							"lerp_mode": "catmullrom"
 						},
 						"2.0": {
-							"post": ["5+q.ground_speed*5", 0, 0],
+							"post": ["5+q.ground_speed*2", 0, 0],
 							"lerp_mode": "catmullrom"
 						}
 					},
