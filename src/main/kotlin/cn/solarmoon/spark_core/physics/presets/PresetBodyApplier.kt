@@ -9,6 +9,8 @@ import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
+import net.minecraft.world.entity.decoration.BlockAttachedEntity
+import net.minecraft.world.entity.decoration.ItemFrame
 import net.minecraft.world.entity.monster.Vindicator
 import net.minecraft.world.entity.monster.Zombie
 import net.minecraft.world.entity.player.Player
@@ -22,7 +24,7 @@ object PresetBodyApplier {
     private fun onEntityJoin(event: EntityJoinLevelEvent) {
         val entity = event.entity
         val level = event.level
-
+        if (entity is BlockAttachedEntity) return //这种东西就不要来占用cpu了！
 //        if (entity is Player || entity is Zombie || entity is Vindicator) {
 //            entity.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach {
 //                val body = PhysicsRigidBody(it.name, entity, CompoundCollisionShape())
