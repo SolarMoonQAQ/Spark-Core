@@ -53,6 +53,8 @@ abstract class PhysicsLevel(
     // 运行时数据
     lateinit var world: PhysicsWorld
         private set
+    lateinit var worldSnapshot: PhysicsWorld
+        private set
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     override val taskMap = ConcurrentHashMap<PPhase, ConcurrentHashMap<String, () -> Unit>>()
     override val immediateQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>()
@@ -121,6 +123,17 @@ abstract class PhysicsLevel(
         // 更新所有物体的位置姿态信息，处理地形碰撞
         val tp = Transform()
         world.pcoList.forEach {
+//            if (it is PhysicsRigidBody) {//将所有刚体信息记录至快照中
+//                if (it.snapShotTwin == null) {
+//                    val snapShot = PhysicsRigidBody(it)
+//                    worldSnapshot.addCollisionObject(snapShot)
+//                }
+//                it.snapShotTwin.get()?.apply {
+//                    setPhysicsTransform(it.getTransform(null))
+//                    setLinearVelocity(it.getLinearVelocity(null))
+//                    setAngularVelocity(it.getAngularVelocity(null))
+//                }
+//            }
             if (!it.isStatic) {//仅更新非静态的物体
                 if (!it.isActive) return@forEach
                 it.lastTickTransform = it.tickTransform.clone()
@@ -144,6 +157,14 @@ abstract class PhysicsLevel(
                 } else it.setUserIndex(it.userIndex() - 1) //销毁倒计时推进
             }
         }
+//        worldSnapshot.pcoList.forEach { //清理快照中已经于物理世界被删除的对象
+//            if (it is PhysicsRigidBody) {
+//                if (it.snapShotTwin.get() == null || !world.pcoList.contains(it.snapShotTwin.get())) {
+//                    worldSnapshot.remove(it)
+//                    it.snapShotTwin = null
+//                }
+//            }
+//        }
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)
@@ -157,6 +178,7 @@ abstract class PhysicsLevel(
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
         scope.launch {
             world = PhysicsWorld(this@PhysicsLevel)
+            worldSnapshot = PhysicsWorld(this@PhysicsLevel, 1)
             run()
         }
     }
@@ -167,6 +189,7 @@ abstract class PhysicsLevel(
     override fun close() {
         runBlocking {
             world.destroy()
+            worldSnapshot.destroy()
             hostManager.clear()
             scope.cancel("物理线程已关闭")
             dispatcher.close()

@@ -34,7 +34,7 @@ interface IAnimatable<T> : JSAnimatable, Syncer {
     val randomSeed: Random get() = Random()
 
     /**
-     * 动画提所处的世界
+     * 动画体所处的世界
      */
     val animLevel: Level
 
