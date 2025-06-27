@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.animation.client.ClientAnimationDataManager
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -37,10 +36,19 @@ data class OAnimationSetSyncPayload(
         @JvmStatic
         fun handleInClient(payload: OAnimationSetSyncPayload, context: IPayloadContext) {
             context.enqueueWork {
-                SparkCore.LOGGER.info("Received OAnimationSetSyncPayload for: ${payload.rootLocation}. Updating ClientAnimationDataManager.")
-                ClientAnimationDataManager.updateAnimationSet(payload.rootLocation, payload.animationSet)
-                // 日志已在 ClientAnimationDataManager.updateAnimationSet 中记录
-                // SparkCore.LOGGER.info("ClientAnimationDataManager updated OAnimationSet for: ${payload.rootLocation}")
+                SparkCore.LOGGER.info("Received OAnimationSetSyncPayload for: ${payload.rootLocation}. Updating OAnimationSet.ORIGINS.")
+                
+                // 直接操作 OAnimationSet.ORIGINS，与新的 handle 机制保持一致
+                if (payload.animationSet.animations.isEmpty()) {
+                    // 如果动画集为空，则从 ORIGINS 中移除
+                    OAnimationSet.ORIGINS.remove(payload.rootLocation)
+                    SparkCore.LOGGER.debug("Removed animation set for: {}", payload.rootLocation)
+                } else {
+                    // 否则更新或添加动画集
+                    OAnimationSet.ORIGINS[payload.rootLocation] = payload.animationSet
+                    SparkCore.LOGGER.debug("Updated animation set for: {} with OAnimationSet object", payload.rootLocation)
+                }
+                
                 // TODO: 考虑是否需要进一步的客户端刷新逻辑，例如针对使用这些动画的实体进行特定更新。
             }.exceptionally { e ->
                 SparkCore.LOGGER.error("Error processing OAnimationSetSyncPayload for ${payload.rootLocation} on client", e)

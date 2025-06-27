@@ -44,6 +44,16 @@ object SparkKeyMappings {
         .category(CATEGORY)
         .conflictContext(KeyConflictContext.GUI) // Only active in GUI
         .build()
+        
+    // Key to open JS Script Browser
+    @JvmStatic
+    val OPEN_JS_SCRIPT_BROWSER = SparkCore.REGISTER.keyMapping()
+        .id("open_js_script_browser")
+        .bound(GLFW.GLFW_KEY_J) // Example key: J
+        .category("key.categories.spark_core.script_browser")
+        .conflictContext(KeyConflictContext.IN_GAME) // Only active in game
+        .build()
+        
     @JvmStatic
     fun register() {}
 

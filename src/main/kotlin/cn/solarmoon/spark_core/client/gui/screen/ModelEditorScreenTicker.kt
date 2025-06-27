@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.client.gui.screen
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.model.origin.OModel
+import cn.solarmoon.spark_core.client.gui.screen.JSScriptBrowserScreen
 import cn.solarmoon.spark_core.registry.client.SparkKeyMappings
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.client.Minecraft
@@ -23,7 +24,16 @@ object ModelEditorScreenTicker {
     fun onClientTick(event: ClientTickEvent.Post) {
         val minecraft = Minecraft.getInstance()
         val player = minecraft.player ?: return // 需要玩家实例
-        // 检查按键是否刚刚被按下
+        
+        // 检查JS脚本浏览器按键
+        if (SparkKeyMappings.OPEN_JS_SCRIPT_BROWSER.consumeClick()) {
+            if (minecraft.screen == null) {
+                minecraft.setScreen(JSScriptBrowserScreen())
+                SparkCore.LOGGER.info("打开JS脚本浏览器")
+            }
+        }
+        
+        // 检查模型编辑器按键
         if (SparkKeyMappings.OPEN_MODEL_EDITOR.consumeClick()) {
             // 检查玩家是否手持特殊物品
              val requiredItem = SparkRegistries.MODEL_EDITOR_WAND.get()

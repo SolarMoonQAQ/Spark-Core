@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.js.ik
 
-// import cn.solarmoon.spark_core.js.put // Removed as per diff logic (put is used in onRegister)
+// import cn.solarmoon.spark_core.js.put // 根据差异逻辑移除（put 在 onRegister 中使用）
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.ik.component.TypedIKComponent
 import cn.solarmoon.spark_core.js.JSApi
@@ -11,68 +11,68 @@ import org.mozilla.javascript.Function
 import org.slf4j.LoggerFactory
 
 object JSIKApi: JSApi,JSComponent() {
-    override val id: String = "ik" // Name exposed to JS (e.g., IK.create(...))
+    override val id: String = "ik" // 暴露给 JS 的名称（例如，IK.create(...)）
     override val valueCache: MutableMap<String, String> = mutableMapOf()
 
-    // Use SLF4J logger
+    // 使用 SLF4J 日志
     private val logger = LoggerFactory.getLogger(JSIKApi::class.java)
 
-    // Store builders until onLoad
-    // Assuming JSIKComponentTypeBuilder exists and has 'id', 'priority', and 'build()'
+    // 存储构建器直到 onLoad 被调用
+    // 假设 JSIKComponentTypeBuilder 存在，并且具有 'id'、'priority' 和 'build()' 方法
     private val pendingRegistrations = mutableListOf<Pair<JSIKComponentTypeBuilder, () -> Unit>>()
 
-    
+
     fun create(idStr: String, configureFunc: Function) {
-        val builder = JSIKComponentTypeBuilder() // Assuming this class exists
-        // Store the configuration logic to run later during onLoad
+        val builder = JSIKComponentTypeBuilder() // 假设这个类存在
+        // 存储配置逻辑，以便稍后在 onLoad 期间运行
         pendingRegistrations.add(builder to {
             try {
-                // Set the ID first, as the configureFunc might need it implicitly
+                // 首先设置 ID，因为 configureFunc 可能隐式需要它
                 builder.id = ResourceLocation.parse(idStr)
-                // Call the JS function, passing the builder for configuration
-                configureFunc.call(engine, builder) // Pass engine context and the builder
-                // Configuration is done, registration will happen in onLoad
-                // builder.buildAndRegister() // Removed registration call here
+                // 调用 JS 函数，传递构建器进行配置
+                configureFunc.call(engine, builder) // 传递引擎上下文和构建器
+                // 配置完成，注册将在 onLoad 中进行
+                // builder.buildAndRegister() // 此处移除了注册调用
             } catch (e: Exception) {
-                logger.error("Error configuring TypedIKComponent '$idStr' from JS:", e) // Use logger
+                logger.error("配置 TypedIKComponent '$idStr' 时发生错误：", e) // 使用日志记录器
             }
         })
-        logger.debug("JS queued TypedIKComponent definition: $idStr") // Use logger
+        logger.debug("JS 已排队 TypedIKComponent 定义：$idStr") // 使用日志记录器
     }
 
     override fun onLoad() {
-        logger.info("Processing ${pendingRegistrations.size} pending JS TypedIKComponent registrations...") // Use logger
-        // Sort by priority if needed, then register
-        pendingRegistrations.sortByDescending { it.first.priority } // Assuming 'priority' exists
-        // pendingRegistrations.forEach { it.second.invoke() } // Removed direct invocation here
+        logger.info("正在处理 ${pendingRegistrations.size} 个待定的 JS TypedIKComponent 注册...") // 使用日志记录器
+        // 如果需要，按优先级排序，然后注册
+        pendingRegistrations.sortByDescending { it.first.priority } // 假设 'priority' 存在
+        // pendingRegistrations.forEach { it.second.invoke() } // 此处移除了直接调用
         pendingRegistrations.forEach { (builder, configureAction) ->
             try {
-                configureAction.invoke() // Ensure configuration is applied
-                val typeToRegister: TypedIKComponent? = builder.build() // Build the type instance, assuming build() exists and returns TypedIKComponent?
+                configureAction.invoke() // 确保配置已应用
+                val typeToRegister: TypedIKComponent? = builder.build() // 构建类型实例，假设 build() 存在并返回 TypedIKComponent?
                 if (typeToRegister != null) {
-                    // Use the DeferredRegister pattern via SparkCore.REGISTER
-                    // Assuming SparkCore.REGISTER.ikComponentType() returns a DeferredRegister<TypedIKComponent>
-                    // And it has a build method accepting path and supplier
+                    // 通过 SparkCore.REGISTER 使用 DeferredRegister 模式
+                    // 假设 SparkCore.REGISTER.ikComponentType() 返回一个 DeferredRegister<TypedIKComponent>
+                    // 并且它有一个接受路径和供应器的构建方法
                     SparkCore.REGISTER.ikComponentType().build(typeToRegister.id.path) { typeToRegister }
-                    logger.info("JS submitted TypedIKComponent for registration: ${typeToRegister.id}") // Use logger
+                    logger.info("JS 提交用于注册的 TypedIKComponent：${typeToRegister.id}") // 使用日志记录器
                 } else {
-                     logger.error("Failed to build TypedIKComponent from JS definition: ${builder.id}")
+                     logger.error("构建 TypedIKComponent 失败，来自 JS 定义：${builder.id}")
                 }
             } catch (e: Exception) {
-                 logger.error("Error processing JS TypedIKComponent registration for '${builder.id ?: "unknown"}':", e)
+                 logger.error("处理 JS TypedIKComponent 注册时发生错误（针对 '${builder.id ?: "unknown"}'）：", e)
             }
         }
         pendingRegistrations.clear()
-        logger.info("Finished processing JS TypedIKComponent registrations.") // Use logger
+        logger.info("已完成 JS TypedIKComponent 注册处理。") // 使用日志记录器
     }
 
     override fun onReload() {
-        // TODO: Decide how to handle JS-defined types on reload.
-        // Option 1: Clear them (requires tracking which ones were JS-defined).
-        // Option 2: Keep them (might lead to duplicates if scripts redefine).
-        // Option 3: Implement a proper reload mechanism.
-        logger.warn("IK component type reloading from JS not fully implemented.") // Use logger
-        // For now, clear pending ones that didn't load?
+        // TODO: 决定如何在重新加载时处理 JS 定义的类型。
+        // 选项 1: 清除它们（需要跟踪哪些是 JS 定义的）。
+        // 选项 2: 保留它们（如果脚本重新定义，可能会导致重复）。
+        // 选项 3: 实现一个正确的重新加载机制。
+        logger.warn("IK 组件类型从 JS 重新加载尚未完全实现。") // 使用日志记录器
+        // 目前，清除那些没有加载的待处理项？
         pendingRegistrations.clear()
     }
 }

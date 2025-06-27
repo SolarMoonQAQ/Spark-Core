@@ -22,7 +22,7 @@ import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 /**
- * 同步 ModelIndex 从服务端到客户端的负载
+ * 同步 ModelIndex 从服务端到客户端的负载, 用于切换模型
  */
 data class ModelIndexSyncPayload(
     val syncerType: SyncerType,

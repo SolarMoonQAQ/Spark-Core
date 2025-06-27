@@ -3,6 +3,9 @@ package cn.solarmoon.spark_core.resource.autoregistry
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.resource.handler.IDynamicResourceHandler
 import cn.solarmoon.spark_core.resource.handler.DynamicAnimationHandler
+import cn.solarmoon.spark_core.resource.handler.DynamicModelHandler
+import cn.solarmoon.spark_core.resource.handler.DynamicTextureHandler
+import cn.solarmoon.spark_core.resource.handler.DynamicJavaScriptHandler
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
@@ -14,7 +17,12 @@ object HandlerDiscoveryService {
     private val discoveredHandlers = mutableListOf<IDynamicResourceHandler>()
 
     private fun findHandlerImplementations(): List<IDynamicResourceHandler> {
-        return listOf(DynamicAnimationHandler(SparkRegistries.TYPED_ANIMATION))
+        return listOf(
+            DynamicAnimationHandler(SparkRegistries.TYPED_ANIMATION),
+            DynamicModelHandler(SparkRegistries.MODELS),
+            DynamicTextureHandler(SparkRegistries.DYNAMIC_TEXTURES),
+            DynamicJavaScriptHandler(SparkRegistries.JS_SCRIPTS)
+        )
     }
 
     @SubscribeEvent

@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
-import cn.solarmoon.spark_core.animation.client.ClientAnimationDataManager
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.client.Minecraft
@@ -27,19 +27,24 @@ data class OAnimationSet(
     companion object {
         /**
          * 获取动画集合。
-         * 在客户端环境下，此方法会尝试从 ClientAnimationDataManager 获取数据。
-         * 在服务器环境下或 ClientAnimationDataManager 中未找到时，会回退到静态的 ORIGINS Map。
+         * 统一数据访问优先级：SparkRegistries动态注册表 > 静态ORIGINS
+         * 在客户端和服务端都优先从动态注册表获取，确保数据一致性
          */
         @JvmStatic
         fun get(res: ResourceLocation): OAnimationSet {
-            // 尝试获取Minecraft实例和level，判断是否在客户端逻辑中
-            val mc = Minecraft.getInstance()
-            // mc.level 可能为 null，例如在主菜单或某些早期加载阶段
-            if (mc.level != null && mc.level!!.isClientSide) {
-                // 客户端逻辑：从ClientAnimationDataManager获取
-                return ClientAnimationDataManager.getAnimationSet(res) ?: EMPTY
+            // 优先从动态注册表获取，在客户端和服务端都保持一致的优先级
+            SparkRegistries.TYPED_ANIMATION?.let { registry ->
+                // 尝试通过ResourceLocation找到对应的TypedAnimation
+                registry.entrySet().forEach { entry ->
+                    val typedAnimation = entry.value
+                    if (typedAnimation.index.index == res) {
+                        // 从TypedAnimation对应的静态ORIGINS获取OAnimationSet
+                        return ORIGINS[res] ?: EMPTY
+                    }
+                }
             }
-            // 服务器端逻辑或无法确定环境（例如，单元测试或早期初始化，或 mc.level 为 null）
+            
+            // 回退到静态ORIGINS
             return ORIGINS[res] ?: EMPTY
         }
 

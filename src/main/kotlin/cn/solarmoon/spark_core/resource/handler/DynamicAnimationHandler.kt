@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
-import cn.solarmoon.spark_core.animation.sync.AnimationDataSyncPayload
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
@@ -15,15 +14,12 @@ import net.minecraft.core.RegistrationInfo
 import net.minecraft.core.Registry
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.server.level.ServerPlayer
 import net.neoforged.fml.loading.FMLPaths
 import net.neoforged.neoforge.network.PacketDistributor
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.LinkedHashMap
 import kotlin.io.path.nameWithoutExtension
-import kotlin.io.path.readText
 
 @AutoRegisterHandler
 class DynamicAnimationHandler(

@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -22,21 +23,45 @@ class AnimationDataSendingTask : ICustomConfigurationTask {
     override fun run(sender: Consumer<CustomPacketPayload?>) {
         SparkCore.LOGGER.info("服务器端 AnimationDataSendingTask: 准备向新玩家发送全量 OAnimationSet 数据...")
         
-        // 直接从 OAnimationSet.ORIGINS 获取数据，并创建一个副本以确保线程安全或避免意外修改
-        // AnimationDataSyncPayload 现在期望 LinkedHashMap<ResourceLocation, OAnimationSet>
-        val animationsToSync = LinkedHashMap(OAnimationSet.ORIGINS)
+        // 从 SparkRegistries.TYPED_ANIMATION 动态注册表获取数据，确保与增量同步数据源一致
+        val animationsToSync = LinkedHashMap<ResourceLocation, OAnimationSet>()
+        
+        SparkRegistries.TYPED_ANIMATION?.let { registry ->
+            registry.entrySet().forEach { entry ->
+                val registryKey = entry.key
+                val typedAnimation = entry.value
+                val animationSetLocation = typedAnimation.index.index
+                
+                // 从 TypedAnimation 提取对应的 OAnimationSet
+                val animationSet = convertTypedAnimationToOAnimationSet(typedAnimation)
+                animationsToSync[animationSetLocation] = animationSet
+                
+                SparkCore.LOGGER.debug("从动态注册表获取 TypedAnimation: ${registryKey.location()} -> 动画集: $animationSetLocation")
+            }
+        } ?: run {
+            SparkCore.LOGGER.warn("TYPED_ANIMATION 动态注册表为空，将发送空的动画数据")
+        }
 
         if (animationsToSync.isNotEmpty()) {
             // AnimationDataSyncPayload 的构造函数现在只接受 animations
             val payload = AnimationDataSyncPayload(animationsToSync)
             sender.accept(payload)
-            SparkCore.LOGGER.info("成功向新玩家发送了包含 ${animationsToSync.size} 个根 OAnimationSet 的同步包。等待客户端确认...")
+            SparkCore.LOGGER.info("成功向新玩家发送了包含 ${animationsToSync.size} 个根 OAnimationSet 的同步包（来源：动态注册表）。等待客户端确认...")
         } else {
-            SparkCore.LOGGER.info("没有加载任何 OAnimationSet 数据，将向新玩家发送空的同步包。")
+            SparkCore.LOGGER.info("动态注册表中没有加载任何 TypedAnimation 数据，将向新玩家发送空的同步包。")
             // 发送一个包含空 map 的 payload
             val payload = AnimationDataSyncPayload(LinkedHashMap()) // 空的 LinkedHashMap
             sender.accept(payload)
         }
+    }
+    
+    /**
+     * 将 TypedAnimation 转换为 OAnimationSet
+     * 通过 TypedAnimation 的 index.index (ResourceLocation) 从静态 ORIGINS 获取 OAnimationSet
+     */
+    private fun convertTypedAnimationToOAnimationSet(typedAnimation: cn.solarmoon.spark_core.animation.anim.play.TypedAnimation): OAnimationSet {
+        val animationSetLocation = typedAnimation.index.index
+        return OAnimationSet.ORIGINS[animationSetLocation] ?: OAnimationSet.EMPTY
     }
 
     override fun type(): ConfigurationTask.Type {

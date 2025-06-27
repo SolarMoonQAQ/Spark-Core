@@ -9,6 +9,8 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
+import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSendingTask
+import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSyncPayload
 import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
 import cn.solarmoon.spark_core.ik.sync.IKDataPayload
 import cn.solarmoon.spark_core.ik.sync.IKDataSendingTask
@@ -18,12 +20,13 @@ import cn.solarmoon.spark_core.ik.sync.RequestSetIKTargetPayload
 import cn.solarmoon.spark_core.js.sync.JSPayload
 import cn.solarmoon.spark_core.js.sync.JSSendingTask
 import cn.solarmoon.spark_core.js.sync.JSTaskPayload
+import cn.solarmoon.spark_core.js.sync.JSScriptDataSendingTask
+import cn.solarmoon.spark_core.js.sync.JSScriptDataSyncPayload
 import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
 import cn.solarmoon.spark_core.physics.sync.AddCollisionCallbackPayload
 import cn.solarmoon.spark_core.physics.sync.AttackSystemSyncPayload
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
-import cn.solarmoon.spark_core.resource.payload.resource_sync.IKConstraintUpdatedPayload
-import cn.solarmoon.spark_core.resource.payload.resource_sync.ModelUpdatedPayload
+import cn.solarmoon.spark_core.rpc.payload.RpcPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -44,12 +47,15 @@ object SparkPayloadRegister {
         anim.playBidirectional(TypedAnimPayload.TYPE, TypedAnimPayload.STREAM_CODEC, TypedAnimPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
-        anim.playToClient(ModelUpdatedPayload.TYPE, ModelUpdatedPayload.STREAM_CODEC, ModelUpdatedPayload::handleInClient)
         anim.playToClient(AnimShouldTurnPayload.TYPE, AnimShouldTurnPayload.STREAM_CODEC, AnimShouldTurnPayload::handleInClient)
 
         anim.configurationToClient(AnimationDataSyncPayload.TYPE, AnimationDataSyncPayload.STREAM_CODEC, AnimationDataSyncPayload::handleInClient)
         anim.configurationToServer(AnimationDataSendingTask.AckPayload.TYPE, AnimationDataSendingTask.AckPayload.STREAM_CODEC, AnimationDataSendingTask.AckPayload::handleOnServer)
         anim.playToClient(OAnimationSetSyncPayload.TYPE, OAnimationSetSyncPayload.STREAM_CODEC, OAnimationSetSyncPayload::handleInClient)
+
+        // 纹理全量同步
+        anim.configurationToClient(TextureDataSyncPayload.TYPE, TextureDataSyncPayload.STREAM_CODEC, TextureDataSyncPayload::handleInClient)
+        anim.configurationToServer(TextureDataSendingTask.AckPayload.TYPE, TextureDataSendingTask.AckPayload.STREAM_CODEC, TextureDataSendingTask.AckPayload::handleOnServer)
 
         val visual = event.registrar("visual_effect")
         visual.playToClient(ShadowPayload.TYPE, ShadowPayload.STREAM_CODEC, ShadowPayload::handleInClient)
@@ -66,6 +72,10 @@ object SparkPayloadRegister {
         js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
         js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
 
+        // JS脚本全量同步
+        js.configurationToClient(JSScriptDataSyncPayload.TYPE, JSScriptDataSyncPayload.STREAM_CODEC, JSScriptDataSyncPayload::handleInClient)
+        js.configurationToServer(JSScriptDataSendingTask.AckPayload.TYPE, JSScriptDataSendingTask.AckPayload.STREAM_CODEC, JSScriptDataSendingTask.AckPayload::handleOnServer)
+
         val ik = event.registrar("ik")
         ik.configurationToClient(IKDataPayload.TYPE, IKDataPayload.STREAM_CODEC, IKDataPayload::handleInClient)
         ik.configurationToServer(IKDataSendingTask.Return.TYPE, IKDataSendingTask.Return.STREAM_CODEC, IKDataSendingTask.Return::onAct)
@@ -73,18 +83,17 @@ object SparkPayloadRegister {
         ik.playToClient(IKComponentSyncPayload.TYPE, IKComponentSyncPayload.STREAM_CODEC, IKComponentSyncPayload::handleInClient)
         ik.playToServer(RequestIKComponentChangePayload.TYPE, RequestIKComponentChangePayload.STREAM_CODEC, RequestIKComponentChangePayload::handleInServer)
         ik.playToServer(RequestSetIKTargetPayload.TYPE, RequestSetIKTargetPayload.STREAM_CODEC, RequestSetIKTargetPayload::handleInServer)
-        ik.playToClient(IKConstraintUpdatedPayload.TYPE, IKConstraintUpdatedPayload.STREAM_CODEC, IKConstraintUpdatedPayload::handleInClient)
 
         val physics = event.registrar("physics")
         physics.playToClient(PhysicsCollisionObjectSyncPayload.TYPE, PhysicsCollisionObjectSyncPayload.STREAM_CODEC, PhysicsCollisionObjectSyncPayload::handleInClient)
         physics.playToClient(AttackSystemSyncPayload.TYPE, AttackSystemSyncPayload.STREAM_CODEC, AttackSystemSyncPayload::handleInClient)
         physics.playToClient(AddCollisionCallbackPayload.TYPE, AddCollisionCallbackPayload.STREAM_CODEC, AddCollisionCallbackPayload::handleInClient)
 
-        val registrar = event.registrar("registry")
-        registrar.playToClient(DynamicRegistrySyncS2CPacket.TYPE, DynamicRegistrySyncS2CPacket.CODEC, DynamicRegistrySyncS2CPacket::handleInClient)
+        val resource = event.registrar("resource")
+        resource.playToClient(DynamicRegistrySyncS2CPacket.TYPE, DynamicRegistrySyncS2CPacket.STREAM_CODEC, DynamicRegistrySyncS2CPacket::handleInClient)
 
-//        val rpc = event.registrar("rpc")
-//        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
+        val rpc = event.registrar("rpc")
+        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {
@@ -92,6 +101,9 @@ object SparkPayloadRegister {
         event.register(JSSendingTask())
         event.register(IKDataSendingTask())
         event.register(AnimationDataSendingTask())
+        // 注册新的全量同步配置任务
+        event.register(JSScriptDataSendingTask())
+        event.register(TextureDataSendingTask())
     }
 
     @JvmStatic

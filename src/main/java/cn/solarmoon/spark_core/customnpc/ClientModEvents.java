@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.util;
+package cn.solarmoon.spark_core.customnpc;
 
 
 import cn.solarmoon.spark_core.SparkCore;

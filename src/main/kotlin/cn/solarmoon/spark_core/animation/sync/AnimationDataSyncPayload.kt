@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.animation.client.ClientAnimationDataManager
 import cn.solarmoon.spark_core.animation.sync.AnimationDataSendingTask
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
@@ -31,17 +30,21 @@ data class AnimationDataSyncPayload(
         )
 
         /**
-         * 在客户端处理此Payload的逻辑，仿照 ModelDataPayload.handleInClient
+         * 在客户端处理此Payload的逻辑，直接操作OAnimationSet.ORIGINS与新的handle机制保持一致
          */
         @JvmStatic
         fun handleInClient(payload: AnimationDataSyncPayload, context: IPayloadContext) {
             context.enqueueWork {
                 SparkCore.LOGGER.info("Received Full AnimationDataSyncPayload on client. Animations count: ${payload.animations.size}")
                 
-                // 调用 ClientAnimationDataManager 来更新客户端数据
-                ClientAnimationDataManager.replaceAllAnimationSetsFromObjects(payload.animations)
+                // 直接操作 OAnimationSet.ORIGINS，与新的 handle 机制保持一致
+                OAnimationSet.ORIGINS.clear()
+                payload.animations.forEach { (location, animationSet) ->
+                    OAnimationSet.ORIGINS[location] = animationSet
+                    SparkCore.LOGGER.debug("Added/Replaced animation set for: {} with OAnimationSet object", location)
+                }
                 
-                SparkCore.LOGGER.info("ClientAnimationDataManager updated with ${payload.animations.size} OAnimationSet objects.")
+                SparkCore.LOGGER.info("OAnimationSet.ORIGINS updated with ${payload.animations.size} OAnimationSet objects.")
                 
                 val ack = AnimationDataSendingTask.AckPayload(payload.animations.size)
                 context.reply(ack) 

@@ -9,12 +9,15 @@ import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.toRadians
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
+import cn.solarmoon.spark_core.util.ResourceExtractionUtil
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.GsonHelper
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector2i
+import net.neoforged.fml.loading.FMLPaths
+import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -24,28 +27,34 @@ import kotlin.io.path.readText
 
 @AutoRegisterHandler
 class DynamicModelHandler(
-    private val modelRegistry: DynamicAwareRegistry<OModel>
+    internal val modelRegistry: DynamicAwareRegistry<OModel>
 ) : IDynamicResourceHandler {
-    private val baseModelPath: Path
     private val directoryIdString = "models"
+    private var initialScanComplete = false
+
+    // 与 DynamicAnimationHandler 保持一致的路径配置
+    private val baseModelPath: Path = FMLPaths.GAMEDIR.get().resolve("sparkcore").resolve(getDirectoryId())
+        .also { path ->
+            if (!Files.exists(path)) {
+                try {
+                    Files.createDirectories(path)
+                    SparkCore.LOGGER.info("Created base directory for DynamicModelHandler: {}", path)
+                } catch (e: Exception) {
+                    SparkCore.LOGGER.error("Failed to create base directory for DynamicModelHandler {}: {}", path, e.message)
+                    throw IllegalStateException("Failed to create base directory: $path", e)
+        }
+            } else if (!Files.isDirectory(path)) {
+                 throw IllegalArgumentException("Base path '$path' exists but is not a directory.")
+        }
+        }
 
     init {
-        val dynamicResourcesRoot = Paths.get("config", "spark_core", "dynamic_resources")
-        baseModelPath = dynamicResourcesRoot.resolve(directoryIdString)
-
-        try {
-            if (!Files.exists(baseModelPath)) {
-                Files.createDirectories(baseModelPath)
-                SparkCore.LOGGER.info("Created directory for DynamicModelHandler: {}", baseModelPath)
-            }
-        } catch (e: IOException) {
-            throw IllegalStateException("Failed to create directory for DynamicModelHandler: $baseModelPath", e)
-        }
-
-        if (!Files.isDirectory(baseModelPath)) {
-            throw IllegalArgumentException("Base path '$baseModelPath' must be a directory.")
-        }
-        SparkCore.LOGGER.info("DynamicModelHandler initialized for path: {}, using ModelRegistry: {}", baseModelPath, modelRegistry.tagNames)
+        SparkCore.LOGGER.info(
+            "DynamicModelHandler 初始化完成，监控目录ID: {}, 完整路径: {}, 模型注册表: {}",
+            getDirectoryId(),
+            baseModelPath,
+            modelRegistry.key().location()
+        )
     }
 
     override fun getDirectoryPath(): String {
@@ -54,6 +63,11 @@ class DynamicModelHandler(
 
     override fun getResourceType(): String {
         return "模型"
+    }
+    
+    fun markInitialScanComplete() {
+        this.initialScanComplete = true
+        SparkCore.LOGGER.info("DynamicModelHandler (${getResourceType()}) 标记初始扫描完成。后续资源变动将触发同步。")
     }
 
     private fun determineResourceLocationRoot(file: Path): ResourceLocation? {
@@ -133,8 +147,14 @@ class DynamicModelHandler(
         val model = processModelData(file, root)
         if (model != null) {
             OModel.ORIGINS[root] = model
+            
+            // 如果初始扫描已完成，触发动态注册和网络同步
+            if (initialScanComplete) {
+                modelRegistry.registerDynamic(root, model)
+                SparkCore.LOGGER.info("模型已动态注册并同步: {}", root)
+            }
+            
             SparkCore.LOGGER.info("成功添加/更新模型 '{}'", root)
-            SparkCore.LOGGER.info("模型已添加/更新: {}. 网络同步占位符。", root)
         } else {
             SparkCore.LOGGER.error("处理并添加模型 '{}' 时失败，来源: {}", root, file)
         }
@@ -150,8 +170,14 @@ class DynamicModelHandler(
         val model = processModelData(file, root)
         if (model != null) {
             OModel.ORIGINS[root] = model 
+            
+            // 如果初始扫描已完成，触发动态注册和网络同步
+            if (initialScanComplete) {
+                modelRegistry.registerDynamic(root, model)
+                SparkCore.LOGGER.info("模型已动态注册并同步: {}", root)
+            }
+            
             SparkCore.LOGGER.info("成功修改/更新模型 '{}'", root)
-            SparkCore.LOGGER.info("模型已修改/更新: {}. 网络同步占位符。", root)
         } else {
             SparkCore.LOGGER.error("处理并更新模型 '{}' 时失败，来源: {}", root, file)
         }
@@ -166,11 +192,16 @@ class DynamicModelHandler(
 
         val removedModel = OModel.ORIGINS.remove(root)
         if (removedModel != null) {
+            // 如果初始扫描已完成，触发动态注销和网络同步
+            if (initialScanComplete) {
+                modelRegistry.unregisterDynamic(root)
+                SparkCore.LOGGER.info("模型已动态注销并同步: {}", root)
+            }
+            
             SparkCore.LOGGER.info("由于文件移除，已移除模型根 '{}': {}", root, file)
         } else {
             SparkCore.LOGGER.warn("尝试移除模型根 '{}'（来自文件 {}），但未找到与此根对应的模型。", root, file)
         }
-        SparkCore.LOGGER.info("模型已移除: {}. 网络同步占位符。", root)
     }
 
     override fun getDirectoryId(): String {
@@ -179,5 +210,32 @@ class DynamicModelHandler(
 
     override fun getRegistryIdentifier(): ResourceLocation? {
         return modelRegistry.key().location()
+    }
+
+    override fun getSourceResourceDirectoryName(): String = "models"
+
+    override fun initializeDefaultResources(modMainClass: Class<*>): Boolean {
+        val gameDir = FMLPaths.GAMEDIR.get().toFile()
+        val targetRuntimeBaseDir = File(gameDir, "sparkcore")
+        val success = ResourceExtractionUtil.extractResourcesFromJar(
+            modMainClass,
+            getSourceResourceDirectoryName(),      // "models"
+            targetRuntimeBaseDir,
+            getDirectoryId(),                      // "models"
+            SparkCore.LOGGER
+        )
+        
+        // 如果提取成功，处理所有提取的文件（与DynamicAnimationHandler一致）
+        if (success) {
+            val finalTargetDir = File(targetRuntimeBaseDir, getDirectoryId())
+            for (file in finalTargetDir.walk()) {
+                if (file.isFile && file.extension.lowercase() == "json") {
+                    onResourceAdded(file.toPath())
+                }
+            }
+        }
+        
+        SparkCore.LOGGER.info("模型默认资源初始化完成: {}", if (success) "成功" else "失败")
+        return success
     }
 }
