@@ -14,10 +14,10 @@ import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.common.NeoForge
 //TODO:将计算线程数量改为通过配置文件设置
-class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
+class PhysicsWorld(val level: PhysicsLevel, numSolvers: Int = 1): PhysicsSoftSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
-    BroadphaseType.DBVT, CollisionConfiguration(8192,0), 12
+    BroadphaseType.DBVT, CollisionConfiguration(8192,0), numSolvers
 ) {
 
     init {

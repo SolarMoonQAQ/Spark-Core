@@ -49,6 +49,7 @@ import jme3utilities.math.MyQuaternion;
 import jme3utilities.math.MyVector3f;
 import net.minecraft.core.BlockPos;
 
+import java.lang.ref.WeakReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,6 +88,10 @@ public class PhysicsRigidBody extends PhysicsBody {
      * 存储方块坐标，仅用于方块的碰撞体
      */
     public final BlockPos blockPos;
+    /**
+     * 刚体的快照对象
+     */
+    public WeakReference<PhysicsRigidBody> snapShotTwin = null;
     // *************************************************************************
     // constructors
 
@@ -147,6 +152,20 @@ public class PhysicsRigidBody extends PhysicsBody {
         assert isContactResponse();
         assert !isInWorld();
         assert !isKinematic();
+    }
+
+    public PhysicsRigidBody(PhysicsRigidBody copy){
+        super(copy.name, copy.getOwner());
+        copyPcoProperties(copy);
+        this.snapShotTwin = new WeakReference<>(copy);
+        copy.snapShotTwin = new WeakReference<>(this);
+        setMass(copy.getMass());
+        this.setPhysicsTransform(copy.getTransform(null));
+        this.setLinearVelocity(copy.getLinearVelocity(null));
+        this.setAngularVelocity(copy.getAngularVelocity(null));
+        this.blockPos = copy.blockPos;
+        this.kinematic = copy.kinematic;
+        this.mass = copy.mass;
     }
     // *************************************************************************
     // new methods exposed

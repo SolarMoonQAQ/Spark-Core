@@ -25,6 +25,7 @@ import kotlin.math.floor
 
 object BlockCollisionHelper {
     private val SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
+    //TODO:服务端不同维度仍需作出区分
     private val SERVER_SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
     private val DEFAULT_SHAPE = BoxCollisionShape(0.5f)
 
@@ -32,6 +33,7 @@ object BlockCollisionHelper {
         val voxel: VoxelShape =
             blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
         val shape = convertVoxelToCollisionShape(voxel)
+        shape.margin = 0.01f
         return shape
     }
 
@@ -118,10 +120,10 @@ object BlockCollisionHelper {
                             blockPos.toString(),
                             PPhase.PRE
                         ) { blockBody?.setUserIndex(0) }
-                    } else {//重置销毁倒计时 Reset the destruction count
+                    } else if (blockBody?.userIndex()!! > 0f) {//重置销毁倒计时 Reset the destruction count
                         //更新方块打滑属性(默认取决于方块类型，上方方块，和天气)
                         if (Math.random() > 0.95)
-                            blockBody?.setUserIndex2(
+                            blockBody.setUserIndex2(
                                 BlockCollisionUtil.getSlip(
                                     physicsLevel.terrainChunks[chunkPos],
                                     blockState,
@@ -132,8 +134,8 @@ object BlockCollisionHelper {
                             blockPos.toString(),
                             PPhase.PRE
                         ) {
-                            blockBody?.setUserIndex(40)
-                            if (blockState != blockBody?.userObject) blockBody?.userObject = blockState
+                            blockBody.setUserIndex(10)
+                            if (blockState != blockBody.userObject) blockBody.userObject = blockState
                         }
                     }
                 } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象 Create a physics body for the block if it has not been recorded
@@ -152,7 +154,7 @@ object BlockCollisionHelper {
                                     blockState.getBulletCollisionShape(physicsLevel),
                                     blockPos
                                 )
-                            blockBody.setUserIndex(40) //设定销毁倒计时(2秒，40主线程tick) Set the destruction count (2 seconds, 40 main thread ticks)
+                            blockBody.setUserIndex(10) //设定销毁倒计时(0.5秒，10主线程tick) Set the destruction count (0.5 seconds, 10 main thread ticks)
                             blockBody.setPhysicsLocation(
                                 Vector3f(
                                     blockPos.x.toFloat() + 0.5f,
@@ -163,6 +165,8 @@ object BlockCollisionHelper {
                             blockBody.userObject = blockState
                             blockBody.friction =
                                 BlockCollisionUtil.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
+                            blockBody.rollingFriction =
+                                BlockCollisionUtil.getBlockRollingFriction(physicsLevel.mcLevel, blockState, blockPos)
                             blockBody.restitution = BlockCollisionUtil.getRestitution(
                                 physicsLevel.terrainChunks[chunkPos],
                                 blockState,
@@ -183,7 +187,6 @@ object BlockCollisionHelper {
             }
         }
     }
-
 }
 
 fun BlockState.getBulletCollisionShape(level: PhysicsLevel): CollisionShape {

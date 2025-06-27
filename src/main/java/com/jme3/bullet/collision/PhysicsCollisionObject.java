@@ -386,6 +386,9 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
         assert old.nativeId() != nativeId();
 
         int flags = old.collisionFlags();
+        setCollisionShape(old.getCollisionShape());
+        setCollisionGroup(old.getCollisionGroup());
+        setCollideWithGroups(old.getCollideWithGroups());
         boolean hasCsd
                 = (flags & CollisionFlag.HAS_CONTACT_STIFFNESS_DAMPING) != 0;
 
