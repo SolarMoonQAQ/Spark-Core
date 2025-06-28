@@ -25,7 +25,7 @@ data class OAnimation(
         val CODEC: Codec<OAnimation> = RecordCodecBuilder.create {
             it.group(
                 Loop.CODEC.optionalFieldOf("loop", Loop.ONCE).forGetter { it.loop },
-                Codec.DOUBLE.fieldOf("animation_length").forGetter { it.animationLength },
+                Codec.DOUBLE.optionalFieldOf("animation_length", 0.0).forGetter { it.animationLength },
                 OBoneAnimation.MAP_CODEC.fieldOf("bones").forGetter { it.bones }
             ).apply(it, ::OAnimation)
         }
