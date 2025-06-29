@@ -3,9 +3,11 @@ package cn.solarmoon.spark_core.animation.anim.play
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
+import cn.solarmoon.spark_core.animation.anim.play.blend.BlendAnimation
+import cn.solarmoon.spark_core.animation.anim.play.blend.BlendMask
+import cn.solarmoon.spark_core.animation.sync.TypedAnimBlendPayload
+import cn.solarmoon.spark_core.animation.sync.TypedAnimPlayPayload
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.neoforged.neoforge.network.PacketDistributor
 
@@ -29,28 +31,42 @@ class TypedAnimation(
         if (animatable == null) OAnimationSet.get(index.index).getAnimation(index.name) != null
         else animatable.animations.hasAnimation(index.name)
 
-    fun create(animatable: IAnimatable<*>, fromAnimatable: Boolean = false): AnimInstance {
-        return if (fromAnimatable) AnimInstance.create(animatable, index.name) {
-            provider.invoke(this)
-        } else AnimInstance.create(animatable, index) {
+    fun create(animatable: IAnimatable<*>): AnimInstance {
+        return AnimInstance.create(animatable, index) {
             provider.invoke(this)
         }
     }
 
-    fun play(animatable: IAnimatable<*>, transTime: Int, fromAnimatable: Boolean = false) {
-        animatable.animController.setAnimation(create(animatable, fromAnimatable), transTime)
+    fun play(animatable: IAnimatable<*>, transTime: Int) {
+        animatable.animController.setAnimation(create(animatable), transTime)
     }
 
-    fun syncToClient(id: Int, transTime: Int, fromAnimatable: Boolean = false, exceptPlayer: ServerPlayer? = null) {
+    fun blend(animatable: IAnimatable<*>, id: String, weight: Double, enterTransTime: Int = 7, exitTransTime: Int = 7, blendMask: BlendMask = BlendMask()) {
+        animatable.animController.blendAnimation(id, BlendAnimation(create(animatable), weight, enterTransTime, exitTransTime, blendMask))
+    }
+
+    fun playToClient(id: Int, transTime: Int, exceptPlayer: ServerPlayer? = null) {
         exceptPlayer?.let {
-            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, TypedAnimPayload(id, this.id, transTime, fromAnimatable))
+            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, TypedAnimPlayPayload(id, this.id, transTime))
         } ?: run {
-            PacketDistributor.sendToAllPlayers(TypedAnimPayload(id, this.id, transTime, fromAnimatable))
+            PacketDistributor.sendToAllPlayers(TypedAnimPlayPayload(id, this.id, transTime))
         }
     }
 
-    fun syncToServer(id: Int, transTime: Int, fromAnimatable: Boolean = false) {
-        PacketDistributor.sendToServer(TypedAnimPayload(id, this.id, transTime, fromAnimatable))
+    fun playToServer(id: Int, transTime: Int) {
+        PacketDistributor.sendToServer(TypedAnimPlayPayload(id, this.id, transTime))
+    }
+
+    fun blendToClient(id: Int, blendId: String, weight: Double, enterTransTime: Int = 7, exitTransTime: Int = 7, blendMask: BlendMask = BlendMask(), exceptPlayer: ServerPlayer? = null) {
+        exceptPlayer?.let {
+            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, TypedAnimBlendPayload(id, this.id, blendId, weight, enterTransTime, exitTransTime, blendMask))
+        } ?: run {
+            PacketDistributor.sendToAllPlayers(TypedAnimBlendPayload(id, this.id, blendId, weight, enterTransTime, exitTransTime, blendMask))
+        }
+    }
+
+    fun blendToServer(id: Int, blendId: String, weight: Double, enterTransTime: Int = 7, exitTransTime: Int = 7, blendMask: BlendMask = BlendMask()) {
+        PacketDistributor.sendToServer(TypedAnimBlendPayload(id, this.id, blendId, weight, enterTransTime, exitTransTime, blendMask))
     }
 
     // 缓存计算的哈希值，避免每次都调用 getId

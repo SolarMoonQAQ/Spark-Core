@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
-import cn.solarmoon.spark_core.animation.presets.PlayerStateAnimMachine;
 import cn.solarmoon.spark_core.entity.player.ILocalPlayerPatch;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -11,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
-import ru.nsk.kstatemachine.statemachine.StateMachine;
 
 @Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMixin extends AbstractClientPlayer implements ILocalPlayerPatch {

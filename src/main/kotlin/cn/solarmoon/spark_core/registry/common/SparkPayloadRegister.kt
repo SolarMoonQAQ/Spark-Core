@@ -8,9 +8,11 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
-import cn.solarmoon.spark_core.animation.sync.TypedAnimPayload
+import cn.solarmoon.spark_core.animation.sync.TypedAnimBlendPayload
+import cn.solarmoon.spark_core.animation.sync.TypedAnimPlayPayload
 import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSendingTask
 import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSyncPayload
+import cn.solarmoon.spark_core.entity.EntityMovingPayload
 import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
 import cn.solarmoon.spark_core.ik.sync.IKDataPayload
 import cn.solarmoon.spark_core.ik.sync.IKDataSendingTask
@@ -44,18 +46,18 @@ object SparkPayloadRegister {
         val anim = event.registrar("animation")
         anim.configurationToClient(ModelDataPayload.TYPE, ModelDataPayload.STREAM_CODEC, ModelDataPayload::handleInClient)
         anim.configurationToServer(ModelDataSendingTask.Return.TYPE, ModelDataSendingTask.Return.STREAM_CODEC, ModelDataSendingTask.Return::onAct)
-        anim.playBidirectional(TypedAnimPayload.TYPE, TypedAnimPayload.STREAM_CODEC, TypedAnimPayload::handleBothSide)
+        anim.playBidirectional(TypedAnimPlayPayload.TYPE, TypedAnimPlayPayload.STREAM_CODEC, TypedAnimPlayPayload::handleBothSide)
+        anim.playBidirectional(TypedAnimBlendPayload.TYPE, TypedAnimBlendPayload.STREAM_CODEC, TypedAnimBlendPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
         anim.playToClient(AnimShouldTurnPayload.TYPE, AnimShouldTurnPayload.STREAM_CODEC, AnimShouldTurnPayload::handleInClient)
-
         anim.configurationToClient(AnimationDataSyncPayload.TYPE, AnimationDataSyncPayload.STREAM_CODEC, AnimationDataSyncPayload::handleInClient)
         anim.configurationToServer(AnimationDataSendingTask.AckPayload.TYPE, AnimationDataSendingTask.AckPayload.STREAM_CODEC, AnimationDataSendingTask.AckPayload::handleOnServer)
         anim.playToClient(OAnimationSetSyncPayload.TYPE, OAnimationSetSyncPayload.STREAM_CODEC, OAnimationSetSyncPayload::handleInClient)
-
         // 纹理全量同步
         anim.configurationToClient(TextureDataSyncPayload.TYPE, TextureDataSyncPayload.STREAM_CODEC, TextureDataSyncPayload::handleInClient)
         anim.configurationToServer(TextureDataSendingTask.AckPayload.TYPE, TextureDataSendingTask.AckPayload.STREAM_CODEC, TextureDataSendingTask.AckPayload::handleOnServer)
+
 
         val visual = event.registrar("visual_effect")
         visual.playToClient(ShadowPayload.TYPE, ShadowPayload.STREAM_CODEC, ShadowPayload::handleInClient)
@@ -68,7 +70,7 @@ object SparkPayloadRegister {
         skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)
 
         val js = event.registrar("js")
-        js.playToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
+        skill.playToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
         js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
         js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
 
@@ -94,6 +96,9 @@ object SparkPayloadRegister {
 
         val rpc = event.registrar("rpc")
         rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
+
+        val entity = event.registrar("entity")
+        entity.playBidirectional(EntityMovingPayload.TYPE, EntityMovingPayload.STREAM_CODEC, EntityMovingPayload::handleInBothSide)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

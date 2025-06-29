@@ -11,11 +11,10 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
-class TypedAnimPayload(
+class TypedAnimPlayPayload(
     val id: Int,
     val animId: Int,
-    val transTime: Int,
-    val fromAnimatable: Boolean
+    val transTime: Int
 ): CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -24,25 +23,25 @@ class TypedAnimPayload(
 
     companion object {
         @JvmStatic
-        fun handleBothSide(payload: TypedAnimPayload, context: IPayloadContext) {
+        fun handleBothSide(payload: TypedAnimPlayPayload, context: IPayloadContext) {
             val level = context.player().level()
             val entity = level.getEntity(payload.id)
             if (entity !is IEntityAnimatable<*>) return
             val anim = SparkRegistries.TYPED_ANIMATION.byId(payload.animId) ?: return
-            anim.play(entity, payload.transTime, payload.fromAnimatable)
-            if (!level.isClientSide) anim.syncToClient(payload.id, payload.transTime, payload.fromAnimatable, context.player() as? ServerPlayer)
+            anim.play(entity, payload.transTime)
+            // 从单人客户端发来的同步需要再同步给其它玩家客户端
+            if (!level.isClientSide) anim.playToClient(payload.id, payload.transTime, context.player() as? ServerPlayer)
         }
 
         @JvmStatic
-        val TYPE = CustomPacketPayload.Type<TypedAnimPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "typed_anim"))
+        val TYPE = CustomPacketPayload.Type<TypedAnimPlayPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "typed_anim_play"))
 
         @JvmStatic
-        val STREAM_CODEC: StreamCodec<FriendlyByteBuf, TypedAnimPayload> = StreamCodec.composite(
-            ByteBufCodecs.INT, TypedAnimPayload::id,
-            ByteBufCodecs.INT, TypedAnimPayload::animId,
-            ByteBufCodecs.INT, TypedAnimPayload::transTime,
-            ByteBufCodecs.BOOL, TypedAnimPayload::fromAnimatable,
-            ::TypedAnimPayload
+        val STREAM_CODEC: StreamCodec<FriendlyByteBuf, TypedAnimPlayPayload> = StreamCodec.composite(
+            ByteBufCodecs.INT, TypedAnimPlayPayload::id,
+            ByteBufCodecs.INT, TypedAnimPlayPayload::animId,
+            ByteBufCodecs.INT, TypedAnimPlayPayload::transTime,
+            ::TypedAnimPlayPayload
         )
     }
 

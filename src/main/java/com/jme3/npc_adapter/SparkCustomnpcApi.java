@@ -378,12 +378,12 @@ public class SparkCustomnpcApi {
             }
 
             // 播放动画
-            animation.play(animatable, transTime, false);
+            animation.play(animatable, transTime);
 
             // 如果是服务端，同步到客户端
             if (!animatable.getAnimLevel().isClientSide()) {
                 Entity entity = animatable.getAnimatable();
-                animation.syncToClient(entity.getId(), transTime, false, null);
+                animation.playToClient(entity.getId(), transTime, null);
             }
 
             return true;
@@ -431,14 +431,14 @@ public class SparkCustomnpcApi {
             }
 
             // 播放动画
-            animation.play(animatable, transTime, false);
+            animation.play(animatable, transTime);
             // speed转成int
             int speedInt = (int) (speed * 20);
             animatable.changeSpeed(speedInt, speedChangeDuration);
             // 如果是服务端，同步到客户端
             if (!animatable.getAnimLevel().isClientSide()) {
                 Entity entity = animatable.getAnimatable();
-                animation.syncToClient(entity.getId(), transTime, false, null);
+                animation.playToClient(entity.getId(), transTime, null);
             }
             return true;
         } catch (Exception e) {

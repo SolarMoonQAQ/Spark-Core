@@ -16,6 +16,7 @@ import cn.solarmoon.spark_core.sync.Syncer;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -37,6 +38,8 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     private final ConcurrentHashMap<Integer, Skill> predictedSkills = new ConcurrentHashMap<>();
     private final AtomicInteger skillCount = new AtomicInteger();
     private boolean jumpingLag = false;
+    private boolean moving = false;
+    private StateMachine stateMachine;
 
     @Inject(method = "setYRot", at = @At("HEAD"), cancellable = true)
     private void setYRot(float yRot, CallbackInfo ci) {
@@ -102,6 +105,26 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     @Override
     public void setJumpingLag(boolean b) {
         jumpingLag = b;
+    }
+
+    @Override
+    public boolean isMoving() {
+        return moving;
+    }
+
+    @Override
+    public void setMoving(boolean b) {
+        moving = b;
+    }
+
+    @Override
+    public @Nullable StateMachine getAnimStateMachine() {
+        return stateMachine;
+    }
+
+    @Override
+    public void setAnimStateMachine(@Nullable StateMachine stateMachine) {
+        this.stateMachine = stateMachine;
     }
 
 }

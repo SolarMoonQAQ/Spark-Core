@@ -4,15 +4,13 @@ import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
-import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager;
-import cn.solarmoon.spark_core.animation.presets.PlayerStateAnimMachine;
-import java.util.Map; // Import Map
-import java.util.concurrent.ConcurrentHashMap; // Import ConcurrentHashMap
+import cn.solarmoon.spark_core.animation.state.PlayerStateAnimMachine;
 import cn.solarmoon.spark_core.ik.component.IKManager;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -22,6 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.Inject;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements IEntityAnimatable<Player> {
@@ -47,7 +49,16 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     @Override
     public void onAddedToLevel() {
         super.onAddedToLevel();
-        if (isLocalPlayer()) AnimStateMachineManager.INSTANCE.putStateMachine(player, level(), PlayerStateAnimMachine.create(player));
+        if (isLocalPlayer()) {
+            //animTree = new PlayerAnimBehaviorTree((LocalPlayer) player).create2();
+            setAnimStateMachine(PlayerStateAnimMachine.create(player));
+        }
+    }
+
+    @Override
+    public void tick() {
+        PlayerStateAnimMachine.progress(player);
+        super.tick();
     }
 
     @Override

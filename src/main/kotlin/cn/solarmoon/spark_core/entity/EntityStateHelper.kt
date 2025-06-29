@@ -175,25 +175,16 @@ fun Input.copy() = Input().apply {
     this.shiftKeyDown = this@copy.shiftKeyDown
 }
 
-fun Entity.isAboveGround(minDistance: Double, checkDistance: Double = 20.0): Boolean {
-    // 获取玩家脚部位置（Y轴坐标）
-    val footY = y
-    // 向下发射射线检测地面（最多检测20格）
+fun Entity.isAboveGround(minDistance: Double): Boolean {
+    // 向下发射射线检测地面
     val hitResult = level().clip(
         ClipContext(
             position(), // 起点：玩家当前位置
-            position().subtract(0.0, checkDistance, 0.0), // 终点：向下20格
+            position().subtract(0.0, minDistance, 0.0), // 终点
             ClipContext.Block.COLLIDER, // 检测碰撞箱
             ClipContext.Fluid.NONE, // 不检测流体
             this
         )
     )
-    return when (hitResult.type) {
-        HitResult.Type.BLOCK -> {
-            // 计算玩家脚部到地面方块的顶部距离
-            val groundY = hitResult.blockPos.y + level().getBlockState(hitResult.blockPos).getShape(level(), hitResult.blockPos).max(Direction.Axis.Y)
-            footY - groundY > minDistance
-        }
-        else -> true // 如果下方没有方块（虚空），视为悬空
-    }
+    return hitResult.type != HitResult.Type.BLOCK
 }

@@ -19,7 +19,7 @@ object VanillaModelHelper {
      * @return 正在播放默认的任意自定义动画则为true
      */
     @JvmStatic
-    fun shouldSwitchToAnim(animatable: IAnimatable<*>) = animatable.animController.mainAnim != null || animatable.animController.isInTransition
+    fun shouldSwitchToAnim(animatable: IAnimatable<*>) = animatable.animController.blendSpace.isValid
 
     @JvmStatic
     fun setRoot(child: ModelPart, root: ModelPart) {

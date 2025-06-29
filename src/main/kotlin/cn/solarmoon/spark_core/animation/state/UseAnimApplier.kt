@@ -1,8 +1,8 @@
-package cn.solarmoon.spark_core.animation.presets
+package cn.solarmoon.spark_core.animation.state
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.BlendAnimation
+import cn.solarmoon.spark_core.animation.anim.play.blend.BlendAnimation
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
@@ -25,11 +25,11 @@ object UseAnimApplier {
             val id = "UseAnimMix"
             val origin = entity.animations.getAnimation(animName) ?: return
             entity.animController.mainAnim?.shouldTurnBody = true
-            entity.animController.blendSpace.putIfAbsent(id,
+            entity.animController.blendSpace.blendAnimMap.putIfAbsent(id,
                 BlendAnimation(AnimInstance.create(entity, animName, origin), 1000000.0).apply { shouldClearWhenResetAnim = false }
             )
         } else {
-            entity.animController.blendSpace.remove("UseAnimMix")
+            entity.animController.blendSpace.blendAnimMap.remove("UseAnimMix")
         }
     }
 
@@ -38,7 +38,7 @@ object UseAnimApplier {
         val entity = event.entity
         if (entity !is IEntityAnimatable<*>) return
 
-        entity.animController.blendSpace.remove("UseAnimMix")
+        entity.animController.blendSpace.blendAnimMap.remove("UseAnimMix")
     }
 
 }

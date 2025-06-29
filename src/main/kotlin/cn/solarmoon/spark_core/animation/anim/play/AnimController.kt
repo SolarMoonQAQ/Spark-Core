@@ -2,6 +2,8 @@ package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.anim.play.blend.BlendAnimation
+import cn.solarmoon.spark_core.animation.anim.play.blend.BlendSpace
 import net.minecraft.world.entity.Entity
 
 class AnimController(
@@ -10,19 +12,10 @@ class AnimController(
 
     var mainAnim: AnimInstance? = null
         private set
-    var lastAnim: AnimInstance? = null
-        private set
-    var transitionTick = 0
-        private set
-    var maxTransitionTick = 0
-        private set
-    var lastBlendResult = mapOf<String, KeyAnimData>()
-        private set
     var speedChangeTime: Int = 0
         private set
     var overallSpeed: Double = 1.0
         private set
-    val isInTransition get() = transitionTick > 0
 
     val blendSpace = BlendSpace()
 
@@ -35,7 +28,6 @@ class AnimController(
      * 1. 验证动画有效性，若骨骼缺失则记录警告并终止
      * 2. 处理主动画的拒绝策略和事件触发
      * 3. 更新动画状态并维护骨骼混合空间
-     * 4. 重置过渡时间计数器
      */
     fun setAnimation(anim: AnimInstance?, transTime: Int) {
         if (anim != null) {
@@ -52,19 +44,19 @@ class AnimController(
         if (mainAnim?.rejectNewAnim?.invoke(anim) == true && mainAnim?.isCancelled != true) return
         mainAnim?.cancel()
         mainAnim?.triggerEvent(AnimEvent.SwitchOut(anim))
-        lastAnim = mainAnim
         mainAnim = anim
         anim?.isCancelled = false
         anim?.triggerEvent(AnimEvent.SwitchIn(mainAnim))
         /** 维护骨骼混合空间 */
-        lastBlendResult = animatable.model.bones.mapValues { blendSpace.blendBone(it.key, animatable) }
         anim?.let {
-            val removeList = blendSpace.filter { it.value.shouldClearWhenResetAnim }.map { it.key }
-            removeList.forEach { blendSpace.remove(it) }
-            blendSpace.put("main", BlendAnimation(anim, 1.0))
+            (blendSpace.blendAnimMap.filter { it.value.shouldClearWhenResetAnim } + blendSpace.mainAnimMap).forEach {
+                // 涉及到同一时刻切换的动画，需要同步其进出的过渡时间，否则其中一者的权重会迅速增大或降低导致权重失衡，看上去动画如同闪现一般
+                it.value.exitTransitionTime = transTime
+                it.value.markedForRemoval()
+            }
+            val blendAnim = BlendAnimation(anim, 1.0, transTime)
+            blendSpace.putMainAnim(anim.name, blendAnim)
         }
-        transitionTick = transTime
-        maxTransitionTick = transitionTick
     }
 
     /**
@@ -82,6 +74,10 @@ class AnimController(
         setAnimation(typed.create(animatable), transTime)
     }
 
+    fun blendAnimation(id: String, anim: BlendAnimation) {
+        blendSpace.putBlendAnim(id, anim)
+    }
+
     fun stopAnimation() {
         mainAnim?.cancel()
     }
@@ -90,8 +86,6 @@ class AnimController(
         val anim = mainAnim
         return anim != null && anim.name == name && !anim.isCancelled
     }
-
-    fun isNotPlaying() = mainAnim == null || mainAnim?.isCancelled == true
 
     /**
      * @return 当前模型缺少的播放[anim]所需的骨骼的集合，为空则不缺少，即该动画可播放
@@ -120,23 +114,11 @@ class AnimController(
     }
 
     fun physTick() {
-        if (transitionTick > 0) {
-            val progress = (1 - transitionTick.toDouble() / maxTransitionTick.toDouble()).coerceIn(0.0, 1.0)
-            animatable.model.bones.forEach {
-                val targetData = blendSpace.blendBone(it.key,animatable)
-                val result = (lastBlendResult[it.key] ?: KeyAnimData()).lerp(targetData, progress)
-                animatable.getBone(it.key).updateInternal(result)
-            }
-            transitionTick--
-        }
+        blendSpace.physTick(overallSpeed)
 
-        else {
-            blendSpace.physTick(overallSpeed)
-
-            animatable.model.bones.forEach { entry ->
-                val bone = animatable.getBone(entry.key)
-                bone.updateInternal(blendSpace.blendBone(entry.key,animatable))
-            }
+        animatable.model.bones.forEach { entry ->
+            val bone = animatable.getBone(entry.key)
+            bone.updateInternal(blendSpace.blendBone(entry.key,animatable))
         }
 
         if (speedChangeTime > 0) speedChangeTime--
@@ -148,9 +130,6 @@ class AnimController(
             animatable.getBone(it.key).setChanged()
         }
 
-        if (!isInTransition) {
-            val anim = mainAnim ?: return
-            if (!anim.isCancelled) anim.tick()
-        }
+        blendSpace.tick()
     }
 }
