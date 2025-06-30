@@ -14,23 +14,23 @@ object UseAnimApplier {
 
     @SubscribeEvent
     private fun useItem(event: EntityTickEvent.Pre) {
-        val entity = event.entity
-        if (entity !is IEntityAnimatable<*> || entity !is LivingEntity) return
-
-        if (entity.isUsingItem) {
-            val item = entity.useItem
-            val useAnim = item.useAnimation
-            val hand = if (ItemStack.isSameItemSameComponents(item, entity.mainHandItem)) InteractionHand.MAIN_HAND else InteractionHand.OFF_HAND
-            val animName = "UseAnim/${useAnim.name.lowercase()}_${if (hand == InteractionHand.MAIN_HAND) "right" else "left"}"
-            val id = "UseAnimMix"
-            val origin = entity.animations.getAnimation(animName) ?: return
-            entity.animController.mainAnim?.shouldTurnBody = true
-            entity.animController.blendSpace.blendAnimMap.putIfAbsent(id,
-                BlendAnimation(AnimInstance.create(entity, animName, origin), 1000000.0).apply { shouldClearWhenResetAnim = false }
-            )
-        } else {
-            entity.animController.blendSpace.blendAnimMap.remove("UseAnimMix")
-        }
+//        val entity = event.entity
+//        if (entity !is IEntityAnimatable<*> || entity !is LivingEntity) return
+//
+//        if (entity.isUsingItem) {
+//            val item = entity.useItem
+//            val useAnim = item.useAnimation
+//            val hand = if (ItemStack.isSameItemSameComponents(item, entity.mainHandItem)) InteractionHand.MAIN_HAND else InteractionHand.OFF_HAND
+//            val animName = "UseAnim/${useAnim.name.lowercase()}_${if (hand == InteractionHand.MAIN_HAND) "right" else "left"}"
+//            val id = "UseAnimMix"
+//            val origin = entity.animations.getAnimation(animName) ?: return
+//            entity.animController.mainAnim?.shouldTurnBody = true
+//            entity.animController.blendSpace.blendAnimMap.putIfAbsent(id,
+//                BlendAnimation(AnimInstance.create(entity, animName, origin), 1000000.0).apply { shouldClearWhenResetAnim = false }
+//            )
+//        } else {
+//            entity.animController.blendSpace.blendAnimMap.remove("UseAnimMix")
+//        }
     }
 
     @SubscribeEvent

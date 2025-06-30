@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendAnimation
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -79,8 +80,8 @@ object RpcHandler : RpcService {
             // 在服务器端设置混合动画
             val animInstance1 = AnimInstance.create(animatable, anim1)
             val animInstance2 = AnimInstance.create(animatable, anim2)
-            animatable.animController.blendAnimation("blendAnim1", BlendAnimation(animInstance1, weight))
-            animatable.animController.blendAnimation("blendAnim2", BlendAnimation(animInstance2, weight))
+            animatable.animController.blendAnimation(BlendAnimation(animInstance1, BlendData(weight)))
+            animatable.animController.blendAnimation(BlendAnimation(animInstance2, BlendData(weight)))
 
             //TODO: 同步到所有客户端
             SparkCore.LOGGER.info("服务器端为实体 $entityId 混合动画 $anim1 和 $anim2 成功")

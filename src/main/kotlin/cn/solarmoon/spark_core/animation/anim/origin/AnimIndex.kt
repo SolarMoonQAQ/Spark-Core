@@ -18,4 +18,10 @@ data class AnimIndex(
         }
     }
 
+    val locationName get() = "$index/${name.replace(regex = Regex("[^a-z0-9/._-]"), "_")}"
+
+    override fun toString(): String {
+        return "$index/$name"
+    }
+
 }

@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.anim.play
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendAnimation
+import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendSpace
 import net.minecraft.world.entity.Entity
 
@@ -36,7 +37,7 @@ class AnimController(
             if (valid.isNotEmpty()) {
                 anim.isCancelled = false
                 anim.cancel()
-                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：$valid,UUID为 ${(animatable.animatable as Entity).stringUUID}, 名称为 ${(animatable.animatable as Entity).name} 的entity的动画 ${anim.name} 无法播放")
+                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：$valid,UUID为 ${(animatable.animatable as Entity).stringUUID}, 名称为 ${(animatable.animatable as Entity).name} 的entity的动画 ${anim.index} 无法播放")
                 return
             }
         }
@@ -49,13 +50,13 @@ class AnimController(
         anim?.triggerEvent(AnimEvent.SwitchIn(mainAnim))
         /** 维护骨骼混合空间 */
         anim?.let {
-            (blendSpace.blendAnimMap.filter { it.value.shouldClearWhenResetAnim } + blendSpace.mainAnimMap).forEach {
+            (blendSpace.blendAnimMap.filter { it.value.data.shouldClearWhenResetAnim } + blendSpace.mainAnimMap).forEach {
                 // 涉及到同一时刻切换的动画，需要同步其进出的过渡时间，否则其中一者的权重会迅速增大或降低导致权重失衡，看上去动画如同闪现一般
-                it.value.exitTransitionTime = transTime
+                it.value.data.exitTransitionTime = transTime
                 it.value.markedForRemoval()
             }
-            val blendAnim = BlendAnimation(anim, 1.0, transTime)
-            blendSpace.putMainAnim(anim.name, blendAnim)
+            val blendAnim = BlendAnimation(anim, BlendData(1.0, transTime))
+            blendSpace.putMainAnim(blendAnim)
         }
     }
 
@@ -64,18 +65,20 @@ class AnimController(
      * @param modifier 待输入的动画实例，可在此对其进行内部参数的修改
      */
     fun setAnimation(name: String, transTime: Int, modifier: AnimInstance.() -> Unit = {}) {
-        animatable.animations.getAnimation(name)?.let {
-            val anim = AnimInstance.create(animatable, name, it, modifier)
-            setAnimation(anim, transTime)
-        }
+        val anim = AnimInstance.create(animatable, name, modifier)
+        setAnimation(anim, transTime)
     }
 
     fun setAnimation(typed: TypedAnimation, transTime: Int) {
         setAnimation(typed.create(animatable), transTime)
     }
 
-    fun blendAnimation(id: String, anim: BlendAnimation) {
-        blendSpace.putBlendAnim(id, anim)
+    fun blendAnimation(anim: BlendAnimation) {
+        blendSpace.putBlendAnim(anim)
+    }
+
+    fun removeBlend(id: String) {
+        blendSpace.removeBlend(id)
     }
 
     fun stopAnimation() {
@@ -84,7 +87,7 @@ class AnimController(
 
     fun isPlaying(name: String): Boolean {
         val anim = mainAnim
-        return anim != null && anim.name == name && !anim.isCancelled
+        return anim != null && anim.index.name == name && !anim.isCancelled
     }
 
     /**

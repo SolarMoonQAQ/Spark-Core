@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendMask
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.network.FriendlyByteBuf
@@ -15,11 +16,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 class TypedAnimBlendPayload(
     val id: Int,
     val animId: Int,
-    val blendId: String,
-    val weight: Double,
-    val enterTransTime: Int,
-    val exitTransTime: Int,
-    val blendMask: BlendMask
+    val blendData: BlendData
 ): CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -33,41 +30,21 @@ class TypedAnimBlendPayload(
             val entity = level.getEntity(payload.id)
             if (entity !is IEntityAnimatable<*>) return
             val anim = SparkRegistries.TYPED_ANIMATION.byId(payload.animId) ?: return
-            anim.blend(entity, payload.blendId, payload.weight, payload.enterTransTime, payload.exitTransTime, payload.blendMask)
+            anim.blend(entity, payload.blendData)
             // 从单人客户端发来的同步需要再同步给其它玩家客户端
-            if (!level.isClientSide) anim.blendToClient(payload.id, payload.blendId, payload.weight, payload.enterTransTime, payload.exitTransTime, payload.blendMask, context.player() as? ServerPlayer)
+            if (!level.isClientSide) anim.blendToClient(payload.id, payload.blendData, context.player() as? ServerPlayer)
         }
 
         @JvmStatic
         val TYPE = CustomPacketPayload.Type<TypedAnimBlendPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "typed_anim_blend"))
 
         @JvmStatic
-        val STREAM_CODEC: StreamCodec<FriendlyByteBuf, TypedAnimBlendPayload> = object : StreamCodec<FriendlyByteBuf, TypedAnimBlendPayload> {
-            override fun decode(buffer: FriendlyByteBuf): TypedAnimBlendPayload {
-                return TypedAnimBlendPayload(
-                    buffer.readInt(),
-                    buffer.readInt(),
-                    buffer.readUtf(),
-                    buffer.readDouble(),
-                    buffer.readInt(),
-                    buffer.readInt(),
-                    BlendMask.STREAM_CODEC.decode(buffer)
-                )
-            }
-
-            override fun encode(
-                buffer: FriendlyByteBuf,
-                value: TypedAnimBlendPayload
-            ) {
-                buffer.writeInt(value.id)
-                buffer.writeInt(value.animId)
-                buffer.writeUtf(value.blendId)
-                buffer.writeDouble(value.weight)
-                buffer.writeInt(value.enterTransTime)
-                buffer.writeInt(value.exitTransTime)
-                BlendMask.STREAM_CODEC.encode(buffer, value.blendMask)
-            }
-        }
+        val STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, TypedAnimBlendPayload::id,
+            ByteBufCodecs.INT, TypedAnimBlendPayload::animId,
+            BlendData.STREAM_CODEC, TypedAnimBlendPayload::blendData,
+            ::TypedAnimBlendPayload
+        )
     }
 
 }

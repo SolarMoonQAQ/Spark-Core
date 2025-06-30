@@ -14,12 +14,18 @@ class BlendSpace {
 
     val isValid get() = mainAnimMap.isNotEmpty() || blendAnimMap.isNotEmpty()
 
-    fun putMainAnim(id: String, anim: BlendAnimation) {
-        mainAnimMap[id] = anim
+    fun putMainAnim(anim: BlendAnimation) {
+        mainAnimMap[anim.id] = anim
     }
 
-    fun putBlendAnim(id: String, anim: BlendAnimation) {
-        blendAnimMap[id] = anim
+    fun putBlendAnim(anim: BlendAnimation) {
+        blendAnimMap[anim.id] = anim
+    }
+
+    fun removeBlend(id: String): Boolean {
+        val blend = blendAnimMap[id] ?: return false
+        blend.markedForRemoval()
+        return true
     }
 
     /**
@@ -33,7 +39,7 @@ class BlendSpace {
         val scale = Vector3f(1f)
         values.forEach {
             val boneData = it.anim.origin.getBoneAnimation(boneName) ?: return@forEach
-            val pt = (it.currentWeight * it.blendMask.getWeight(boneName) / totalWeight).toFloat()
+            val pt = (it.currentWeight * it.data.blendMask.getWeight(boneName) / totalWeight).toFloat()
             val time = when (it.anim.origin.loop) {
                 Loop.TRUE -> it.anim.time % it.anim.maxLength
                 Loop.ONCE -> it.anim.time

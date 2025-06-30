@@ -4,13 +4,13 @@ import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
-import cn.solarmoon.spark_core.animation.state.PlayerStateAnimMachine;
+import cn.solarmoon.spark_core.animation.state.EntityBaseUseAnimStateMachine;
+import cn.solarmoon.spark_core.animation.state.PlayerBaseAnimStateMachine;
 import cn.solarmoon.spark_core.ik.component.IKManager;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.Inject;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +40,8 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     // Use Map interface type, ConcurrentHashMap for potential thread safety (though likely accessed main-thread only)
     private final Map<String, Vec3> ikTargetPositions = new ConcurrentHashMap<>();
     private final Map<String, FabrikChain3D> ikChains = new ConcurrentHashMap<>();
+    private PlayerBaseAnimStateMachine baseAnimStateMachine;
+    private EntityBaseUseAnimStateMachine baseUseAnimStateMachine;
 
     protected PlayerMixin(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
@@ -49,15 +50,14 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     @Override
     public void onAddedToLevel() {
         super.onAddedToLevel();
-        if (isLocalPlayer()) {
-            //animTree = new PlayerAnimBehaviorTree((LocalPlayer) player).create2();
-            setAnimStateMachine(PlayerStateAnimMachine.create(player));
-        }
+        baseAnimStateMachine = new PlayerBaseAnimStateMachine(player);
+        baseUseAnimStateMachine = new EntityBaseUseAnimStateMachine(player);
     }
 
     @Override
     public void tick() {
-        PlayerStateAnimMachine.progress(player);
+        baseAnimStateMachine.progress();
+        baseUseAnimStateMachine.progress();
         super.tick();
     }
 

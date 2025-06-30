@@ -12,7 +12,7 @@ import net.neoforged.bus.api.SubscribeEvent
 object DynamicStateAnimApplier {
 
     @SubscribeEvent
-    fun onEntityStateAnimationChange(event: ChangePresetAnimEvent.EntityState) {
+    fun onEntityStateAnimationChange(event: ChangePresetAnimEvent.EntityUseState) {
         val entity = event.entity // event.entity is LivingEntity
         val state = event.state // This is an instance of a class like EntityStates.Idle, EntityStates.Walk, etc.
 
