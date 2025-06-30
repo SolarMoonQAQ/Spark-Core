@@ -24,10 +24,12 @@ object JSPhysicsHelper: JSComponent() {
     fun createCollisionBoxBoundToBone(animatable: IAnimatable<*>, boneName: String, size: Vec3, offset: Vec3, init: Function?): PhysicsCollisionObject {
         val animatable = animatable as? IEntityAnimatable<*> ?: throw IllegalArgumentException("动画体必须是实体类型！")
         val entity = animatable.animatable
-        return entity.bindBody(PhysicsRigidBody(UUID.randomUUID().toString(), entity, BoxCollisionShape(size.div(2.0).toBVector3f()))) {
+        return entity.bindBody(
+            PhysicsRigidBody(UUID.randomUUID().toString(), entity, BoxCollisionShape(size.div(2.0).toBVector3f()))
+        ) {
             isContactResponse = false
             isKinematic = true
-            collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
+            collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
             setGravity(Vector3f())
             addPhysicsTicker(MoveWithAnimatedBoneTicker(boneName, offset.toBVector3f()))
             init?.call(engine, this)

@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.registry.client
 
 import cn.solarmoon.spark_core.camera.CameraAdjuster
+import cn.solarmoon.spark_core.client.gui.screen.ModelEditorScreenTicker
 import cn.solarmoon.spark_core.entity.player.PlayerApplier
 import cn.solarmoon.spark_core.local_control.LocalController
 import cn.solarmoon.spark_core.visual_effect.VisualEffectTicker
@@ -15,6 +16,7 @@ object SparkClientEventRegister {
         add(VisualEffectTicker)
         add(CameraShakeApplier)
         add(LocalController)
+        add(ModelEditorScreenTicker)
     }
 
     private fun add(event: Any) {

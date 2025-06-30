@@ -11,7 +11,7 @@ class SparkJSComponentRegisterEvent(
 
     fun registerComponent(name: String, component: JSComponent) {
         component.engine = engine
-        engine.scope.put(name, component)
+        engine.scope?.put(name, engine.scope, component)
     }
 
 }

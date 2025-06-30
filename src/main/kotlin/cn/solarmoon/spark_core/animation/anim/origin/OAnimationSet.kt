@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import net.minecraft.client.Minecraft
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
@@ -24,10 +26,25 @@ data class OAnimationSet(
 
     companion object {
         /**
-         * 如果res是玩家，自动返回玩家的动画集合
+         * 获取动画集合。
+         * 统一数据访问优先级：SparkRegistries动态注册表 > 静态ORIGINS
+         * 在客户端和服务端都优先从动态注册表获取，确保数据一致性
          */
         @JvmStatic
         fun get(res: ResourceLocation): OAnimationSet {
+            // 优先从动态注册表获取，在客户端和服务端都保持一致的优先级
+            SparkRegistries.TYPED_ANIMATION?.let { registry ->
+                // 尝试通过ResourceLocation找到对应的TypedAnimation
+                registry.entrySet().forEach { entry ->
+                    val typedAnimation = entry.value
+                    if (typedAnimation.index.index == res) {
+                        // 从TypedAnimation对应的静态ORIGINS获取OAnimationSet
+                        return ORIGINS[res] ?: EMPTY
+                    }
+                }
+            }
+            
+            // 回退到静态ORIGINS
             return ORIGINS[res] ?: EMPTY
         }
 

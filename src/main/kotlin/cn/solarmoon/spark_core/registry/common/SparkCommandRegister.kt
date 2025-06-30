@@ -1,8 +1,6 @@
 package cn.solarmoon.spark_core.registry.common
 
-import cn.solarmoon.spark_core.command.GetTagCommand
-import cn.solarmoon.spark_core.command.PlaySkillCommand
-import cn.solarmoon.spark_core.command.ReloadSkillCommand
+import cn.solarmoon.spark_core.command.* // Import all commands from the package
 import net.minecraft.commands.Commands
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.RegisterCommandsEvent
@@ -15,6 +13,8 @@ object SparkCommandRegister {
                 .then(PlaySkillCommand().create(event.buildContext))
                 .then(ReloadSkillCommand().create(event.buildContext))
                 .then(GetTagCommand().create(event.buildContext))
+                .then(IKDebugCommand().create(event.buildContext))
+                .then(GetWandCommand().create(event.buildContext))
         )
     }
 

@@ -3,19 +3,12 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.event.SparkJSComponentRegisterEvent
 import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
 import cn.solarmoon.spark_core.js.JSApi
-import cn.solarmoon.spark_core.js.SparkJS
-import cn.solarmoon.spark_core.js.extension.JSAnimHelper
-import cn.solarmoon.spark_core.js.extension.JSDamageSourceHelper
-import cn.solarmoon.spark_core.js.extension.JSEntityHelper
-import cn.solarmoon.spark_core.js.extension.JSLogger
-import cn.solarmoon.spark_core.js.extension.JSMath
-import cn.solarmoon.spark_core.js.extension.JSPhysicsHelper
-import cn.solarmoon.spark_core.js.put
+import cn.solarmoon.spark_core.js.extension.*
+import cn.solarmoon.spark_core.js.ik.JSIKApi
 import cn.solarmoon.spark_core.js.skill.JSSkillApi
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.neoforge.common.NeoForge
-import net.neoforged.neoforge.registries.RegisterEvent
 
 object SparkJSApiRegister {
 
@@ -25,6 +18,7 @@ object SparkJSApiRegister {
 
     private fun reg(event: SparkJSRegisterEvent) {
         event.register(JSSkillApi)
+        event.register(JSIKApi)  // 修复：添加JSIKApi的注册
     }
 
     private fun regCom(event: SparkJSComponentRegisterEvent) {
@@ -35,6 +29,7 @@ object SparkJSApiRegister {
         event.registerComponent("AnimHelper", JSAnimHelper)
         event.registerComponent("PhysicsHelper", JSPhysicsHelper)
         event.registerComponent("Logger", JSLogger)
+        event.registerComponent("Ik", JSIKApi)
     }
 
     @JvmStatic

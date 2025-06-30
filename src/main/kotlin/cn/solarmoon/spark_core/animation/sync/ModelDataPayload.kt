@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 data class ModelDataPayload(
     val models: LinkedHashMap<ResourceLocation, OModel>,
     val animationSets: LinkedHashMap<ResourceLocation, OAnimationSet>
-): CustomPacketPayload {
+) : CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
         return TYPE
@@ -50,5 +50,4 @@ data class ModelDataPayload(
             ::ModelDataPayload
         )
     }
-
 }

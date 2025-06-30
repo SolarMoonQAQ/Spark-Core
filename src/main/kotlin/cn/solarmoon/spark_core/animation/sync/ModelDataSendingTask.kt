@@ -45,5 +45,4 @@ class ModelDataSendingTask(): ICustomConfigurationTask {
             val STREAM_CODEC = StreamCodec.unit<FriendlyByteBuf, Return>(Return())
         }
     }
-
 }

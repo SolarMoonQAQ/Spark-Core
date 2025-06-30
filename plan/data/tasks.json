@@ -1,0 +1,128 @@
+{
+  "tasks": [
+    {
+      "id": "abf7354d-547b-4da8-8ad7-e232cdcb4dd5",
+      "name": "增强AnimStateMachineManager以支持实体动画覆盖",
+      "description": "修改AnimStateMachineManager.kt，使其能够存储和管理每个实体（通过UUID识别）的状态动画覆盖。动画状态键将来源于EntityStates中定义的各状态的名称（即SparkTypedAnimations的注册表键字符串）。",
+      "notes": "动画状态键的生成和使用必须一致。考虑实体卸载时清理相关数据，防止内存泄漏。",
+      "status": "已完成",
+      "dependencies": [],
+      "createdAt": "2025-05-26T19:16:15.731Z",
+      "updatedAt": "2025-05-26T19:35:50.127Z",
+      "relatedFiles": [
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/anim/state/AnimStateMachineManager.kt",
+          "type": "TO_MODIFY",
+          "description": "主要修改文件，添加数据结构和API"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/presets/EntityStates.kt",
+          "type": "REFERENCE",
+          "description": "动画状态键的来源参考"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/registry/common/SparkTypedAnimations.kt",
+          "type": "REFERENCE",
+          "description": "动画注册表键的来源"
+        },
+        {
+          "path": "src/main/java/net/minecraft/world/entity/Entity.java",
+          "type": "REFERENCE",
+          "description": "获取实体ID"
+        },
+        {
+          "path": "src/main/java/dev/kosmx/playerAnim/core/animation/Animation.java",
+          "type": "REFERENCE",
+          "description": "动画对象的类型"
+        }
+      ],
+      "implementationGuide": "1. 在AnimStateMachineManager中定义一个新的私有成员变量，例如 `private val entityAnimationOverrides: MutableMap<Int, MutableMap<String, Animation>> = ConcurrentHashMap()`。外层Map的键是 `entity.id`，内层Map的键是动画状态的字符串表示（例如 `EntityStates.Idle().name` 或直接使用 `SparkTypedAnimations.IDLE.get().registryKey.toString()`），值是 `Animation` 对象。\n2. 实现公共API函数用于注册、注销和查询实体的动画覆盖：\n   - `fun registerEntityAnimationOverride(entityId: Int, animationStateKey: String, animation: Animation)`\n   - `fun unregisterEntityAnimationOverride(entityId: Int, animationStateKey: String)`\n   - `fun clearAllEntityAnimationOverrides(entityId: Int)`\n   - `fun getEntityAnimationOverride(entityId: Int, animationStateKey: String): Animation?`\n3. 考虑在实体从世界卸载时（例如监听 `EntityLeaveLevelEvent`）自动调用 `clearAllEntityAnimationOverrides` 清理相关数据，以防止内存泄漏。",
+      "verificationCriteria": "1. 能够成功为实体ID注册一个或多个状态的自定义动画。\n2. 能够成功查询已注册的自定义动画。\n3. 能够成功注销特定状态的自定义动画或实体所有自定义动画。\n4. 在并发访问时数据结构保持一致性。\n5. 实体卸载时，其动画覆盖数据能被清理（如果实现了此逻辑）。",
+      "summary": "成功增强了 AnimStateMachineManager 以支持实体动画覆盖。主要改动包括：\n1. 添加了 `entityAnimationOverrides` (类型为 `MutableMap<Int, MutableMap<String, TypedAnimation>>`) 用于存储每个实体基于动画状态键的 TypedAnimation 覆盖。\n2. 实现了 `registerEntityAnimationOverride` 方法，用于注册特定实体的动画覆盖。\n3. 实现了 `unregisterEntityAnimationOverride` 方法，用于注销特定实体特定状态的动画覆盖，并在该实体无其他覆盖时清理其条目。\n4. 实现了 `clearAllEntityAnimationOverrides` 方法，用于清除特定实体的所有动画覆盖。\n5. 实现了 `getEntityAnimationOverride` 方法，该方法会检索指定的 `TypedAnimation`。关键在于，此方法会通过 `SparkRegistries.TYPED_ANIMATION.getKey()` 检查 `TypedAnimation` 的有效性（是否仍注册）。如果动画无效，则会将其从管理器中移除并返回 `null`。\n6. 添加了对 `EntityLeaveLevelEvent` 的监听，在实体离开世界时自动调用 `clearAllEntityAnimationOverrides` 和清理相关的状态机，以防止内存泄漏。\n7. 确保了所有操作都使用正确的 `TypedAnimation` 类型，并处理了其注册状态的校验。\n\n代码经过多次迭代修正，解决了导入问题和类型问题，最终版本符合设计要求。",
+      "completedAt": "2025-05-26T19:35:50.127Z"
+    },
+    {
+      "id": "97640ef0-0453-4418-a962-a7f0b93ab127",
+      "name": "创建DynamicStateAnimApplier以应用实体动画覆盖",
+      "description": "创建一个新的Kotlin文件DynamicStateAnimApplier.kt。它将监听ChangePresetAnimEvent.EntityState事件，并根据AnimStateMachineManager中存储的覆盖信息，动态替换所有EntityStates中定义的状态的动画。",
+      "notes": "此应用器将处理所有EntityStates中定义的状态。关键是正确使用state.name作为查询AnimStateMachineManager的键。",
+      "status": "已完成",
+      "dependencies": [
+        {
+          "taskId": "abf7354d-547b-4da8-8ad7-e232cdcb4dd5"
+        }
+      ],
+      "createdAt": "2025-05-26T19:16:15.731Z",
+      "updatedAt": "2025-05-26T19:41:22.614Z",
+      "relatedFiles": [
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/vanilla/custom/DynamicStateAnimApplier.kt",
+          "type": "CREATE",
+          "description": "新创建的应用器文件"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/anim/state/AnimStateMachineManager.kt",
+          "type": "REFERENCE",
+          "description": "调用其API获取实体动画覆盖"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/presets/EntityStates.kt",
+          "type": "REFERENCE",
+          "description": "明确所有需要检查和可能被覆盖的状态"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/event/ChangePresetAnimEvent.kt",
+          "type": "REFERENCE",
+          "description": "监听此事件类型"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/vanilla/vindicator/VindicatorStateAnimApplier.kt",
+          "type": "REFERENCE",
+          "description": "参考其事件监听和动画替换的实现方式"
+        }
+      ],
+      "implementationGuide": "1. 创建一个名为 `DynamicStateAnimApplier` 的Kotlin object。\n2. 在该object中创建一个 `@SubscribeEvent` 注解的方法，用于监听 `ChangePresetAnimEvent.EntityState` 事件，类似于 `VindicatorStateAnimApplier`。\n3. 在事件处理方法中：\n   a. 获取事件中的实体 `event.entity` 和状态 `event.state`。\n   b. 使用 `event.state.name` (这将是类似 `spark_core:idle` 的字符串) 作为 `animationStateKey`。\n   c. 调用 `AnimStateMachineManager.getEntityAnimationOverride(event.entity.id, animationStateKey)` 来检查是否有覆盖动画。\n   d. 如果返回的 `animation` 不为 `null`，则设置 `event.newAnim = animation`。\n4. 确保此Applier在Mod初始化时被注册到事件总线。",
+      "verificationCriteria": "1. 对于没有在AnimStateMachineManager中注册自定义动画的实体，其动画播放不受影响。\n2. 对于为任何EntityStates中的状态注册了自定义动画的实体，在播放对应状态的动画时，实际播放的是自定义动画。\n3. DynamicStateAnimApplier能正确处理来自EntityStateAnimMachine发布的针对所有EntityStates中定义的状态的事件。\n4. 事件监听和处理逻辑正确，没有导致游戏崩溃或明显的性能问题。",
+      "summary": "成功创建了 `DynamicStateAnimApplier.kt` 文件，并实现了 `DynamicStateAnimApplier` object。\n主要功能包括：\n1. 在 `cn.solarmoon.spark_core.animation.applier` 包下创建了该文件。\n2. `DynamicStateAnimApplier` object 在其 `init` 块中注册到 `NeoForge.EVENT_BUS`。\n3. 实现了一个 `@SubscribeEvent` 注解的方法 `onEntityStateAnimationChange`，用于监听 `ChangePresetAnimEvent.EntityState` 事件。\n4. 在事件处理方法中，通过 `event.entity.id` 和 `event.state.name` (作为动画状态键) 从 `AnimStateMachineManager.getEntityAnimationOverride()` 获取已注册的动画覆盖 (`TypedAnimation`)。\n5. 如果找到有效的 `TypedAnimation` 覆盖，则将其赋值给 `event.newAnim`，从而动态替换实体即将播放的动画。\n6. 解决了导入路径问题 (将 `ChangePresetAnimEvent` 的导入从 `...animation.event` 改为 `...event`)。\n7. 解决了获取动画状态键的问题 (从 `state.defaultAnim` 改为 `state.name`)，并添加了必要的空检查。\n8. 移除了未使用的导入语句。\n\n该 applier 现在能够根据 `AnimStateMachineManager` 中存储的配置，在实体状态改变时应用自定义动画。",
+      "completedAt": "2025-05-26T19:41:22.613Z"
+    },
+    {
+      "id": "d2767871-81fe-4f9c-a368-f5cf8a8e17f9",
+      "name": "集成并测试DynamicStateAnimApplier",
+      "description": "确保DynamicStateAnimApplier正确注册到事件总线，并与AnimStateMachineManager和EntityStateAnimMachine协同工作，以实现对所有EntityStates中状态的动态动画替换。",
+      "notes": "重点是全面测试所有EntityStates中的状态，确保动态替换逻辑的普适性和正确性。确保AnimStateMachineManager中的数据清理逻辑（如实体卸载时）按预期工作。",
+      "status": "進行中",
+      "dependencies": [
+        {
+          "taskId": "97640ef0-0453-4418-a962-a7f0b93ab127"
+        }
+      ],
+      "createdAt": "2025-05-26T19:16:15.731Z",
+      "updatedAt": "2025-05-26T19:46:06.768Z",
+      "relatedFiles": [
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/SparkCore.kt",
+          "type": "TO_MODIFY",
+          "description": "注册DynamicStateAnimApplier到事件总线"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/vanilla/custom/DynamicStateAnimApplier.kt",
+          "type": "REFERENCE",
+          "description": "被注册的应用器"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/anim/state/AnimStateMachineManager.kt",
+          "type": "REFERENCE",
+          "description": "用于注册测试动画"
+        },
+        {
+          "path": "src/main/kotlin/cn/solarmoon/spark_core/animation/presets/EntityStateAnimMachine.kt",
+          "type": "REFERENCE",
+          "description": "验证其事件发布是否依然正常"
+        }
+      ],
+      "implementationGuide": "1. 在Mod的主初始化类中（例如 `SparkCore.kt`），将 `DynamicStateAnimApplier` 注册到NeoForge的事件总线 ( `NeoForge.EVENT_BUS.register(DynamicStateAnimApplier)` )。\n2. 编写测试代码或通过游戏内操作，为不同实体的不同 `EntityStates` 状态（例如 Idle, Walk, Sprinting, Fall, Swim等）注册自定义动画到 `AnimStateMachineManager`。\n3. 在游戏中触发这些实体的相应状态，观察动画是否按预期被替换为自定义动画。\n4. 验证没有自定义动画的实体或状态是否仍播放默认动画。\n5. 检查 `EntityStateAnimMachine` 是否继续正常工作，并在状态转换时正确发布事件。",
+      "verificationCriteria": "1. `DynamicStateAnimApplier` 已成功注册到事件总线。\n2. 对 `EntityStates` 中定义的任一状态，如果实体有自定义动画，则该动画被播放。\n3. 如果实体对某个状态没有自定义动画，则播放默认动画。\n4. 系统整体稳定，没有因为新的应用器导致崩溃或错误。\n5. `AnimStateMachineManager` 的数据管理（包括可能的清理逻辑）按预期工作。"
+    }
+  ]
+}

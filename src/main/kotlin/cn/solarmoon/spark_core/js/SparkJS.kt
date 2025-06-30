@@ -9,9 +9,11 @@ import org.mozilla.javascript.Context
 
 abstract class SparkJS {
 
-    val context = Context.enter()
+    @Volatile
+    var context: Context? = null
 
-    val scope = context.initStandardObjects()
+    @Volatile
+    var scope: org.mozilla.javascript.Scriptable? = null
 
     fun register() {
         NeoForge.EVENT_BUS.post(SparkJSComponentRegisterEvent(this))
@@ -19,7 +21,19 @@ abstract class SparkJS {
 
     fun eval(script: String, contextName: String = "") {
         runCatching {
-            context.evaluateString(scope, script, contextName, 1, null)
+            // 为当前线程创建或获取Context
+            val currentContext = Context.enter()
+            try {
+                // 仅在 scope 尚未初始化时初始化标准对象，避免因 Context 不同导致覆盖已注入的组件
+                if (scope == null) {
+                    context = currentContext
+                    scope = currentContext.initStandardObjects()
+                }
+                
+                currentContext.evaluateString(scope, script, contextName, 1, null)
+            } finally {
+                Context.exit()
+            }
         }.getOrElse { throw LoaderException("Js脚本加载失败: $contextName", it) }
     }
 

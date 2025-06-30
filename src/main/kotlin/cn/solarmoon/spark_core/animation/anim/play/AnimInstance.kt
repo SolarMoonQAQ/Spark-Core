@@ -11,27 +11,27 @@ import kotlin.reflect.KClass
 
 class AnimInstance private constructor(
     val holder: IAnimatable<*>,
-    val name: String,
-    val origin: OAnimation
+    val index: AnimIndex
 ) {
 
     companion object {
         @JvmStatic
-        fun create(holder: IAnimatable<*>, name: String, origin: OAnimation = holder.animations.getValidAnimation(name), provider: AnimInstance.() -> Unit = {}): AnimInstance {
-            return AnimInstance(holder, name, origin).apply { provider.invoke(this) }
-        }
+        fun create(holder: IAnimatable<*>, name: String, provider: AnimInstance.() -> Unit = {}) =
+            create(holder, AnimIndex(holder.modelIndex.animPath, name), provider)
 
         @JvmStatic
-        fun create(holder: IAnimatable<*>, index: AnimIndex, provider: AnimInstance.() -> Unit = {}) = create(holder, index.name, OAnimationSet.get(index.index).getValidAnimation(index.name), provider)
+        fun create(holder: IAnimatable<*>, index: AnimIndex, provider: AnimInstance.() -> Unit = {}) =
+            AnimInstance(holder, index).apply { provider.invoke(this) }
     }
 
+    val origin = OAnimationSet.get(index.index).getValidAnimation(index.name)
     val flags = setOf<String>()
-
     var time = 0.0
     var speed = 1.0
     var totalTime = 0.0
     var maxLength = origin.animationLength
     var shouldTurnBody = false
+    var shouldTurnHead = false
     var rejectNewAnim: (AnimInstance?) -> Boolean = { false }
     var isCancelled = true
         internal set
@@ -68,11 +68,12 @@ class AnimInstance private constructor(
     }
 
     fun copy(): AnimInstance {
-        val copy = AnimInstance(holder, name, origin)
+        val copy = AnimInstance(holder, index)
         copy.time = time
         copy.speed = speed
         copy.totalTime = totalTime
         copy.shouldTurnBody = shouldTurnBody
+        copy.shouldTurnHead = shouldTurnHead
         copy.rejectNewAnim = rejectNewAnim
         copy.eventHandlers = eventHandlers.toMutableMap()
         return copy
@@ -86,7 +87,7 @@ class AnimInstance private constructor(
     fun tick() {
         triggerEvent(AnimEvent.Tick)
     }
-    
+
     fun physTick(overallSpeed: Double = 1.0) {
         when(origin.loop) {
             Loop.TRUE -> {

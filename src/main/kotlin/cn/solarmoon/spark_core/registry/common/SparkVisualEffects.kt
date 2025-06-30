@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.registry.common
 
+import cn.solarmoon.spark_core.ik.visualizer.IKDebugRenderer
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShaker
 import cn.solarmoon.spark_core.visual_effect.shadow.ShadowRenderer
 import cn.solarmoon.spark_core.visual_effect.shape.ShapeRenderer
@@ -18,6 +19,9 @@ object SparkVisualEffects {
 
     @JvmStatic
     val SPORT = ShapeRenderer()
+
+    @JvmStatic
+    val IK = IKDebugRenderer()
 
     @JvmStatic
     fun register() {}

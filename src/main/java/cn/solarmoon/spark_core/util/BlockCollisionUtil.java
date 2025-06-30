@@ -45,18 +45,18 @@ public class BlockCollisionUtil {
         float humidity = 0.0f;
         //湿滑处理
         if (!chunk.getFluidState(pos.above()).isEmpty()) humidity = 1.0f;
-        else if (Objects.requireNonNull(chunk.getLevel()).isRainingAt(pos.above())) {
+        else if (Objects.requireNonNull(chunk.getLevel()).isRainingAt(pos)) {//TODO:检查为什么canSeeSky恒返回false
             humidity = Objects.requireNonNull(chunk.getLevel()).getRainLevel(1.0f);
 //            SparkCore.LOGGER.info("isRainingAt: {} humidity: {}", pos, humidity);
         }
         if (state.is(BlockTags.SNOW)) {//雪块视作湿滑，疏松多孔，更易打滑
             result += 35 - (int) (20 * humidity);
         } else if (state.getBlock() instanceof ColoredFallingBlock) {//可掉落方块视作颗粒状，疏松多孔，更易打滑
-            result += (int) (35 + 30 * humidity);
+            result += (int) (35 + 40 * humidity);
         } else if (state.getBlock() instanceof ConcretePowderBlock) {
             result += 35 - (int) (50 * humidity);
         } else {//常规方块仅根据湿度调整摩擦系数
-            result += (int) (30 * humidity);
+            result += (int) (50 * humidity);
         }
         return Math.min(100, result);
     }
@@ -67,13 +67,12 @@ public class BlockCollisionUtil {
      *
      * @return 方块的弹性系数，0-1之间，0表示完全非弹性碰撞，1表示完全弹性碰撞 <p> The elasticity coefficient of the block, ranging from 0 to 1, 0 indicating a completely inelastic collision, and 1 indicating a completely elastic collision.
      */
-    public static float getRestitution(ChunkAccess chunk, BlockState state, BlockPos pos) {
+    public static float getRestitution(ChunkAccess chunk, BlockState state, BlockPos pos){
         if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) return 0.3f;
         else if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) return 0.9f;
-        else if (state.is(BlockTags.MINEABLE_WITH_AXE)) return 0.8f;
+        else if (state.is(BlockTags.MINEABLE_WITH_AXE)) return 0.7f;
         else if (state.is(BlockTags.MINEABLE_WITH_HOE)) return 0.0f;
-        else if (state.is(BlockTags.WOOL)) return 0.1f;//吸能方块
-        else if (state.isSlimeBlock()) return 5f;
+        else if (state.isSlimeBlock()) return 0.9999f;
         else if (state.isStickyBlock()) return 0.0f;
         else return 0.5f;
     }

@@ -6,4 +6,8 @@ interface IEntityPatch {
 
     var jumpingLag: Boolean
 
+    var isMoving: Boolean
+
+    var animStateMachine: StateMachine?
+
 }

@@ -7,6 +7,8 @@
   "mixins": [
     "animation.EntityMixin",
     "animation.LivingEntityMixin",
+    "animation.LookControlMixin",
+    "animation.animatable.EntityCustomNpcMixin",
     "animation.animatable.PlayerMixin",
     "animation.animatable.VindicatorMixin",
     "animation.animatable.ZombieMixin",
@@ -35,6 +37,7 @@
     "animation.ModelPartMixin",
     "animation.PlayerRendererMixin",
     "animation.animatable.IllagerModelMixin",
+    "animation.animatable.ModelNPCGolemMixin",
     "animation.animatable.PlayerModelMixin",
     "animation.animatable.ZombieModelMixin",
     "animation.humanoid.first_person.CameraMixin",

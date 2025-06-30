@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.EntityType
-import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
 
@@ -17,44 +16,45 @@ object SparkTypedAnimations {
     fun register() {}
 
     @JvmStatic
-    val IDLE = createStateAnim("idle")
+    val LAND_IDLE = createStateAnim("land.idle")
     @JvmStatic
-    val WALK = createMoveStateAnim("walk")
+    val LAND_MOVE = createMoveStateAnim("land.move")
     @JvmStatic
-    val WALK_BACK = createMoveStateAnim("walk_back")
+    val LAND_MOVE_BACK = createMoveStateAnim("land.move_back")
     @JvmStatic
-    val SPRINTING = createMoveStateAnim("sprinting")
+    val LAND_SPRINT = createMoveStateAnim("land.sprint")
     @JvmStatic
-    val FLY = createStateAnim("fly")
+    val CROUCH_IDLE = createStateAnim("crouch.idle")
     @JvmStatic
-    val FLY_MOVE = createStateAnim("fly_move")
+    val CROUCH_MOVE = createMoveStateAnim("crouch.move")
     @JvmStatic
-    val CROUCHING = createStateAnim("crouching")
+    val CROUCH_MOVE_BACK = createMoveStateAnim("crouch.move_back")
     @JvmStatic
-    val CROUCHING_MOVE = createMoveStateAnim("crouching_move")
+    val FLY_IDLE = createStateAnim("fly.idle")
+    @JvmStatic
+    val FLY_MOVE = createStateAnim("fly.move")
+    @JvmStatic
+    val SWIM_IDLE = createStateAnim("swim.idle")
+    @JvmStatic
+    val SWIM_MOVE = createMoveStateAnim("swim.move")
+
     @JvmStatic
     val FALL = createStateAnim("fall")
     @JvmStatic
     val SIT = createStateAnim("sit")
     @JvmStatic
-    val FALL_FLYING = createStateAnim("fall_flying")
+    val FALL_FLYING = createStateAnim("fall_fly")
     @JvmStatic
-    val SLEEPING = createStateAnim("sleeping")
+    val SLEEP = createStateAnim("sleep")
     @JvmStatic
-    val SWIMMING_IDLE = createStateAnim("swimming_idle")
-    @JvmStatic
-    val SWIMMING = createMoveStateAnim("swimming")
-
-    @JvmStatic
-    val VINDICATOR_IDLE_COMBAT = createStateAnim("idle_combat", BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.VINDICATOR))
-    @JvmStatic
-    val VINDICATOR_WALK_COMBAT = createStateAnim("walk_combat", BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.VINDICATOR))
+    val JUMP_LAND = createStateAnim("jump_land")
 
     fun createStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
         .id(name)
-        .animIndex(AnimIndex(index, "EntityState/$name"))
+        .animIndex(AnimIndex(index, "state.$name"))
         .provider(provider)
         .build()
+
 
     fun createMoveStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = createStateAnim(name, index) {
         onEvent<AnimEvent.Tick> {
