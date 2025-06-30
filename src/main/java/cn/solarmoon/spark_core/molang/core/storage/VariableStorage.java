@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.molang.core.storage;
 
 import cn.solarmoon.spark_core.molang.core.util.PooledStringHashMap;
 import cn.solarmoon.spark_core.molang.core.util.PooledStringHashSet;
+import cn.solarmoon.spark_core.molang.core.util.StringPool;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -60,6 +61,11 @@ public class VariableStorage implements ITempVariableStorage, IScopedVariableSto
         } else {
             return null;
         }
+    }
+
+    @Override
+    public Object getPublic(String name) {
+        return getPublic(StringPool.computeIfAbsent(name));
     }
 
     // 注意 this.publicMap 线程安全

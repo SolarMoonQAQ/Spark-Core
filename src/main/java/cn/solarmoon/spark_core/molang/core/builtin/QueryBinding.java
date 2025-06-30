@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.builtin;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.event.MolangQueryRegisterEvent;
 import cn.solarmoon.spark_core.molang.core.binding.ContextBinding;
 import cn.solarmoon.spark_core.molang.core.builtin.query.*;
@@ -48,14 +49,14 @@ public class QueryBinding extends ContextBinding {
 
         entityVar("head_x_rotation", ctx -> ctx.getAnimatable().getXRot());
         entityVar("head_y_rotation", ctx -> ctx.getAnimatable().getYRot());
-        entityVar("yaw_speed", ctx -> getYawSpeed(ctx.getAnimatable()));
+        entityVar("yaw_speed", ctx -> getYawSpeed(ctx.getAnimatable(), ctx));
         entityVar("cardinal_facing_2d", ctx -> ctx.getAnimatable().getDirection().get3DDataValue());
         entityVar("distance_from_camera", ctx -> Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(ctx.getAnimatable().position()));
         entityVar("eye_target_x_rotation", ctx -> ctx.getAnimatable().getViewXRot(ctx.getPartialTicks()));
         entityVar("eye_target_y_rotation", ctx -> ctx.getAnimatable().getViewYRot(ctx.getPartialTicks()));
-        entityVar("ground_speed", ctx -> getGroundSpeed(ctx.getAnimatable()));
+        entityVar("ground_speed", ctx -> getGroundSpeed(ctx.getAnimatable(), ctx));
         entityVar("modified_distance_moved", ctx -> ctx.getAnimatable().walkDist);
-        entityVar("vertical_speed", ctx -> getVerticalSpeed(ctx.getAnimatable()));
+        entityVar("vertical_speed", ctx -> getVerticalSpeed(ctx.getAnimatable(), ctx));
         entityVar("walk_distance", ctx -> ctx.getAnimatable().moveDist);
         entityVar("has_rider", ctx -> ctx.getAnimatable().isVehicle());
         entityVar("is_first_person", ctx -> Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON);
@@ -116,16 +117,31 @@ public class QueryBinding extends ContextBinding {
         }
     }
 
-    private static float getYawSpeed(Entity entity) {
-        return 20 * (entity.getYRot() - entity.yRotO);
+    private static float getYawSpeed(Entity entity, IAnimatable<Entity> ctx) {
+        float partialTicks = ctx.getPartialTicks();
+        if (partialTicks == 0) partialTicks = 0.5f;// 防止除零错误，但会导致这一帧数值不正确
+        return 20 * (entity.getYRot() - entity.yRotO) / partialTicks;
     }
 
-    private static float getGroundSpeed(Entity player) {
-        Vec3 velocity = player.getDeltaMovement();
-        return 20 * Mth.sqrt((float) ((velocity.x * velocity.x) + (velocity.z * velocity.z)));
+    private static float getGroundSpeed(Entity entity, IAnimatable<Entity> ctx) {
+        float partialTicks = ctx.getPartialTicks();
+        if (partialTicks == 0) {
+            Vec3 motion = entity.getDeltaMovement().scale(20f);
+            return Mth.sqrt((float) (motion.x * motion.x + motion.z * motion.z));
+        } else {
+            double vx = 20 * (Mth.lerp(partialTicks, entity.xo, entity.getX()) - entity.xo) / partialTicks;
+            double vz = 20 * (Mth.lerp(partialTicks, entity.zo, entity.getZ()) - entity.zo) / partialTicks;
+            return Mth.sqrt((float) ((vx * vx) + (vz * vz)));
+        }
     }
 
-    private static float getVerticalSpeed(Entity entity) {
-        return 20 * (float) (entity.position().y - entity.yo);
+    private static float getVerticalSpeed(Entity entity, IAnimatable<Entity> ctx) {
+        float partialTicks = ctx.getPartialTicks();
+        if (partialTicks == 0) {
+            Vec3 motion = entity.getDeltaMovement();
+            return (float) motion.y * 20f;
+        } else {
+            return (float) (20 * (Mth.lerp(partialTicks, entity.yo, entity.getY()) - entity.yo) / (partialTicks));
+        }
     }
 }
