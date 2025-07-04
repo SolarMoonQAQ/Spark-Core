@@ -278,7 +278,7 @@ class DynamicTextureHandler(
         val targetRuntimeBaseDir = File(gameDir, "sparkcore")
         val success = ResourceExtractionUtil.extractResourcesFromJar(
             modMainClass,
-            getSourceResourceDirectoryName(),      // "textures"
+            "assets/spark_core/" + getSourceResourceDirectoryName(),      // "textures"
             targetRuntimeBaseDir,
             getDirectoryId(),                      // "textures"
             SparkCore.LOGGER

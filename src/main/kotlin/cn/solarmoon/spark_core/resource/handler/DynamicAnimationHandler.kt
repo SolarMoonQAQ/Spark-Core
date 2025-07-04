@@ -77,7 +77,7 @@ class DynamicAnimationHandler(
         val targetRuntimeBaseDir = File(gameDir, "sparkcore")
         val success = ResourceExtractionUtil.extractResourcesFromJar(
             modMainClass,
-            getSourceResourceDirectoryName(),      // should be "animations"
+            "assets/spark_core/" + getSourceResourceDirectoryName(),      // should be "animations"
             targetRuntimeBaseDir,
             getDirectoryId(),                      // should be "animations"
             SparkCore.LOGGER

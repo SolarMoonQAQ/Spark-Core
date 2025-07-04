@@ -272,7 +272,7 @@ class DynamicJavaScriptHandler(
         val targetRuntimeBaseDir = File(gameDir, "sparkcore")
         val success = ResourceExtractionUtil.extractResourcesFromJar(
             modMainClass,
-            getSourceResourceDirectoryName(),      // "script"
+            "assets/spark_core/" + getSourceResourceDirectoryName(),      // "script"
             targetRuntimeBaseDir,
             getDirectoryId(),                      // "script"
             SparkCore.LOGGER

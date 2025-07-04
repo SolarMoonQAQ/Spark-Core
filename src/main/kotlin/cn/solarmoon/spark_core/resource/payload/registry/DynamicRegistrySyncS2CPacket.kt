@@ -202,10 +202,10 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-                    if (dynamicRegistry.containsKey(packet.entryId)) {
-                        SparkCore.LOGGER.debug("TypedAnimation {} already exists, skipping ADD sync", packet.entryId)
-                        return
-                    }
+//                    if (dynamicRegistry.containsKey(packet.entryId)) {
+//                        SparkCore.LOGGER.debug("TypedAnimation {} already exists, skipping ADD sync", packet.entryId)
+//                        return
+//                    }
 
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val indexLocation = buf.readResourceLocation()
@@ -234,10 +234,10 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-                    if (dynamicRegistry.containsKey(packet.entryId)) {
-                        SparkCore.LOGGER.debug("OModel {} already exists, skipping ADD sync", packet.entryId)
-                        return
-                    }
+//                    if (dynamicRegistry.containsKey(packet.entryId)) {
+//                        SparkCore.LOGGER.debug("OModel {} already exists, skipping ADD sync", packet.entryId)
+//                        return
+//                    }
 
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val model = OModel.STREAM_CODEC.decode(buf)
@@ -262,10 +262,10 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-                    if (dynamicRegistry.containsKey(packet.entryId)) {
-                        SparkCore.LOGGER.debug("OJSScript {} already exists, skipping ADD sync", packet.entryId)
-                        return
-                    }
+//                    if (dynamicRegistry.containsKey(packet.entryId)) {
+//                        SparkCore.LOGGER.debug("OJSScript {} already exists, skipping ADD sync", packet.entryId)
+//                        return
+//                    }
 
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val script = OJSScript.STREAM_CODEC.decode(buf)
@@ -290,10 +290,10 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-                    if (dynamicRegistry.containsKey(packet.entryId)) {
-                        SparkCore.LOGGER.debug("OTexture {} already exists, skipping ADD sync", packet.entryId)
-                        return
-                    }
+//                    if (dynamicRegistry.containsKey(packet.entryId)) {
+//                        SparkCore.LOGGER.debug("OTexture {} already exists, skipping ADD sync", packet.entryId)
+//                        return
+//                    }
 
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val texture = OTexture.STREAM_CODEC.decode(buf)

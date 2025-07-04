@@ -219,7 +219,7 @@ class DynamicModelHandler(
         val targetRuntimeBaseDir = File(gameDir, "sparkcore")
         val success = ResourceExtractionUtil.extractResourcesFromJar(
             modMainClass,
-            getSourceResourceDirectoryName(),      // "models"
+            "assets/spark_core/" + getSourceResourceDirectoryName(),      // "models"
             targetRuntimeBaseDir,
             getDirectoryId(),                      // "models"
             SparkCore.LOGGER
