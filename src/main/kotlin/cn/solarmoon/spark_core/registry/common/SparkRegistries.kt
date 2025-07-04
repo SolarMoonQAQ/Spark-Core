@@ -32,9 +32,9 @@ object SparkRegistries {
                     try {
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                    val packet = DynamicRegistrySyncS2CPacket.createForTypedAnimationAdd(key.location(), value)
-                    net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(packet)
-                    SparkCore.LOGGER.info("Triggered dynamic TypedAnimation ADD sync for ${key.location()} via callback")
+                            val packet = DynamicRegistrySyncS2CPacket.createForTypedAnimationAdd(key.location(), value)
+                            net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(packet)
+                            SparkCore.LOGGER.info("Triggered dynamic TypedAnimation ADD sync for ${key.location()} via callback")
                         } else {
                             SparkCore.LOGGER.debug("客户端跳过动画ADD同步，等待服务端同步: ${key.location()}")
                         }

@@ -77,7 +77,7 @@ class DynamicAwareRegistry<T: Any>(
         return maxId
     }
 
-    fun registerDynamic(key: ResourceLocation, value: T, replace: Boolean = false): T {
+    fun registerDynamic(key: ResourceLocation, value: T, replace: Boolean = true): T {
         lock.writeLock().lock()
         try {
             if (!replace){
@@ -118,15 +118,14 @@ class DynamicAwareRegistry<T: Any>(
         try {
             val location = key.location()
             if (this.isStaticPhaseOver) {
-                // Dynamic registration path
-                if (staticRegistry.containsKey(location)) {
-                    SparkCore.LOGGER.warn("Attempted to dynamically register key $location which already exists in the static registry. Returning existing static holder.")
-                    return staticRegistry.getHolderOrThrow(key)
-                }
-                if (dynamicEntries.containsKey(location)) {
-                    SparkCore.LOGGER.warn("Attempted to dynamically register key $location which already exists in dynamic entries. Returning existing dynamic holder.")
-                    return this.getHolderOrThrow(key) // Already a dynamic holder
-                }
+//                if (staticRegistry.containsKey(location)) {
+//                    SparkCore.LOGGER.warn("Attempted to dynamically register key $location which already exists in the static registry. Returning existing static holder.")
+//                    return staticRegistry.getHolderOrThrow(key)
+//                }
+//                if (dynamicEntries.containsKey(location)) {
+//                    SparkCore.LOGGER.warn("Attempted to dynamically register key $location which already exists in dynamic entries. Returning existing dynamic holder.")
+//                    return this.getHolderOrThrow(key) // Already a dynamic holder
+//                }
 
                 val id = nextDynamicId.getAndIncrement()
                 dynamicEntries[location] = value
