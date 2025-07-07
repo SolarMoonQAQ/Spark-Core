@@ -59,6 +59,7 @@ public class SparkCore {
         SparkDataGenerator.register(modEventBus);
         SparkCapabilities.register(modEventBus);
         SparkJSApiRegister.register(modEventBus);
+        SparkCustomModelItem.register(modEventBus);
         // 注册配置
         SparkConfig.INSTANCE.register(modContainer);
         PhysicsHelperKt.initBullet();
