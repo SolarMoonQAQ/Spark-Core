@@ -14,6 +14,7 @@ class TypedAnimationBuilder(private val register: DeferredRegister<TypedAnimatio
     private var id = ""
     private var index: AnimIndex? = null
     private var provider: TypedAnimProvider = {}
+    private val textureRegistry = SparkRegistries.TYPED_ANIMATION
 
     /**
      * 设置动画ID
@@ -69,7 +70,8 @@ class TypedAnimationBuilder(private val register: DeferredRegister<TypedAnimatio
     fun registerDynamic(fullId: ResourceLocation): TypedAnimation {
         val animation = constructOnly()
         val registry = SparkRegistries.TYPED_ANIMATION
-        registry.registerDynamic(fullId, animation)
+        val resourceKey = net.minecraft.resources.ResourceKey.create(registry.key(), fullId)
+        textureRegistry.register(resourceKey, animation, net.minecraft.core.RegistrationInfo.BUILT_IN)
         return animation
     }
 

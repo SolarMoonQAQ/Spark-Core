@@ -65,7 +65,12 @@ object ResourceExtractionUtil {
                                 // 根据策略，可能需要设置标志以整体返回 false
                             }
                         } else {
-                            logger.debug("默认资源已存在，跳过: {}", destFile.path)
+                            val sourceBytes = Files.readAllBytes(sourcePath)
+                            val destBytes = Files.readAllBytes(destFile.toPath())
+                            if (!sourceBytes.contentEquals(destBytes)) {
+                                Files.copy(sourcePath, destFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                                logger.info("已更新资源: {}", destFile.path)
+                            }
                         }
                     }
                 }

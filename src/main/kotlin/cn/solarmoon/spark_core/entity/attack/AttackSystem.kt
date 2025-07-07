@@ -155,7 +155,7 @@ class AttackSystem {
                 resetAfterTicks // Add new field
             )
             PacketDistributor.sendToPlayersTrackingEntity(currentEntity, payload)
-            // SparkCore.LOGGER.debug("AttackSystem: Sent sync packet for entity {} and collisionBoxId {}", currentEntity.id, currentCbId)
+            SparkCore.LOGGER.debug("AttackSystem: Sent sync packet for entity {} and collisionBoxId {}", currentEntity.id, currentCbId)
         }
     }
 

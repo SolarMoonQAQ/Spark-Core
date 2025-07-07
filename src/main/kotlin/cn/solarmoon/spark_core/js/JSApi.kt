@@ -29,11 +29,10 @@ interface JSApi {
          */
         fun getScriptsByApi(apiId: String): Map<String, String> {
             return try {
-                SparkRegistries.JS_SCRIPTS?.getDynamicEntries()
-                    ?.values
-                    ?.filter { it.apiId == apiId }
-                    ?.associate { it.fileName to it.content }
-                    ?: emptyMap()
+                SparkRegistries.JS_SCRIPTS.getDynamicEntries()
+                    .values
+                    .filter { it.apiId == apiId }
+                    .associate { it.fileName to it.content }
             } catch (e: Exception) {
                 SparkCore.LOGGER.debug("获取API {}的脚本时出错: {}", apiId, e.message)
                 emptyMap()
@@ -45,13 +44,12 @@ interface JSApi {
          */
         fun getAllScriptsForSync(): Map<String, Map<String, String>> {
             return try {
-                SparkRegistries.JS_SCRIPTS?.getDynamicEntries()
-                    ?.values
-                    ?.groupBy { it.apiId }
-                    ?.mapValues { (_, scripts) ->
+                SparkRegistries.JS_SCRIPTS.getDynamicEntries()
+                    .values
+                    .groupBy { it.apiId }
+                    .mapValues { (_, scripts) ->
                         scripts.associate { it.fileName to it.content }
                     }
-                    ?: emptyMap()
             } catch (e: Exception) {
                 SparkCore.LOGGER.debug("获取所有脚本数据时出错: {}", e.message)
                 emptyMap()

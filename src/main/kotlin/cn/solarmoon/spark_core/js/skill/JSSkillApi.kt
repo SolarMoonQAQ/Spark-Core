@@ -13,7 +13,7 @@ import org.mozilla.javascript.Function
 object JSSkillApi: JSApi, JSComponent() {
 
     override val id: String = "skill"
-    override val valueCache: MutableMap<String, String> = mutableMapOf()
+    // 移除本地缓存，统一使用动态注册表数据源
 
     private val preLoads = mutableListOf<Pair<JSSkillTypeBuilder, () -> Unit>>()
 

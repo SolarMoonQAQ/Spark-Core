@@ -45,12 +45,12 @@ data class JSScriptDataSyncPayload(
                 
                 try {
                     // 清空客户端动态注册表
-                    SparkRegistries.JS_SCRIPTS?.clearDynamic()
+                    SparkRegistries.JS_SCRIPTS.clearDynamic()
                     
                     // 将全量同步数据注册到客户端动态注册表
                     payload.scripts.forEach { (location, jsScript) ->
-                        val resourceKey = net.minecraft.resources.ResourceKey.create(SparkRegistries.JS_SCRIPTS!!.key(), location)
-                        SparkRegistries.JS_SCRIPTS!!.register(resourceKey, jsScript, net.minecraft.core.RegistrationInfo.BUILT_IN)
+                        val resourceKey = net.minecraft.resources.ResourceKey.create(SparkRegistries.JS_SCRIPTS.key(), location)
+                        SparkRegistries.JS_SCRIPTS.register(resourceKey, jsScript, net.minecraft.core.RegistrationInfo.BUILT_IN)
                         SparkCore.LOGGER.debug("客户端注册JS脚本: {} -> API: {}, 文件: {}", location, jsScript.apiId, jsScript.fileName)
                     }
                     
@@ -58,7 +58,7 @@ data class JSScriptDataSyncPayload(
                     updateClientApiCache(payload.scripts.values)
                     
                     SparkCore.LOGGER.info("客户端动态注册表已更新，包含 ${payload.scripts.size} 个JS脚本")
-                    
+
                     // 刷新JS脚本浏览器界面（如果当前正在打开）
                     try {
                         val refreshMethod = Class.forName("cn.solarmoon.spark_core.client.gui.screen.JSScriptBrowserScreen")

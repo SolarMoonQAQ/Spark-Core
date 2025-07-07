@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toVec3
+import cn.solarmoon.spark_core.entity.attack.AttackSystem
 import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
@@ -39,5 +40,13 @@ object JSPhysicsHelper: JSComponent() {
     fun getContactPosA(manifoldId: Long) = Vector3f().apply { ManifoldPoints.getPositionWorldOnA(manifoldId, this) }.toVec3()
 
     fun getContactPosB(manifoldId: Long) = Vector3f().apply { ManifoldPoints.getPositionWorldOnB(manifoldId, this) }.toVec3()
+
+    /**
+     * 创建一个新的 AttackSystem 实例，可以用于管理攻击状态
+     * @return 新的 AttackSystem 实例
+     */
+    fun createAttackSystem(): AttackSystem {
+        return AttackSystem()
+    }
 
 }
