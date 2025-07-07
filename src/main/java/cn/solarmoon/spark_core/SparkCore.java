@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core;
 
 import cn.solarmoon.spark_core.config.SparkConfig;
 import cn.solarmoon.spark_core.js.JSHelperKt;
+import cn.solarmoon.spark_core.js.JSApi;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 //import cn.solarmoon.spark_core.physics.sync.PhysicsSyncConfigKt;
@@ -42,8 +43,7 @@ public class SparkCore {
 //            WebSocketRpcServer rpcServer = new WebSocketRpcServer();
 //            rpcServer.start(8080); // 启动服务器
         }
-
-        HandlerDiscoveryService.INSTANCE.discoverAndInitializeHandlers(getClass());
+        SparkJSApiRegister.register(modEventBus);
         SparkRegistries.register();
         SparkVisualEffects.register();
         SparkAttachments.register();
@@ -58,10 +58,10 @@ public class SparkCore {
         SyncerTypes.register();
         SparkDataGenerator.register(modEventBus);
         SparkCapabilities.register(modEventBus);
-        SparkJSApiRegister.register(modEventBus);
         // 注册配置
         SparkConfig.INSTANCE.register(modContainer);
         PhysicsHelperKt.initBullet();
+        HandlerDiscoveryService.INSTANCE.discoverAndInitializeHandlers(getClass());
         // JavaScript脚本初始化现在由DynamicJavaScriptHandler的initializeDefaultResources()处理
     }
 }

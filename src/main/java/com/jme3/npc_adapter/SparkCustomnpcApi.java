@@ -433,8 +433,8 @@ public class SparkCustomnpcApi {
             // 播放动画
             animation.play(animatable, transTime);
             // speed转成int
-            int speedInt = (int) (speed * 20);
-            animatable.changeSpeed(speedInt, speedChangeDuration);
+            int speedChangeDurationInt = (int) (speedChangeDuration * 20);
+            animatable.changeSpeed(speedChangeDurationInt, speed);
             // 如果是服务端，同步到客户端
             if (!animatable.getAnimLevel().isClientSide()) {
                 Entity entity = animatable.getAnimatable();

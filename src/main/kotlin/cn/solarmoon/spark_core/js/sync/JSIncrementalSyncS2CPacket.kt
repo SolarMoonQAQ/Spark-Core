@@ -111,30 +111,43 @@ data class JSIncrementalSyncS2CPacket(
             val api = JSApi.Companion.ALL[packet.apiId]!!
             val player = context.player()
             val js = player.level().jsEngine
-
+            val registry = cn.solarmoon.spark_core.registry.common.SparkRegistries.JS_SCRIPTS
             when (packet.operationType) {
                 ChangeType.ADDED, ChangeType.MODIFIED -> {
-                    // 执行脚本
-                    js.eval(packet.scriptContent, "${packet.apiId} - ${packet.fileName}")
+                    // 创建 OJSScript 对象
+                    val location = ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "script/${packet.apiId}/${packet.fileName}")
+                    val ojsScript = cn.solarmoon.spark_core.js.origin.OJSScript(
+                        apiId = packet.apiId,
+                        fileName = packet.fileName,
+                        content = packet.scriptContent,
+                        location = location
+                    )
 
-                    // 更新API缓存
-                    api.valueCache[packet.fileName] = packet.scriptContent
+                    // 更新客户端动态注册表
+                    try {
+                        registry.registerDynamic(location, ojsScript)
+                    } catch (e: Exception) {
+                        SparkCore.LOGGER.debug("更新客户端注册表失败: {}", e.message)
+                    }
+
+                    // 使用统一的脚本执行方法
+                    js.reloadScript(ojsScript)
 
                     val operation = if (packet.operationType == ChangeType.MODIFIED) "更新" else "添加"
                     SparkCore.LOGGER.info("客户端${operation}JS脚本：模块：${packet.apiId} 文件：${packet.fileName}")
-
-                    // 如果是添加操作，触发onLoad（更新操作不触发onLoad，避免重复注册）
-                    if (packet.operationType == ChangeType.ADDED) {
-                        api.onLoad()
-                    }
                 }
 
                 ChangeType.REMOVED -> {
-                    // 从缓存中移除
-                    api.valueCache.remove(packet.fileName)
+                    // 从客户端动态注册表移除
+                    try {
+                        val location = ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "script/${packet.apiId}/${packet.fileName}")
+                        registry.unregisterDynamic(location)
+                    } catch (e: Exception) {
+                        SparkCore.LOGGER.debug("从客户端注册表移除失败: {}", e.message)
+                    }
 
-                    // 触发reload来清理相关注册
-                    api.onReload()
+                    // 使用统一的脚本卸载方法
+                    js.unloadScript(packet.apiId, packet.fileName)
 
                     SparkCore.LOGGER.info("客户端删除JS脚本：模块：${packet.apiId} 文件：${packet.fileName}")
                 }

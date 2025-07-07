@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.ServerSparkJS
 import cn.solarmoon.spark_core.js.origin.OJSScript
+import cn.solarmoon.spark_core.js.sync.JSIncrementalSyncS2CPacket
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import cn.solarmoon.spark_core.resource.payload.resource_sync.ChangeType
@@ -11,6 +12,7 @@ import cn.solarmoon.spark_core.util.ResourceExtractionUtil
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.fml.loading.FMLEnvironment
 import net.neoforged.fml.loading.FMLPaths
+import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.server.ServerLifecycleHooks
 import java.io.File
 import java.nio.file.Files
@@ -80,6 +82,15 @@ class DynamicJavaScriptHandler(
         }
 
         val apiId = pathParts[0]
+        
+        // 防御性检查：确保 JSApi.ALL 已初始化
+        try {
+            JSApi.ALL.keys // 尝试访问来检查是否已初始化
+        } catch (e: kotlin.UninitializedPropertyAccessException) {
+            SparkCore.LOGGER.warn("JSApi.ALL 尚未初始化，跳过处理文件: {}", file)
+            return null
+        }
+
         SparkCore.LOGGER.debug("从路径 {} 解析出API ID: {}, 已注册的API: {}", file, apiId, JSApi.ALL.keys)
         return JSApi.ALL[apiId]?.also {
             SparkCore.LOGGER.debug("路径 {} 映射到API模块: {}", file, apiId)
@@ -155,7 +166,8 @@ class DynamicJavaScriptHandler(
                     
                     // 注册到动态注册表，触发网络同步
                     if (initialScanComplete) {
-                        jsRegistry.registerDynamic(location, ojsScript)
+                        val resourceKey = net.minecraft.resources.ResourceKey.create(jsRegistry.key(), location)
+                        jsRegistry.register(resourceKey, ojsScript, net.minecraft.core.RegistrationInfo.BUILT_IN)
                         SparkCore.LOGGER.info("成功注册JS脚本到动态注册表: {}", location)
                     } else {
                         // 初始扫描阶段，只本地注册，不触发网络同步
@@ -164,19 +176,13 @@ class DynamicJavaScriptHandler(
                         SparkCore.LOGGER.debug("初始扫描：JS脚本已本地注册: {}", location)
                     }
                     
-                    // 在服务端执行脚本和更新API缓存（仅在运行时阶段）
+                    // 在服务端执行脚本（仅在运行时阶段）
                     if (initialScanComplete) {
                         val jsEngine = getServerJSEngine()
                         if (jsEngine != null) {
-                            jsEngine.eval(scriptContent, "${api.id} - $fileName")
-                            // 移除手动更新valueCache，现在从动态注册表自动获取
-                            // api.valueCache[fileName] = scriptContent
-                            
-                            // 如果是添加操作，触发onLoad
-                            if (operationType == ChangeType.ADDED) {
-                                api.onLoad()
-                            }
-                            
+                            // 使用线程安全的脚本重载方法
+                            jsEngine.reloadScript(ojsScript)
+                            PacketDistributor.sendToAllPlayers(JSIncrementalSyncS2CPacket(api.id, fileName, operationType, scriptContent))
                             val operation = if (operationType == ChangeType.MODIFIED) "更新" else "添加"
                             SparkCore.LOGGER.info("服务端${operation}JS脚本: API={}, 文件={}", api.id, fileName)
                         } else {
@@ -198,12 +204,14 @@ class DynamicJavaScriptHandler(
                         SparkCore.LOGGER.debug("初始扫描：JS脚本已移除: {}", location)
                     }
                     
-                    // 从缓存中移除并触发reload（仅在运行时阶段）
+                    // 在服务端卸载脚本（仅在运行时阶段）
                     if (initialScanComplete) {
-                        // 移除手动操作valueCache，现在从动态注册表自动获取
-                        // api.valueCache.remove(fileName)
-                        api.onReload()
-                        
+                        val jsEngine = getServerJSEngine()
+                        if (jsEngine != null) {
+                            // 使用线程安全的脚本卸载方法
+                            jsEngine.unloadScript(api.id, fileName)
+                        }
+                        PacketDistributor.sendToAllPlayers(JSIncrementalSyncS2CPacket(api.id, fileName, operationType, ""))
                         SparkCore.LOGGER.info("服务端删除JS脚本: API={}, 文件={}", api.id, fileName)
                     } else {
                         SparkCore.LOGGER.debug("初始扫描阶段：脚本已移除: {}", location)

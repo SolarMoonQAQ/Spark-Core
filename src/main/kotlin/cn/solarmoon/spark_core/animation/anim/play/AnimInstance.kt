@@ -31,7 +31,8 @@ class AnimInstance private constructor(
     var totalTime = 0.0
     var maxLength = origin.animationLength
     var shouldTurnBody = false
-    var shouldTurnHead = false
+    // 锁定ai注视目标
+    var shouldTurnHead = true
     var rejectNewAnim: (AnimInstance?) -> Boolean = { false }
     var isCancelled = true
         internal set

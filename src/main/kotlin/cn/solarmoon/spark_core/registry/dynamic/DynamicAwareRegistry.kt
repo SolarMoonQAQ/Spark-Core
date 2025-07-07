@@ -100,7 +100,6 @@ class DynamicAwareRegistry<T: Any>(
             dynamicKeyToId[key] = id
             dynamicIdToKey[id] = key
             dynamicValueToKey[value] = key
-
             return value
         } finally {
             lock.writeLock().unlock()
@@ -118,15 +117,6 @@ class DynamicAwareRegistry<T: Any>(
         try {
             val location = key.location()
             if (this.isStaticPhaseOver) {
-//                if (staticRegistry.containsKey(location)) {
-//                    SparkCore.LOGGER.warn("Attempted to dynamically register key $location which already exists in the static registry. Returning existing static holder.")
-//                    return staticRegistry.getHolderOrThrow(key)
-//                }
-//                if (dynamicEntries.containsKey(location)) {
-//                    SparkCore.LOGGER.warn("Attempted to dynamically register key $location which already exists in dynamic entries. Returning existing dynamic holder.")
-//                    return this.getHolderOrThrow(key) // Already a dynamic holder
-//                }
-
                 val id = nextDynamicId.getAndIncrement()
                 dynamicEntries[location] = value
                 dynamicKeyToId[location] = id
@@ -183,7 +173,7 @@ class DynamicAwareRegistry<T: Any>(
             // Construct ResourceKey for the callback
             val resourceKey = ResourceKey.create(this.key(), key)
             onDynamicUnregister?.invoke(resourceKey, existingValue) // Invoke callback
-            SparkCore.LOGGER.debug("Dynamically unregistered entry: $key")
+            SparkCore.LOGGER.debug("Dynamically unregistered entry: {}", key)
             return true
         } finally {
             lock.writeLock().unlock()

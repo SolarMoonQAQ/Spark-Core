@@ -19,6 +19,7 @@ import cn.solarmoon.spark_core.ik.sync.IKDataSendingTask
 import cn.solarmoon.spark_core.ik.sync.IKSyncTargetPayload
 import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
 import cn.solarmoon.spark_core.ik.sync.RequestSetIKTargetPayload
+import cn.solarmoon.spark_core.js.sync.JSIncrementalSyncS2CPacket
 import cn.solarmoon.spark_core.js.sync.JSPayload
 import cn.solarmoon.spark_core.js.sync.JSSendingTask
 import cn.solarmoon.spark_core.js.sync.JSTaskPayload
@@ -73,6 +74,7 @@ object SparkPayloadRegister {
         skill.playToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
         js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
         js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
+        js.playToClient(JSIncrementalSyncS2CPacket.TYPE, JSIncrementalSyncS2CPacket.STREAM_CODEC, JSIncrementalSyncS2CPacket::handleInClient)
 
         // JS脚本全量同步
         js.configurationToClient(JSScriptDataSyncPayload.TYPE, JSScriptDataSyncPayload.STREAM_CODEC, JSScriptDataSyncPayload::handleInClient)

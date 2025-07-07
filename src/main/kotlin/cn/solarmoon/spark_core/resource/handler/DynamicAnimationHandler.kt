@@ -197,6 +197,12 @@ class DynamicAnimationHandler(
         }
 
         val previouslyRegisteredKeys = fileToRegisteredAnimationKeys.getOrDefault(filePath, mutableListOf()).toList()
+        /*
+         * 注销与当前文件关联的所有旧动态动画键
+         * 遍历已注册的动画键，尝试逐个注销并记录操作结果
+         * @param filePath 正在处理的资源文件路径
+         * @return 无返回值（Unit）
+         */
         for (oldKey in previouslyRegisteredKeys) {
             if (typedAnimationRegistry.unregisterDynamic(oldKey)) {
                 SparkCore.LOGGER.debug("注销了旧的 TypedAnimation: {} (文件: {})", oldKey.location(), filePath)
@@ -204,9 +210,22 @@ class DynamicAnimationHandler(
                 SparkCore.LOGGER.warn("尝试注销旧的 TypedAnimation {} 失败 (文件: {})", oldKey.location(), filePath)
             }
         }
+        /*
+         * 创建新的动画键容器并绑定到文件映射
+         * 准备存储本次注册的新动画键
+         * @param filePath 当前处理的资源文件路径
+         * @return MutableList<ResourceKey<TypedAnimation>> 新建的动画键列表容器
+         */
         val currentFileAnimationKeys = mutableListOf<ResourceKey<TypedAnimation>>()
         fileToRegisteredAnimationKeys[filePath] = currentFileAnimationKeys
 
+        /*
+         * 遍历动画集合注册新动画
+         * 处理每个动画条目生成唯一资源定位符并注册到系统
+         * @param animationSet 动画数据集合
+         * @param rootLocation 基础资源定位信息
+         * @return 无返回值（Unit）
+         */
         for ((animNameInFile, _) in animationSet.animations.entries) {
             val specificAnimPath = "${rootLocation.path}/${animNameInFile.lowercase().replace(regex = Regex("[^a-z0-9/._-]"), "_")}"
             val animationSpecificLocation = ResourceLocation.fromNamespaceAndPath(rootLocation.namespace, specificAnimPath)

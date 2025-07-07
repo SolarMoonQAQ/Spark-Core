@@ -48,12 +48,12 @@ interface JSPhysicsCollisionObject {
         values.add(consumer)
     }
 
-    fun onAttackCollide(id: String, consumer: Scriptable) {
+    fun onAttackCollide(id: String, consumer: Scriptable, customAttackSystem: AttackSystem? = null) {
         val values = callbackFunctions.getOrPut(id) { mutableListOf() }
 
         if (values.isEmpty()) {
-            pco.addCollisionCallback(object : AttackCollisionCallback {
-                override val attackSystem: AttackSystem = AttackSystem()
+            val attackCallback = object : AttackCollisionCallback {
+                override val attackSystem: AttackSystem = customAttackSystem ?: AttackSystem()
                 override fun preAttack(
                     isFirst: Boolean,
                     attacker: Entity,
@@ -65,7 +65,7 @@ interface JSPhysicsCollisionObject {
                     if (attacker.level().isClientSide) return
                     attacker.level().submitImmediateTask(PPhase.POST) {
                         values.forEach {
-                            it.getFunctionMember("preAttack")?.call(js, isFirst, attacker, target, aBody, bBody, manifoldId)
+                            it.getFunctionMember("preAttack")?.call(js, isFirst, attacker, target, aBody, bBody, manifoldId, attackSystem)
                         }
                     }
                 }
@@ -80,7 +80,7 @@ interface JSPhysicsCollisionObject {
                     if (attacker.level().isClientSide) return false
                     attacker.level().submitImmediateTask(PPhase.POST) {
                         values.forEach {
-                            it.getFunctionMember("doAttack")?.call(js, attacker, target, aBody, bBody, manifoldId)
+                            it.getFunctionMember("doAttack")?.call(js, attacker, target, aBody, bBody, manifoldId, attackSystem)
                         }
                     }
                     return true
@@ -96,11 +96,12 @@ interface JSPhysicsCollisionObject {
                     if (attacker.level().isClientSide) return
                     attacker.level().submitImmediateTask(PPhase.POST) {
                         values.forEach {
-                            it.getFunctionMember("postAttack")?.call(js, attacker, target, aBody, bBody, manifoldId)
+                            it.getFunctionMember("postAttack")?.call(js, attacker, target, aBody, bBody, manifoldId, attackSystem)
                         }
                     }
                 }
-            })
+            }
+            pco.addCollisionCallback(attackCallback)
         }
 
         values.add(consumer)

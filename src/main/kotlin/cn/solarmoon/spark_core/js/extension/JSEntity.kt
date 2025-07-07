@@ -1,12 +1,15 @@
 package cn.solarmoon.spark_core.js.extension
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.camera.setCameraLock
 import cn.solarmoon.spark_core.entity.addRelativeMovement
 import cn.solarmoon.spark_core.entity.getRelativeVector
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
@@ -20,12 +23,13 @@ import kotlin.math.atan2
 interface JSEntity {
 
     val entity get() = this as Entity
-
-    fun commonAttack(target: Entity) {
+    // 调试
+    fun commonAttack(target: Entity, currentAttackPhase: Int) {
         val entity = entity
         if (entity.level().isClientSide) return
         if (target is LivingEntity) {
             if (entity is Player) {
+                println("attack on currentAttackPhase $currentAttackPhase")
                 entity.attack(target)
             } else if (entity is LivingEntity) {
                 entity.doHurtTarget(target)
@@ -95,4 +99,7 @@ interface JSEntity {
         }
     }
 
+    fun log(message: String) {
+        SparkCore.LOGGER.info("发送消息: {}", message)
+    }
 }

@@ -150,7 +150,8 @@ class DynamicModelHandler(
             
             // 如果初始扫描已完成，触发动态注册和网络同步
             if (initialScanComplete) {
-                modelRegistry.registerDynamic(root, model)
+                val resourceKey = net.minecraft.resources.ResourceKey.create(modelRegistry.key(), root)
+                modelRegistry.register(resourceKey, model, net.minecraft.core.RegistrationInfo.BUILT_IN)
                 SparkCore.LOGGER.info("模型已动态注册并同步: {}", root)
             }
             
@@ -173,7 +174,8 @@ class DynamicModelHandler(
             
             // 如果初始扫描已完成，触发动态注册和网络同步
             if (initialScanComplete) {
-                modelRegistry.registerDynamic(root, model)
+                val resourceKey = net.minecraft.resources.ResourceKey.create(modelRegistry.key(), root)
+                modelRegistry.register(resourceKey, model, net.minecraft.core.RegistrationInfo.BUILT_IN)
                 SparkCore.LOGGER.info("模型已动态注册并同步: {}", root)
             }
             

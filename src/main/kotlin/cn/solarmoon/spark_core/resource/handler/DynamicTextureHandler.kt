@@ -197,7 +197,8 @@ class DynamicTextureHandler(
         if (oTexture != null) {
             // 注册到动态注册表，触发网络同步
             if (initialScanComplete) {
-                textureRegistry.registerDynamic(location, oTexture)
+                val resourceKey = net.minecraft.resources.ResourceKey.create(textureRegistry.key(), location)
+                textureRegistry.register(resourceKey, oTexture, net.minecraft.core.RegistrationInfo.BUILT_IN)
                 SparkCore.LOGGER.info("成功注册纹理到动态注册表: {}", location)
             } else {
                 // 初始扫描阶段，只本地注册，不触发网络同步
@@ -229,7 +230,8 @@ class DynamicTextureHandler(
         if (oTexture != null) {
             // 更新动态注册表，触发网络同步
             if (initialScanComplete) {
-                textureRegistry.registerDynamic(location, oTexture)
+                val resourceKey = net.minecraft.resources.ResourceKey.create(textureRegistry.key(), location)
+                textureRegistry.register(resourceKey, oTexture, net.minecraft.core.RegistrationInfo.BUILT_IN)
                 SparkCore.LOGGER.info("成功更新纹理到动态注册表: {}", location)
             } else {
                 // 初始扫描阶段，只本地注册

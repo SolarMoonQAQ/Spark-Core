@@ -17,9 +17,11 @@ object SparkJsApplier {
         val js = level.jsEngine
         js.register()
 
-        // 只在服务端执行脚本加载，客户端延迟到玩家登录后
+        // 服务端和客户端执行不同的初始化逻辑
         if (js is ServerSparkJS) {
-            SparkCore.LOGGER.info("服务端JS引擎已注册，脚本将通过DynamicJavaScriptHandler热重载机制加载")
+            SparkCore.LOGGER.info("服务端JS引擎已注册，开始加载脚本")
+            // 从注册表加载并执行所有脚本
+            js.loadAllFromRegistry()
         } else {
             SparkCore.LOGGER.info("客户端JS引擎已注册，等待玩家登录后加载脚本")
         }
@@ -31,62 +33,38 @@ object SparkJsApplier {
      */
     @SubscribeEvent
     private fun onClientPlayerLogin(event: ClientPlayerNetworkEvent.LoggingIn) {
-        val player = event.player
-        val level = player.level()
-        val js = level.jsEngine
+        val level = event.player.level()
+        SparkCore.LOGGER.info("Level: {}", level)
+        val js: SparkJS = level.jsEngine
         
-        SparkCore.LOGGER.info("客户端玩家登录完成，开始加载JS脚本")
-        
-        // --- 新增：确保JS引擎已先初始化 Scope，使得后续 registerComponent 可以把对象注入其中 ---
-        run {
-            val ctx = org.mozilla.javascript.Context.enter()
-            try {
-                if (js.scope == null) {
-                    js.context = ctx
-                    js.scope = ctx.initStandardObjects()
-                }
-            } finally {
-                org.mozilla.javascript.Context.exit()
-            }
-        }
-        
-        // 确保JS引擎重新注册API组件（防止注册时机问题）
-        js.register()
-        
-        // 手动确保关键API组件已注入（避免事件总线时序问题）
-        js.scope?.put("Skill", js.scope, cn.solarmoon.spark_core.js.skill.JSSkillApi)
+        SparkCore.LOGGER.info("客户端玩家登录完成，开始从注册表加载JS脚本")
         
         try {
-            // 从动态注册表按API分组获取脚本
-            val scriptsByApi = mutableMapOf<String, Map<String, String>>()
-            SparkRegistries.JS_SCRIPTS?.getDynamicEntries()?.values?.groupBy { it.apiId }?.forEach { (apiId, scripts) ->
-                scriptsByApi[apiId] = scripts.associate { it.fileName to it.content }
-            }
+            // 从动态注册表加载脚本
+            js.loadAllFromRegistry()
             
-            SparkCore.LOGGER.debug("客户端从动态注册表加载 ${scriptsByApi.size} 个API模块的脚本")
-            
-            // 按API分组执行脚本
-            scriptsByApi.forEach { (apiId, scripts) ->
-                try {
-                    js.validateApi(apiId)
-                    val api = JSApi.ALL[apiId]
-                    if (api != null) {
+            // 兼容性处理：如果注册表为空，回退到传统的 clientApiCache 方式
+            val registryScripts = SparkRegistries.JS_SCRIPTS?.getDynamicEntries()?.size ?: 0
+            if (registryScripts == 0 && JSApi.clientApiCache.isNotEmpty()) {
+                SparkCore.LOGGER.info("注册表为空，回退到传统加载方式")
+                // 按API分组执行脚本
+                JSApi.clientApiCache.forEach { (apiId, scripts) ->
+                    try {
+                        js.validateApi(apiId)
+                        val api = JSApi.ALL[apiId]!!
                         scripts.forEach { (fileName, content) ->
                             js.eval(content, "$apiId - $fileName")
                         }
-                        if (api is JSComponent) {
-                            api.onLoad()
-                        }
+                        api.onLoad()
                         SparkCore.LOGGER.debug("客户端成功加载API模块: $apiId")
+                    } catch (e: Exception) {
+                        SparkCore.LOGGER.error("客户端JS脚本加载失败: $apiId", e)
+                        throw e  // 重新抛出异常以便上层处理
                     }
-                } catch (e: Exception) {
-                    SparkCore.LOGGER.error("客户端JS脚本加载失败: $apiId", e)
-                    throw e  // 重新抛出异常以便上层处理
                 }
             }
             
             SparkCore.LOGGER.info("客户端JS脚本加载完成")
-            
         } catch (e: Exception) {
             SparkCore.LOGGER.error("客户端JS脚本加载过程中发生错误", e)
         }

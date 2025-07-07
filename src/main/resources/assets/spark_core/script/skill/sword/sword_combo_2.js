@@ -11,7 +11,7 @@ Skill.create("spark_core:sword_combo_2", builder => {
 
         attackBody.onAttackCollide('attack', {
             doAttack: (attacker, target, o1, o2, manifoldId) => {
-                EntityHelper.commonAttack(entity, target)
+                entity.commonAttack(target)
             }
         })
 
@@ -26,7 +26,7 @@ Skill.create("spark_core:sword_combo_2", builder => {
         skill.onActive(() => {
             const animTime = anim.getTime()
             if (animTime >= 0.2 && animTime <= 0.3) {
-                EntityHelper.move(entity, SpMath.vec3(0.0, entity.getDeltaMovement().y, 0.5), false)
+                entity.move(SpMath.vec3(0.0, entity.getDeltaMovement().y, 0.5), false)
             }
 
             if (animTime >= 0.25 && animTime <= 0.4) {
