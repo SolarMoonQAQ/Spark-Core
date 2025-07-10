@@ -22,6 +22,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.HashMap;
 @Mod(SparkCore.MOD_ID)
 public class SparkCore {
 
@@ -29,7 +30,7 @@ public class SparkCore {
     public static final Logger LOGGER = LoggerFactory.getLogger("星火核心");
     public static final ObjectRegister REGISTER = new ObjectRegister(MOD_ID, true);
     public static final ObjectRegister MC_REGISTER = new ObjectRegister("minecraft", false);
-    public static final MolangParser PARSER = new MolangParser(null);
+    public static final MolangParser PARSER = new MolangParser(new HashMap<>(4));
 
     public SparkCore(IEventBus modEventBus, ModContainer modContainer) {
         REGISTER.register(modEventBus);

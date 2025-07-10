@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.molang.core;
 
 import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.event.MolangBindingRegisterEvent;
 import cn.solarmoon.spark_core.molang.core.binding.PrimaryBinding;
 import cn.solarmoon.spark_core.molang.core.value.DoubleValue;
 import cn.solarmoon.spark_core.molang.core.value.IValue;
@@ -8,6 +9,7 @@ import cn.solarmoon.spark_core.molang.core.value.MolangValue;
 import cn.solarmoon.spark_core.molang.engine.MolangEngine;
 import cn.solarmoon.spark_core.molang.engine.parser.ParseException;
 import cn.solarmoon.spark_core.molang.engine.runtime.binding.ObjectBinding;
+import net.neoforged.fml.ModLoader;
 
 import java.util.Map;
 
@@ -22,7 +24,11 @@ public class MolangParser {
     }
 
     public void init() {
-        primaryBinding = new PrimaryBinding(extraBindings);
+
+        var event = new MolangBindingRegisterEvent();
+        ModLoader.postEvent(event);
+        extraBindings.putAll(event.getBindings());
+        primaryBinding = new PrimaryBinding(event.getBindings());
         engine = MolangEngine.fromCustomBinding(primaryBinding);
     }
 
