@@ -28,6 +28,14 @@ import kotlin.io.path.readText
 @AutoRegisterHandler
 class MetaHandler : ResourceHandlerBase() {
 
+    companion object {
+        init {
+            cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService.registerHandler {
+                MetaHandler()
+            }
+        }
+    }
+
     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
 
     override fun getSupportedExtensions(): Set<String> = setOf(OModuleInfo.DESCRIPTOR_FILE_NAME, "spark")

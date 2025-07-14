@@ -66,7 +66,9 @@ public class SparkCore {
         // 注册配置
         SparkConfig.register(modContainer);
         PhysicsHelperKt.initBullet();
+
         // 注册资源系统
         SparkResourceRegister.register(modEventBus);
+        // JavaScript脚本初始化现在由DynamicJavaScriptHandler的initializeDefaultResources()处理
     }
 }

@@ -26,11 +26,19 @@ import kotlin.io.path.readText
 class IKConstraintHandler(
     private val ikComponentRegistry: DynamicAwareRegistry<TypedIKComponent>
 ) : ResourceHandlerBase() {
-    
+
+    companion object {
+        init {
+            cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService.registerHandler {
+                IKConstraintHandler(cn.solarmoon.spark_core.registry.common.SparkRegistries.IK_COMPONENT_TYPE)
+            }
+        }
+    }
+
     private val resourceType = "ik_constraints"
     private val supportedExtensions = setOf("json")
     private var processedCount = 0
-    
+
     init {
         SparkCore.LOGGER.info("IKConstraintHandler 初始化完成")
         // 注意：移除对DependencyGraph的注册，使用MetadataManager进行依赖管理
