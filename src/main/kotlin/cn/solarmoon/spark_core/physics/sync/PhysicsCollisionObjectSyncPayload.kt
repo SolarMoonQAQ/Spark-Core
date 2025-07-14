@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.host.getBody
-import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
+import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
@@ -128,10 +128,10 @@ class PhysicsCollisionObjectSyncPayload(
                             this.setEnableSleep(false) // 'this' refers to PhysicsRigidBody (body)
                             // Ensure host is an Entity for the callback
                             val entity = host as? Entity ?: run {
-                                SparkCore.LOGGER.error("PhysicsCollisionObjectSyncPayload: host cannot be cast to Entity for CustomnpcCollisionCallback.")
+                                SparkCore.LOGGER.error("PhysicsCollisionObjectSyncPayload: host cannot be cast to Entity for SparkCollisionCallback.")
                                 return@bindBody // or handle error appropriately
                             }
-                            this.addCollisionCallback(CustomnpcCollisionCallback(
+                            this.addCollisionCallback(SparkCollisionCallback(
                                 owner = entity,
                                 cbName = body.name,
                                 collisionBoxId = body.name

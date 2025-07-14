@@ -5,10 +5,12 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OModel
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.client.gui.browser.WebBrowserWidget
 import cn.solarmoon.spark_core.client.gui.screen.ModelEditorScreen.Axis.*
 import cn.solarmoon.spark_core.client.gui.widget.ModelTreeViewWidget
@@ -17,7 +19,9 @@ import cn.solarmoon.spark_core.physics.level.PhysicsWorld
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.registry.client.SparkKeyMappings
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder.buildAnimationPathFromModel
 import cn.solarmoon.spark_core.rpc.RpcClient
+import cn.solarmoon.spark_core.util.MultiModuleResourceExtractionUtil.normalizeResourceName
 import com.cinemamod.mcef.MCEF
 import com.google.gson.GsonBuilder
 import com.jme3.bullet.collision.PhysicsRayTestResult
@@ -55,7 +59,8 @@ import kotlin.math.sin
 import kotlin.math.tan
 import com.jme3.math.Vector3f as JMEVector3f
 
-class ModelEditorScreen(private val modelLocation: ResourceLocation, private val textureLocation: ResourceLocation) : Screen(Component.translatable("spark_core.screen.model_editor.title")) {
+class ModelEditorScreen(private val modelLocation: ResourceLocation, private val textureLocation: ResourceLocation) :
+    Screen(Component.translatable("${SparkCore.MOD_ID}.screen.model_editor.title")) {
 
     // --- Main Camera Control State (used by CameraMixin) ---
     var cameraDistance: Float = 5.0f
@@ -99,6 +104,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
     // --- Axis Selection and Manipulation ---
     private enum class Axis { X, Y, Z }
+
     private var selectedAxis: Axis? = null
     private var axisWorldCoordinates: Vector3f? = null
     private var axisDebugOffset: Vector3f? = null // For visualization during dragging
@@ -119,8 +125,8 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     private var ikTargetAxisSelected: Axis? = null // 选中的IK目标坐标轴
 
     // --- Model Selection List Widget (Inner class remains the same) ---
-    private inner class ModelSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int)
-        : ObjectSelectionList<ModelSelectionList.Entry>(minecraft, width, height, y, itemHeight) {
+    private inner class ModelSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int) :
+        ObjectSelectionList<ModelSelectionList.Entry>(minecraft, width, height, y, itemHeight) {
 
         init {
             // Populate the list
@@ -129,7 +135,8 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             }
         }
 
-        override fun getRowWidth(): Int = this.width - (if (this.maxScroll > 0) 18 else 12) // Adjust width for scrollbar
+        override fun getRowWidth(): Int =
+            this.width - (if (this.maxScroll > 0) 18 else 12) // Adjust width for scrollbar
 
         override fun getScrollbarPosition(): Int = this.getX() + this.width - 6
 
@@ -137,7 +144,18 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             private var lastClickTime: Long = 0
             private var lastClickLocation: ResourceLocation? = null
 
-            override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, isHovering: Boolean, partialTick: Float) {
+            override fun render(
+                guiGraphics: GuiGraphics,
+                index: Int,
+                top: Int,
+                left: Int,
+                width: Int,
+                height: Int,
+                mouseX: Int,
+                mouseY: Int,
+                isHovering: Boolean,
+                partialTick: Float
+            ) {
                 // Display the path part of the resource location
                 val displayText = location.path
                 val font = this@ModelEditorScreen.font
@@ -166,8 +184,8 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     }
 
     // --- IK Chain Selection List Widget ---
-    private inner class IKChainSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int)
-        : ObjectSelectionList<IKChainSelectionList.Entry>(minecraft, width, height, y, itemHeight) {
+    private inner class IKChainSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int) :
+        ObjectSelectionList<IKChainSelectionList.Entry>(minecraft, width, height, y, itemHeight) {
 
         fun updateIKChains(chains: Map<String, IKComponent>) {
             this.clearEntries() // 清除先前的条目
@@ -183,7 +201,18 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         override fun getScrollbarPosition(): Int = this.x + this.width - 6
 
         inner class Entry(val chainName: String, val component: IKComponent) : ObjectSelectionList.Entry<Entry>() {
-            override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, isHovering: Boolean, partialTick: Float) {
+            override fun render(
+                guiGraphics: GuiGraphics,
+                index: Int,
+                top: Int,
+                left: Int,
+                width: Int,
+                height: Int,
+                mouseX: Int,
+                mouseY: Int,
+                isHovering: Boolean,
+                partialTick: Float
+            ) {
                 val font = this@ModelEditorScreen.font
                 val color = if (chainName == selectedIKChain) 0xFFFF00 else 0xFFFFFF // 选中项显示为黄色
                 guiGraphics.drawString(font, chainName, left + 2, top + (height - font.lineHeight) / 2, color)
@@ -208,8 +237,8 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     }
 
     // --- Animation Selection List Widget --- M
-    private inner class AnimationSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int)
-        : ObjectSelectionList<AnimationSelectionList.Entry>(minecraft, width, height, y, itemHeight) {
+    private inner class AnimationSelectionList(minecraft: Minecraft, width: Int, height: Int, y: Int, itemHeight: Int) :
+        ObjectSelectionList<AnimationSelectionList.Entry>(minecraft, width, height, y, itemHeight) {
 
         fun updateAnimations(animationNames: List<String>) {
             this.clearEntries() // Clear previous animations
@@ -225,7 +254,18 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         override fun getScrollbarPosition(): Int = this.x + this.width - 6
 
         inner class Entry(val animationName: String) : ObjectSelectionList.Entry<Entry>() {
-            override fun render(guiGraphics: GuiGraphics, index: Int, top: Int, left: Int, width: Int, height: Int, mouseX: Int, mouseY: Int, isHovering: Boolean, partialTick: Float) {
+            override fun render(
+                guiGraphics: GuiGraphics,
+                index: Int,
+                top: Int,
+                left: Int,
+                width: Int,
+                height: Int,
+                mouseX: Int,
+                mouseY: Int,
+                isHovering: Boolean,
+                partialTick: Float
+            ) {
                 val font = this@ModelEditorScreen.font
                 guiGraphics.drawString(font, animationName, left + 2, top + (height - font.lineHeight) / 2, 0xFFFFFF)
             }
@@ -258,7 +298,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // --- 1. Get Player as IAnimatable ---
         val player = minecraft.player
         if (player == null) {
-             minecraft.gui.chat.addMessage(Component.literal("Error: Player not available!"))
+            minecraft.gui.chat.addMessage(Component.literal("Error: Player not available!"))
             this.onClose()
             return
         }
@@ -299,11 +339,11 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         val sidebarWidth = 100
 
-        val modelListY =topMargin + padding + availableHeight/2
-        val modelListHeight = (availableHeight-padding)/2
+        val modelListY = topMargin + padding + availableHeight / 2
+        val modelListHeight = (availableHeight - padding) / 2
 
         val animListY = topMargin
-        val animListHeight = (availableHeight - padding)/2 // Let animation list take full height on left
+        val animListHeight = (availableHeight - padding) / 2 // Let animation list take full height on left
 
 
         // --- Add Undo/Redo/Save/IK Buttons ---
@@ -347,17 +387,20 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         // --- 8. Initialize Model Selection List ---
         // Placed below TreeView on the right sidebaranimListHeight
-        modelSelectionList = ModelSelectionList(minecraft, sidebarWidth, modelListHeight, modelListY, font.lineHeight + 3)
+        modelSelectionList =
+            ModelSelectionList(minecraft, sidebarWidth, modelListHeight, modelListY, font.lineHeight + 3)
         this.addRenderableWidget(modelSelectionList)
 
         // --- 8.5 Initialize Animation Selection List --- M
         // Place Animation List on the left side
-        animationSelectionList = AnimationSelectionList(minecraft, sidebarWidth, animListHeight, animListY, font.lineHeight + 3)
+        animationSelectionList =
+            AnimationSelectionList(minecraft, sidebarWidth, animListHeight, animListY, font.lineHeight + 3)
         this.addRenderableWidget(animationSelectionList)
 
         // --- Initialize IK Chain Selection List ---
         // 初始化IK链选择列表，默认不显示
-        ikChainSelectionList = IKChainSelectionList(minecraft, sidebarWidth, animListHeight, animListY, font.lineHeight + 3)
+        ikChainSelectionList =
+            IKChainSelectionList(minecraft, sidebarWidth, animListHeight, animListY, font.lineHeight + 3)
         ikChainSelectionList.visible = false // 默认不显示
         this.addRenderableWidget(ikChainSelectionList)
 
@@ -390,10 +433,8 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         this.addRenderableWidget(treeView)
 
         // Populate initial animations and try auto-play
-        // --- Fetch Initial Animation Set --- M
-        val initialAnimSetKey = getAnimationSetKey(modelLocation)
-        val initialAnimSet = OAnimationSet.ORIGINS[initialAnimSetKey] ?: OAnimationSet.EMPTY
-        updateAndPlayIdleAnimation(animatable, initialAnimSet) // Pass the specific set
+        // --- Fetch All Animations for Initial Model --- M
+        updateAndPlayIdleAnimationForModel(animatable, modelLocation)
 
         // --- 9. Initialize Camera State ---
         // Initial camera state is now set in the properties directly
@@ -405,7 +446,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // --- Add Web Browser Widget ---
         if (MCEF.isInitialized()) {
             val browserWidgetHeight = 70
-            val browserWidgetWidth = this.width - sidebarWidth*2
+            val browserWidgetWidth = this.width - sidebarWidth * 2
             val browserWidgetX = sidebarWidth
             val browserWidgetY = buttonY - browserWidgetHeight - 5
 
@@ -441,7 +482,8 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         super.render(guiGraphics, mouseX, mouseY, partialTick)
         // --- 4. Draw Overlay Text ---
         val titleColor = if (ikModeEnabled) 0xFFFF00 else 0xFFFFFF // IK模式下标题显示为黄色
-        val titleText = if (ikModeEnabled) "Editing: ${modelLocation.path} (IK Mode)" else "Editing: ${modelLocation.path}"
+        val titleText =
+            if (ikModeEnabled) "Editing: ${modelLocation.path} (IK Mode)" else "Editing: ${modelLocation.path}"
         guiGraphics.drawString(this.font, titleText, 10, 5, titleColor)
 
         // 显示IK模式信息
@@ -466,14 +508,17 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
             // 格式化坐标显示，保留两位小数
             val formatCoord = { value: Float -> String.format("%.2f", value) }
-            val worldPosStr = "(${formatCoord(axisWorldCoordinates!!.x)}, ${formatCoord(axisWorldCoordinates!!.y)}, ${formatCoord(axisWorldCoordinates!!.z)})"
+            val worldPosStr = "(${formatCoord(axisWorldCoordinates!!.x)}, ${formatCoord(axisWorldCoordinates!!.y)}, ${
+                formatCoord(axisWorldCoordinates!!.z)
+            })"
 
             // 如果有偏移，显示当前位置
             var displayText = "$axisName Axis Origin: $worldPosStr"
 
             if (axisDebugOffset != null && (axisDebugOffset!!.x != 0f || axisDebugOffset!!.y != 0f || axisDebugOffset!!.z != 0f)) {
                 val currentPos = Vector3f(axisWorldCoordinates).add(axisDebugOffset)
-                val currentPosStr = "(${formatCoord(currentPos.x)}, ${formatCoord(currentPos.y)}, ${formatCoord(currentPos.z)})"
+                val currentPosStr =
+                    "(${formatCoord(currentPos.x)}, ${formatCoord(currentPos.y)}, ${formatCoord(currentPos.z)})"
                 displayText += "\nCurrent Pos: $currentPosStr"
 
                 // 在IK模式下显示额外信息
@@ -493,7 +538,17 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     }
 
     // --- Helper to draw screen lines (May still be useful if Gizmo draws on UI layer) ---
-    private fun drawScreenLine(matrix: Matrix4f, normalMatrix: Matrix3f, buffer: VertexConsumer, start: Vector3f, end: Vector3f, r: Float, g: Float, b: Float, a: Float) {
+    private fun drawScreenLine(
+        matrix: Matrix4f,
+        normalMatrix: Matrix3f,
+        buffer: VertexConsumer,
+        start: Vector3f,
+        end: Vector3f,
+        r: Float,
+        g: Float,
+        b: Float,
+        a: Float
+    ) {
         // ... (implementation remains the same for now)
         val normal = Vector3f(0f, 0f, 1f) // Simple Z normal for UI lines
         buffer.addVertex(matrix, start.x, start.y, start.z).setColor(r, g, b, a).setNormal(normal.x, normal.y, normal.z)
@@ -504,34 +559,34 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     // --- Camera Control ---
     override fun mouseDragged(mouseX: Double, mouseY: Double, button: Int, dragX: Double, dragY: Double): Boolean {
         // Check if dragging TreeView first
-         if (treeView.isMouseOver(mouseX, mouseY)) {
-             if (treeView.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
-                    return true
+        if (treeView.isMouseOver(mouseX, mouseY)) {
+            if (treeView.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+                return true
             }
-            if (treeView.isMouseOver(dragStartX, dragStartY)){
+            if (treeView.isMouseOver(dragStartX, dragStartY)) {
                 return true
             }
         }
-         // Check if dragging ModelSelectionList
-         if (modelSelectionList.isMouseOver(mouseX, mouseY)) {
-             if (modelSelectionList.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
-                  return true
-             }
-             if (modelSelectionList.isMouseOver(dragStartX, dragStartY)){
-                 return true
-             }
-         }
-         // Check if dragging AnimationSelectionList
+        // Check if dragging ModelSelectionList
+        if (modelSelectionList.isMouseOver(mouseX, mouseY)) {
+            if (modelSelectionList.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+                return true
+            }
+            if (modelSelectionList.isMouseOver(dragStartX, dragStartY)) {
+                return true
+            }
+        }
+        // Check if dragging AnimationSelectionList
         if (animationSelectionList.isMouseOver(mouseX, mouseY)) {
-             if (animationSelectionList.mouseDragged(mouseX, mouseY, button, dragX, dragY)){
-                 return true
-             }
-             if (animationSelectionList.isMouseOver(dragStartX, dragStartY)){
-                 return true
-             }
+            if (animationSelectionList.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+                return true
+            }
+            if (animationSelectionList.isMouseOver(dragStartX, dragStartY)) {
+                return true
+            }
         }
         if (webBrowserWidget.isMouseOver(mouseX, mouseY)) {
-            if (webBrowserWidget.isMouseOver(dragStartX, dragStartY)){
+            if (webBrowserWidget.isMouseOver(dragStartX, dragStartY)) {
                 return true
             }
         }
@@ -656,17 +711,17 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             return
         }
 
-        // 2. Infer textureLocation (same logic)
+        // 2. Infer textureLocation using SparkResourcePathBuilder
         val newTextureLocation = try {
-            // ... (texture inference logic remains the same)
-            val modelPath = newModelLocation.path
-            val texturePath = when {
-                modelPath.startsWith("geo/model/") -> modelPath.replaceFirst("geo/model/", "textures/entity/")
-                else -> "textures/entity/$modelPath" // Assume root model path maps to textures/entity/
-            }
-
-            val texturePathPng = if (texturePath.endsWith(".png")) texturePath else "$texturePath.png"
-            ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, texturePathPng)
+            // 从模型路径推断贴图路径：modId:modId/module/models/entity -> modId:module/textures/entity/entity
+            val pathParts = newModelLocation.path.split("/")
+            val moduleName = pathParts[0]
+            val entityName = pathParts.drop(2).joinToString("/")
+            SparkResourcePathBuilder.buildTexturePath(
+                newModelLocation.namespace,
+                moduleName,
+                "entity/$entityName"
+            )
         } catch (e: Exception) {
             SparkCore.LOGGER.error("Failed to infer texture location for model $newModelLocation", e)
             this.textureLocation // Fallback to original texture
@@ -712,11 +767,9 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // cameraYaw = 0.0f
 
         // 9. Update animations list and auto-play idle M
-        // --- Fetch Correct Animation Set on Switch --- M
+        // --- Fetch All Animations for New Model --- M
         if (animatable != null) {
-            val newAnimSetKey = getAnimationSetKey(newModelLocation)
-            val newAnimSet = OAnimationSet.ORIGINS[newAnimSetKey] ?: OAnimationSet.EMPTY
-             updateAndPlayIdleAnimation(animatable, newAnimSet) // Pass the specific set
+            updateAndPlayIdleAnimationForModel(animatable, newModelLocation)
         }
         SparkCore.LOGGER.debug("Model switched successfully.")
     }
@@ -761,20 +814,20 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val camera = minecraft.gameRenderer.mainCamera
 
         try {
-            val mc     = Minecraft.getInstance()
+            val mc = Minecraft.getInstance()
             val camera = mc.gameRenderer.mainCamera
 
             // ==== 用 Screen 的宽高 而不是 Window 的帧缓冲分辨率 ====
-            val width  = this.width .toFloat()
+            val width = this.width.toFloat()
             val height = this.height.toFloat()
 
             // 1. 真实 FOV 和宽高比
-            val fovY   = Math.toRadians(mc.options.fov().get().toDouble()).toFloat()
+            val fovY = Math.toRadians(mc.options.fov().get().toDouble()).toFloat()
             val aspect = width / height
-            val fovX   = 2f * atan(tan(fovY / 2f) * aspect)
+            val fovX = 2f * atan(tan(fovY / 2f) * aspect)
 
             // 2. NDC 坐标 [-1,1]
-            val ndcX = (2f * screenX.toFloat() / width  - 1f)
+            val ndcX = (2f * screenX.toFloat() / width - 1f)
             val ndcY = (1f - 2f * screenY.toFloat() / height)
 
             // 3. 本地偏移
@@ -782,19 +835,19 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             val offsetY = ndcY * tan(fovY / 2f)
 
             // 4. world-space 基向量
-            val fwd   = Vector3f(camera.lookVector .x, camera.lookVector .y, camera.lookVector .z)
-            val up    = Vector3f(camera.upVector   .x, camera.upVector   .y, camera.upVector   .z)
+            val fwd = Vector3f(camera.lookVector.x, camera.lookVector.y, camera.lookVector.z)
+            val up = Vector3f(camera.upVector.x, camera.upVector.y, camera.upVector.z)
             val right = Vector3f(camera.leftVector.x, camera.leftVector.y, camera.leftVector.z)
                 .negate()
 
             // 5. 合成方向
             val dir = Vector3f(fwd)
                 .add(Vector3f(right).mul(offsetX))
-                .add(Vector3f(up   ).mul(offsetY))
+                .add(Vector3f(up).mul(offsetY))
                 .normalize()
 
             // 6. 射线原点 = 相机世界位置
-            val pos    = camera.position
+            val pos = camera.position
             val origin = Vector3f(pos.x.toFloat(), pos.y.toFloat(), pos.z.toFloat())
 
             return Pair(origin, dir)
@@ -825,17 +878,17 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         if (treeView.mouseClicked(mouseX, mouseY, button)) return true
         if (modelSelectionList.mouseClicked(mouseX, mouseY, button)) return true
 
-        if (ikModeEnabled){
+        if (ikModeEnabled) {
             if (ikChainSelectionList.mouseClicked(mouseX, mouseY, button)) return true
-        }else{
-            if (animationSelectionList.mouseClicked(mouseX, mouseY,button)) return true
+        } else {
+            if (animationSelectionList.mouseClicked(mouseX, mouseY, button)) return true
         }
 
         // 处理 WebBrowserWidget 的点击
         if (webBrowserWidget.mouseClicked(mouseX, mouseY, button)) {
-             treeView.isFocused = false
-             modelSelectionList.isFocused = false
-             animationSelectionList.isFocused = false
+            treeView.isFocused = false
+            modelSelectionList.isFocused = false
+            animationSelectionList.isFocused = false
             // 设置屏幕的焦点，确保后续键盘事件能路由到它
             this.focused = webBrowserWidget // 让 Screen 知道谁是焦点
             return true
@@ -892,9 +945,24 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 val targetZEnd = Vector3f(persistentIKTargetPosition).add(0f, 0f, targetAxisLength)
 
                 // 计算射线与各轴的最近距离
-                val (distToXAxis, xAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, persistentIKTargetPosition!!, targetXEnd)
-                val (distToYAxis, yAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, persistentIKTargetPosition!!, targetYEnd)
-                val (distToZAxis, zAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, persistentIKTargetPosition!!, targetZEnd)
+                val (distToXAxis, xAxisPoint) = rayDistanceToLineSegment(
+                    rayOrigin,
+                    rayDirection,
+                    persistentIKTargetPosition!!,
+                    targetXEnd
+                )
+                val (distToYAxis, yAxisPoint) = rayDistanceToLineSegment(
+                    rayOrigin,
+                    rayDirection,
+                    persistentIKTargetPosition!!,
+                    targetYEnd
+                )
+                val (distToZAxis, zAxisPoint) = rayDistanceToLineSegment(
+                    rayOrigin,
+                    rayDirection,
+                    persistentIKTargetPosition!!,
+                    targetZEnd
+                )
 
                 // 设置阈值，决定是否认为射线击中了坐标轴
                 val hitThreshold = 0.2f
@@ -935,7 +1003,11 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                     val rayToPointVec = Vector3f(closestPoint).sub(rayOrigin)
                     axisClickDistance = rayToPointVec.length()
 
-                    SparkCore.LOGGER.debug("Selected IK target axis: {}, World coordinates: {}", closestAxis, persistentIKTargetPosition)
+                    SparkCore.LOGGER.debug(
+                        "Selected IK target axis: {}, World coordinates: {}",
+                        closestAxis,
+                        persistentIKTargetPosition
+                    )
                     return true
                 }
             }
@@ -958,9 +1030,24 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
 
                 // 计算射线与各轴的最近距离
-                val (distToXAxis, xAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, pivotWorldPos, gizmoXEndWorld)
-                val (distToYAxis, yAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, pivotWorldPos, gizmoYEndWorld)
-                val (distToZAxis, zAxisPoint) = rayDistanceToLineSegment(rayOrigin, rayDirection, pivotWorldPos, gizmoZEndWorld)
+                val (distToXAxis, xAxisPoint) = rayDistanceToLineSegment(
+                    rayOrigin,
+                    rayDirection,
+                    pivotWorldPos,
+                    gizmoXEndWorld
+                )
+                val (distToYAxis, yAxisPoint) = rayDistanceToLineSegment(
+                    rayOrigin,
+                    rayDirection,
+                    pivotWorldPos,
+                    gizmoYEndWorld
+                )
+                val (distToZAxis, zAxisPoint) = rayDistanceToLineSegment(
+                    rayOrigin,
+                    rayDirection,
+                    pivotWorldPos,
+                    gizmoZEndWorld
+                )
 
                 // 设置阈值，决定是否认为射线击中了坐标轴
                 val hitThreshold = 0.2f // 可以根据需要调整
@@ -1065,7 +1152,8 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         try {
             // 1. Construct the target file path
-            val basePath = "F:/Work/code/test/Spark-Core/build/resources/main/data/" // TODO: Make path relative or configurable?
+            val basePath =
+                "F:/Work/code/test/Spark-Core/build/resources/main/data/" // TODO: Make path relative or configurable?
             val namespace = modelLocation.namespace
             val path = modelLocation.path // e.g., "geo/model/my_model" or just "my_model"
             // Ensure the path includes the necessary subdirectory if not already present
@@ -1320,7 +1408,8 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val partialTick = event.partialTick.getGameTimeDeltaPartialTick(true)
 
         // --- Calculate Gizmo Position (Always based on the primary selected bone's pivot) ---
-        val gizmoTargetBoneName = selectedBone?.name ?: selectedBoneName // Use selectedBone directly if available, else inferred name
+        val gizmoTargetBoneName =
+            selectedBone?.name ?: selectedBoneName // Use selectedBone directly if available, else inferred name
         val pivotWorldPos = animatable.getWorldBonePivot(gizmoTargetBoneName ?: "") // Gizmo needs a bone pivot
 
         // --- Calculate Highlight Box Vertices (Recursively if a bone is selected) --- M
@@ -1462,15 +1551,42 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 // 绘制坐标轴，如果轴被选中则使用更亮的颜色
                 // X轴 - 红色
                 val xAxisColor = if (selectedAxis == X) Triple(1f, 0.8f, 0.8f) else Triple(1f, 0.2f, 0.2f)
-                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, gizmoPos, gizmoXEndWorld, xAxisColor.first, xAxisColor.second, xAxisColor.third, gizmoAlpha)
+                drawWorldLineWithOffset(
+                    worldPoseMatrix,
+                    gizmoBuffer,
+                    gizmoPos,
+                    gizmoXEndWorld,
+                    xAxisColor.first,
+                    xAxisColor.second,
+                    xAxisColor.third,
+                    gizmoAlpha
+                )
 
                 // Y轴 - 绿色
                 val yAxisColor = if (selectedAxis == Y) Triple(0.8f, 1f, 0.8f) else Triple(0.2f, 1f, 0.2f)
-                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, gizmoPos, gizmoYEndWorld, yAxisColor.first, yAxisColor.second, yAxisColor.third, gizmoAlpha)
+                drawWorldLineWithOffset(
+                    worldPoseMatrix,
+                    gizmoBuffer,
+                    gizmoPos,
+                    gizmoYEndWorld,
+                    yAxisColor.first,
+                    yAxisColor.second,
+                    yAxisColor.third,
+                    gizmoAlpha
+                )
 
                 // Z轴 - 蓝色
                 val zAxisColor = if (selectedAxis == Z) Triple(0.8f, 0.8f, 1f) else Triple(0.2f, 0.2f, 1f)
-                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, gizmoPos, gizmoZEndWorld, zAxisColor.first, zAxisColor.second, zAxisColor.third, gizmoAlpha)
+                drawWorldLineWithOffset(
+                    worldPoseMatrix,
+                    gizmoBuffer,
+                    gizmoPos,
+                    gizmoZEndWorld,
+                    zAxisColor.first,
+                    zAxisColor.second,
+                    zAxisColor.third,
+                    gizmoAlpha
+                )
             }
 
             // 如果有选中的轴和偏移量，绘制偏移后的位置
@@ -1482,8 +1598,10 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 drawDebugPoint(worldPoseMatrix, gizmoBuffer, offsetPos, 0.05f, 1f, 1f, 0f, 1f) // 黄色标记
 
                 // 绘制从原始位置到偏移位置的虚线
-                drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer,
-                    axisWorldCoordinates!!, offsetPos, 1f, 1f, 0f, 0.5f) // 半透明黄色虚线
+                drawWorldLineWithOffset(
+                    worldPoseMatrix, gizmoBuffer,
+                    axisWorldCoordinates!!, offsetPos, 1f, 1f, 0f, 0.5f
+                ) // 半透明黄色虚线
 
                 // 在偏移位置绘制坐标轴
                 val offsetAxisLength = 0.2f // 偏移位置的坐标轴长度更短
@@ -1501,7 +1619,16 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 // 绘制持久化的IK目标位置
                 if (persistentIKTargetPosition != null) {
                     // 绘制IK目标位置标记（紫色）
-                    drawDebugPoint(worldPoseMatrix, gizmoBuffer, persistentIKTargetPosition!!, 0.07f, 0.8f, 0.2f, 1f, 1f) // 紫色标记
+                    drawDebugPoint(
+                        worldPoseMatrix,
+                        gizmoBuffer,
+                        persistentIKTargetPosition!!,
+                        0.07f,
+                        0.8f,
+                        0.2f,
+                        1f,
+                        1f
+                    ) // 紫色标记
 
                     // 在IK目标位置绘制坐标轴
                     val targetAxisLength = 0.25f
@@ -1510,13 +1637,53 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                     val targetZEnd = Vector3f(persistentIKTargetPosition).add(0f, 0f, targetAxisLength)
 
                     // 如果正在编辑IK目标坐标轴，使用更亮的颜色
-                    val xAxisColor = if (editingIKTarget && ikTargetAxisSelected == X) Triple(1f, 0.5f, 1f) else Triple(1f, 0.3f, 0.8f)
-                    val yAxisColor = if (editingIKTarget && ikTargetAxisSelected == Y) Triple(0.5f, 1f, 1f) else Triple(0.3f, 1f, 0.8f)
-                    val zAxisColor = if (editingIKTarget && ikTargetAxisSelected == Z) Triple(0.5f, 0.5f, 1f) else Triple(0.3f, 0.3f, 1f)
+                    val xAxisColor = if (editingIKTarget && ikTargetAxisSelected == X) Triple(1f, 0.5f, 1f) else Triple(
+                        1f,
+                        0.3f,
+                        0.8f
+                    )
+                    val yAxisColor = if (editingIKTarget && ikTargetAxisSelected == Y) Triple(0.5f, 1f, 1f) else Triple(
+                        0.3f,
+                        1f,
+                        0.8f
+                    )
+                    val zAxisColor =
+                        if (editingIKTarget && ikTargetAxisSelected == Z) Triple(0.5f, 0.5f, 1f) else Triple(
+                            0.3f,
+                            0.3f,
+                            1f
+                        )
 
-                    drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, persistentIKTargetPosition!!, targetXEnd, xAxisColor.first, xAxisColor.second, xAxisColor.third, gizmoAlpha) // X轴
-                    drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, persistentIKTargetPosition!!, targetYEnd, yAxisColor.first, yAxisColor.second, yAxisColor.third, gizmoAlpha) // Y轴
-                    drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer, persistentIKTargetPosition!!, targetZEnd, zAxisColor.first, zAxisColor.second, zAxisColor.third, gizmoAlpha) // Z轴
+                    drawWorldLineWithOffset(
+                        worldPoseMatrix,
+                        gizmoBuffer,
+                        persistentIKTargetPosition!!,
+                        targetXEnd,
+                        xAxisColor.first,
+                        xAxisColor.second,
+                        xAxisColor.third,
+                        gizmoAlpha
+                    ) // X轴
+                    drawWorldLineWithOffset(
+                        worldPoseMatrix,
+                        gizmoBuffer,
+                        persistentIKTargetPosition!!,
+                        targetYEnd,
+                        yAxisColor.first,
+                        yAxisColor.second,
+                        yAxisColor.third,
+                        gizmoAlpha
+                    ) // Y轴
+                    drawWorldLineWithOffset(
+                        worldPoseMatrix,
+                        gizmoBuffer,
+                        persistentIKTargetPosition!!,
+                        targetZEnd,
+                        zAxisColor.first,
+                        zAxisColor.second,
+                        zAxisColor.third,
+                        gizmoAlpha
+                    ) // Z轴
 
                     // 添加“IK目标”文本标记
                     val targetTextPos = Vector3f(persistentIKTargetPosition).add(0f, 0.3f, 0f)
@@ -1526,12 +1693,23 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 // 绘制持久化的末端执行器实际位置
                 if (persistentEndEffectorPosition != null) {
                     // 绘制末端执行器实际位置标记（青色）
-                    drawDebugPoint(worldPoseMatrix, gizmoBuffer, persistentEndEffectorPosition!!, 0.07f, 0.2f, 0.8f, 1f, 1f) // 青色标记
+                    drawDebugPoint(
+                        worldPoseMatrix,
+                        gizmoBuffer,
+                        persistentEndEffectorPosition!!,
+                        0.07f,
+                        0.2f,
+                        0.8f,
+                        1f,
+                        1f
+                    ) // 青色标记
 
                     // 如果同时有IK目标位置，绘制从末端执行器到IK目标的连线
                     if (persistentIKTargetPosition != null) {
-                        drawWorldLineWithOffset(worldPoseMatrix, gizmoBuffer,
-                            persistentEndEffectorPosition!!, persistentIKTargetPosition!!, 0.5f, 0.5f, 1f, 0.7f) // 半透明蓝紫色连线
+                        drawWorldLineWithOffset(
+                            worldPoseMatrix, gizmoBuffer,
+                            persistentEndEffectorPosition!!, persistentIKTargetPosition!!, 0.5f, 0.5f, 1f, 0.7f
+                        ) // 半透明蓝紫色连线
                     }
 
                     // 添加“实际位置”文本标记
@@ -1580,7 +1758,11 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     }
 
     //  递归收集cube顶点
-    private fun collectDescendantCubeVertices(bone: OBone, animatable: IAnimatable<*>, partialTick: Float): List<List<Vector3f>> {
+    private fun collectDescendantCubeVertices(
+        bone: OBone,
+        animatable: IAnimatable<*>,
+        partialTick: Float
+    ): List<List<Vector3f>> {
         val results = mutableListOf<List<Vector3f>>()
         val boneWorldMatrix = animatable.getWorldBoneMatrix(bone.name, partialTick) // Stop if bone matrix fails
 
@@ -1610,13 +1792,31 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
     }
 
     // --- Helper to draw lines in WORLD space ---
-    private fun drawWorldLine(poseMatrix: Matrix4f, buffer: VertexConsumer, start: Vector3f, end: Vector3f, r: Float, g: Float, b: Float, a: Float) {
+    private fun drawWorldLine(
+        poseMatrix: Matrix4f,
+        buffer: VertexConsumer,
+        start: Vector3f,
+        end: Vector3f,
+        r: Float,
+        g: Float,
+        b: Float,
+        a: Float
+    ) {
         buffer.addVertex(poseMatrix, start.x, start.y, start.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
         buffer.addVertex(poseMatrix, end.x, end.y, end.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
     }
 
     // --- 当两个面或线在同一深度时，会出现闪烁 ---
-    private fun drawWorldLineWithOffset(poseMatrix: Matrix4f, buffer: VertexConsumer, start: Vector3f, end: Vector3f, r: Float, g: Float, b: Float, a: Float) {
+    private fun drawWorldLineWithOffset(
+        poseMatrix: Matrix4f,
+        buffer: VertexConsumer,
+        start: Vector3f,
+        end: Vector3f,
+        r: Float,
+        g: Float,
+        b: Float,
+        a: Float
+    ) {
         // 计算朝向摄像机的微小偏移向量
         val minecraft = Minecraft.getInstance()
         val cameraPos = minecraft.gameRenderer.mainCamera.position
@@ -1640,12 +1840,22 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // 应用偏移绘制
         val startOffset = Vector3f(start).add(offsetDir)
         val endOffset = Vector3f(end).add(offsetDir)
-        buffer.addVertex(poseMatrix, startOffset.x, startOffset.y, startOffset.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, startOffset.x, startOffset.y, startOffset.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
         buffer.addVertex(poseMatrix, endOffset.x, endOffset.y, endOffset.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
     }
 
     // --- Helper to draw a debug point (small octahedron) ---
-    private fun drawDebugPoint(poseMatrix: Matrix4f, buffer: VertexConsumer, position: Vector3f, size: Float, r: Float, g: Float, b: Float, a: Float) {
+    private fun drawDebugPoint(
+        poseMatrix: Matrix4f,
+        buffer: VertexConsumer,
+        position: Vector3f,
+        size: Float,
+        r: Float,
+        g: Float,
+        b: Float,
+        a: Float
+    ) {
         val halfSize = size / 2f
 
         // 绘制八面体的八个三角形
@@ -1653,85 +1863,133 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         // 上半部分
         // 第一个三角形
-        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
         // 第二个三角形
-        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
         // 第三个三角形
-        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
         // 第四个三角形
-        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y + halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
         // 下半部分
         // 第五个三角形
-        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
         // 第六个三角形
-        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z + halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
         // 第七个三角形
-        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x - halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
         // 第八个三角形
-        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x + halfSize, position.y, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
 
-        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
-        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a).setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y, position.z - halfSize).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
+        buffer.addVertex(poseMatrix, position.x, position.y - halfSize, position.z).setColor(r, g, b, a)
+            .setNormal(0f, 1f, 0f)
     }
 
     // --- IK Mode Handling ---
@@ -1833,14 +2091,16 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         SparkCore.LOGGER.debug("Selected IK chain: {}, bones: {}", chainName, selectedIKBones.map { it.name })
     }
 
-    // --- Animation Handling --- M
-    private fun updateAndPlayIdleAnimation(animatable: IAnimatable<*>, animationSet: OAnimationSet) {
-        // Fetch animation names from the provided OAnimationSet M
-        currentAnimations = animationSet.animations.keys.toList()
+    // --- Animation Handling for Model Switch --- M
+    private fun updateAndPlayIdleAnimationForModel(animatable: IAnimatable<*>, targetModelLocation: ResourceLocation) {
+        // 收集目标模型的所有相关动画
+        currentAnimations = collectAllAnimationsForModel(targetModelLocation)
         animationSelectionList.updateAnimations(currentAnimations)
 
         // Reset scroll for the animation list
         animationSelectionList.resetScroll()
+
+        SparkCore.LOGGER.debug("Updated animation list for model $targetModelLocation: ${currentAnimations.size} animations found")
 
         // Find and play idle animation
         val idleAnim = currentAnimations.firstOrNull { it.contains("idle", ignoreCase = true) }
@@ -1848,28 +2108,33 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             playAnimation(idleAnim) // Use the common play function
         } else if (currentAnimations.isNotEmpty()) {
             // Maybe play the first animation as a fallback? Or stop?
-             playAnimation(currentAnimations[0]) // Play first if no idle found
+            playAnimation(currentAnimations[0]) // Play first if no idle found
 //            animatable.stopAllAnimations() // Or stop animations
         } else {
             // No animations found, stop any current ones
-             animatable.stopAllAnimations()
+            animatable.stopAllAnimations()
         }
     }
 
     private fun playAnimation(animationName: String) {
         val player = Minecraft.getInstance().player ?: return
         val animatable = player as? IAnimatable<*> ?: return
-        // Using playAnimationLoop, adjust if single play is needed
+
         try {
-            val animInstance = AnimInstance.create(animatable, animationName)
-            // Use a short transition time (e.g., 0 ticks) or adjust as needed
-            animatable.animController.setAnimation(animInstance, 0)
+            // 需要找到包含这个动画的正确动画集合
+            val animIndex = findAnimationIndex(animationName)
+            if (animIndex != null) {
+                val animInstance = AnimInstance.create(animatable, animIndex)
+                animatable.animController.setAnimation(animInstance, 0)
+                SparkCore.LOGGER.debug("Successfully playing animation: $animationName from ${animIndex.index}")
+            } else {
+                SparkCore.LOGGER.error("Could not find animation index for: $animationName")
+                minecraft?.gui?.chat?.addMessage(Component.literal("Animation not found: $animationName"))
+            }
         } catch (e: Exception) {
-            // Catch potential errors if animation name is invalid (though list should be valid)
             SparkCore.LOGGER.error("Failed to play animation '$animationName'", e)
             minecraft?.gui?.chat?.addMessage(Component.literal("Error playing animation: ${e.message}"))
         }
-        SparkCore.LOGGER.debug("Playing animation: $animationName")
     }
 
     // --- Screen Lifecycle Methods ---
@@ -1917,18 +2182,58 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
         super.onClose()
     }
-}
 
-private fun distSqr(x1: Float, y1: Float, x2: Float, y2: Float): Float {
-    val dx = x1 - x2
-    val dy = y1 - y2
-    return dx * dx + dy * dy
-}
+    // --- Helper to collect all animations for a model --- M
+    private fun collectAllAnimationsForModel(modelLocation: ResourceLocation): List<String> {
+        val allAnimations = mutableListOf<String>()
+        val pathParts = modelLocation.path.split("/")
+        if (pathParts.size >= 3 && pathParts[1] == "models") {
+            val moduleName = pathParts[0]
+            val entityName = pathParts.last()
 
+            // 遍历所有已注册的动画集合，找到匹配的
+            OAnimationSet.ORIGINS.forEach { (key, animSet) ->
+                if (key.namespace == modelLocation.namespace &&
+                    key.path.startsWith("$moduleName/animations/$entityName/")
+                ) {
+                    animSet.animations.forEach { (name, anim) ->
+                        allAnimations.add(name)
+                    }
+                    SparkCore.LOGGER.debug("Found animation set: $key with ${animSet.animations.size} animations")
+                }
+            }
+        }
+        SparkCore.LOGGER.debug(
+            "Collected {} animations for model {}: {}",
+            allAnimations.size,
+            modelLocation,
+            allAnimations
+        )
+        return allAnimations.distinct()
+    }
+
+
+    // --- Helper to find the correct AnimIndex for an animation name --- M
+    private fun findAnimationIndex(animationName: String): AnimIndex? {
+        val animation = SparkRegistries.TYPED_ANIMATION.get(ResourceLocation.parse(buildAnimationPathFromModel(modelLocation).toString() + "/" + normalizeResourceName(animationName)))
+        return if (animation != null) {
+            animation.index
+        } else {
+            SparkCore.LOGGER.warn("Could not find animation '$animationName' for model '${modelLocation.path}'")
+            null
+        }
+    }
+
+}
 /**
  * 计算射线到线段的最短距离，并返回最近点
  */
-private fun rayDistanceToLineSegment(rayOrigin: Vector3f, rayDirection: Vector3f, lineStart: Vector3f, lineEnd: Vector3f): Pair<Float, Vector3f> {
+private fun rayDistanceToLineSegment(
+    rayOrigin: Vector3f,
+    rayDirection: Vector3f,
+    lineStart: Vector3f,
+    lineEnd: Vector3f
+): Pair<Float, Vector3f> {
     // 线段向量
     val lineVec = Vector3f(lineEnd).sub(lineStart)
 
@@ -1970,13 +2275,6 @@ private fun rayDistanceToLineSegment(rayOrigin: Vector3f, rayDirection: Vector3f
     }
 }
 
-// --- Helper to get Animation Set Key from Model Location --- M
-private fun getAnimationSetKey(modelLocation: ResourceLocation): ResourceLocation {
-    // Mimics EntityAnimListener logic: namespace + path part before first slash
-    val pathRoot = modelLocation.path.substringBefore('/')
-    SparkCore.LOGGER.debug(pathRoot)
-    return ResourceLocation.withDefaultNamespace(pathRoot)
-}
 
 // --- IAnimatable Extension Placeholder --- M
 // Assuming IAnimatable has methods like these based on JS extensions
@@ -1991,7 +2289,15 @@ fun IAnimatable<*>.stopAllAnimations() {
 }
 
 // --- Helper to draw text in 3D world space ---
-private fun drawWorldText(poseMatrix: Matrix4f, text: String, position: Vector3f, r: Float, g: Float, b: Float, a: Float) {
+private fun drawWorldText(
+    poseMatrix: Matrix4f,
+    text: String,
+    position: Vector3f,
+    r: Float,
+    g: Float,
+    b: Float,
+    a: Float
+) {
     val minecraft = Minecraft.getInstance()
     val camera = minecraft.gameRenderer.mainCamera
 
@@ -2028,8 +2334,20 @@ private fun drawWorldText(poseMatrix: Matrix4f, text: String, position: Vector3f
     // 绘制文本
     val font = minecraft.font
     val textWidth = font.width(text)
-    val color = ((a * 255).toInt() shl 24) or ((r * 255).toInt() shl 16) or ((g * 255).toInt() shl 8) or (b * 255).toInt()
-    font.drawInBatch(text, -textWidth / 2f, 0f, color, false, matrixStack.last().pose(), bufferSource, Font.DisplayMode.NORMAL, 0, 15728880)
+    val color =
+        ((a * 255).toInt() shl 24) or ((r * 255).toInt() shl 16) or ((g * 255).toInt() shl 8) or (b * 255).toInt()
+    font.drawInBatch(
+        text,
+        -textWidth / 2f,
+        0f,
+        color,
+        false,
+        matrixStack.last().pose(),
+        bufferSource,
+        Font.DisplayMode.NORMAL,
+        0,
+        15728880
+    )
 
     // 结束批处理
     bufferSource.endBatch()

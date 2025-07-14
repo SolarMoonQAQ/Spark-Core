@@ -13,7 +13,7 @@ class BlendAnimation(
         if (data.weight <= 0) throw IllegalArgumentException("混合权重不可为0及以下的值")
     }
 
-    val id get() = anim.index.locationName
+    val id get() = anim.animIndex.locationName
     
     private var targetWeight = data.weight
     private var startWeight = 0.0

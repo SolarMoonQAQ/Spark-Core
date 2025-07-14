@@ -14,9 +14,10 @@ import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
 import cn.solarmoon.spark_core.physics.presets.PresetBodyApplier
 import cn.solarmoon.spark_core.preinput.PreInputApplier
-import cn.solarmoon.spark_core.skill.SkillApplier
-import net.neoforged.neoforge.common.NeoForge
 
+import cn.solarmoon.spark_core.skill.SkillApplier
+
+import net.neoforged.neoforge.common.NeoForge
 object SparkCommonEventRegister {
 
     @JvmStatic
@@ -41,5 +42,4 @@ object SparkCommonEventRegister {
     private fun add(event: Any) {
         NeoForge.EVENT_BUS.register(event)
     }
-
 }

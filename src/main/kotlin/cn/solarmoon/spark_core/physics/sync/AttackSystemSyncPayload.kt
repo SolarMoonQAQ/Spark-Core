@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.physics.sync
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
-import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
+import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import com.jme3.bullet.objects.PhysicsRigidBody
@@ -125,17 +125,18 @@ data class AttackSystemSyncPayload(
 
                 val body = host.getBody(payload.collisionBoxId, PhysicsRigidBody::class)
                 if (body == null) {
-                    SparkCore.LOGGER.warn("Client: No PhysicsRigidBody found for id ${payload.collisionBoxId} on entity ${(host as? Entity)?.id}")
+                    // TODO: 修复该问题
+                    // SparkCore.LOGGER.warn("Client: No PhysicsRigidBody found for id ${payload.collisionBoxId} on entity ${(host as? Entity)?.id}")
                     return@enqueueWork
                 }
 
                 val callbacks: List<CollisionCallback>? = body.collisionListeners
                 val foundCallback = callbacks?.find { callback: CollisionCallback -> 
-                    (callback as? CustomnpcCollisionCallback)?.cbName == payload.cbName
-                } as? CustomnpcCollisionCallback
+                    (callback as? SparkCollisionCallback)?.cbName == payload.cbName
+                } as? SparkCollisionCallback
                 
                 if (foundCallback == null) {
-                    SparkCore.LOGGER.warn("Client: No CustomnpcCollisionCallback found with name ${payload.collisionBoxId} for collisionBoxId on entity ${(host as? Entity)?.id}, available callbacks: ${callbacks?.joinToString { (it as? Any)?.javaClass?.simpleName ?: "unknown_type" }}")
+                    SparkCore.LOGGER.warn("Client: No SparkCollisionCallback found with name ${payload.collisionBoxId} for collisionBoxId on entity ${(host as? Entity)?.id}, available callbacks: ${callbacks?.joinToString { (it as? Any)?.javaClass?.simpleName ?: "unknown_type" }}")
                     return@enqueueWork
                 }
 
@@ -146,17 +147,17 @@ data class AttackSystemSyncPayload(
                 attackSystem.resetAfterTicks = payload.resetAfterTicks
                 attackSystem.internalSetAttackedEntities(payload.attackedEntities)
 
-                val hostEntityId = (host as? Entity)?.id ?: "unknown_host_type"
+//                val hostEntityId = (host as? Entity)?.id ?: "unknown_host_type"
 
-                SparkCore.LOGGER.debug(
-                    "Client AttackSystem for cbId '{}' on entity '{}': Synced. attacked={}, ignoreInvulnerable={}, ticksSinceReset={}, resetAfterTicks={}",
-                    payload.collisionBoxId, 
-                    hostEntityId,
-                    payload.attackedEntities,
-                    payload.ignoreInvulnerableTime,
-                    payload.ticksSinceLastReset,
-                    payload.resetAfterTicks
-                )
+//                SparkCore.LOGGER.debug(
+//                    "Client AttackSystem for cbId '{}' on entity '{}': Synced. attacked={}, ignoreInvulnerable={}, ticksSinceReset={}, resetAfterTicks={}",
+//                    payload.collisionBoxId,
+//                    hostEntityId,
+//                    payload.attackedEntities,
+//                    payload.ignoreInvulnerableTime,
+//                    payload.ticksSinceLastReset,
+//                    payload.resetAfterTicks
+//                )
 
             }.exceptionally { e ->
                 SparkCore.LOGGER.error("Error handling AttackSystemSyncPayload on client", e)

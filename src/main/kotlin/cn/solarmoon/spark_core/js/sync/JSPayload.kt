@@ -7,7 +7,9 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.js.ClientSparkJS
 import cn.solarmoon.spark_core.js.JSApi
+import cn.solarmoon.spark_core.js.ServerSparkJS
 import cn.solarmoon.spark_core.js.SparkJS
+import cn.solarmoon.spark_core.js.origin.OJSScript
 import net.minecraft.client.Minecraft
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
@@ -37,7 +39,14 @@ class JSPayload(
                 v.forEach {
                     api.onReload()
                     val (fileName, value) = it
-                    js.eval(value, "$apiId - $fileName")
+                    val scriptLocation = ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "sync_script/${apiId}/${fileName}")
+                    val script = OJSScript(
+                        apiId = apiId,
+                        fileName = fileName,
+                        content = value,
+                        location = scriptLocation
+                    )
+                    js.executeScript(script)
                     api.valueCache[fileName] = value
                     context.player().sendSystemMessage(Component.literal("已从服务器接收脚本数据：模块：$apiId 文件：$fileName"))
                 }

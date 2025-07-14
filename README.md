@@ -12,3 +12,4 @@
 
 - [KStateMachine](https://github.com/KStateMachine/kstatemachine)
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lujunjiehhh/Spark-Core-HotReload)

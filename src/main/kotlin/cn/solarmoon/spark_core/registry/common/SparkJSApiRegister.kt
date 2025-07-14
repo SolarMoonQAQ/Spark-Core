@@ -1,11 +1,14 @@
 package cn.solarmoon.spark_core.registry.common
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.SparkJSComponentRegisterEvent
 import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.extension.*
 import cn.solarmoon.spark_core.js.ik.JSIKApi
 import cn.solarmoon.spark_core.js.skill.JSSkillApi
+import cn.solarmoon.spark_core.js.resource.JSResourcePathApi
+import cn.solarmoon.spark_core.js.extension.JSResourcePath
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.neoforge.common.NeoForge
@@ -19,6 +22,7 @@ object SparkJSApiRegister {
     private fun reg(event: SparkJSRegisterEvent) {
         event.register(JSSkillApi)
         event.register(JSIKApi)  // 修复：添加JSIKApi的注册
+        event.register(JSResourcePathApi)  // 添加资源路径API
     }
 
     private fun regCom(event: SparkJSComponentRegisterEvent) {
@@ -30,6 +34,7 @@ object SparkJSApiRegister {
         event.registerComponent("PhysicsHelper", JSPhysicsHelper)
         event.registerComponent("Logger", JSLogger)
         event.registerComponent("Ik", JSIKApi)
+        event.registerComponent("ResourcePath", JSResourcePath)  // 添加资源路径组件
     }
 
     @JvmStatic

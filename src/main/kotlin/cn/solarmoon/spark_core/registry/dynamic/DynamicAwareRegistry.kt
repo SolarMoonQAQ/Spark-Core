@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.tags.TagKey
 import net.minecraft.util.RandomSource
+import net.neoforged.fml.loading.FMLEnvironment
 import net.neoforged.neoforge.registries.callback.RegistryCallback
 import net.neoforged.neoforge.registries.datamaps.DataMapType
 import java.util.*
@@ -53,6 +54,10 @@ class DynamicAwareRegistry<T: Any>(
     private val dynamicKeyToId = ConcurrentHashMap<ResourceLocation, Int>()
     private val dynamicIdToKey = ConcurrentHashMap<Int, ResourceLocation>()
     private val dynamicValueToKey = ConcurrentHashMap<T, ResourceLocation>()
+    
+    // 模块相关映射
+    private val moduleToResources = ConcurrentHashMap<String, MutableSet<ResourceLocation>>()
+    private val resourceToModule = ConcurrentHashMap<ResourceLocation, String>()
     // staticLookup 应该总是可以从 staticRegistry 获取，因为 Registry 接口定义了 createRegistrationLookup
     val staticLookup: HolderGetter<T>?
 
@@ -77,7 +82,7 @@ class DynamicAwareRegistry<T: Any>(
         return maxId
     }
 
-    fun registerDynamic(key: ResourceLocation, value: T, replace: Boolean = true): T {
+    fun registerDynamic(key: ResourceLocation, value: T, moduleId: String, replace: Boolean = true, triggerCallback: Boolean = true): T {
         lock.writeLock().lock()
         try {
             if (!replace){
@@ -100,6 +105,19 @@ class DynamicAwareRegistry<T: Any>(
             dynamicKeyToId[key] = id
             dynamicIdToKey[id] = key
             dynamicValueToKey[value] = key
+
+            // 记录模块映射
+            resourceToModule[key] = moduleId
+            moduleToResources.computeIfAbsent(moduleId) { ConcurrentHashMap.newKeySet() }.add(key)
+
+            // 只在需要时触发动态注册回调，避免客户端触发服务端回调
+            if (triggerCallback) {
+                val resourceKey = ResourceKey.create(this.key(), key)
+                onDynamicRegister?.invoke(resourceKey, value)
+            }
+
+            SparkCore.LOGGER.debug("Dynamically registered entry: {} with id {} from module {}", key, id, moduleId)
+
             return value
         } finally {
             lock.writeLock().unlock()
@@ -125,6 +143,7 @@ class DynamicAwareRegistry<T: Any>(
 
                 val holder = Holder.Reference.createStandAlone(this.dynamicOwner, key)
                 holder.value = value
+                
                 SparkCore.LOGGER.debug("Dynamically registered entry: {} with id {}", location, id)
                 onDynamicRegister?.invoke(key, value) // Invoke callback
                 return holder
@@ -170,10 +189,18 @@ class DynamicAwareRegistry<T: Any>(
             }
             dynamicValueToKey.remove(existingValue) // Remove by value
 
+            // 清理模块映射
+            val moduleId = resourceToModule.remove(key)
+            if (moduleId != null) {
+                moduleToResources[moduleId]?.remove(key)
+                if (moduleToResources[moduleId]?.isEmpty() == true) {
+                    moduleToResources.remove(moduleId)
+                }
+            }
             // Construct ResourceKey for the callback
             val resourceKey = ResourceKey.create(this.key(), key)
             onDynamicUnregister?.invoke(resourceKey, existingValue) // Invoke callback
-            SparkCore.LOGGER.debug("Dynamically unregistered entry: {}", key)
+            SparkCore.LOGGER.debug("Dynamically unregistered entry: {} ", key, )
             return true
         } finally {
             lock.writeLock().unlock()
@@ -200,6 +227,8 @@ class DynamicAwareRegistry<T: Any>(
             dynamicKeyToId.clear()
             dynamicIdToKey.clear()
             dynamicValueToKey.clear()
+            moduleToResources.clear()
+            resourceToModule.clear()
         } finally {
             lock.writeLock().unlock()
         }
@@ -246,6 +275,63 @@ class DynamicAwareRegistry<T: Any>(
      */
     fun isDynamic(key: ResourceKey<T>): Boolean {
         return isDynamic(key.location())
+    }
+    
+    /**
+     * 通过模块ID注销所有相关资源
+     */
+    fun unregisterByModule(moduleId: String): Set<ResourceLocation> {
+        lock.writeLock().lock()
+        try {
+            val resources = moduleToResources[moduleId] ?: return emptySet()
+            val removedKeys = mutableSetOf<ResourceLocation>()
+            
+            for (resourceKey in resources.toSet()) {
+                if (unregisterDynamic(resourceKey)) {
+                    removedKeys.add(resourceKey)
+                }
+            }
+            
+            return removedKeys
+        } finally {
+            lock.writeLock().unlock()
+        }
+    }
+    
+    /**
+     * 获取指定模块的所有资源
+     */
+    fun getResourcesByModule(moduleId: String): Set<ResourceLocation> {
+        lock.readLock().lock()
+        try {
+            return moduleToResources[moduleId]?.toSet() ?: emptySet()
+        } finally {
+            lock.readLock().unlock()
+        }
+    }
+    
+    /**
+     * 获取资源所属的模块ID
+     */
+    fun getModuleByResource(resourceKey: ResourceLocation): String? {
+        lock.readLock().lock()
+        try {
+            return resourceToModule[resourceKey]
+        } finally {
+            lock.readLock().unlock()
+        }
+    }
+    
+    /**
+     * 获取所有模块到资源的映射
+     */
+    fun getModuleResourceMapping(): Map<String, Set<ResourceLocation>> {
+        lock.readLock().lock()
+        try {
+            return moduleToResources.mapValues { it.value.toSet() }
+        } finally {
+            lock.readLock().unlock()
+        }
     }
 
     // 以下是 Registry<T> 接口的实现

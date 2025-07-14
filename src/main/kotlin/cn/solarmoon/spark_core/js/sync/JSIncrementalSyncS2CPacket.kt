@@ -11,6 +11,7 @@ import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 data class JSIncrementalSyncS2CPacket(
+    val modId: String,
     val apiId: String,           // JS API模块ID (如 "skill", "ik")
     val fileName: String,        // 脚本文件名 (如 "example.js")
     val operationType: ChangeType,
@@ -27,6 +28,7 @@ data class JSIncrementalSyncS2CPacket(
         @JvmField
         val STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, JSIncrementalSyncS2CPacket> {
             override fun encode(buf: FriendlyByteBuf, packet: JSIncrementalSyncS2CPacket) {
+                buf.writeUtf(packet.modId)
                 buf.writeUtf(packet.apiId)
                 buf.writeUtf(packet.fileName)
                 buf.writeEnum(packet.operationType)
@@ -34,19 +36,21 @@ data class JSIncrementalSyncS2CPacket(
             }
 
             override fun decode(buf: FriendlyByteBuf): JSIncrementalSyncS2CPacket {
+                val modId = buf.readUtf()
                 val apiId = buf.readUtf()
                 val fileName = buf.readUtf()
                 val operationType = buf.readEnum(ChangeType::class.java)
                 val scriptContent = buf.readUtf()
-                return JSIncrementalSyncS2CPacket(apiId, fileName, operationType, scriptContent)
+                return JSIncrementalSyncS2CPacket(modId, apiId, fileName, operationType, scriptContent)
             }
         }
 
         /**
          * 创建脚本添加/更新同步包
          */
-        fun createForScriptAddOrUpdate(apiId: String, fileName: String, scriptContent: String, isUpdate: Boolean = false): JSIncrementalSyncS2CPacket {
+        fun createForScriptAddOrUpdate(modId: String, apiId: String, fileName: String, scriptContent: String, isUpdate: Boolean = false): JSIncrementalSyncS2CPacket {
             return JSIncrementalSyncS2CPacket(
+                modId,
                 apiId,
                 fileName,
                 if (isUpdate) ChangeType.MODIFIED else ChangeType.ADDED,
@@ -57,8 +61,9 @@ data class JSIncrementalSyncS2CPacket(
         /**
          * 创建脚本删除同步包
          */
-        fun createForScriptRemove(apiId: String, fileName: String): JSIncrementalSyncS2CPacket {
+        fun createForScriptRemove(modId: String, apiId: String, fileName: String): JSIncrementalSyncS2CPacket {
             return JSIncrementalSyncS2CPacket(
+                modId,
                 apiId,
                 fileName,
                 ChangeType.REMOVED,
@@ -69,8 +74,8 @@ data class JSIncrementalSyncS2CPacket(
         /**
          * 同步脚本删除到所有客户端
          */
-        fun syncScriptRemovalToClients(apiId: String, fileName: String) {
-            val packet = createForScriptRemove(apiId, fileName)
+        fun syncScriptRemovalToClients(modId: String, apiId: String, fileName: String) {
+            val packet = createForScriptRemove(modId, apiId, fileName)
             PacketDistributor.sendToAllPlayers(packet)
             SparkCore.LOGGER.info("Sent JS script REMOVAL sync packet for $apiId/$fileName to all clients")
         }
@@ -78,8 +83,8 @@ data class JSIncrementalSyncS2CPacket(
         /**
          * 同步脚本添加/更新到所有客户端
          */
-        fun syncScriptToClients(apiId: String, fileName: String, scriptContent: String, isUpdate: Boolean = false) {
-            val packet = createForScriptAddOrUpdate(apiId, fileName, scriptContent, isUpdate)
+        fun syncScriptToClients(modId: String, apiId: String, fileName: String, scriptContent: String, isUpdate: Boolean = false) {
+            val packet = createForScriptAddOrUpdate(modId, apiId, fileName, scriptContent, isUpdate)
             PacketDistributor.sendToAllPlayers(packet)
             val operation = if (isUpdate) "MODIFIED" else "ADDED"
             SparkCore.LOGGER.info("Sent JS script $operation sync packet for $apiId/$fileName to all clients")
@@ -109,6 +114,7 @@ data class JSIncrementalSyncS2CPacket(
             }
 
             val api = JSApi.Companion.ALL[packet.apiId]!!
+            val modId = packet.modId
             val player = context.player()
             val js = player.level().jsEngine
             val registry = cn.solarmoon.spark_core.registry.common.SparkRegistries.JS_SCRIPTS
@@ -125,7 +131,7 @@ data class JSIncrementalSyncS2CPacket(
 
                     // 更新客户端动态注册表
                     try {
-                        registry.registerDynamic(location, ojsScript)
+                        registry.registerDynamic(location, ojsScript, modId)
                     } catch (e: Exception) {
                         SparkCore.LOGGER.debug("更新客户端注册表失败: {}", e.message)
                     }

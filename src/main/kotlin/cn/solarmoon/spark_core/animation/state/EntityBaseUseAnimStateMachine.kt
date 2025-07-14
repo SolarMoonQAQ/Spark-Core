@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceLocation
@@ -71,7 +72,15 @@ class EntityBaseUseAnimStateMachine(
             val data = s.payload
             if (data !is AnimPlayDataProvider) return@onStateEntry
             SparkCore.LOGGER.info(animName)
-            SparkRegistries.TYPED_ANIMATION.get(ResourceLocation.parse("$entityLocation/${animName}"))?.let {
+            // 使用SparkResourcePathBuilder构建四层格式的动画路径
+            val basePath = SparkResourcePathBuilder.buildAnimationPathFromEntityAuto(entity.type)
+            val animationPath = SparkResourcePathBuilder.buildAnimationPath(
+                basePath.namespace,
+                basePath.path.split("/")[0], // moduleName
+                basePath.path.split("/").drop(2).joinToString("/"), // entityPath
+                animName
+            )
+            SparkRegistries.TYPED_ANIMATION.get(animationPath)?.let {
                 val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, it, this, data))
                 if (event.isCanceled) return@let
                 val anim = event.newAnim ?: event.originAnim

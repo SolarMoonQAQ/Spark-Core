@@ -29,7 +29,7 @@ interface JSEntity {
         if (entity.level().isClientSide) return
         if (target is LivingEntity) {
             if (entity is Player) {
-                println("attack on currentAttackPhase $currentAttackPhase")
+                SparkCore.LOGGER.info("attack on currentAttackPhase $currentAttackPhase")
                 entity.attack(target)
             } else if (entity is LivingEntity) {
                 entity.doHurtTarget(target)

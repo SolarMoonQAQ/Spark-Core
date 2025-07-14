@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.sync
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.model.origin.OModel
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.StreamCodec
@@ -12,7 +13,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 
 data class ModelDataPayload(
     val models: LinkedHashMap<ResourceLocation, OModel>,
-    val animationSets: LinkedHashMap<ResourceLocation, OAnimationSet>
 ) : CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -23,15 +23,20 @@ data class ModelDataPayload(
         @JvmStatic
         fun handleInClient(payload: ModelDataPayload, context: IPayloadContext) {
             context.enqueueWork {
+                // 清理旧数据
                 OModel.ORIGINS.clear()
-                OAnimationSet.ORIGINS.clear()
+                // 获取动态注册表
+                val dynamicRegistry = SparkRegistries.MODELS
+                // 更新静态缓存并注册到动态注册表
                 payload.models.forEach { id, model ->
                     OModel.ORIGINS[id] = model
+                    // 客户端避免触发回调循环
+                    val moduleId = id.namespace // 从ResourceLocation提取模块ID
+                    dynamicRegistry.registerDynamic(id, model, moduleId, replace = true, triggerCallback = false)
+                    SparkCore.LOGGER.debug("全量同步：已注册模型到动态注册表: {}", id)
                 }
-                payload.animationSets.forEach { id, anim ->
-                    OAnimationSet.ORIGINS[id] = anim
-                }
-                SparkCore.LOGGER.info("已从服务器接收所有模型动画数据")
+
+                SparkCore.LOGGER.info("已从服务器接收所有 {} 个模型并注册到动态注册表", payload.models.size)
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受模型和动画数据"))
                 return@exceptionally null
@@ -46,7 +51,6 @@ data class ModelDataPayload(
         @JvmStatic
         val STREAM_CODEC: StreamCodec<FriendlyByteBuf, ModelDataPayload> = StreamCodec.composite(
             OModel.ORIGIN_MAP_STREAM_CODEC, ModelDataPayload::models,
-            OAnimationSet.ORIGIN_MAP_STREAM_CODEC, ModelDataPayload::animationSets,
             ::ModelDataPayload
         )
     }

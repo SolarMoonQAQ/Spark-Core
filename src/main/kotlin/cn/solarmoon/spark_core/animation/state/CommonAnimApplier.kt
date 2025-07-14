@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
-import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
+import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.initWithAnimatedBone
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import com.jme3.bullet.collision.PhysicsCollisionObject
@@ -89,7 +89,7 @@ object CommonAnimApplier {
                 this.isKinematic = true
                 this.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
                 this.addPhysicsTicker(MoveWithAnimatedBoneTicker(bone.name))
-                this.addCollisionCallback(CustomnpcCollisionCallback(
+                this.addCollisionCallback(SparkCollisionCallback(
                     owner = entityHost,
                     cbName = body.name,
                     collisionBoxId = body.name

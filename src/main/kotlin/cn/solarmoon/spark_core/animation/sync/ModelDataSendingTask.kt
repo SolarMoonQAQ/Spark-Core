@@ -15,7 +15,7 @@ import java.util.function.Consumer
 class ModelDataSendingTask(): ICustomConfigurationTask {
 
     override fun run(sender: Consumer<CustomPacketPayload?>) {
-        val modelData = ModelDataPayload(OModel.ORIGINS, OAnimationSet.ORIGINS)
+        val modelData = ModelDataPayload(OModel.ORIGINS)
         sender.accept(modelData)
     }
 

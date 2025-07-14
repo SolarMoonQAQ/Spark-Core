@@ -36,6 +36,7 @@ object SparkConfig {
      *
      * @param container 模组容器
      */
+    @JvmStatic
     fun register(container: ModContainer) {
         container.registerConfig(ModConfig.Type.COMMON, COMMON_SPEC)
         container.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC)
@@ -46,17 +47,31 @@ object SparkConfig {
      * 通用配置类
      */
     class CommonConfig(builder: ModConfigSpec.Builder) {
-        // JavaScript 引擎配置
-        val enableGraalVM: Supplier<Boolean>
+        // Web服务器配置
+        val enableWebServer: Supplier<Boolean>
+        val webServerPort: Supplier<Int>
+        val webServerCorsEnabled: Supplier<Boolean>
 
         init {
-            builder.comment("JavaScript 引擎配置")
-            builder.push("javascript")
 
-            enableGraalVM = builder
-                .comment("是否启用 GraalVM 功能，禁用后将无法使用 @HostAccess.Export 注解的功能")
-                .translation("config.spark_core.enable_graalvm")
-                .define("enableGraalVM", true)
+            // Web服务器配置
+            builder.comment("Web服务器配置")
+            builder.push("webserver")
+
+            enableWebServer = builder
+                .comment("是否启用web服务器，用于提供RESTful API接口进行调试和控制")
+                .translation("config.${SparkCore.MOD_ID}.enable_web_server")
+                .define("enableWebServer", false)
+
+            webServerPort = builder
+                .comment("web服务器监听端口")
+                .translation("config.${SparkCore.MOD_ID}.web_server_port")
+                .defineInRange("webServerPort", 8081, 1024, 65535)
+
+            webServerCorsEnabled = builder
+                .comment("是否启用CORS跨域支持，用于前端调试")
+                .translation("config.spark_core.web_server_cors_enabled")
+                .define("webServerCorsEnabled", true)
 
             builder.pop()
         }

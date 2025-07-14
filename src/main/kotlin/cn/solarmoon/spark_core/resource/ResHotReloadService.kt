@@ -1,7 +1,8 @@
 package cn.solarmoon.spark_core.resource
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.resource.handler.IDynamicResourceHandler
+import cn.solarmoon.spark_core.resource.common.IResourceHandler
+import cn.solarmoon.spark_core.resource.discovery.ResourceDiscoveryService
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor
 import org.apache.commons.io.monitor.FileAlterationMonitor
 import org.apache.commons.io.monitor.FileAlterationObserver
@@ -9,28 +10,90 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * 统一的资源热重载服务
+ * 重构后使用统一的ResourcePathResolver和IResourceHandler
+ */
 object ResHotReloadService {
 
-    private val POLL_INTERVAL_MS: Long = 1000 // 轮询间隔，例如1秒
+    private val POLL_INTERVAL_MS: Long = 1000 // 轮询间隔
     private val monitor = FileAlterationMonitor(POLL_INTERVAL_MS)
     private val isRunning = AtomicBoolean(false)
 
-    // 新增的公共属性，用于外部检查监控是否已启动
     val isMonitorActive: Boolean
         get() = isRunning.get()
 
-    private val directoryMonitors = ConcurrentHashMap<String, Pair<IDynamicResourceHandler, FileAlterationObserver>>()
+    private val directoryMonitors = ConcurrentHashMap<String, Pair<IResourceHandler, FileAlterationObserver>>()
 
-    fun registerDirectory(directoryId: String, handler: IDynamicResourceHandler) {
-        val runtimeDir = Paths.get(System.getProperty("user.dir"), "sparkcore", directoryId).toAbsolutePath()
+    fun registerDirectory(directoryId: String, handler: IResourceHandler) {
+        SparkCore.LOGGER.info("注册目录监控: $directoryId")
+
+        if (ResourceExtractionCompletionTracker.isExtractionComplete()) {
+            // 如果资源提取已完成，直接注册
+            registerDirectoryInternal(directoryId, handler)
+        } else {
+            // 否则等待资源提取完成事件
+            ResourceExtractionCompletionTracker.onExtractionComplete {
+                registerDirectoryInternal(directoryId, handler)
+            }
+        }
+    }
+    
+    private fun registerDirectoryInternal(directoryId: String, handler: IResourceHandler) {
+        SparkCore.LOGGER.info("开始实际注册目录监控: $directoryId")
+        
+        // 使用ResourceDiscoveryService获取所有命名空间的目录
+        val discoveredNamespaces = ResourceDiscoveryService.getDiscoveredNamespaces()
+        var registeredAny = false
+        
+        for ((namespace, namespaceInfo) in discoveredNamespaces.entries) {
+            if (directoryId in namespaceInfo.resourceTypes || 
+                namespaceInfo.type == ResourceDiscoveryService.ResourceSourceType.SPARK_PACKAGE) {
+                
+                val runtimeDir = when (namespaceInfo.type) {
+                    ResourceDiscoveryService.ResourceSourceType.LOOSE_FILES -> {
+                        // 四层结构：namespaceInfo.rootPath 已经指向 run/sparkcore/{modId}/{moduleName}/
+                        namespaceInfo.rootPath.resolve(directoryId)
+                    }
+                    ResourceDiscoveryService.ResourceSourceType.SPARK_PACKAGE -> {
+                        // 对于包文件，跳过直接文件监控，由ResourceDiscoveryService处理
+                        continue
+                    }
+                    ResourceDiscoveryService.ResourceSourceType.MOD_ASSETS -> {
+                        // 对于MOD_ASSETS，namespace格式为 modId:moduleName
+                        val (modId, moduleName) = if (namespace.contains(":")) {
+                            val parts = namespace.split(":", limit = 2)
+                            Pair(parts[0], parts[1])
+                        } else {
+                            // fallback：如果没有冒号，使用namespace作为modId和moduleName
+                            Pair(namespace, namespace)
+                        }
+                        namespaceInfo.rootPath.resolve("assets").resolve("sparkcore").resolve(moduleName).resolve(directoryId)
+                    }
+                    else -> {
+                        // 处理其他未知类型
+                        continue
+                    }
+                }.toAbsolutePath()
+                
+                registerSingleDirectory(runtimeDir, directoryId, handler, namespace)
+                registeredAny = true
+            }
+        }
+
+        if (!registeredAny) {
+            SparkCore.LOGGER.warn("未找到目录 {} (ID: {}) 的命名空间信息。", directoryId, directoryId)
+        }
+    }
+    
+    private fun registerSingleDirectory(runtimeDir: Path, directoryId: String, handler: IResourceHandler, namespace: String) {
         val runtimeDirFile = runtimeDir.toFile()
 
         if (!runtimeDirFile.exists()) {
-            SparkCore.LOGGER.warn("目录 {} (ID: {}) 不存在，正在尝试创建。", runtimeDir, directoryId)
+            SparkCore.LOGGER.warn("目录 {} (ID: {}, 命名空间: {}) 不存在，正在尝试创建。", runtimeDir, directoryId, namespace)
             try {
                 Files.createDirectories(runtimeDir)
                 SparkCore.LOGGER.info("已创建目录: {}", runtimeDir)
@@ -98,83 +161,59 @@ object ResHotReloadService {
         monitor.addObserver(observer)
         directoryMonitors[absolutePathStr] = Pair(handler, observer)
 
-        SparkCore.LOGGER.info("已为目录 {} (ID: {}) 添加监控，处理器: {}", runtimeDir, directoryId, handler::class.simpleName)
+        SparkCore.LOGGER.info("已为目录 {} (ID: {}, 命名空间: {}) 添加监控，处理器: {}", runtimeDir, directoryId, namespace, handler::class.simpleName)
 
         if (runtimeDirFile.exists() && runtimeDirFile.isDirectory) {
-            processExistingFilesInDirectory(runtimeDirFile, handler)
+            processExistingFilesInDirectory(runtimeDirFile, handler, directoryId)
         }
     }
 
-    private fun processExistingFilesInDirectory(directory: File, handler: IDynamicResourceHandler) {
-        SparkCore.LOGGER.info("开始处理目录中的现有文件: {} 对应处理器: {}", directory.absolutePath, handler.getResourceType())
+    private fun processExistingFilesInDirectory(directory: File, handler: IResourceHandler, directoryId: String) {
         try {
-            directory.walkTopDown().filter { it.isFile }.forEach { file ->
-                try {
-                    SparkCore.LOGGER.debug("正在处理现有文件: {}", file.absolutePath)
-                    handler.onResourceAdded(file.toPath())
-                } catch (e: Exception) {
-                    SparkCore.LOGGER.error("处理现有文件时发生错误 {} 使用处理器 {}: {}", file.absolutePath, handler.getResourceType(), e.message, e)
+            Files.walk(directory.toPath())
+                .filter { Files.isRegularFile(it) }
+                .filter { handler.canHandle(it) }
+                .forEach { filePath ->
+                    try {
+                        handler.onResourceAdded(filePath)
+                    } catch (e: Exception) {
+                        SparkCore.LOGGER.error("处理现有文件失败 {} for handler {}: {}", filePath, handler::class.simpleName, e.message, e)
+                    }
                 }
-            }
         } catch (e: Exception) {
-            SparkCore.LOGGER.error("遍历目录 {} 处理现有文件时出错: {}", directory.absolutePath, e.message, e)
+            SparkCore.LOGGER.error("扫描目录现有文件失败 {} for handler {}: {}", directory, handler::class.simpleName, e.message, e)
         }
-        SparkCore.LOGGER.info("完成目录中的现有文件处理: {} 对应处理器: {}", directory.absolutePath, handler.getResourceType())
     }
 
     fun start() {
-        if (directoryMonitors.isEmpty()) {
-            SparkCore.LOGGER.info("没有注册的目录，ResHotReloadService (Commons IO) 未启动。")
-            return
-        }
         if (isRunning.compareAndSet(false, true)) {
             try {
                 monitor.start()
-                SparkCore.LOGGER.info("ResHotReloadService (Commons IO) 已启动。")
+                SparkCore.LOGGER.info("文件监控服务已启动")
             } catch (e: Exception) {
                 isRunning.set(false)
-                SparkCore.LOGGER.error("启动 ResHotReloadService (Commons IO) 失败。", e)
+                SparkCore.LOGGER.error("启动文件监控服务失败: {}", e.message, e)
+                throw e
             }
         } else {
-            SparkCore.LOGGER.warn("ResHotReloadService (Commons IO) 已经运行中。")
+            SparkCore.LOGGER.warn("文件监控服务已经在运行")
         }
     }
 
     fun stop() {
         if (isRunning.compareAndSet(true, false)) {
             try {
-                monitor.stop(500) // 尝试在500ms内停止
-                directoryMonitors.values.forEach { monitor.removeObserver(it.second) }
-                directoryMonitors.clear()
-                SparkCore.LOGGER.info("ResHotReloadService (Commons IO) 已停止。")
+                monitor.stop()
+                SparkCore.LOGGER.info("文件监控服务已停止")
             } catch (e: Exception) {
-                SparkCore.LOGGER.error("停止 ResHotReloadService (Commons IO) 失败或超时。", e)
-                // 即使停止失败，也尝试清理
-                directoryMonitors.values.forEach { 
-                    try { monitor.removeObserver(it.second) } catch (re: Exception) { /* ignore */ }
-                }
-                directoryMonitors.clear()
+                SparkCore.LOGGER.error("停止文件监控服务失败: {}", e.message, e)
             }
         } else {
-            SparkCore.LOGGER.warn("ResHotReloadService (Commons IO) 未运行或已在停止过程中。")
+            SparkCore.LOGGER.warn("文件监控服务未在运行")
         }
     }
 
     fun unregisterDirectory(directoryId: String) {
-        val runtimeDir = Paths.get(System.getProperty("user.dir"), "sparkcore", directoryId).toAbsolutePath()
-        val absolutePathStr = runtimeDir.toFile().absolutePath
-
-        directoryMonitors.remove(absolutePathStr)?.let { pair ->
-            try {
-                monitor.removeObserver(pair.second)
-                SparkCore.LOGGER.info("已从 ResHotReloadService (Commons IO) 中取消监控目录: {}", runtimeDir)
-            } catch (e: Exception) {
-                 SparkCore.LOGGER.error("取消监控目录 {} 时出错: {}", runtimeDir, e.message, e)
-            }
-        }
-    }
-    
-    fun hasRegisteredDirectories(): Boolean {
-        return directoryMonitors.isNotEmpty()
+        // TODO
     }
 }

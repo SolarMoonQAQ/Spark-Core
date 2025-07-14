@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.physics.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
-import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
+import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import com.jme3.bullet.collision.PhysicsCollisionObject
@@ -18,16 +18,16 @@ import java.util.Optional
 import java.util.function.Function
 
 /**
- * Payload to synchronize the addition of a CustomnpcCollisionCallback to a PhysicsCollisionObject.
+ * Payload to synchronize the addition of a SparkCollisionCallback to a PhysicsCollisionObject.
  * Sent from server to client.
  */
 data class AddCollisionCallbackPayload(
     val hostSyncerType: SyncerType,
     val hostSyncData: SyncData,
     val pcoCollisionBoxId: String, // ID of the PhysicsCollisionObject
-    val callbackName: String,      // Name for the CustomnpcCollisionCallback instance
+    val callbackName: String,      // Name for the SparkCollisionCallback instance
     val callbackAutoReset: Boolean,
-    val callbackResetAfterTicks: Int? // Nullable, maps to resetTicks in CustomnpcCollisionCallback
+    val callbackResetAfterTicks: Int? // Nullable, maps to resetTicks in SparkCollisionCallback
 ) : CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = TYPE
@@ -102,13 +102,13 @@ data class AddCollisionCallbackPayload(
                 }
 
                 // Check if a callback with the same name already exists to prevent duplicates if necessary
-                val existingCallback = pco.collisionListeners?.find { (it as? CustomnpcCollisionCallback)?.cbName == payload.callbackName }
+                val existingCallback = pco.collisionListeners?.find { (it as? SparkCollisionCallback)?.cbName == payload.callbackName }
                 if (existingCallback != null) {
                     SparkCore.LOGGER.debug("AddCollisionCallback: Callback with name '${payload.callbackName}' already exists on PCO '${payload.pcoCollisionBoxId}' for host ${hostEntity.id}. Skipping addition.")
                     return@enqueueWork
                 }
 
-                val newCallback = CustomnpcCollisionCallback(
+                val newCallback = SparkCollisionCallback(
                     cbName = payload.callbackName,
                     owner = hostEntity, // The entity that owns the PCO
                     collisionBoxId = payload.pcoCollisionBoxId, // The ID of the PCO this callback is attached to
@@ -119,7 +119,7 @@ data class AddCollisionCallbackPayload(
                 pco.addCollisionCallback(newCallback)
 
                 SparkCore.LOGGER.debug(
-                    "Client: Added CustomnpcCollisionCallback '{}' to PCO '{}' on entity '{}'. AutoReset: {}, ResetTicks: {}",
+                    "Client: Added SparkCollisionCallback '{}' to PCO '{}' on entity '{}'. AutoReset: {}, ResetTicks: {}",
                     payload.callbackName,
                     payload.pcoCollisionBoxId,
                     hostEntity.id,

@@ -2,11 +2,11 @@ package cn.solarmoon.spark_core.animation.state
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.client.player.LocalPlayer
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.player.Player
 import net.neoforged.neoforge.common.NeoForge
 import ru.nsk.kstatemachine.event.Event
@@ -74,8 +74,8 @@ class PlayerBaseAnimStateMachine(
     private fun IState.playRelativeAnim(animName: String) {
         val data = payload
         if (data !is AnimPlayDataProvider) return
-        SparkCore.LOGGER.info(animName)
-        SparkRegistries.TYPED_ANIMATION.get(ResourceLocation.parse("minecraft:player/${animName}"))?.let {
+        val animationPath = SparkResourcePathBuilder.buildAnimationPath("spark_core", "spark_core", "player", animName)
+        SparkRegistries.TYPED_ANIMATION.get(animationPath)?.let {
             val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, this, data))
             if (event.isCanceled) return@let
             val anim = event.newAnim ?: event.originAnim
@@ -113,7 +113,7 @@ class PlayerBaseAnimStateMachine(
     fun checkPlayingOtherAnim(): Boolean {
         val controller = player.animController
         val animNow = controller.getPlayingAnim() ?: return false
-        return animNow.index.name.substringBefore(".") != "state"
+        return animNow.animIndex.name.substringBefore(".") != "state"
     }
 
     fun progress() {

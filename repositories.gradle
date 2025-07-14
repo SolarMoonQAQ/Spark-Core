@@ -3,7 +3,8 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}:slim"
     additionalRuntimeClasspath ('org.jetbrains.kotlin:kotlin-stdlib')
     additionalRuntimeClasspath ('org.jetbrains.kotlin:kotlin-reflect')
-    additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-coroutines-core')
+    // 明确指定与Ktor 2.3.4兼容的协程版本
+    additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3')
     additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-serialization-core')
     additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-serialization-json')
     // jei
@@ -25,6 +26,8 @@ dependencies {
     // 第一人称
     implementation "maven.modrinth:first-person-model:Sx5QD2SF"
 
+    jarJar(implementation('org.jgrapht:jgrapht-core:1.5.2'))
+    additionalRuntimeClasspath ('org.jgrapht:jgrapht-core:1.5.2')
     // 外部库------------------------------------------------------------------------------------------------------------
     // 状态机
     jarJar(implementation("io.github.nsk90:kstatemachine-jvm:0.33.0"))
@@ -32,6 +35,39 @@ dependencies {
     // js
     jarJar(implementation("org.mozilla:rhino:1.8.0"))
     additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
+    // ktor web server (使用最新版本3.2.1和CIO引擎，排除冲突依赖)
+    jarJar(implementation("io.ktor:ktor-server-core-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    })
+    jarJar(implementation("io.ktor:ktor-server-cio-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    })
+    jarJar(implementation("io.ktor:ktor-server-content-negotiation-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    })
+    jarJar(implementation("io.ktor:ktor-serialization-gson-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+        exclude group: 'com.google.code.gson', module: 'gson'
+    })
+    jarJar(implementation("io.ktor:ktor-server-cors-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    })
+    additionalRuntimeClasspath("io.ktor:ktor-server-core-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    additionalRuntimeClasspath("io.ktor:ktor-server-cio-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    additionalRuntimeClasspath("io.ktor:ktor-server-content-negotiation-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    additionalRuntimeClasspath("io.ktor:ktor-serialization-gson-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+    additionalRuntimeClasspath("io.ktor:ktor-server-cors-jvm:3.2.1") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
 
     // 本地库------------------------------------------------------------------------------------------------------------
     // 其它mod
@@ -40,8 +76,8 @@ dependencies {
     implementation("com.google.code.gson:gson:[2.10.1,2.11.0)")
     implementation 'commons-io:commons-io:2.11.0'
 
-    implementation files("compileOnly/mcef-neoforge-2.1.6-1.21.1.jar")
-    implementation files("compileOnly/CustomNPCs-Unofficial-NeoForge-1.21.1.20241226.jar")
+    compileOnly files("compileOnly/mcef-neoforge-2.1.6-1.21.1.jar")
+    compileOnly files("compileOnly/CustomNPCs-Unofficial-NeoForge-1.21.1.20241226.jar")
 
     files(fileTree(dir: 'libs', includes: ['*.jar']))
     additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])

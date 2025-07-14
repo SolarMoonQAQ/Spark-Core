@@ -25,7 +25,7 @@ abstract class SparkJS {
     }
 
     fun validateApi(api: String) {
-        if (!JSApi.ALL.contains(api)) throw NullPointerException("JS API $api 尚未注册！")
+        if (!JSApi.ALL.containsKey(api)) throw NullPointerException("JS API $api 尚未注册！")
     }
 
     fun validateApi(api: JSApi) = validateApi(api.id)
@@ -100,8 +100,9 @@ abstract class SparkJS {
 
     /**
      * 执行单个脚本，子类可以重写以实现线程安全
+     * 公共方法，可以从外部调用
      */
-    protected open fun executeScript(script: OJSScript) {
+    open fun executeScript(script: OJSScript) {
         eval(script.content, "${script.apiId} - ${script.fileName}")
     }
 

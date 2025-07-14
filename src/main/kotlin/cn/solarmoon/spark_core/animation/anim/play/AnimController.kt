@@ -37,7 +37,7 @@ class AnimController(
             if (valid.isNotEmpty()) {
                 anim.isCancelled = false
                 anim.cancel()
-                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：$valid,UUID为 ${(animatable.animatable as Entity).stringUUID}, 名称为 ${(animatable.animatable as Entity).name} 的entity的动画 ${anim.index} 无法播放")
+                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：$valid,UUID为 ${(animatable.animatable as Entity).stringUUID}, 名称为 ${(animatable.animatable as Entity).name} 的entity的动画 ${anim.animIndex} 无法播放")
                 return
             }
         }
@@ -87,7 +87,7 @@ class AnimController(
 
     fun isPlaying(name: String): Boolean {
         val anim = mainAnim
-        return anim != null && anim.index.name == name && !anim.isCancelled
+        return anim != null && anim.animIndex.name == name && !anim.isCancelled
     }
 
     /**

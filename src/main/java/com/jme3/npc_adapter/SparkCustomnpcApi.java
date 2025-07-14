@@ -9,7 +9,7 @@ import cn.solarmoon.spark_core.animation.anim.state.AnimStateMachineManager;
 import cn.solarmoon.spark_core.animation.sync.AnimShouldTurnPayload;
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
-import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback;
+import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback;
 import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.registry.common.SparkRegistries;
@@ -133,7 +133,7 @@ public class SparkCustomnpcApi {
             String entityName = newModelPath.split(":")[1];
             ResourceLocation textureResLoc = ResourceLocation.fromNamespaceAndPath("spark_core", "textures/entity/" + entityName + ".png");
             SparkCore.LOGGER.info(modelResLoc.getNamespace());
-            ModelIndex newIdx = new ModelIndex(modelResLoc, modelResLoc, textureResLoc);
+            ModelIndex newIdx = new ModelIndex(modelResLoc, textureResLoc);
 
             // This is the core action that should trigger a model update and ModelIndexChangeEvent
             animatable.setModelIndex(newIdx);
@@ -207,7 +207,7 @@ public class SparkCustomnpcApi {
                 ((PhysicsHost) animatable).getPhysicsLevel(),
                 true,
                 t -> {
-                    t.addCollisionCallback(new CustomnpcCollisionCallback(
+                    t.addCollisionCallback(new SparkCollisionCallback(
                             cbName,
                             animatable.getAnimatable(),
                             collisionBoxId
@@ -257,8 +257,8 @@ public class SparkCustomnpcApi {
         ticks = ticks * 24;
         if (pco != null) {
             // Add callback locally on the server
-            pco.addCollisionCallback(new CustomnpcCollisionCallback(cbName, entity, collisionBoxId, autoReset != null ? autoReset : false, ticks != null ? ticks : 0));
-            SparkCore.LOGGER.debug("Server: Added CustomnpcCollisionCallback '{}' to PCO '{}' for entity {}.", cbName, collisionBoxId, entity.getStringUUID());
+            pco.addCollisionCallback(new SparkCollisionCallback(cbName, entity, collisionBoxId, autoReset != null ? autoReset : false, ticks != null ? ticks : 0));
+            SparkCore.LOGGER.debug("Server: Added SparkCollisionCallback '{}' to PCO '{}' for entity {}.", cbName, collisionBoxId, entity.getStringUUID());
 
             // If on server, send packet to clients
             if (!entity.level().isClientSide()) {
@@ -284,8 +284,8 @@ public class SparkCustomnpcApi {
             PhysicsCollisionObject pco = findPhysicsObjectForBox(iAnimatable, collisionBoxId);
             if (pco != null) {
                 for (CollisionCallback callback : pco.collisionListeners){
-                    if (callback instanceof CustomnpcCollisionCallback && ((CustomnpcCollisionCallback) callback).getCbName().equals(cbName)) {
-                        ((CustomnpcCollisionCallback) callback).getAttackSystem().reset();
+                    if (callback instanceof SparkCollisionCallback && ((SparkCollisionCallback) callback).getCbName().equals(cbName)) {
+                        ((SparkCollisionCallback) callback).getAttackSystem().reset();
                     }
                 }
             }
@@ -295,7 +295,7 @@ public class SparkCustomnpcApi {
     private void removeCollisionCallback(String collisionBoxId, String cbName) {
         PhysicsCollisionObject pco = findPhysicsObjectByName(collisionBoxId);
         if (pco != null) {
-            pco.collisionListeners.removeIf(callback -> callback instanceof CustomnpcCollisionCallback && ((CustomnpcCollisionCallback) callback).getCbName().equals(cbName));
+            pco.collisionListeners.removeIf(callback -> callback instanceof SparkCollisionCallback && ((SparkCollisionCallback) callback).getCbName().equals(cbName));
         }
     }
 

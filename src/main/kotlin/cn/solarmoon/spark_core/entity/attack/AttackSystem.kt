@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.physics.sync.AttackSystemSyncPayload
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.PacketDistributor
-import noppes.npcs.entity.EntityCustomNpc
+import net.neoforged.fml.ModList
 
 /**
  * 统一的攻击方法，方便对攻击数据进行统一修改
@@ -140,8 +140,16 @@ class AttackSystem {
         val currentEntity = associatedEntity
         val currentCbId = collisionBoxId
         if (currentEntity != null && currentCbId != null && !currentEntity.level().isClientSide) {
-            if (currentEntity is EntityCustomNpc && currentCbId == "rightArm"){
-                println("352448")
+            // 检查是否为 EntityCustomNpc
+            if (ModList.get().isLoaded("customnpcs")) {
+                try {
+                    val entityCustomNpcClass = Class.forName("noppes.npcs.entity.EntityCustomNpc")
+                    if (entityCustomNpcClass.isInstance(currentEntity)) {
+                        SparkCore.LOGGER.info("EntityCustomNpc加载成功")
+                    }
+                } catch (e: Exception) {
+                    // 忽略反射错误，继续执行
+                }
             }
             val payload = AttackSystemSyncPayload(
                 currentEntity.syncerType,
@@ -155,13 +163,20 @@ class AttackSystem {
                 resetAfterTicks // Add new field
             )
             PacketDistributor.sendToPlayersTrackingEntity(currentEntity, payload)
-            SparkCore.LOGGER.debug("AttackSystem: Sent sync packet for entity {} and collisionBoxId {}", currentEntity.id, currentCbId)
         }
     }
 
     fun customAttack(target: Entity, customLogic: () -> Boolean): Boolean {
-        if (this.associatedEntity is EntityCustomNpc && this.collisionBoxId == "rightArm" && this.associatedEntity?.level() is ClientLevel){
-            println("123456")
+        // 检查是否为 EntityCustomNpc 且为 rightArm，使用反射安全检查
+        if (ModList.get().isLoaded("customnpcs") && this.collisionBoxId == "rightArm" && this.associatedEntity?.level() is ClientLevel) {
+            try {
+                val entityCustomNpcClass = Class.forName("noppes.npcs.entity.EntityCustomNpc")
+                if (entityCustomNpcClass.isInstance(this.associatedEntity)) {
+                    println("123456")
+                }
+            } catch (e: Exception) {
+                // 忽略反射错误，继续执行
+            }
         }
         if (autoResetEnabled) {
             ticksSinceLastReset++ // 每次调用时递增，当自动重置开启时
@@ -204,7 +219,7 @@ class AttackSystem {
     fun reset() {
         val changed = _attackedEntities.isNotEmpty()
         _attackedEntities.clear()
-        ticksSinceLastReset = 0 // 重置tick计数器
+        if (ignoreInvulnerableTime) ticksSinceLastReset = 0 // 重置tick计数器
         if (changed) {
             trySendSyncPacket() // 手动触发同步
         }

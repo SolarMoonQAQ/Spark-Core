@@ -30,9 +30,10 @@ object SparkRegistries {
                 this.onDynamicRegister = { key, value ->
                     // 只在服务端发送同步包，避免客户端发送clientbound包错误
                     try {
+
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                            val packet = DynamicRegistrySyncS2CPacket.createForTypedAnimationAdd(key.location(), value)
+                            val packet = DynamicRegistrySyncS2CPacket.createForTypedAnimationAdd(key.location().namespace, key.location(), value)
                             net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(packet)
                             SparkCore.LOGGER.info("Triggered dynamic TypedAnimation ADD sync for ${key.location()} via callback")
                         } else {
@@ -47,8 +48,8 @@ object SparkRegistries {
                     try {
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                    DynamicRegistrySyncS2CPacket.syncTypedAnimationRemovalToClients(key.location())
-                    SparkCore.LOGGER.info("Triggered dynamic TypedAnimation REMOVAL sync for ${key.location()} via callback. Animation: $value")
+                            DynamicRegistrySyncS2CPacket.syncTypedAnimationRemovalToClients(key.location().namespace, key.location())
+                            SparkCore.LOGGER.info("Triggered dynamic TypedAnimation REMOVAL sync for ${key.location()} via callback. Animation: $value")
                         } else {
                             SparkCore.LOGGER.debug("客户端跳过动画REMOVAL同步，等待服务端同步: ${key.location()}")
                         }
@@ -71,7 +72,7 @@ object SparkRegistries {
                     try {
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                            val packet = DynamicRegistrySyncS2CPacket.createForModelAdd(key.location(), value)
+                            val packet = DynamicRegistrySyncS2CPacket.createForModelAdd(key.location().namespace, key.location(), value)
                             net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(packet)
                             SparkCore.LOGGER.info("Triggered dynamic OModel ADD sync for ${key.location()} via callback")
                         } else {
@@ -86,7 +87,7 @@ object SparkRegistries {
                     try {
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                            DynamicRegistrySyncS2CPacket.syncModelRemovalToClients(key.location())
+                            DynamicRegistrySyncS2CPacket.syncModelRemovalToClients(key.location().namespace, key.location())
                             SparkCore.LOGGER.info("Triggered dynamic OModel REMOVAL sync for ${key.location()} via callback. Model: $value")
                         } else {
                             SparkCore.LOGGER.debug("客户端跳过模型REMOVAL同步，等待服务端同步: ${key.location()}")
@@ -111,10 +112,41 @@ object SparkRegistries {
         .build { it.sync(true).create() }
 
     @JvmStatic
-    val IK_COMPONENT_TYPE = SparkCore.REGISTER.registry<TypedIKComponent>()
-        .id("ik_component_type") // Registry name
-        .valueType(TypedIKComponent::class) // Pass KClass for DynamicAwareRegistry
-        .build { it.sync(true).create() } // Sync to client if needed
+    val IK_COMPONENT_TYPE =
+        (SparkCore.REGISTER.registry<TypedIKComponent>()
+            .id("ik_component_type")
+            .valueType(TypedIKComponent::class)
+            .build { it.sync(true).create() } as? DynamicAwareRegistry<TypedIKComponent>)
+            ?.apply {
+                this.onDynamicRegister = { key, value ->
+                    try {
+                        val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+                        if (server != null) {
+                            // TODO: 实现 IK 组件同步包
+                            // net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(packet)
+                            SparkCore.LOGGER.info("触发了对 ${key.location()} 的动态 TypedIKComponent ADD 同步")
+                        } else {
+                            SparkCore.LOGGER.debug("客户端跳过IK组件ADD同步，等待服务端同步: ${key.location()}")
+                        }
+                    } catch (e: Exception) {
+                        SparkCore.LOGGER.debug("IK组件ADD同步跳过（可能在客户端）: ${key.location()}")
+                    }
+                }
+                this.onDynamicUnregister = { key, value ->
+                    try {
+                        val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+                        if (server != null) {
+                            // TODO: 实现 IK 组件移除同步
+                            // DynamicRegistrySyncS2CPacket.syncIKComponentRemovalToClients(key.location())
+                            SparkCore.LOGGER.info("触发了对${key.location()}的动态TypedIKComponent移除同步。组件：$value")
+                        } else {
+                            SparkCore.LOGGER.debug("客户端跳过IK组件REMOVAL同步，等待服务端同步: ${key.location()}")
+                        }
+                    } catch (e: Exception) {
+                        SparkCore.LOGGER.debug("IK组件REMOVAL同步跳过（可能在客户端）: ${key.location()}")
+                    }
+                }
+            } ?: throw IllegalStateException("IK_COMPONENT_TYPE 注册表无法转换为 DynamicAwareRegistry。请检查 ObjectRegister 的实现。")
 
     @JvmStatic
     val JS_SCRIPTS =
@@ -128,9 +160,9 @@ object SparkRegistries {
                     try {
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                            val packet = DynamicRegistrySyncS2CPacket.createForJSScriptAdd(key.location(), value)
+                            val packet = DynamicRegistrySyncS2CPacket.createForJSScriptAdd(key.location().namespace, key.location(), value)
                             net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(packet)
-                            SparkCore.LOGGER.info("Triggered dynamic OJSScript ADD sync for ${key.location()} via callback")
+                            SparkCore.LOGGER.info("通过回调触发了对 ${key.location()} 的动态 OJSScript 添加同步")
                         } else {
                             SparkCore.LOGGER.debug("客户端跳过JS脚本ADD同步，等待服务端同步: ${key.location()}")
                         }
@@ -143,8 +175,8 @@ object SparkRegistries {
                     try {
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                            DynamicRegistrySyncS2CPacket.syncJSScriptRemovalToClients(key.location())
-                            SparkCore.LOGGER.info("Triggered dynamic OJSScript REMOVAL sync for ${key.location()} via callback. Script: $value")
+                            DynamicRegistrySyncS2CPacket.syncJSScriptRemovalToClients(key.location().namespace, key.location())
+                            SparkCore.LOGGER.info("已通过回调触发对${key.location()}的动态OJSScript移除同步。脚本：$value")
                         } else {
                             SparkCore.LOGGER.debug("客户端跳过JS脚本REMOVAL同步，等待服务端同步: ${key.location()}")
                         }
@@ -152,7 +184,7 @@ object SparkRegistries {
                         SparkCore.LOGGER.debug("JS脚本REMOVAL同步跳过（可能在客户端）: ${key.location()}")
                     }
                 }
-            } ?: throw IllegalStateException("JS_SCRIPTS registry could not be cast to DynamicAwareRegistry. Check ObjectRegister implementation.")
+            } ?: throw IllegalStateException("JS_SCRIPTS 注册表无法转换为 DynamicAwareRegistry。请检查 ObjectRegister 的实现。")
 
     @JvmStatic
     val DYNAMIC_TEXTURES =
@@ -166,9 +198,9 @@ object SparkRegistries {
                     try {
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                            val packet = DynamicRegistrySyncS2CPacket.createForTextureAdd(key.location(), value)
+                            val packet = DynamicRegistrySyncS2CPacket.createForTextureAdd(key.location().namespace, key.location(), value)
                             net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(packet)
-                            SparkCore.LOGGER.info("Triggered dynamic OTexture ADD sync for ${key.location()} via callback")
+                            SparkCore.LOGGER.info("通过回调为 ${key.location()} 触发了动态 OTexture ADD 同步")
                         } else {
                             SparkCore.LOGGER.debug("客户端跳过纹理ADD同步，等待服务端同步: ${key.location()}")
                         }
@@ -181,8 +213,8 @@ object SparkRegistries {
                     try {
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
-                            DynamicRegistrySyncS2CPacket.syncTextureRemovalToClients(key.location())
-                            SparkCore.LOGGER.info("Triggered dynamic OTexture REMOVAL sync for ${key.location()} via callback. Texture: $value")
+                            DynamicRegistrySyncS2CPacket.syncTextureRemovalToClients(key.location().namespace, key.location())
+                            SparkCore.LOGGER.info("通过回调为${key.location()}触发了动态OTexture移除同步。纹理：$value")
                         } else {
                             SparkCore.LOGGER.debug("客户端跳过纹理REMOVAL同步，等待服务端同步: ${key.location()}")
                         }
@@ -190,7 +222,7 @@ object SparkRegistries {
                         SparkCore.LOGGER.debug("纹理REMOVAL同步跳过（可能在客户端）: ${key.location()}")
                     }
                 }
-            } ?: throw IllegalStateException("DYNAMIC_TEXTURES registry could not be cast to DynamicAwareRegistry. Check ObjectRegister implementation.")
+            } ?: throw IllegalStateException("DYNAMIC_TEXTURES 注册表无法转为 DynamicAwareRegistry。请检查 ObjectRegister 的实现。")
 
     @JvmStatic
     val MODEL_EDITOR_WAND = SparkCore.REGISTER.item<Item>() // Specify Item type explicitly

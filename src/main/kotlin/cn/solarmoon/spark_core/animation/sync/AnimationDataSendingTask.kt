@@ -25,21 +25,23 @@ class AnimationDataSendingTask : ICustomConfigurationTask {
         
         // 从 SparkRegistries.TYPED_ANIMATION 动态注册表获取数据，确保与增量同步数据源一致
         val animationsToSync = LinkedHashMap<ResourceLocation, OAnimationSet>()
-        
-        SparkRegistries.TYPED_ANIMATION?.let { registry ->
+
+        SparkRegistries.TYPED_ANIMATION.let { registry ->
             registry.entrySet().forEach { entry ->
                 val registryKey = entry.key
                 val typedAnimation = entry.value
                 val animationSetLocation = typedAnimation.index.index
-                
+
                 // 从 TypedAnimation 提取对应的 OAnimationSet
                 val animationSet = convertTypedAnimationToOAnimationSet(typedAnimation)
                 animationsToSync[animationSetLocation] = animationSet
-                
-                SparkCore.LOGGER.debug("从动态注册表获取 TypedAnimation: ${registryKey.location()} -> 动画集: $animationSetLocation")
+
+                SparkCore.LOGGER.debug(
+                    "从动态注册表获取 TypedAnimation: {} -> 动画集: {}",
+                    registryKey.location(),
+                    animationSetLocation
+                )
             }
-        } ?: run {
-            SparkCore.LOGGER.warn("TYPED_ANIMATION 动态注册表为空，将发送空的动画数据")
         }
 
         if (animationsToSync.isNotEmpty()) {

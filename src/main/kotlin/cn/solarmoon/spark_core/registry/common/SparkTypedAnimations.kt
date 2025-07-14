@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.EntityType
@@ -49,14 +50,14 @@ object SparkTypedAnimations {
     @JvmStatic
     val JUMP_LAND = createStateAnim("jump_land")
 
-    fun createStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
+    fun createStateAnim(name: String, index: ResourceLocation = SparkResourcePathBuilder.buildAnimationPath("spark_core", "spark_core", "player", "base_state"), provider: TypedAnimProvider = {}) = SparkCore.REGISTER.typedAnimation()
         .id(name)
         .animIndex(AnimIndex(index, "state.$name"))
         .provider(provider)
         .build()
 
 
-    fun createMoveStateAnim(name: String, index: ResourceLocation = ResourceLocation.withDefaultNamespace("player"), provider: TypedAnimProvider = {}) = createStateAnim(name, index) {
+    fun createMoveStateAnim(name: String, index: ResourceLocation = SparkResourcePathBuilder.buildAnimationPath("spark_core", "spark_core", "player", "base_state"), provider: TypedAnimProvider = {}) = createStateAnim(name, index) {
         onEvent<AnimEvent.Tick> {
             if (holder is Player) {
                 speed = holder.getAttributeValue(Attributes.MOVEMENT_SPEED) / (if (holder.isSprinting) 0.13 else 0.1)

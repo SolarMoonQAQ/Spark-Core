@@ -27,6 +27,7 @@ enum class OperationType {
 }
 
 data class DynamicRegistrySyncS2CPacket(
+    val modId: String,
     val registryKey: ResourceKey<out Registry<*>>,
     val entryId: ResourceLocation,
     val operationType: OperationType,
@@ -43,6 +44,7 @@ data class DynamicRegistrySyncS2CPacket(
         @JvmField
         val STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, DynamicRegistrySyncS2CPacket> {
             override fun encode(buf: FriendlyByteBuf, packet: DynamicRegistrySyncS2CPacket) {
+                buf.writeUtf(packet.modId)
                 buf.writeResourceLocation(packet.registryKey.location())
                 buf.writeResourceLocation(packet.entryId)
                 buf.writeEnum(packet.operationType)
@@ -50,16 +52,17 @@ data class DynamicRegistrySyncS2CPacket(
             }
 
             override fun decode(buf: FriendlyByteBuf): DynamicRegistrySyncS2CPacket {
+                val modId = buf.readUtf()
                 val registryKeyLocation = buf.readResourceLocation()
                 val registryKey = ResourceKey.createRegistryKey<Registry<*>>(registryKeyLocation)
                 val entryId = buf.readResourceLocation()
                 val operationType = buf.readEnum(OperationType::class.java)
                 val entryData = buf.readByteArray()
-                return DynamicRegistrySyncS2CPacket(registryKey, entryId, operationType, entryData)
+                return DynamicRegistrySyncS2CPacket(modId,registryKey, entryId, operationType, entryData)
             }
         }
 
-        fun createForTypedAnimationAdd(id: ResourceLocation, animation: TypedAnimation): DynamicRegistrySyncS2CPacket {
+        fun createForTypedAnimationAdd(modId: String,id: ResourceLocation, animation: TypedAnimation): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
             buf.writeResourceLocation(animation.index.index)
             buf.writeUtf(animation.index.name)
@@ -69,6 +72,7 @@ data class DynamicRegistrySyncS2CPacket(
             buf.release()
 
             return DynamicRegistrySyncS2CPacket(
+                modId,
                 SparkRegistries.TYPED_ANIMATION.key(),
                 id,
                 OperationType.ADD,
@@ -76,7 +80,7 @@ data class DynamicRegistrySyncS2CPacket(
             )
         }
 
-        fun createForModelAdd(id: ResourceLocation, model: OModel): DynamicRegistrySyncS2CPacket {
+        fun createForModelAdd(modId: String, id: ResourceLocation, model: OModel): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
             OModel.STREAM_CODEC.encode(buf, model)
 
@@ -85,6 +89,7 @@ data class DynamicRegistrySyncS2CPacket(
             buf.release()
 
             return DynamicRegistrySyncS2CPacket(
+                modId,
                 SparkRegistries.MODELS.key(),
                 id,
                 OperationType.ADD,
@@ -92,7 +97,7 @@ data class DynamicRegistrySyncS2CPacket(
             )
         }
 
-        fun createForJSScriptAdd(id: ResourceLocation, script: OJSScript): DynamicRegistrySyncS2CPacket {
+        fun createForJSScriptAdd(modId: String, id: ResourceLocation, script: OJSScript): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
             OJSScript.STREAM_CODEC.encode(buf, script)
 
@@ -101,6 +106,7 @@ data class DynamicRegistrySyncS2CPacket(
             buf.release()
 
             return DynamicRegistrySyncS2CPacket(
+                modId,
                 SparkRegistries.JS_SCRIPTS.key(),
                 id,
                 OperationType.ADD,
@@ -108,7 +114,7 @@ data class DynamicRegistrySyncS2CPacket(
             )
         }
 
-        fun createForTextureAdd(id: ResourceLocation, texture: OTexture): DynamicRegistrySyncS2CPacket {
+        fun createForTextureAdd(modId: String, id: ResourceLocation, texture: OTexture): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
             OTexture.STREAM_CODEC.encode(buf, texture)
 
@@ -117,6 +123,7 @@ data class DynamicRegistrySyncS2CPacket(
             buf.release()
 
             return DynamicRegistrySyncS2CPacket(
+                modId,
                 SparkRegistries.DYNAMIC_TEXTURES.key(),
                 id,
                 OperationType.ADD,
@@ -124,8 +131,9 @@ data class DynamicRegistrySyncS2CPacket(
             )
         }
 
-        fun syncTypedAnimationRemovalToClients(id: ResourceLocation) {
+        fun syncTypedAnimationRemovalToClients(modId: String, id: ResourceLocation) {
             val packet = DynamicRegistrySyncS2CPacket(
+                modId,
                 SparkRegistries.TYPED_ANIMATION.key(),
                 id,
                 OperationType.REMOVE,
@@ -135,8 +143,9 @@ data class DynamicRegistrySyncS2CPacket(
             SparkCore.LOGGER.info("Sent dynamic TypedAnimation REMOVAL sync packet for $id to all clients")
         }
 
-        fun syncModelRemovalToClients(id: ResourceLocation) {
+        fun syncModelRemovalToClients(modId: String, id: ResourceLocation) {
             val packet = DynamicRegistrySyncS2CPacket(
+                modId,
                 SparkRegistries.MODELS.key(),
                 id,
                 OperationType.REMOVE,
@@ -146,8 +155,9 @@ data class DynamicRegistrySyncS2CPacket(
             SparkCore.LOGGER.info("Sent dynamic OModel REMOVAL sync packet for $id to all clients")
         }
 
-        fun syncJSScriptRemovalToClients(id: ResourceLocation) {
+        fun syncJSScriptRemovalToClients(modId: String, id: ResourceLocation) {
             val packet = DynamicRegistrySyncS2CPacket(
+                modId,
                 SparkRegistries.JS_SCRIPTS.key(),
                 id,
                 OperationType.REMOVE,
@@ -157,8 +167,9 @@ data class DynamicRegistrySyncS2CPacket(
             SparkCore.LOGGER.info("Sent dynamic OJSScript REMOVAL sync packet for $id to all clients")
         }
 
-        fun syncTextureRemovalToClients(id: ResourceLocation) {
+        fun syncTextureRemovalToClients(modId: String, id: ResourceLocation) {
             val packet = DynamicRegistrySyncS2CPacket(
+                modId,
                 SparkRegistries.DYNAMIC_TEXTURES.key(),
                 id,
                 OperationType.REMOVE,
@@ -202,10 +213,11 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-//                    if (dynamicRegistry.containsKey(packet.entryId)) {
-//                        SparkCore.LOGGER.debug("TypedAnimation {} already exists, skipping ADD sync", packet.entryId)
-//                        return
-//                    }
+                    // 检查是否已存在，避免重复注册导致循环发包
+                    if (dynamicRegistry.containsKey(packet.entryId)) {
+                        SparkCore.LOGGER.debug("TypedAnimation {} already exists, skipping ADD sync", packet.entryId)
+                        return
+                    }
 
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val indexLocation = buf.readResourceLocation()
@@ -215,7 +227,8 @@ data class DynamicRegistrySyncS2CPacket(
                     val animIndex = AnimIndex(indexLocation, animName)
                     val animation = TypedAnimation(animIndex) {}
 
-                    dynamicRegistry.registerDynamic(packet.entryId, animation)
+                    // 使用不触发回调的注册方式，避免客户端触发服务端回调
+                    dynamicRegistry.registerDynamic(packet.entryId, animation, packet.modId, replace = false, triggerCallback = false)
                     SparkCore.LOGGER.info("Dynamically registered TypedAnimation ${packet.entryId} from server")
                 }
                 OperationType.REMOVE -> {
@@ -234,16 +247,18 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-//                    if (dynamicRegistry.containsKey(packet.entryId)) {
-//                        SparkCore.LOGGER.debug("OModel {} already exists, skipping ADD sync", packet.entryId)
-//                        return
-//                    }
+                    // 检查是否已存在，避免重复注册导致循环发包
+                    if (dynamicRegistry.containsKey(packet.entryId)) {
+                        SparkCore.LOGGER.debug("OModel {} already exists, skipping ADD sync", packet.entryId)
+                        return
+                    }
 
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val model = OModel.STREAM_CODEC.decode(buf)
                     buf.release()
 
-                    dynamicRegistry.registerDynamic(packet.entryId, model)
+                    // 使用不触发回调的注册方式，避免客户端触发服务端回调
+                    dynamicRegistry.registerDynamic(packet.entryId, model, packet.modId, replace = false)
                     SparkCore.LOGGER.info("Dynamically registered OModel ${packet.entryId} from server")
                 }
                 OperationType.REMOVE -> {
@@ -262,16 +277,18 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-//                    if (dynamicRegistry.containsKey(packet.entryId)) {
-//                        SparkCore.LOGGER.debug("OJSScript {} already exists, skipping ADD sync", packet.entryId)
-//                        return
-//                    }
+                    // 检查是否已存在，避免重复注册导致循环发包
+                    if (dynamicRegistry.containsKey(packet.entryId)) {
+                        SparkCore.LOGGER.debug("OJSScript {} already exists, skipping ADD sync", packet.entryId)
+                        return
+                    }
 
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val script = OJSScript.STREAM_CODEC.decode(buf)
                     buf.release()
 
-                    dynamicRegistry.registerDynamic(packet.entryId, script)
+                    // 使用不触发回调的注册方式，避免客户端触发服务端回调
+                    dynamicRegistry.registerDynamic(packet.entryId, script, packet.modId, replace = false)
                     SparkCore.LOGGER.info("Dynamically registered OJSScript ${packet.entryId} from server")
                 }
                 OperationType.REMOVE -> {
@@ -290,16 +307,18 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-//                    if (dynamicRegistry.containsKey(packet.entryId)) {
-//                        SparkCore.LOGGER.debug("OTexture {} already exists, skipping ADD sync", packet.entryId)
-//                        return
-//                    }
+                    // 检查是否已存在，避免重复注册导致循环发包
+                    if (dynamicRegistry.containsKey(packet.entryId)) {
+                        SparkCore.LOGGER.debug("OTexture {} already exists, skipping ADD sync", packet.entryId)
+                        return
+                    }
 
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val texture = OTexture.STREAM_CODEC.decode(buf)
                     buf.release()
 
-                    dynamicRegistry.registerDynamic(packet.entryId, texture)
+                    // 使用不触发回调的注册方式，避免客户端触发服务端回调
+                    dynamicRegistry.registerDynamic(packet.entryId, texture, packet.modId, replace = false)
                     SparkCore.LOGGER.info("Dynamically registered OTexture ${packet.entryId} from server")
                 }
                 OperationType.REMOVE -> {
@@ -314,8 +333,8 @@ data class DynamicRegistrySyncS2CPacket(
         }
 
         @Deprecated("Use createForTypedAnimationAdd and send manually or a new specific sync method", ReplaceWith("createForTypedAnimationAdd"))
-        private fun syncTypedAnimationToClients(id: ResourceLocation, animation: TypedAnimation) {
-            val packet = createForTypedAnimationAdd(id, animation)
+        private fun syncTypedAnimationToClients(modId: String, id: ResourceLocation, animation: TypedAnimation) {
+            val packet = createForTypedAnimationAdd(modId, id, animation)
             PacketDistributor.sendToAllPlayers(packet)
             SparkCore.LOGGER.info("Sent dynamic TypedAnimation ADD sync packet for $id to all clients")
         }
