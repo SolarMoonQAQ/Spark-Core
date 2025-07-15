@@ -1,18 +1,16 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.ICustomModelItem
 import cn.solarmoon.spark_core.animation.ItemAnimatable
-import cn.solarmoon.spark_core.animation.renderer.GeoItemRenderer
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
-import net.minecraft.core.registries.BuiltInRegistries
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemDisplayContext
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.capabilities.ItemCapability
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions
-import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent
 
 object SparkCapabilities {
 
@@ -29,36 +27,45 @@ object SparkCapabilities {
         .bound { Test() }
         .build()
 
-    class Test: Item(Properties()) {
-
-    }
-
-    class Ex: IClientItemExtensions {
-        private val renderer = GeoItemRenderer()
-
-        override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
-            return renderer
-        }
-    }
-
-    private fun regM(event: RegisterClientExtensionsEvent) {
-        event.registerItem(Ex(), TEST)
-    }
-
-    private fun applyToItem(event: RegisterCapabilitiesEvent) {
-        BuiltInRegistries.ITEM.forEach {
-            event.registerItem(
-                ITEM_ANIMATABLE,
-                { stack, level -> ItemAnimatable(stack, level) },
-                it
+    class Test: Item(Properties()), ICustomModelItem {
+        override fun getModelIndex(itemStack: ItemStack, level: Level, context: ItemDisplayContext): ModelIndex {
+            return if (context.firstPerson()) ModelIndex(
+                ResourceLocation.fromNamespaceAndPath("minecraft", "item/crowbar_first_person.geo"),
+                ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "textures/item/crowbar_first_person.png")
+            )
+            else ModelIndex(
+                ResourceLocation.fromNamespaceAndPath("minecraft", "item/crowbar.geo"),
+                ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "textures/item/crowbar.png")
             )
         }
     }
 
+//    class Ex: IClientItemExtensions {
+//        private val renderer = GeoItemRenderer()
+//
+//        override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
+//            return renderer
+//        }
+//    }
+//
+//    private fun regM(event: RegisterClientExtensionsEvent) {
+//        event.registerItem(Ex(), TEST)
+//    }
+//
+//    private fun applyToItem(event: RegisterCapabilitiesEvent) {
+//        BuiltInRegistries.ITEM.forEach {
+//            event.registerItem(
+//                ITEM_ANIMATABLE,
+//                { stack, level -> ItemAnimatable(stack, level) },
+//                it
+//            )
+//        }
+//    }
+
     @JvmStatic
     fun register(bus: IEventBus) {
-        bus.addListener(::applyToItem)
-        bus.addListener(::regM)
+//        bus.addListener(::applyToItem)
+//        bus.addListener(::regM)
     }
 
 }

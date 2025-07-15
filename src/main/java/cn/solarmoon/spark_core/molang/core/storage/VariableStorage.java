@@ -63,9 +63,18 @@ public class VariableStorage implements ITempVariableStorage, IScopedVariableSto
         }
     }
 
+    public void setPublic(int name, Object value) {
+        VariableValueHolder valueHolder = publicMap.computeIfAbsent(name, n -> new VariableValueHolder());
+        valueHolder.value = value;
+    }
+
     @Override
     public Object getPublic(String name) {
         return getPublic(StringPool.computeIfAbsent(name));
+    }
+
+    public void setPublic(String name, Object value) {
+        setPublic(StringPool.computeIfAbsent(name), value);
     }
 
     // 注意 this.publicMap 线程安全
