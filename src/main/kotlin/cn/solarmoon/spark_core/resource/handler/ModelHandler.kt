@@ -35,19 +35,11 @@ import kotlin.io.path.readText
 class ModelHandler(
     private val modelRegistry: DynamicAwareRegistry<OModel>
 ) : ResourceHandlerBase() {
-
-    companion object {
-        init {
-            cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService.registerHandler {
-                ModelHandler(cn.solarmoon.spark_core.registry.common.SparkRegistries.MODELS)
-            }
-        }
-    }
-
+    
     private val resourceType = "models"
     private val supportedExtensions = setOf("json")
     private var processedCount = 0
-
+    
     init {
         SparkCore.LOGGER.info("ModelHandler 初始化完成")
     }

@@ -70,7 +70,11 @@ object CommonAnimApplier {
         val entityHost = event.animatable as? IEntityAnimatable<*> ?: return
         if(entityHost.animLevel is ClientLevel) return
 
+        // Ensure entityHost is an Entity
         val entity = entityHost as? Entity ?: run {
+            // Log an error or handle the case where entityHost is not an Entity
+            // For now, we'll just return if it's not an Entity, though this implies a logic error elsewhere
+            // if IEntityAnimatable is not always an Entity.
             println("[CommonAnimApplier] Error: entityHost could not be cast to Entity in onModelIndexChange.")
             return
         }
@@ -92,7 +96,11 @@ object CommonAnimApplier {
                 ))
             }
         }
-        PacketDistributor.sendToAllPlayers(
+
+
+
+        PacketDistributor.sendToPlayersTrackingEntity(
+            entityHost.animatable,
             ModelIndexSyncPayload(entityHost.syncerType, entityHost.syncData, event.newModelIndex)
         )
     }

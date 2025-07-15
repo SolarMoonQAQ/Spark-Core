@@ -13,43 +13,12 @@ import cn.solarmoon.spark_core.resource.handler.*
 /**
  * 处理器发现服务
  * 由SparkCore主类的模块事件总线注册
- * 支持自动注册机制，handler类可以通过registerHandler方法自动注册
  */
 object HandlerDiscoveryService {
 
     private val discoveredHandlers = mutableListOf<IResourceHandler>()
-    private val registeredHandlerFactories = mutableListOf<() -> IResourceHandler>()
-
-    /**
-     * 注册handler工厂方法
-     * 供handler类在静态初始化时调用，实现自动注册
-     * @param factory handler实例化工厂方法
-     */
-    @JvmStatic
-    fun registerHandler(factory: () -> IResourceHandler) {
-        registeredHandlerFactories.add(factory)
-        SparkCore.LOGGER.debug("注册handler工厂: {}", factory.javaClass.simpleName)
-    }
 
     private fun findHandlerImplementations(): List<IResourceHandler> {
-        // 优先使用自动注册的handlers
-        val autoRegisteredHandlers = registeredHandlerFactories.map { factory ->
-            try {
-                factory()
-            } catch (e: Exception) {
-                SparkCore.LOGGER.error("创建自动注册的handler失败", e)
-                null
-            }
-        }.filterNotNull()
-
-        // 如果有自动注册的handlers，使用它们
-        if (autoRegisteredHandlers.isNotEmpty()) {
-            SparkCore.LOGGER.info("使用自动注册的handlers: {} 个", autoRegisteredHandlers.size)
-            return autoRegisteredHandlers
-        }
-
-        // Fallback到硬编码方式（向后兼容）
-        SparkCore.LOGGER.warn("未发现自动注册的handlers，使用硬编码fallback")
         return listOf(
             AnimationHandler(SparkRegistries.TYPED_ANIMATION),
             ModelHandler(SparkRegistries.MODELS),

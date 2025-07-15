@@ -28,14 +28,6 @@ class JavaScriptHandler(
     private val jsRegistry: DynamicAwareRegistry<OJSScript>
 ) : ResourceHandlerBase() {
 
-    companion object {
-        init {
-            cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService.registerHandler {
-                JavaScriptHandler(cn.solarmoon.spark_core.registry.common.SparkRegistries.JS_SCRIPTS)
-            }
-        }
-    }
-
     private val resourceType = "scripts"
     private val supportedExtensions = setOf("js")
     private var processedCount = 0

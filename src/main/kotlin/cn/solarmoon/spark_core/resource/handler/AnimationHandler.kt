@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
-import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
 import cn.solarmoon.spark_core.resource.graph.ResourceGraphManager
 import cn.solarmoon.spark_core.resource.graph.ResourceNode
@@ -30,19 +29,11 @@ import kotlin.io.path.readText
 class AnimationHandler(
     private val typedAnimationRegistry: DynamicAwareRegistry<TypedAnimation>
 ) : ResourceHandlerBase() {
-
-    companion object {
-        init {
-            HandlerDiscoveryService.registerHandler {
-                AnimationHandler(cn.solarmoon.spark_core.registry.common.SparkRegistries.TYPED_ANIMATION)
-            }
-        }
-    }
-
+    
     private val resourceType = "animations"
     private val supportedExtensions = setOf("json")
     private var processedCount = 0
-
+    
     init {
         SparkCore.LOGGER.info("AnimationHandler 初始化完成")
         // 注意：移除对DependencyGraph的注册，使用MetadataManager进行依赖管理

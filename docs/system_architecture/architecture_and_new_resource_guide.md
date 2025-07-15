@@ -253,14 +253,6 @@ class ShaderHandler(
     private val shaderRegistry: DynamicAwareRegistry<OShader>
 ) : ResourceHandlerBase() {
 
-    companion object {
-        init {
-            cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService.registerHandler {
-                ShaderHandler(cn.solarmoon.spark_core.registry.common.SparkRegistries.DYNAMIC_SHADERS)
-            }
-        }
-    }
-
     override fun getResourceType(): String = "shaders"
     override fun getSupportedExtensions(): Set<String> = setOf("glsl")
     override fun getRegistryIdentifier(): ResourceLocation? = shaderRegistry.key().location()
@@ -313,29 +305,7 @@ class ShaderHandler(
 }
 ```
 
-### 第4步：Handler自动注册机制 
-
-**自动注册原理**：
-从上面的示例可以看到，每个Handler类都包含一个`companion object`的`init`块，这是SparkCore的自动注册机制的核心。
-
-**工作流程**：
-1. **类加载时注册**：当Handler类被JVM加载时，companion object的init块自动执行
-2. **工厂方法存储**：`HandlerDiscoveryService.registerHandler`将Handler的工厂方法存储起来
-3. **延迟实例化**：使用lambda表达式避免循环依赖，在需要时才创建Handler实例
-4. **自动发现**：`HandlerDiscoveryService`优先使用自动注册的handlers，fallback到硬编码方式
-
-**关键优势**：
-- ✅ **无需硬编码**：新Handler无需在`HandlerDiscoveryService`中手动添加
-- ✅ **自动发现**：系统自动发现所有标注了`@AutoRegisterHandler`的Handler类
-- ✅ **向后兼容**：保留fallback机制确保系统稳定性
-- ✅ **易于扩展**：添加新Handler只需实现类和companion object即可
-
-**注意事项**：
-- 必须使用完整包名避免循环导入
-- 确保注册表参数正确匹配Handler的构造函数
-- `@AutoRegisterHandler`注解是必需的，用于标识自动注册的Handler
-
-### 第5步：扩展网络同步逻辑
+### 第4步：扩展网络同步逻辑
 
 需要扩展`DynamicRegistrySyncS2CPacket.kt`以支持`OShader`的增量同步。
 
