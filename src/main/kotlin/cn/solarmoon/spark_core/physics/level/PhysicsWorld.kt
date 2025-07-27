@@ -54,7 +54,7 @@ class PhysicsWorld(val level: PhysicsLevel, numSolvers: Int = 1): PhysicsSoftSpa
         }
         if (pcoB.isCollisionGroupContains(pcoA)) {
             pcoB.isColliding = true
-            pcoB.collisionListeners.forEach { it.onProcessed(pcoB, pcoA, manifoldPointId) }
+            pcoB.collisionListeners.forEach { it.onProcessed(pcoA, pcoB, manifoldPointId) }
         }
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(manifoldPointId, pcoA, pcoB))

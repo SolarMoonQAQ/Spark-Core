@@ -51,7 +51,9 @@
     "compat.geckolib.GeoArmorRendererMixin",
     "event.KeyboardInputMixin",
     "extension.DebugRendererMixin",
-    "extension.LocalPlayerMixin"
+    "extension.LocalPlayerMixin",
+    "sound.SoundEngineMixin",
+    "sound.SoundManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

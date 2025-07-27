@@ -42,9 +42,10 @@ class AnimInstance private constructor(
             AnimInstance(holder, index).apply { provider.invoke(this) }
     }
     private val nameComponents = animIndex.toString().split("/")
-    // animIndex的真正的index为 animIndex-animName
-    val index = ResourceLocation.parse(nameComponents.dropLast(1).joinToString("/"))
-    val origin = OAnimationSet.get(index).getValidAnimation(nameComponents.last())
+    // OAnimationSet的index为 animIndex-animName
+    val animName = nameComponents.last()
+    val setIndex = ResourceLocation.parse(nameComponents.dropLast(1).joinToString("/"))
+    val origin = OAnimationSet.get(setIndex).getValidAnimation(animName)
     val flags = setOf<String>()
     var time = 0.0
     var speed = 1.0
