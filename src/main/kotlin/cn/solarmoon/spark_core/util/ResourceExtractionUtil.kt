@@ -10,12 +10,17 @@ object ResourceExtractionUtil {
     /**
      * 从 JAR 文件中的目录提取资源到文件系统的目标目录。
      *
+     * 行为策略：
+     * - 如果目标文件不存在，直接复制JAR中的默认资源
+     * - 如果目标文件存在且内容相同，跳过复制
+     * - 如果目标文件存在但内容不同，跳过覆盖以保护用户修改
+     *
      * @param modMainClass 模组的主类，用于通过其类加载器访问 JAR 资源。
      * @param sourceDirInJar JAR 文件中源目录的路径（例如，\"assets/sparkcore/animations\"）。
      * @param targetBaseRuntimeDir 运行时文件系统中资源将被复制到的基本目录（例如，`run/sparkcore/`）。
      * @param targetSubDirName `targetBaseRuntimeDir` 下特定资源应放置的子目录名称（例如，\"animations\"）。
      * @param logger SLF4J 日志实例，用于记录消息。
-     * @return 如果提取成功或不需要提取（例如，源未找到，或文件已存在且未覆盖），返回 true；如果在复制过程中发生严重错误，返回 false。
+     * @return 如果提取成功或不需要提取（例如，源未找到，或文件已存在），返回 true；如果在复制过程中发生严重错误，返回 false。
      */
     fun extractResourcesFromJar(
         modMainClass: Class<*>,
@@ -65,12 +70,14 @@ object ResourceExtractionUtil {
                                 // 根据策略，可能需要设置标志以整体返回 false
                             }
                         } else {
-                            val sourceBytes = Files.readAllBytes(sourcePath)
-                            val destBytes = Files.readAllBytes(destFile.toPath())
-                            if (!sourceBytes.contentEquals(destBytes)) {
-                                Files.copy(sourcePath, destFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                                logger.info("已更新资源: {}", destFile.path)
-                            }
+//                            val sourceBytes = Files.readAllBytes(sourcePath)
+//                            val destBytes = Files.readAllBytes(destFile.toPath())
+//                            if (!sourceBytes.contentEquals(destBytes)) {
+//                                // 跳过覆盖，保护用户修改
+//                                logger.info("检测到文件已被修改，跳过覆盖以保护用户修改: {}", destFile.path)
+//                            } else {
+//                                logger.debug("文件内容相同，无需更新: {}", destFile.path)
+//                            }
                         }
                     }
                 }

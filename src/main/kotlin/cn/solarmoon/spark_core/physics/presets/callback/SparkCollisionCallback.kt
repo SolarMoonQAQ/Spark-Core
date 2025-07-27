@@ -46,11 +46,6 @@ class SparkCollisionCallback @JvmOverloads constructor(
             // 发送 SparkCore 通用事件
             val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
             NeoForge.EVENT_BUS.post(event)
-            
-            // 如果 CustomNPC 模组存在，则同时触发 CustomNPC 的脚本事件
-            if (ModList.get().isLoaded("customnpcs")) {
-                triggerCustomNpcEvent("preAttack", attacker, target, aBody, bBody, manifoldId)
-            }
         }
     }
 
@@ -67,11 +62,6 @@ class SparkCollisionCallback @JvmOverloads constructor(
             // 发送 SparkCore 通用事件
             val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
             NeoForge.EVENT_BUS.post(event)
-            
-            // 如果 CustomNPC 模组存在，则同时触发 CustomNPC 的脚本事件
-            if (ModList.get().isLoaded("customnpcs")) {
-                triggerCustomNpcEvent("doAttack", attacker, target, aBody, bBody, manifoldId)
-            }
         }
         return true
     }
@@ -89,66 +79,7 @@ class SparkCollisionCallback @JvmOverloads constructor(
             // 发送 SparkCore 通用事件
             val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
             NeoForge.EVENT_BUS.post(event)
-            
-            // 如果 CustomNPC 模组存在，则同时触发 CustomNPC 的脚本事件
-            if (ModList.get().isLoaded("customnpcs")) {
-                triggerCustomNpcEvent("postAttack", attacker, target, aBody, bBody, manifoldId)
-            }
         }
     }
 
-    /**
-     * 安全地触发 CustomNPC 脚本事件
-     */
-    private fun triggerCustomNpcEvent(
-        phase: String,
-        attacker: Entity,
-        target: Entity,
-        aBody: PhysicsCollisionObject,
-        bBody: PhysicsCollisionObject,
-        manifoldId: Long
-    ) {
-        try {
-            // 通过反射安全地调用 CustomNPC 的事件系统
-            val eventHooksClass = Class.forName("noppes.npcs.EventHooks")
-            val npcApiClass = Class.forName("noppes.npcs.api.NpcAPI")
-            
-            // 获取 NpcAPI 实例
-            val npcApiInstance = npcApiClass.getMethod("Instance").invoke(null)
-            
-            // 获取 IWorld
-            val getIWorldMethod = npcApiClass.getMethod("getIWorld", ServerLevel::class.java)
-            val iWorld = getIWorldMethod.invoke(npcApiInstance, owner.level() as ServerLevel)
-            
-            // 获取 IPos
-            val getIPosMethod = npcApiClass.getMethod("getIPos", Double::class.java, Double::class.java, Double::class.java)
-            val iPos = getIPosMethod.invoke(npcApiInstance, owner.x, owner.y, owner.z)
-            
-            // 获取 IEntity
-            val getIEntityMethod = npcApiClass.getMethod("getIEntity", Entity::class.java)
-            val iEntity = getIEntityMethod.invoke(npcApiInstance, owner)
-            
-            // 构造事件参数
-            val eventArgs = arrayOf<Any?>(
-                phase, cbName, attacker.name.string, attacker.stringUUID, aBody.name, 
-                target.name.string, target.stringUUID, bBody.name, manifoldId
-            )
-            
-            // 调用脚本事件
-            val onScriptTriggerEventMethod = eventHooksClass.getMethod(
-                "onScriptTriggerEvent",
-                Int::class.java,
-                Class.forName("noppes.npcs.api.IWorld"),
-                Class.forName("noppes.npcs.api.IPos"),
-                Class.forName("noppes.npcs.api.IEntity"),
-                Array<Any?>::class.java
-            )
-            
-            onScriptTriggerEventMethod.invoke(null, eventId, iWorld, iPos, iEntity, eventArgs)
-            
-        } catch (e: Exception) {
-            // 如果反射调用失败，记录警告但不影响主要功能
-            SparkCore.LOGGER.warn(("Failed to trigger CustomNPC event: $e"))
-        }
-    }
 }

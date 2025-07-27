@@ -12,6 +12,15 @@ import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
 import kotlin.collections.set
 
+/**
+ * 脚本来源信息
+ * 用于追踪技能是由哪个脚本文件创建的
+ */
+data class ScriptSource(
+    val apiId: String,       // API模块ID，如"skill"
+    val fileName: String     // 脚本文件名，如"axe_combo_1"
+)
+
 class SkillType<S: Skill>(
     val registryKey: ResourceLocation,
     val isIndependent: Boolean = true,
@@ -19,6 +28,13 @@ class SkillType<S: Skill>(
 ) {
 
     internal var fromJS = false
+
+    /**
+     * 脚本来源信息
+     * 如果技能是由JS脚本创建的，此字段记录来源脚本信息
+     * 非JS创建的技能此字段为null
+     */
+    var scriptSource: ScriptSource? = null
     val name = Component.translatable("skill.${registryKey.namespace}.${registryKey.path}.name")
     val description = Component.translatable("skill.${registryKey.namespace}.${registryKey.path}.description")
     val icon = ResourceLocation.fromNamespaceAndPath(registryKey.namespace, "textures/skill/${registryKey.path}.png")

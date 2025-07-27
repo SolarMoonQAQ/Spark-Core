@@ -18,18 +18,11 @@ public class SparkPhysicsEvent extends Event {
     }
 
     /**
-     * 通过反射安全地发布事件到CustomNPC事件系统
+     * 发布事件到NeoForge事件总线
      */
-    private void postToCustomNpcEventBus() {
-        try {
-            Class<?> npcApiClass = Class.forName("noppes.npcs.api.NpcAPI");
-            Object npcApiInstance = npcApiClass.getMethod("Instance").invoke(null);
-            Object eventBus = npcApiClass.getMethod("events").invoke(npcApiInstance);
-            eventBus.getClass().getMethod("post", Object.class).invoke(eventBus, this);
-        } catch (Exception e) {
-            // 如果反射失败，忽略错误但不影响主要功能
-            // 可以选择记录日志：System.err.println("Failed to post to CustomNPC event bus: " + e.getMessage());
-        }
+    public void postToEventBus() {
+        // 发布到NeoForge事件总线
+        NeoForge.EVENT_BUS.post(this);
     }
     
     /**

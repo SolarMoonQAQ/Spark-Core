@@ -26,7 +26,7 @@ data class OAnimationSet(
 
     companion object {
         /**
-         * 获取动画集合。
+         * 如果res是玩家，自动返回玩家的动画集合
          */
         @JvmStatic
         fun get(res: ResourceLocation): OAnimationSet {

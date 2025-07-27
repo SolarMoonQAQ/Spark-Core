@@ -1,72 +1,29 @@
-# eclipse
-bin
-*.launch
-.settings
-.metadata
-.classpath
-.project
-
-# idea
-out
-*.ipr
-*.iws
-*.iml
-.idea
-
-# gradle
-build
-.gradle
-
-# other
-.eclipse
-eclipse
-run
-
-# Files from Forge MDK
-forge*changelog.txt
-
-.gitattributes
-gradlew
-gradlew.bat
-mcmodsrepo
-run-data
-CREDITS.txt
-changelog.txt
-setting.gradle
-.kotlin
-lib
-mods
-
-.gitignore
-minecraft-spider
-Genesis
-mcef
-webdisplays
-.cursorignore
-.trae
-.vscode
-/plan/
-
-# Added by Claude Task Master
 # Logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-dev-debug.log
-# Dependency directories
-node_modules/
-# Environment variables
-.env
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
 # Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-# OS specific
-.DS_Store!/plan/
-/.lingma/
-/plan/
-/.lingma/
+/frontend/
+/docs/security/
+/docs/state_tree_system/
+/js_test/
+/参考代码/

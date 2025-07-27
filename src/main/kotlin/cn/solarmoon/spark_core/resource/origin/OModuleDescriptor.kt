@@ -39,40 +39,8 @@ data class OModuleDescriptor(
     /** 是否为付费内容（为未来功能预留） */
     val paid: Boolean = false
 ) {
-    /**
-     * 转换为普通ModuleDescriptor
-     */
-    fun toModuleDescriptor(): ModuleDescriptor {
-        return ModuleDescriptor(
-            id = id,
-            version = version,
-            description = description,
-            author = author,
-            depends = depends,
-            recommends = recommends,
-            provides = provides,
-            conflicts = conflicts,
-            paid = paid
-        )
-    }
     
     companion object {
-        /**
-         * 从普通ModuleDescriptor转换
-         */
-        fun fromModuleDescriptor(descriptor: ModuleDescriptor): OModuleDescriptor {
-            return OModuleDescriptor(
-                id = descriptor.id,
-                version = descriptor.version,
-                description = descriptor.description,
-                author = descriptor.author,
-                depends = descriptor.depends,
-                recommends = descriptor.recommends,
-                provides = descriptor.provides,
-                conflicts = descriptor.conflicts,
-                paid = descriptor.paid
-            )
-        }
         
         /**
          * 获取模块描述器

@@ -34,7 +34,6 @@
     "animation.HumanoidArmorLayerMixin",
     "animation.HumanoidModelMixin",
     "animation.ItemInHandLayerMixin",
-    "animation.ItemRendererMixin",
     "animation.LivingEntityRendererMixin",
     "animation.ModelPartMixin",
     "animation.PlayerRendererMixin",

@@ -26,9 +26,9 @@ import java.util.* // 需要导入 Optional
  * 保存了客户端渲染完整动画和模型所需的必要数据
  *
  * 路径格式已更新为新resource系统格式：
- * - 模型路径：sparkcore:models/player
- * - 动画路径：sparkcore:animations/player/base_state/xxx
- * - 贴图路径：sparkcore:textures/entity/player.png
+ * - 模型路径：modId:moduleid/models/xxx
+ * - 动画路径：modId:moduleid/animations/player/.../xxx
+ * - 贴图路径：modId:moduleid/textures/entity/xxx
  */
 class ModelIndex (
     modelPath: ResourceLocation,

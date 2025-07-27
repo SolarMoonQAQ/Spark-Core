@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.js
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.SparkJSComponentRegisterEvent
 import cn.solarmoon.spark_core.js.origin.OJSScript
+import cn.solarmoon.spark_core.js.skill.JSSkillApi
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.neoforged.fml.util.LoaderException
 import net.neoforged.neoforge.common.NeoForge
@@ -90,8 +91,15 @@ abstract class SparkJS {
         try {
             validateApi(apiId)
             val api = JSApi.ALL[apiId]!!
-            api.onReload() // 触发重载来清理旧脚本的影响
-            
+
+            // 对于JSSkillApi，使用精确卸载
+            if (api is JSSkillApi) {
+                api.unloadScript(fileName)
+            } else {
+                // 其他API仍使用全局重载
+                api.onReload()
+            }
+
             SparkCore.LOGGER.info("卸载脚本: API=$apiId, 文件=$fileName")
         } catch (e: Exception) {
             SparkCore.LOGGER.error("卸载脚本失败: API=$apiId, 文件=$fileName", e)
@@ -103,7 +111,20 @@ abstract class SparkJS {
      * 公共方法，可以从外部调用
      */
     open fun executeScript(script: OJSScript) {
-        eval(script.content, "${script.apiId} - ${script.fileName}")
+        // 设置当前文件名到对应的API
+        val api = JSApi.ALL[script.apiId]
+        if (api is JSSkillApi) {
+            api.currentFileName = script.fileName
+        }
+
+        try {
+            eval(script.content, "${script.apiId} - ${script.fileName}")
+        } finally {
+            // 清除当前文件名
+            if (api is JSSkillApi) {
+                api.currentFileName = null
+            }
+        }
     }
 
 }

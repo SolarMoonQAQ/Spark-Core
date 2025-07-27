@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.resource.graph
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.event.ModuleGraphEvent
 import cn.solarmoon.spark_core.resource.origin.OModuleInfo
+import net.neoforged.neoforge.common.NeoForge
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.DirectedAcyclicGraph
 import org.jgrapht.traverse.TopologicalOrderIterator
@@ -32,6 +34,9 @@ object ModuleGraphManager {
         modules[moduleNode.id] = moduleNode
         graph.addVertex(moduleNode)
         SparkCore.LOGGER.debug("模块节点已注册: ${moduleNode.id}")
+
+        // 发布模块注册事件
+        publishModuleChangeEvent(moduleNode, ModuleGraphEvent.ChangeType.ADDED)
     }
 
     /**
@@ -44,12 +49,24 @@ object ModuleGraphManager {
                 moduleNode.data.dependencies.forEach { depId ->
                     modules[depId]?.let { depNode ->
                         graph.addEdge(moduleNode, depNode)
+                        // 发布硬依赖添加事件
+                        publishModuleDependencyChangeEvent(
+                            moduleNode, depNode,
+                            ModuleGraphEvent.DependencyType.HARD,
+                            ModuleGraphEvent.ChangeType.ADDED
+                        )
                     } ?: SparkCore.LOGGER.warn("模块 ${moduleNode.id} 的硬依赖 $depId 未找到。")
                 }
                 // 处理软依赖 (同样作为图的边)
                 moduleNode.data.recommendations.forEach { recId ->
                     modules[recId]?.let { recNode ->
                         graph.addEdge(moduleNode, recNode)
+                        // 发布软依赖添加事件
+                        publishModuleDependencyChangeEvent(
+                            moduleNode, recNode,
+                            ModuleGraphEvent.DependencyType.SOFT,
+                            ModuleGraphEvent.ChangeType.ADDED
+                        )
                     }
                 }
             } catch (e: IllegalArgumentException) {
@@ -62,6 +79,9 @@ object ModuleGraphManager {
         // 依赖图构建完成后，立即按拓扑顺序触发模块的注册流程
         orderedModule = getModulesInTopologicalOrder()
         SparkCore.LOGGER.info("模块拓扑排序完成，将按以下顺序注册: ${orderedModule.joinToString { it.id }}")
+
+        // 发布模块图重建事件
+        publishGraphRebuiltEvent()
     }
 
     /**
@@ -209,4 +229,77 @@ object ModuleGraphManager {
         moduleWeights.clear()
         SparkCore.LOGGER.info("ModuleGraphManager 已被清理。")
     }
+
+    // ==================== 事件发布机制 ====================
+
+    /**
+     * 发布模块变更事件
+     * @param moduleNode 发生变更的模块节点
+     * @param changeType 变更类型
+     */
+    private fun publishModuleChangeEvent(moduleNode: ModuleNode, changeType: ModuleGraphEvent.ChangeType) {
+        try {
+            val event = ModuleGraphEvent.NodeChange(moduleNode, changeType)
+            NeoForge.EVENT_BUS.post(event)
+            SparkCore.LOGGER.debug("发布模块变更事件: {} - {}", moduleNode.id, changeType)
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布模块变更事件失败: ${moduleNode.id}", e)
+        }
+    }
+
+    /**
+     * 发布模块依赖关系变更事件
+     * @param source 依赖源模块节点
+     * @param target 依赖目标模块节点
+     * @param dependencyType 依赖类型
+     * @param changeType 变更类型
+     */
+    private fun publishModuleDependencyChangeEvent(
+        source: ModuleNode,
+        target: ModuleNode,
+        dependencyType: ModuleGraphEvent.DependencyType,
+        changeType: ModuleGraphEvent.ChangeType
+    ) {
+        try {
+            val event = ModuleGraphEvent.DependencyChange(source, target, dependencyType, changeType)
+            NeoForge.EVENT_BUS.post(event)
+            SparkCore.LOGGER.debug(
+                "发布模块依赖变更事件: {} -> {} ({}) - {}",
+                source.id,
+                target.id,
+                dependencyType,
+                changeType
+            )
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布模块依赖变更事件失败: ${source.id} -> ${target.id}", e)
+        }
+    }
+
+    /**
+     * 发布模块加载顺序变更事件
+     * @param affectedModules 受影响的模块列表
+     */
+    private fun publishLoadOrderChangeEvent(affectedModules: List<ModuleNode>) {
+        try {
+            val event = ModuleGraphEvent.LoadOrderChange(affectedModules)
+            NeoForge.EVENT_BUS.post(event)
+            SparkCore.LOGGER.debug("发布模块加载顺序变更事件，影响 ${affectedModules.size} 个模块")
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布模块加载顺序变更事件失败", e)
+        }
+    }
+
+    /**
+     * 发布模块图重建事件
+     */
+    private fun publishGraphRebuiltEvent() {
+        try {
+            val event = ModuleGraphEvent.GraphRebuilt
+            NeoForge.EVENT_BUS.post(event)
+            SparkCore.LOGGER.info("发布模块图重建事件")
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布模块图重建事件失败", e)
+        }
+    }
+
 }

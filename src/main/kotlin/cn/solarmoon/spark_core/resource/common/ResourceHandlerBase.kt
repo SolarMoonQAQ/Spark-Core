@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.resource.common
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.resource.graph.ResourceGraphManager
+import cn.solarmoon.spark_core.resource.conflict.ResourceConflictManager
 import net.minecraft.resources.ResourceLocation
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -33,6 +34,22 @@ abstract class ResourceHandlerBase : IModuleAwareResourceHandler, IHotReloadAwar
         val node = ResourceGraphManager.addOrUpdateResource(filePath, getResourceType())
         if (node != null) {
             try {
+                // 检测资源冲突
+                val conflictResult = ResourceConflictManager.detectConflict(node)
+                when (conflictResult) {
+                    is ResourceConflictManager.ConflictDetectionResult.Conflict -> {
+                        SparkCore.LOGGER.warn("检测到资源冲突: ${node.id}")
+                        // 暂停处理，等待用户解决冲突
+                        return
+                    }
+                    is ResourceConflictManager.ConflictDetectionResult.PendingChange -> {
+                        SparkCore.LOGGER.info("资源有变更，已创建Legacy备份: ${node.id}")
+                    }
+                    else -> {
+                        // 无冲突，正常处理
+                    }
+                }
+
                 processResourceModified(node)
                 ResourceHandlerLogger.logResourceModified(getResourceType(), node.id, node.getFullModuleId())
             } catch (e: Exception) {

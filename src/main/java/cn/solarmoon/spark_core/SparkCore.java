@@ -24,8 +24,6 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.HashMap;
-
-import java.util.List;
 @Mod(SparkCore.MOD_ID)
 public class SparkCore {
 
@@ -64,12 +62,8 @@ public class SparkCore {
         SyncerTypes.register();
         SparkDataGenerator.register(modEventBus);
         SparkCapabilities.register(modEventBus);
-        SparkJSApiRegister.register(modEventBus);
-        SparkCustomModelItem.register(modEventBus);
-        // 注册配置
         SparkConfig.register(modContainer);
         PhysicsHelperKt.initBullet();
-        // 注册资源系统
         SparkResourceRegister.register(modEventBus);
     }
 }

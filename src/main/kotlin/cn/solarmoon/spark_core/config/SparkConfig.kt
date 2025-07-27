@@ -52,6 +52,12 @@ object SparkConfig {
         val webServerPort: Supplier<Int>
         val webServerCorsEnabled: Supplier<Boolean>
 
+        // 打包配置
+        val defaultPackagingOutputDir: Supplier<String>
+        val maxConcurrentPackagingTasks: Supplier<Int>
+        val packagingTaskTimeoutMinutes: Supplier<Int>
+        val defaultCompressionLevel: Supplier<Int>
+
         init {
 
             // Web服务器配置
@@ -72,6 +78,32 @@ object SparkConfig {
                 .comment("是否启用CORS跨域支持，用于前端调试")
                 .translation("config.spark_core.web_server_cors_enabled")
                 .define("webServerCorsEnabled", true)
+
+            builder.pop()
+
+            // 打包配置
+            builder.comment("打包管理配置")
+            builder.push("packaging")
+
+            defaultPackagingOutputDir = builder
+                .comment("默认打包输出目录")
+                .translation("config.${SparkCore.MOD_ID}.default_packaging_output_dir")
+                .define("defaultPackagingOutputDir", "sparkcore/packages")
+
+            maxConcurrentPackagingTasks = builder
+                .comment("最大并发打包任务数")
+                .translation("config.${SparkCore.MOD_ID}.max_concurrent_packaging_tasks")
+                .defineInRange("maxConcurrentPackagingTasks", 2, 1, 8)
+
+            packagingTaskTimeoutMinutes = builder
+                .comment("打包任务超时时间（分钟）")
+                .translation("config.${SparkCore.MOD_ID}.packaging_task_timeout_minutes")
+                .defineInRange("packagingTaskTimeoutMinutes", 30, 5, 120)
+
+            defaultCompressionLevel = builder
+                .comment("默认压缩级别（0-9）")
+                .translation("config.${SparkCore.MOD_ID}.default_compression_level")
+                .defineInRange("defaultCompressionLevel", 9, 0, 9)
 
             builder.pop()
         }

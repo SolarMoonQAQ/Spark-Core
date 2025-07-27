@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.texture.OTexture
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
+import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
 import cn.solarmoon.spark_core.resource.graph.ResourceGraphManager
 import cn.solarmoon.spark_core.resource.graph.ResourceNode
@@ -29,11 +30,19 @@ import javax.imageio.ImageIO
 class TextureHandler(
     private val textureRegistry: DynamicAwareRegistry<OTexture>
 ) : ResourceHandlerBase() {
-    
+
+    companion object {
+        init {
+            HandlerDiscoveryService.registerHandler {
+                TextureHandler(cn.solarmoon.spark_core.registry.common.SparkRegistries.DYNAMIC_TEXTURES)
+            }
+        }
+    }
+
     private val resourceType = "textures"
     private val supportedExtensions = setOf("png", "jpg", "jpeg", "tga", "bmp")
     private var processedCount = 0
-    
+
     init {
         SparkCore.LOGGER.info("TextureHandler 初始化完成")
         // 注意：移除对DependencyGraph的注册，使用MetadataManager进行依赖管理

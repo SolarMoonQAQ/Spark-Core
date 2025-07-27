@@ -31,7 +31,6 @@ import cn.solarmoon.spark_core.physics.sync.AttackSystemSyncPayload
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
 import cn.solarmoon.spark_core.resource.sync.UpdateDepsC2SPacket
 import cn.solarmoon.spark_core.resource.sync.DepsChangedS2CPacket
-import cn.solarmoon.spark_core.rpc.payload.RpcPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -99,9 +98,6 @@ object SparkPayloadRegister {
         resource.playToClient(DynamicRegistrySyncS2CPacket.TYPE, DynamicRegistrySyncS2CPacket.STREAM_CODEC, DynamicRegistrySyncS2CPacket::handleInClient)
         resource.playToClient(UpdateDepsC2SPacket.TYPE, UpdateDepsC2SPacket.STREAM_CODEC, UpdateDepsC2SPacket::handleInServer)
         resource.playToClient(DepsChangedS2CPacket.TYPE, DepsChangedS2CPacket.STREAM_CODEC, DepsChangedS2CPacket::handleInClient)
-
-        val rpc = event.registrar("rpc")
-        rpc.playToServer(RpcPayload.TYPE, RpcPayload.STREAM_CODEC, RpcPayload::handleInServer)
 
         val entity = event.registrar("entity")
         entity.playBidirectional(EntityMovingPayload.TYPE, EntityMovingPayload.STREAM_CODEC, EntityMovingPayload::handleInBothSide)

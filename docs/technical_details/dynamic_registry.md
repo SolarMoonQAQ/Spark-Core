@@ -36,7 +36,7 @@ class DynamicAwareRegistry<T>(private val staticRegistry: Registry<T>) : Registr
     private val lock: ReadWriteLock = ReentrantReadWriteLock()
 
     // 动态ID分配器
-    private val nextDynamicId = AtomicInteger(...)
+    private val nextDynamicId = AtomicInteger(findMaxStaticId() + 1)
     
     // 网络同步回调
     var onDynamicRegister: ((key: ResourceKey<T>, value: T) -> Unit)? = null

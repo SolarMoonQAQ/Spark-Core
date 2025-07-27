@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.physics.sync.AttackSystemSyncPayload
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.PacketDistributor
-import net.neoforged.fml.ModList
 
 /**
  * 统一的攻击方法，方便对攻击数据进行统一修改
@@ -140,17 +139,6 @@ class AttackSystem {
         val currentEntity = associatedEntity
         val currentCbId = collisionBoxId
         if (currentEntity != null && currentCbId != null && !currentEntity.level().isClientSide) {
-            // 检查是否为 EntityCustomNpc
-            if (ModList.get().isLoaded("customnpcs")) {
-                try {
-                    val entityCustomNpcClass = Class.forName("noppes.npcs.entity.EntityCustomNpc")
-                    if (entityCustomNpcClass.isInstance(currentEntity)) {
-                        SparkCore.LOGGER.info("EntityCustomNpc加载成功")
-                    }
-                } catch (e: Exception) {
-                    // 忽略反射错误，继续执行
-                }
-            }
             val payload = AttackSystemSyncPayload(
                 currentEntity.syncerType,
                 currentEntity.syncData,
@@ -163,21 +151,11 @@ class AttackSystem {
                 resetAfterTicks // Add new field
             )
             PacketDistributor.sendToPlayersTrackingEntity(currentEntity, payload)
+            SparkCore.LOGGER.debug("AttackSystem: Sent sync packet for entity {} and collisionBoxId {}", currentEntity.id, currentCbId)
         }
     }
 
     fun customAttack(target: Entity, customLogic: () -> Boolean): Boolean {
-        // 检查是否为 EntityCustomNpc 且为 rightArm，使用反射安全检查
-        if (ModList.get().isLoaded("customnpcs") && this.collisionBoxId == "rightArm" && this.associatedEntity?.level() is ClientLevel) {
-            try {
-                val entityCustomNpcClass = Class.forName("noppes.npcs.entity.EntityCustomNpc")
-                if (entityCustomNpcClass.isInstance(this.associatedEntity)) {
-                    println("123456")
-                }
-            } catch (e: Exception) {
-                // 忽略反射错误，继续执行
-            }
-        }
         if (autoResetEnabled) {
             ticksSinceLastReset++ // 每次调用时递增，当自动重置开启时
             
@@ -209,7 +187,6 @@ class AttackSystem {
         }
         
         // 如果customLogic返回false，攻击未发生
-        // 如果启用了自动重置，ticksSinceLastReset已经为这次"尝试"递增了
         return false
     }
 

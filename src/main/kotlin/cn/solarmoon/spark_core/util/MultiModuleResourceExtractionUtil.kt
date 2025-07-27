@@ -1,9 +1,11 @@
 package cn.solarmoon.spark_core.util
 
 import cn.solarmoon.spark_core.SparkCore
+import net.neoforged.fml.ModList
 import net.neoforged.fml.loading.FMLPaths
 import org.slf4j.Logger
 import java.io.File
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -52,21 +54,22 @@ object MultiModuleResourceExtractionUtil {
         var allSuccessful = true
 
         try {
-            // 从 JAR 中查找 assets/sparkcore/ 目录（统一的资源路径）
-            val sparkcoreAssetsUrl = modMainClass.classLoader.getResource("assets/sparkcore/")
+            var sparkcoreAssetsUrl = findCorrectResourceUrl(modId)
+            // 如果新方法失败，fallback到原有的类加载器方式（向后兼容）
             if (sparkcoreAssetsUrl == null) {
-                SparkCore.LOGGER.debug("JAR 中未找到 assets/sparkcore/ 目录，mod: $modId")
+                sparkcoreAssetsUrl = modMainClass.classLoader.getResource("assets/sparkcore/")
+            } else {
+                SparkCore.LOGGER.info("调试 - NeoForge API查找成功: $sparkcoreAssetsUrl")
+            }
+            if (sparkcoreAssetsUrl == null) {
                 return true // 视为成功，因为可能确实没有资源
             }
 
             val sparkcoreAssetsPath = Paths.get(sparkcoreAssetsUrl.toURI())
             if (!Files.exists(sparkcoreAssetsPath)) {
-                SparkCore.LOGGER.debug("assets/sparkcore/ 路径不存在，mod: $modId")
                 return true
             }
 
-            SparkCore.LOGGER.info("开始为mod '$modId' 提取 $resourceType 资源，扫描所有模块")
-            
             // 遍历assets/sparkcore/下的所有模块目录
             Files.list(sparkcoreAssetsPath).use { moduleStream ->
                 moduleStream
@@ -165,6 +168,7 @@ object MultiModuleResourceExtractionUtil {
      * @return 推断的modId
      */
     private fun inferModIdFromClass(modMainClass: Class<*>): String {
+        SparkCore.LOGGER.info("=== inferModIdFromClass 调试 ===")
         // 首先尝试从已注册的mod列表中查找
         val registeredMods = cn.solarmoon.spark_core.resource.common.MultiModResourceRegistry.getRegisteredMods()
         for (modInfo in registeredMods) {
@@ -174,18 +178,49 @@ object MultiModuleResourceExtractionUtil {
         }
 
         // 如果没找到，使用默认逻辑
-        return when {
-            modMainClass.name.contains("spark_core") -> "spark_core"
+        val inferredModId = when {
+            modMainClass.name.contains("spark_core") -> {
+                "spark_core"
+            }
             else -> {
                 // 尝试从包名推断
                 val packageName = modMainClass.packageName
                 val parts = packageName.split(".")
-                if (parts.size >= 3) {
+                val result = if (parts.size >= 3) {
                     parts[2] // 通常是 cn.solarmoon.{mod_id}
                 } else {
                     "unknown_mod"
                 }
+                result
             }
+        }
+        return inferredModId
+    }
+
+    /**
+     * 使用NeoForge官方API正确定位mod资源
+     *
+     * 这个方法解决了类加载器上下文混乱的问题，确保每个mod从正确的jar包中获取资源
+     *
+     * @param modId 模组ID
+     * @return 该mod的assets/sparkcore/目录URL，如果未找到则返回null
+     */
+    private fun findCorrectResourceUrl(modId: String): URL? {
+        return try {
+            // 使用NeoForge官方API获取mod文件信息
+            val modFileInfo = ModList.get().getModFileById(modId)
+            if (modFileInfo == null) {
+                return null
+            }
+            // 在特定mod的文件中查找assets/sparkcore/资源
+            val resourcePath = modFileInfo.file.findResource("assets/sparkcore/")
+            if (resourcePath == null) {
+                return null
+            }
+            val resourceUrl = resourcePath.toUri().toURL()
+            resourceUrl
+        } catch (e: Exception) {
+            null
         }
     }
 

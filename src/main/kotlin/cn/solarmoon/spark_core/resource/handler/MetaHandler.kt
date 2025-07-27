@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.resource.handler
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
+import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.ResourceHandlerBase
 import cn.solarmoon.spark_core.resource.graph.ModuleGraphManager
 import cn.solarmoon.spark_core.resource.graph.ResourceGraphManager
@@ -27,6 +28,14 @@ import kotlin.io.path.readText
  */
 @AutoRegisterHandler
 class MetaHandler : ResourceHandlerBase() {
+
+    companion object {
+        init {
+            HandlerDiscoveryService.registerHandler {
+                MetaHandler()
+            }
+        }
+    }
 
     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
 

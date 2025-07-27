@@ -3,8 +3,7 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}:slim"
     additionalRuntimeClasspath ('org.jetbrains.kotlin:kotlin-stdlib')
     additionalRuntimeClasspath ('org.jetbrains.kotlin:kotlin-reflect')
-    // 明确指定与Ktor 2.3.4兼容的协程版本
-    additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3')
+    additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-coroutines-core')
     additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-serialization-core')
     additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-serialization-json')
     // jei
@@ -13,6 +12,8 @@ dependencies {
     runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
     // 玉
     implementation "maven.modrinth:jade:${jade_version}"
+    // Getter与Setter
+    implementation 'org.projectlombok:lombok:1.18.30'
 
     // 兼容--------------------------------------------------------------------------------------------------------------
     // geckolib
@@ -28,6 +29,12 @@ dependencies {
 
     jarJar(implementation('org.jgrapht:jgrapht-core:1.5.2'))
     additionalRuntimeClasspath ('org.jgrapht:jgrapht-core:1.5.2')
+    // 添加 jgrapht-core 的传递依赖 apfloat
+    jarJar(implementation('org.apfloat:apfloat:1.10.1'))
+    additionalRuntimeClasspath ('org.apfloat:apfloat:1.10.1')
+    // 添加 jheaps
+    jarJar(implementation('org.jheaps:jheaps:0.14'))
+    additionalRuntimeClasspath('org.jheaps:jheaps:0.14')
     // 外部库------------------------------------------------------------------------------------------------------------
     // 状态机
     jarJar(implementation("io.github.nsk90:kstatemachine-jvm:0.33.0"))

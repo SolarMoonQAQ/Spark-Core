@@ -101,10 +101,32 @@ graph TD
 ### 2.2 资源发现与处理
 
 - **`ResourceDiscoveryService`**: 在游戏启动时扫描所有已知位置（`sparkcore/`, `mods/`, `.spark`包），发现所有可用的资源命名空间和类型。
+
+- **`HandlerDiscoveryService`**: 负责发现和注册所有资源处理器。现在支持自动注册机制：
+  - **自动注册**: Handler类通过`@AutoRegisterHandler`注解和companion object的init块自动注册
+  - **向后兼容**: 保留硬编码fallback机制确保系统稳定性
+  - **职责专一**: 专注于handler发现、注册和生命周期管理
+
 - **`ResourceHandler` (如 `AnimationHandler`)**: 每种资源类型都有一个对应的处理器。它们负责：
   1. 监视文件系统变更。
   2. 在文件变更时调用`ResourceGraphManager.addOrUpdateResource()`。
   3. 将解析后的资源注册到对应的`DynamicAwareRegistry`中。
+
+  **Handler自动注册示例**：
+  ```kotlin
+  @AutoRegisterHandler
+  class AnimationHandler(...) : ResourceHandlerBase() {
+      companion object {
+          init {
+              HandlerDiscoveryService.registerHandler {
+                  AnimationHandler(SparkRegistries.TYPED_ANIMATION)
+              }
+          }
+      }
+  }
+  ```
+
+- **`DynamicResourceApplier`**: 专注于热重载服务的启动和配置，移除了重复的handler生命周期管理代码。
 
 ### 2.3 模块图系统 (Module Graph System)
 

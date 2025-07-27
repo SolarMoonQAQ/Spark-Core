@@ -17,6 +17,12 @@ object JSSkillApi: JSApi, JSComponent() {
 
     private val preLoads = mutableListOf<Pair<JSSkillTypeBuilder, () -> Unit>>()
 
+    /**
+     * 当前正在处理的脚本文件名
+     * 用于在构建技能时设置脚本来源信息
+     */
+    var currentFileName: String? = null
+
     fun create(id: String, consumer: Function) = create(id, null, consumer)
 
     fun createBy(id: String, by: String, consumer: Function) = create(id, by, consumer)
@@ -26,6 +32,8 @@ object JSSkillApi: JSApi, JSComponent() {
         preLoads.add(
             builder to {
                 builder.id = ResourceLocation.parse(id)
+                // 设置当前文件名到builder
+                builder.currentFileName = currentFileName
                 consumer.call(engine, builder)
                 if (by == null) builder.build() else builder.buildBy(SkillManager[ResourceLocation.parse(by)] ?: throw NullPointerException("父技能 $by 无法被继承，因为此技能尚未注册"))
             }
@@ -38,11 +46,37 @@ object JSSkillApi: JSApi, JSComponent() {
         preLoads.clear()
     }
 
+    /**
+     * 精确卸载指定脚本文件创建的技能
+     * @param fileName 脚本文件名（不包含扩展名）
+     */
+    fun unloadScript(fileName: String) {
+        val toRemove = SkillManager.filter {
+            it.value.fromJS &&
+            it.value.scriptSource?.apiId == id &&
+            it.value.scriptSource?.fileName == fileName
+        }.toList()
+
+        toRemove.forEach {
+            SkillManager.remove(it.first)
+            SparkCore.LOGGER.debug("移除技能: ${it.first} (来源脚本: $fileName)")
+        }
+
+        if (toRemove.isNotEmpty()) {
+            SparkCore.LOGGER.info("已卸载脚本 $fileName 创建的 ${toRemove.size} 个技能")
+        }
+    }
+
     override fun onReload() {
-        val r = SkillManager.filter { it.value.fromJS }.toList()
+        // 清除所有由此API创建的JS技能
+        val r = SkillManager.filter {
+            it.value.fromJS &&
+            it.value.scriptSource?.apiId == id
+        }.toList()
         r.forEach {
             SkillManager.remove(it.first)
         }
+        SparkCore.LOGGER.debug("onReload: 清除了 ${r.size} 个技能")
     }
 
 }

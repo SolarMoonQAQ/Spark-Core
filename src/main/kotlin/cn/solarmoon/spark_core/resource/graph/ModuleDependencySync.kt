@@ -3,16 +3,26 @@ package cn.solarmoon.spark_core.resource.graph
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.resource.origin.ODependencyType
 import cn.solarmoon.spark_core.resource.origin.OResourceDependency
+import cn.solarmoon.spark_core.resource.origin.OModuleInfo
+import com.google.gson.GsonBuilder
 import net.minecraft.resources.ResourceLocation
+import net.neoforged.fml.loading.FMLPaths
 import org.jgrapht.graph.SimpleDirectedGraph
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * 模块依赖同步器
- * 
+ *
  * 专门负责资源级别依赖与模块级别依赖的同步，遵循单一职责原则。
  * 当资源依赖跨越不同模块时，自动在模块级别建立相应的依赖关系。
  */
 object ModuleDependencySync {
+
+    private val gson = GsonBuilder().setPrettyPrinting().create()
+    private val isDevelopmentMode = AtomicBoolean(true)
+    private val isSaving = AtomicBoolean(false)
     
     /**
      * 同步跨模块依赖到ModuleGraphManager
@@ -35,10 +45,22 @@ object ModuleDependencySync {
                     if (dep.type == ODependencyType.HARD) {
                         val success = ModuleGraphManager.addDynamicDependency(sourceModuleId, targetModuleId)
                         if (success) {
-                            SparkCore.LOGGER.debug("同步跨模块硬依赖: $sourceModuleId -> $targetModuleId (资源: ${sourceNode.id} -> ${dep.id})")
+                            SparkCore.LOGGER.debug(
+                                "同步跨模块硬依赖: {} -> {} (资源: {} -> {})",
+                                sourceModuleId,
+                                targetModuleId,
+                                sourceNode.id,
+                                dep.id
+                            )
                         }
                     } else {
-                        SparkCore.LOGGER.debug("跨模块软依赖不同步到模块级别: $sourceModuleId -> $targetModuleId (资源: ${sourceNode.id} -> ${dep.id})")
+                        SparkCore.LOGGER.debug(
+                            "跨模块软依赖不同步到模块级别: {} -> {} (资源: {} -> {})",
+                            sourceModuleId,
+                            targetModuleId,
+                            sourceNode.id,
+                            dep.id
+                        )
                     }
                 }
             }
@@ -211,6 +233,112 @@ object ModuleDependencySync {
         return node?.getFullModuleId() ?: resourceLocation.namespace
     }
     
+    // ==================== 开发模式序列化功能 ====================
+
+    /**
+     * 设置开发模式
+     */
+    fun setDevelopmentMode(enabled: Boolean) {
+        isDevelopmentMode.set(enabled)
+        SparkCore.LOGGER.info("ModuleDependencySync 开发模式已${if (enabled) "启用" else "禁用"}")
+    }
+
+    /**
+     * 开发模式下同步模块信息到磁盘
+     * 在资源依赖变更后调用，更新模块的 resourceDependencies 并保存
+     */
+    fun syncModuleInfoToDisk(moduleId: String) {
+        if (!isDevelopmentMode.get() || isSaving.get()) return
+
+        try {
+            val moduleNode = ModuleGraphManager.getModuleNode(moduleId)
+            if (moduleNode == null) {
+                SparkCore.LOGGER.warn("模块节点不存在，无法同步: $moduleId")
+                return
+            }
+
+            // 收集该模块的所有资源依赖
+            val resourceDependencies = collectResourceDependenciesForModule(moduleId)
+            // 注意：ModuleNode.data 是 val，不能直接修改
+            // TODO: 需要重新重建OModuleInfo的各个字段
+
+            // 更新模块信息
+            val updatedModuleInfo = moduleNode.data.copy(
+                resourceDependencies = resourceDependencies
+            )
+
+            // 保存到磁盘（避免触发MetaHandler）
+            saveModuleInfoWithoutTriggeringHandler(moduleId, updatedModuleInfo)
+
+
+            SparkCore.LOGGER.debug("已同步模块信息到磁盘: $moduleId")
+
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("同步模块信息到磁盘失败: $moduleId", e)
+        }
+    }
+
+    /**
+     * 收集模块的资源依赖信息
+     */
+    private fun collectResourceDependenciesForModule(moduleId: String): Map<ResourceLocation, List<OResourceDependency>> {
+        val resourceDependencies = mutableMapOf<ResourceLocation, List<OResourceDependency>>()
+
+        // 获取该模块下的所有资源节点
+        val moduleResources = ResourceNodeManager.getAllNodeValues()
+            .filter { "${it.modId}:${it.moduleName}" == moduleId }
+
+        for (resourceNode in moduleResources) {
+            val dependencies = ResourceGraphManager.getDirectDependencies(resourceNode.id)
+            if (dependencies.isNotEmpty()) {
+                resourceDependencies[resourceNode.id] = dependencies
+            }
+        }
+
+        return resourceDependencies
+    }
+
+    /**
+     * 保存模块信息但不触发MetaHandler
+     */
+    private fun saveModuleInfoWithoutTriggeringHandler(moduleId: String, moduleInfo: OModuleInfo) {
+        if (!isSaving.compareAndSet(false, true)) return
+
+        try {
+            val moduleDir = getModuleDirectory(moduleId)
+            if (moduleDir == null) {
+                SparkCore.LOGGER.warn("无法找到模块目录: $moduleId")
+                return
+            }
+
+            val metaFile = moduleDir.resolve(OModuleInfo.DESCRIPTOR_FILE_NAME)
+            val jsonContent = gson.toJson(moduleInfo)
+
+            // TODO: 实现避免触发ResHotReloadService的机制
+            // 当前临时实现：直接写入文件
+            Files.createDirectories(metaFile.parent)
+            Files.writeString(metaFile, jsonContent)
+
+            SparkCore.LOGGER.debug("已保存模块信息: {}", metaFile)
+
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("保存模块信息失败: $moduleId", e)
+        } finally {
+            isSaving.set(false)
+        }
+    }
+
+    /**
+     * 获取模块目录
+     */
+    private fun getModuleDirectory(moduleId: String): Path? {
+        val parts = moduleId.split(":")
+        if (parts.size != 2) return null
+
+        val (modId, moduleName) = parts
+        return FMLPaths.GAMEDIR.get().resolve("sparkcore").resolve(modId).resolve(moduleName)
+    }
+
     /**
      * 验证结果
      */

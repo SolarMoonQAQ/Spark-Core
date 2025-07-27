@@ -10,6 +10,7 @@ import cn.solarmoon.spark_core.physics.div
 import cn.solarmoon.spark_core.physics.toRadians
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
+import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
 import cn.solarmoon.spark_core.resource.graph.ResourceGraphManager
 import cn.solarmoon.spark_core.resource.graph.ResourceNode
@@ -35,11 +36,19 @@ import kotlin.io.path.readText
 class ModelHandler(
     private val modelRegistry: DynamicAwareRegistry<OModel>
 ) : ResourceHandlerBase() {
-    
+
+    companion object {
+        init {
+            HandlerDiscoveryService.registerHandler {
+                ModelHandler(cn.solarmoon.spark_core.registry.common.SparkRegistries.MODELS)
+            }
+        }
+    }
+
     private val resourceType = "models"
     private val supportedExtensions = setOf("json")
     private var processedCount = 0
-    
+
     init {
         SparkCore.LOGGER.info("ModelHandler 初始化完成")
     }

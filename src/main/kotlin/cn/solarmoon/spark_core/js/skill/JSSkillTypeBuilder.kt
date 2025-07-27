@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillConfig
 import cn.solarmoon.spark_core.skill.SkillType
+import cn.solarmoon.spark_core.skill.ScriptSource
 import cn.solarmoon.spark_core.skill.skillType
 import net.minecraft.resources.ResourceLocation
 import org.mozilla.javascript.Function
@@ -16,6 +17,12 @@ class JSSkillTypeBuilder(val js: SparkJS) {
         private set
     private val preFunctions = mutableListOf<SkillConfig.() -> Unit>()
     private val functions = mutableListOf<Skill.() -> Unit>()
+
+    /**
+     * 当前正在处理的脚本文件名
+     * 由JSSkillApi在处理脚本时设置
+     */
+    var currentFileName: String? = null
 
     fun getId() = id.toString()
 
@@ -40,13 +47,25 @@ class JSSkillTypeBuilder(val js: SparkJS) {
         init {
             functions.forEach { it.invoke(this) }
         }
-    }.apply { fromJS = true }
+    }.apply {
+        fromJS = true
+        // 设置脚本来源信息
+        scriptSource = currentFileName?.let { fileName ->
+            ScriptSource("skill", fileName)
+        }
+    }
 
     fun buildBy(type: SkillType<*>) = skillType(id, { type.provider() }) {
         preFunctions.forEach { it.invoke(config) }
         init {
             functions.forEach { it.invoke(this) }
         }
-    }.apply { fromJS = true }
+    }.apply {
+        fromJS = true
+        // 设置脚本来源信息
+        scriptSource = currentFileName?.let { fileName ->
+            ScriptSource("skill", fileName)
+        }
+    }
 
 }

@@ -3,11 +3,6 @@ package cn.solarmoon.spark_core.resource.presets
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.resource.ResHotReloadService
 import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
-import cn.solarmoon.spark_core.resource.handler.AnimationHandler
-import cn.solarmoon.spark_core.resource.handler.ModelHandler
-import cn.solarmoon.spark_core.resource.handler.TextureHandler
-import cn.solarmoon.spark_core.resource.handler.JavaScriptHandler
-import cn.solarmoon.spark_core.resource.handler.IKConstraintHandler
 import cn.solarmoon.spark_core.resource.common.IResourceHandler
 
 import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent
@@ -63,34 +58,7 @@ object DynamicResourceApplier {
                 }
             }
 
-            // 所有 handler 的 registerDirectory 调用完成后，意味着初始文件扫描已完成
-            // （因为 registerDirectory -> processExistingFilesInDirectory -> handler.onResourceAdded）
-            // 此时，为所有Handler标记初始扫描已完成，以便后续的资源变动可以触发网络同步
-            handlers.filterIsInstance<AnimationHandler>().forEach { animHandler ->
-                animHandler.markInitialScanComplete()
-                SparkCore.LOGGER.info("已为 AnimationHandler (${animHandler.getResourceType()}) 标记初始扫描完成。")
-            }
-            
-            handlers.filterIsInstance<ModelHandler>().forEach { modelHandler ->
-                modelHandler.markInitialScanComplete()
-                SparkCore.LOGGER.info("已为 ModelHandler (${modelHandler.getResourceType()}) 标记初始扫描完成。")
-            }
-            
-            handlers.filterIsInstance<TextureHandler>().forEach { textureHandler ->
-                textureHandler.markInitialScanComplete()
-                SparkCore.LOGGER.info("已为 TextureHandler (${textureHandler.getResourceType()}) 标记初始扫描完成。")
-            }
-            
-            handlers.filterIsInstance<JavaScriptHandler>().forEach { jsHandler ->
-                jsHandler.markInitialScanComplete()
-
-            }
-
-            handlers.filterIsInstance<IKConstraintHandler>().forEach { ikHandler ->
-                ikHandler.markInitialScanComplete()
-                SparkCore.LOGGER.info("已为 IKConstraintHandler (${ikHandler.getResourceType()}) 标记初始扫描完成。")
-            }
-
+            // 启动热重载服务
             if (successfullyRegisteredHandlers > 0 && !resHotReloadSvc.isMonitorActive) {
                 try {
                     resHotReloadSvc.start()

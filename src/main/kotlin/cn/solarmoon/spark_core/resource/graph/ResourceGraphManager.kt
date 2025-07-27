@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.resource.graph
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.event.ResourceGraphEvent
 import cn.solarmoon.spark_core.resource.common.ModuleIdUtils
 import cn.solarmoon.spark_core.resource.origin.OAssetMetadata
 import cn.solarmoon.spark_core.resource.origin.ODependencyType
@@ -9,6 +10,7 @@ import cn.solarmoon.spark_core.resource.origin.OResourceDependency
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import net.minecraft.resources.ResourceLocation
+import net.neoforged.neoforge.common.NeoForge
 import org.jgrapht.graph.SimpleDirectedGraph
 import org.jgrapht.graph.AsSubgraph
 import org.jgrapht.traverse.DepthFirstIterator
@@ -67,6 +69,8 @@ object ResourceGraphManager {
             ResourceNodeManager.updateNode(existingNode)
             // 触发依赖重新计算
             generateAndLinkDependencies(existingNode)
+            // 发布资源更新事件
+            publishResourceChangeEvent(existingNode, ResourceGraphEvent.ChangeType.UPDATED)
             return existingNode
         } else {
             // 4. 创建新节点
@@ -101,6 +105,8 @@ object ResourceGraphManager {
                 checkAndNotifyOverrideChanges(newNode)
             }
 
+            // 发布资源添加事件
+            publishResourceChangeEvent(newNode, ResourceGraphEvent.ChangeType.ADDED)
             return newNode
         }
     }
@@ -120,6 +126,8 @@ object ResourceGraphManager {
                 checkAndNotifyOverrideChanges(nodeToRemove)
             }
 
+            // 发布资源移除事件
+            publishResourceChangeEvent(nodeToRemove, ResourceGraphEvent.ChangeType.REMOVED)
             graph.removeVertex(nodeToRemove)
             return true
         }
@@ -198,11 +206,24 @@ object ResourceGraphManager {
         // 1. 计算依赖关系
         val dependencies = DependencyCalculator.calculateDependencies(node)
 
-        // 2. 在图中链接依赖关系
+        // 2. 获取旧的依赖关系用于事件发布
+        val oldDependencies = graph.outgoingEdgesOf(node).map { edge ->
+            val target = graph.getEdgeTarget(edge)
+            Triple(node, target, edge)
+        }.toSet()
+
+        // 3. 在图中链接依赖关系（不发布事件，避免重复）
         DependencyCalculator.linkDependencies(graph, node, dependencies)
 
-        // 3. 同步跨模块依赖到ModuleGraphManager (委托给 ModuleDependencySync)
+        // 4. 发布依赖关系变更事件（只在自动计算依赖时发布）
+        publishDependencyChangesForNode(node, oldDependencies, dependencies)
+
+        // 5. 同步跨模块依赖到ModuleGraphManager (委托给 ModuleDependencySync)
         ModuleDependencySync.syncModuleDependencies(node, dependencies)
+
+        // 6. 开发模式下同步模块信息到磁盘
+        val moduleId = "${node.modId}:${node.moduleName}"
+        ModuleDependencySync.syncModuleInfoToDisk(moduleId)
     }
 
     /**
@@ -230,6 +251,8 @@ object ResourceGraphManager {
                     ODependencyType.SOFT, ODependencyType.OPTIONAL -> EdgeType.SOFT_DEPENDENCY
                 }
                 graph.addEdge(sourceNode, depNode, edgeType)
+                // 发布依赖关系添加事件
+                publishDependencyChangeEvent(sourceNode, depNode, edgeType, ResourceGraphEvent.ChangeType.ADDED)
             }
         }
     }
@@ -573,6 +596,125 @@ object ResourceGraphManager {
     fun initializeOverrideSystem() {
         SparkCore.LOGGER.info("ResourceGraphManager: 初始化覆盖系统...")
         OverrideManager.initializeOverrideSystem()
+    }
+
+    // ==================== 事件发布机制 ====================
+
+    /**
+     * 发布资源变更事件
+     * @param node 发生变更的资源节点
+     * @param changeType 变更类型
+     */
+    private fun publishResourceChangeEvent(node: ResourceNode, changeType: ResourceGraphEvent.ChangeType) {
+        try {
+            val event = ResourceGraphEvent.NodeChange(node, changeType)
+            NeoForge.EVENT_BUS.post(event)
+            SparkCore.LOGGER.debug("发布资源变更事件: ${node.id} - $changeType")
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布资源变更事件失败: ${node.id}", e)
+        }
+    }
+
+    /**
+     * 发布依赖关系变更事件
+     * @param source 依赖源节点
+     * @param target 依赖目标节点
+     * @param edgeType 依赖类型
+     * @param changeType 变更类型
+     */
+    private fun publishDependencyChangeEvent(
+        source: ResourceNode,
+        target: ResourceNode,
+        edgeType: EdgeType,
+        changeType: ResourceGraphEvent.ChangeType
+    ) {
+        try {
+            val event = ResourceGraphEvent.DependencyChange(source, target, edgeType, changeType)
+            NeoForge.EVENT_BUS.post(event)
+            SparkCore.LOGGER.debug("发布依赖变更事件: ${source.id} -> ${target.id} ($edgeType) - $changeType")
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布依赖变更事件失败: ${source.id} -> ${target.id}", e)
+        }
+    }
+
+    /**
+     * 发布覆盖关系变更事件
+     * @param overrider 覆盖者节点
+     * @param overridden 被覆盖者节点
+     * @param changeType 变更类型
+     */
+    private fun publishOverrideChangeEvent(
+        overrider: ResourceNode,
+        overridden: ResourceNode,
+        changeType: ResourceGraphEvent.ChangeType
+    ) {
+        try {
+            val event = ResourceGraphEvent.OverrideChange(overrider, overridden, changeType)
+            NeoForge.EVENT_BUS.post(event)
+            SparkCore.LOGGER.debug("发布覆盖变更事件: ${overrider.id} overrides ${overridden.id} - $changeType")
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布覆盖变更事件失败: ${overrider.id} -> ${overridden.id}", e)
+        }
+    }
+
+    /**
+     * 发布资源图重建事件
+     */
+    private fun publishGraphRebuiltEvent() {
+        try {
+            val event = ResourceGraphEvent.GraphRebuilt
+            NeoForge.EVENT_BUS.post(event)
+            SparkCore.LOGGER.info("发布资源图重建事件")
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布资源图重建事件失败", e)
+        }
+    }
+
+    /**
+     * 发布节点依赖关系变更事件
+     * 比较旧依赖和新依赖，发布相应的变更事件
+     * @param node 资源节点
+     * @param oldDependencies 旧的依赖关系集合
+     * @param newDependencies 新的依赖关系列表
+     * @param source 依赖变更来源，用于日志记录
+     */
+    private fun publishDependencyChangesForNode(
+        node: ResourceNode,
+        oldDependencies: Set<Triple<ResourceNode, ResourceNode, EdgeType>>,
+        newDependencies: List<OResourceDependency>,
+        source: String = "auto-calculated"
+    ) {
+        try {
+            // 构建新依赖关系的集合
+            val newDependencySet = newDependencies.mapNotNull { dep ->
+                val targetNode = ResourceNodeManager.getNode(dep.id)
+                if (targetNode != null) {
+                    val edgeType = when (dep.type) {
+                        ODependencyType.HARD -> EdgeType.HARD_DEPENDENCY
+                        ODependencyType.SOFT, ODependencyType.OPTIONAL -> EdgeType.SOFT_DEPENDENCY
+                    }
+                    Triple(node, targetNode, edgeType)
+                } else null
+            }.toSet()
+
+            // 找出被移除的依赖
+            val removedDependencies = oldDependencies - newDependencySet
+            for ((sourceNode, target, edgeType) in removedDependencies) {
+                publishDependencyChangeEvent(sourceNode, target, edgeType, ResourceGraphEvent.ChangeType.REMOVED)
+            }
+
+            // 找出新增的依赖
+            val addedDependencies = newDependencySet - oldDependencies
+            for ((sourceNode, target, edgeType) in addedDependencies) {
+                publishDependencyChangeEvent(sourceNode, target, edgeType, ResourceGraphEvent.ChangeType.ADDED)
+            }
+
+            if (removedDependencies.isNotEmpty() || addedDependencies.isNotEmpty()) {
+                SparkCore.LOGGER.debug("节点 ${node.id} 依赖变更($source): 移除 ${removedDependencies.size} 个，新增 ${addedDependencies.size} 个")
+            }
+        } catch (e: Exception) {
+            SparkCore.LOGGER.error("发布节点依赖变更事件失败: ${node.id}", e)
+        }
     }
 
 }

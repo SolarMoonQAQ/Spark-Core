@@ -1,10 +1,13 @@
 package cn.solarmoon.spark_core.js.extension
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
+import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.Entity
@@ -29,8 +32,9 @@ interface JSAnimatable {
         return AnimInstance.create(js_animatable, AnimIndex(ResourceLocation.parse(index), name))
     }
 
-    fun createAnimation(name: String): AnimInstance {
-        return AnimInstance.create(js_animatable, name)
+    fun createAnimation(index: String): AnimInstance {
+        // 直接从注册表中获取
+       return (SparkRegistries.TYPED_ANIMATION.get(ResourceLocation.parse(index)) as TypedAnimation).create(js_animatable)
     }
 
     fun changeSpeed(time: Int, speed: Double) {
