@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.physics.presets
 
-import cn.solarmoon.spark_core.physics.div
+import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithBoundingBoxTicker
@@ -12,7 +12,6 @@ import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.decoration.BlockAttachedEntity
-import net.minecraft.world.entity.decoration.ItemFrame
 import net.minecraft.world.entity.monster.Vindicator
 import net.minecraft.world.entity.monster.Zombie
 import net.minecraft.world.entity.player.Player

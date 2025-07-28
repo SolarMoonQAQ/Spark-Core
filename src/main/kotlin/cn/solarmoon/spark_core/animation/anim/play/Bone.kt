@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
-import cn.solarmoon.spark_core.physics.rotLerp
+import cn.solarmoon.spark_core.util.rotLerp
 import net.neoforged.neoforge.common.NeoForge
 
 class Bone(

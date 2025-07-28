@@ -3,10 +3,7 @@ package cn.solarmoon.spark_core.physics.presets.callback
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
 import cn.solarmoon.spark_core.entity.attack.CollisionHurtData
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback
-import cn.solarmoon.spark_core.physics.toVec3
-import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
 
 interface AttackCollisionCallback: CollisionCallback {

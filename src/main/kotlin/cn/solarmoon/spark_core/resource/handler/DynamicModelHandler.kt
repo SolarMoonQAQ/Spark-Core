@@ -5,8 +5,8 @@ import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OLocator
 import cn.solarmoon.spark_core.animation.model.origin.OModel
-import cn.solarmoon.spark_core.physics.div
-import cn.solarmoon.spark_core.physics.toRadians
+import cn.solarmoon.spark_core.util.div
+import cn.solarmoon.spark_core.util.toRadians
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import cn.solarmoon.spark_core.util.ResourceExtractionUtil
@@ -18,10 +18,8 @@ import net.minecraft.world.phys.Vec3
 import org.joml.Vector2i
 import net.neoforged.fml.loading.FMLPaths
 import java.io.File
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.readText
 

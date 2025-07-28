@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.physics.mesh
 
-import cn.solarmoon.spark_core.physics.copy
-import cn.solarmoon.spark_core.physics.toVector3f
+import cn.solarmoon.spark_core.util.copy
+import cn.solarmoon.spark_core.util.toVector3f
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import org.joml.Matrix4f
 import org.joml.Vector3f

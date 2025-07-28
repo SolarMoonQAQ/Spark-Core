@@ -189,6 +189,7 @@ class AttackSystem {
 
         if (customLogic()) {
             _attackedEntities.add(target.id)
+            if (ignoreInvulnerableTime) target.invulnerableTime = 0
             trySendSyncPacket() // 手动触发同步
             return true
         }
@@ -209,4 +210,5 @@ class AttackSystem {
             trySendSyncPacket() // 手动触发同步
         }
     }
+
 }

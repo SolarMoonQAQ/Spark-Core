@@ -7,10 +7,17 @@ import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.util.Mth
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.level.block.LadderBlock
+import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
+import net.neoforged.neoforge.event.entity.living.LivingEvent
+import net.neoforged.neoforge.event.tick.EntityTickEvent
 import ru.nsk.kstatemachine.event.Event
+import ru.nsk.kstatemachine.state.DefaultState
 import ru.nsk.kstatemachine.state.IState
+import ru.nsk.kstatemachine.state.State
 import ru.nsk.kstatemachine.state.activeStates
 import ru.nsk.kstatemachine.state.initialChoiceState
 import ru.nsk.kstatemachine.state.initialState
@@ -35,11 +42,22 @@ class PlayerBaseAnimStateMachine(
             val crouch = state("crouch") { setupMovementStates(player) }
             val swim = state("swim") { setupMovementStates(player) }
             val fly = state("fly") { setupMovementStates(player) }
+            val climb = state("climb") {
+                val idle = state("$name.idle") { payload = MainPlayDataProvider { 7 } }
+                val move = state("$name.move") { payload = MainPlayDataProvider { 7 } }
+                initialChoiceState {
+                    when {
+                        !player.isSuppressingSlidingDownLadder && !player.onGround() || player.input.moveVector.length() > 0  -> move
+                        else -> idle
+                    }
+                }
+            }
             val sit = state("sit") { payload = MainPlayDataProvider { 7 } }
             val sleep = state("sleep") { payload = MainPlayDataProvider { 7 } }
             val fallFly = state("fall_fly") { payload = MainPlayDataProvider { 7 } }
             val fall = state("fall") { payload = MainPlayDataProvider { 7 } }
 
+            val jump = state("jump") { payload = BlendDataProvider { Modifier.jumpLag = false; BlendData(if (player.input.moveVector.length() > 0) 1.0 else 100.0) } }
             val jumpLand = state("jump_land") { payload = BlendDataProvider { BlendData(if (player.input.moveVector.length() > 0) 1.0 else 100.0) } }
 
             initialChoiceState {
@@ -47,9 +65,11 @@ class PlayerBaseAnimStateMachine(
                     player.isPassenger -> sit
                     player.isSleeping -> sleep
                     player.abilities.flying -> fly
+                    player.onClimbable() -> climb
                     player.isFallFlying -> fallFly
                     player.isSwimming -> swim
                     player.isCrouching -> crouch
+                    Modifier.jumpLag -> jump
                     (player.y - player.yOld) < 0.001 && player.isAboveGround(1.0) && !player.onGround() -> fall
                     activeStates().contains(fall) && !player.isAboveGround(1.0) -> jumpLand
                     else -> land
@@ -118,6 +138,35 @@ class PlayerBaseAnimStateMachine(
 
     fun progress() {
         baseMachine?.processEventBlocking(SwitchEvent)
+    }
+
+    object Modifier {
+        var jumpLag = false
+
+        @SubscribeEvent
+        private fun entityTick(event: EntityTickEvent.Post) {
+            val player = event.entity
+            val level = player.level()
+            if (player is Player && player.onClimbable()) {
+                player.lastClimbablePos.ifPresent { pos ->
+                    val ladder = level.getBlockState(pos)
+                    val facing = ladder.getValue(LadderBlock.FACING)
+                    val facingRot = facing.opposite.toYRot()
+                    // 限制爬梯朝向
+                    player.setYBodyRot(facingRot)
+                    // 限制头角度在一定范围
+                    var angleDiff = Mth.degreesDifference(facingRot, player.yHeadRot) // 归一化差值
+                    angleDiff = angleDiff.coerceIn(-90f, 90f)                // 应用限制范围
+                    player.yHeadRot = facingRot + angleDiff                 // 重新组合角度
+                }
+            }
+        }
+
+        @SubscribeEvent
+        private fun jump(event: LivingEvent.LivingJumpEvent) {
+            val player = event.entity
+            if (player is Player && player.isLocalPlayer) jumpLag = true
+        }
     }
 
 }

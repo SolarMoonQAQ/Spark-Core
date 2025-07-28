@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.animation
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
 import cn.solarmoon.spark_core.ik.component.IKManager
-import cn.solarmoon.spark_core.physics.toRadians
+import cn.solarmoon.spark_core.util.toRadians
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import cn.solarmoon.spark_core.registry.common.SyncerTypes
 import cn.solarmoon.spark_core.sync.IntSyncData

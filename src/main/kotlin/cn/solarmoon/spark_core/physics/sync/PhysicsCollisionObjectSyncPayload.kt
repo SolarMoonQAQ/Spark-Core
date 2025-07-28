@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.physics.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.physics.div
+import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.host.getBody
 import cn.solarmoon.spark_core.physics.presets.callback.CustomnpcCollisionCallback

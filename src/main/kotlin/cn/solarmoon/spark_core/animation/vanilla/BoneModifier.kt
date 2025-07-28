@@ -1,19 +1,14 @@
 package cn.solarmoon.spark_core.animation.vanilla
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
-import cn.solarmoon.spark_core.physics.toRadians
-import net.minecraft.client.renderer.entity.LivingEntityRenderer
+import cn.solarmoon.spark_core.util.toRadians
 import net.minecraft.core.Direction
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.Pose
-import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import kotlin.math.PI
 
 object BoneModifier {

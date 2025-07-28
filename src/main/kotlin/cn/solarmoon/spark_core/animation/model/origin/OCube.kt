@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
 import cn.solarmoon.spark_core.data.SerializeHelper
-import cn.solarmoon.spark_core.physics.div
+import cn.solarmoon.spark_core.util.div
 import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder

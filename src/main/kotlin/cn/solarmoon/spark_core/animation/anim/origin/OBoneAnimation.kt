@@ -3,8 +3,8 @@ package cn.solarmoon.spark_core.animation.anim.origin
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
-import cn.solarmoon.spark_core.physics.toRadians
-import cn.solarmoon.spark_core.physics.toVec3
+import cn.solarmoon.spark_core.util.toRadians
+import cn.solarmoon.spark_core.util.toVec3
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs

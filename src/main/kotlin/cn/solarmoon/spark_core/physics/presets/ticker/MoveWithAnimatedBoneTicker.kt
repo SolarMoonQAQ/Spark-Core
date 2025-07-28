@@ -2,9 +2,9 @@ package cn.solarmoon.spark_core.physics.presets.ticker
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
-import cn.solarmoon.spark_core.physics.toBQuaternion
+import cn.solarmoon.spark_core.util.toBQuaternion
 import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.physics.toVec3
+import cn.solarmoon.spark_core.util.toVec3
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody

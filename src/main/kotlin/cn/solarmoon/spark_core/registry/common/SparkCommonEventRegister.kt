@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.animation.anim.play.AnimApplier
 import cn.solarmoon.spark_core.animation.state.CommonAnimApplier
 import cn.solarmoon.spark_core.animation.presets.DynamicStateAnimApplier
+import cn.solarmoon.spark_core.animation.state.PlayerBaseAnimStateMachine
 import cn.solarmoon.spark_core.animation.state.PoseAnimApplier
 import cn.solarmoon.spark_core.animation.state.UseAnimApplier
 import cn.solarmoon.spark_core.animation.vanilla.BoneModifier
@@ -29,6 +30,7 @@ object SparkCommonEventRegister {
         add(AnimApplier)
         add(PreInputApplier)
         add(CommonAnimApplier)
+        add(PlayerBaseAnimStateMachine.Modifier)
         add(UseAnimApplier)
         add(PoseAnimApplier)
         add(DynamicStateAnimApplier)

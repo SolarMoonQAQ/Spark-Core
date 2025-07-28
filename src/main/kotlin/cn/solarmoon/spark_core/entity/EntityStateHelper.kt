@@ -1,12 +1,11 @@
 package cn.solarmoon.spark_core.entity
 
-import cn.solarmoon.spark_core.physics.toRadians
-import cn.solarmoon.spark_core.physics.toVec3
+import cn.solarmoon.spark_core.util.toRadians
+import cn.solarmoon.spark_core.util.toVec3
 import cn.solarmoon.spark_core.util.Side
 import net.minecraft.client.player.Input
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.commands.arguments.EntityAnchorArgument
-import net.minecraft.core.Direction
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
