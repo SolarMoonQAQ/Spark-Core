@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.physics.presets
 
-import cn.solarmoon.spark_core.physics.div
+
 import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
 import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
