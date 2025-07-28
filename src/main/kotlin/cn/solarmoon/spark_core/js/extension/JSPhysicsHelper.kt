@@ -4,10 +4,10 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.js.JSComponent
 import cn.solarmoon.spark_core.js.call
-import cn.solarmoon.spark_core.physics.div
+import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.physics.toVec3
+import cn.solarmoon.spark_core.util.toVec3
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
 import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.PhysicsCollisionObject

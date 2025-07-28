@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.visual_effect.trail
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.physics.toVec3
+import cn.solarmoon.spark_core.util.toVec3
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import cn.solarmoon.spark_core.util.RenderTypeUtil
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer

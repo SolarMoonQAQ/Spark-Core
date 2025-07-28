@@ -1,10 +1,10 @@
 package cn.solarmoon.spark_core.physics.presets
 
 import cn.solarmoon.spark_core.animation.model.origin.OBone
-import cn.solarmoon.spark_core.physics.div
-import cn.solarmoon.spark_core.physics.toBQuaternion
+import cn.solarmoon.spark_core.util.div
+import cn.solarmoon.spark_core.util.toBQuaternion
 import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.physics.toRadians
+import cn.solarmoon.spark_core.util.toRadians
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.math.Transform

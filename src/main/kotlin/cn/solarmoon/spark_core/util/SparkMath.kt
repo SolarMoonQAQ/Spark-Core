@@ -1,7 +1,8 @@
-package cn.solarmoon.spark_core.physics
+package cn.solarmoon.spark_core.util
 
 import cn.solarmoon.spark_core.molang.core.value.DoubleValue
 import cn.solarmoon.spark_core.molang.core.value.Vector3k
+import cn.solarmoon.spark_core.physics.toBVector3f
 import com.jme3.math.Matrix4f
 import com.jme3.math.Quaternion
 import com.jme3.math.Transform
@@ -63,6 +64,14 @@ fun Vec3.rotLerp(target: Vec3, progress: Double): Vec3 {
     return result.toEuler().toVec3()
 }
 
+fun Vector3f.rotLerp(target: Vector3f, progress: Double, dist: Vector3f): Vector3f {
+    return dist.set(toVec3().rotLerp(target.toVec3(), progress).toVector3f())
+}
+
+fun Vector3f.rotLerp(target: Vector3f, progress: Double): Vector3f {
+    return rotLerp(target, progress, this)
+}
+
 fun Vector3f.toVec3() = Vec3(x.toDouble(), y.toDouble(), z.toDouble())
 
 fun Vector3d.toVec3() = Vec3(x, y, z)
@@ -91,7 +100,7 @@ fun Quaterniond.toEuler(): Vector3d {
     val cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
     angles.apply { z = atan2(siny_cosp, cosy_cosp) }
 
-    return angles;
+    return angles
 }
 
 fun Double.toDegrees() = Math.toDegrees(this)

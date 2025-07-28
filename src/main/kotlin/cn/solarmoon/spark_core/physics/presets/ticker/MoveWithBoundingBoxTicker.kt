@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.physics.presets.ticker
 
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
-import cn.solarmoon.spark_core.physics.div
+import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.physics.getOwner
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBVector3f

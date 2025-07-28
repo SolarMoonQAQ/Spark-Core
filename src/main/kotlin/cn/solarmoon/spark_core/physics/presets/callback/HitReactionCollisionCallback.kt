@@ -31,9 +31,6 @@ data class HitData(
  */
 interface HitReactionCollisionCallback : AttackCollisionCallback {
 
-    override val attackSystem: AttackSystem
-        get() = AttackSystem()
-
     // 新实现：manifoldId 版本的 onProcessed，确保物理上下文贯通
     override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
         super.onProcessed(o1, o2, manifoldId)

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.state
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.entity.isAboveGround
@@ -13,56 +14,26 @@ import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
+import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.level.block.LadderBlock
+import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.neoforge.client.event.ClientTickEvent
+import net.neoforged.neoforge.client.event.RenderPlayerEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.living.LivingEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
+import net.neoforged.neoforge.event.tick.PlayerTickEvent
 import net.neoforged.neoforge.network.PacketDistributor
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
 
 object CommonAnimApplier {
-
-    @SubscribeEvent
-    private fun entityJoin(event: EntityJoinLevelEvent) {
-        val entity = event.entity
-        val level = event.level
-    }
-
-    @SubscribeEvent
-    private fun entityTick(event: EntityTickEvent.Pre) {
-        val entity = event.entity
-
-//        Minecraft.getInstance().options.keyAttack.onEvent(KeyEvent.PRESS_ONCE) {
-//            Minecraft.getInstance().player?.animController?.setAnimation("sword:combo_${entity.tickCount % 2}", 0)
-//            true
-//        }
-
-
-        if (entity.jumpingLag && !entity.isAboveGround(0.1)) {
-            entity.jumpingLag = false
-//            if (entity is IEntityAnimatable<*>) {
-//                val animName = "Common/jump_land"
-//                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.Common(entity, animName, CommonState.JUMP_LAND))
-//                entity.animController.blendSpace.put(BlendAnimation(entity.newAnimInstance(event.newAnim ?: event.originAnim)))
-//            }
-        }
-
-    }
-
-    @SubscribeEvent
-    private fun jump(event: LivingEvent.LivingJumpEvent) {
-//        val entity = event.entity
-//        if (entity !is IEntityAnimatable<*>) return
-//        entity.jumpingLag = true
-//        val animName = "Common/jump_start"
-//        val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.Common(entity, animName, CommonState.JUMP))
-//        entity.animController.setAnimation(event.newAnim ?: event.originAnim, 0)
-    }
 
     // 服务端模型更换自动绑定碰撞箱测试
     @SubscribeEvent

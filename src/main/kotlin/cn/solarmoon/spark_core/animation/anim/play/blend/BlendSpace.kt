@@ -3,8 +3,10 @@ package cn.solarmoon.spark_core.animation.anim.play.blend
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
-import cn.solarmoon.spark_core.physics.toVec3
+import cn.solarmoon.spark_core.util.rotLerp
+import cn.solarmoon.spark_core.util.toVec3
 import org.joml.Vector3f
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 class BlendSpace {
@@ -15,10 +17,20 @@ class BlendSpace {
     val isValid get() = mainAnimMap.isNotEmpty() || blendAnimMap.isNotEmpty()
 
     fun putMainAnim(anim: BlendAnimation) {
+        val same = mainAnimMap.remove(anim.id)
+        same?.let {
+            it.markedForRemoval()
+            blendAnimMap[it.id + UUID.randomUUID().toString()] = it
+        }
         mainAnimMap[anim.id] = anim
     }
 
     fun putBlendAnim(anim: BlendAnimation) {
+        val same = blendAnimMap.remove(anim.id)
+        same?.let {
+            it.markedForRemoval()
+            blendAnimMap[it.id + UUID.randomUUID().toString()] = it
+        }
         blendAnimMap[anim.id] = anim
     }
 
@@ -46,7 +58,7 @@ class BlendSpace {
                 Loop.HOLD_ON_LAST_FRAME -> it.anim.time
             }
             pos.add(boneData.getAnimPosAt(time, animatable).mul(pt))
-            rot.add(boneData.getAnimRotAt(time, animatable).mul(pt))
+            rot.rotLerp(rot.add(boneData.getAnimRotAt(time, animatable).mul(pt), Vector3f()), 1.0)
             scale.add(boneData.getAnimScaleAt(time, animatable).mul(pt)).sub(Vector3f(pt))
         }
         return KeyAnimData(pos.toVec3(), rot.toVec3(), scale.toVec3())

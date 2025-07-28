@@ -2,12 +2,7 @@ package cn.solarmoon.spark_core.ik.caliko
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.ik.util.IKCoordinateTransformer
-import cn.solarmoon.spark_core.physics.toVec3
-import jme3utilities.math.MyMath.lerp
-import jme3utilities.math.MyMath.toRadians
-import net.minecraft.world.entity.Entity // Import Entity
-import net.minecraft.world.phys.Vec3
+import cn.solarmoon.spark_core.util.toVec3
 import org.joml.Quaternionf
 import org.joml.Vector3f
 

@@ -1,14 +1,8 @@
 package cn.solarmoon.spark_core.ik.util
 
-import au.edu.federation.utils.Vec3f as CalikoVec3f
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.ik.util.CalikoUtils.toCalikoVec3f
-import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.physics.toVector3f
+import cn.solarmoon.spark_core.util.toVector3f
 import com.jme3.math.Vector3f
-import net.minecraft.server.level.ServerLevel
-import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 import org.joml.Vector3f as JomlVector3f
 

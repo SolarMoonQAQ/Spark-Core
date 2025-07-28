@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.animation.anim.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
-import cn.solarmoon.spark_core.physics.toVector3f
+import cn.solarmoon.spark_core.util.toVector3f
 import com.mojang.serialization.Codec
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
