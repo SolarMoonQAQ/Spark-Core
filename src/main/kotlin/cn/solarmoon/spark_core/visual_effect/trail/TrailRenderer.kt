@@ -1,41 +1,38 @@
 package cn.solarmoon.spark_core.visual_effect.trail
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.util.toVec3
-import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import cn.solarmoon.spark_core.util.RenderTypeUtil
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.mojang.blaze3d.vertex.PoseStack
+import com.mojang.blaze3d.vertex.VertexConsumer
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.LightTexture
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector3f
-import kotlin.collections.elementAt
-import kotlin.collections.forEach
-import kotlin.collections.forEachIndexed
 
 class TrailRenderer: VisualEffectRenderer() {
 
-    private val trails = hashMapOf<String, MutableList<Trail>>()
-    private val trailTemplate = mutableMapOf<String, (Float) -> Trail>()
+    val meshes = mutableMapOf<String, TrailMesh>()
 
-    fun refresh(id: String, trail: (Float) -> Trail) {
-        trailTemplate[id] = trail
+    fun addPoint(id: String, start: (Float) -> Vector3f, end: (Float) -> Vector3f, info: TrailInfo) {
+        meshes.getOrPut(id) { TrailMesh(info) }.apply {
+//            addMainPoint(TrailPoint(start(0f), end(0f), info))
+//            addMainPoint(TrailPoint(start(0.25f), end(0.25f), info))
+//            addMainPoint(TrailPoint(start(0.75f), end(0.75f), info))
+            addMainPoint(TrailPoint(start(1f), end(1f), info))
+            dynamicStart = start
+            dynamicEnd = end
+        }
     }
 
     override fun physTick(physLevel: PhysicsLevel) {}
 
     override fun tick() {
-        SparkVisualEffects.TRAIL.trails.values.forEach {
-            it.forEach {
-                it.tick()
-            }
+        meshes.values.forEach {
+            it.tick()
         }
-
-        trailTemplate.clear()
-        SparkVisualEffects.TRAIL.trails.values.forEach { it.removeIf { it.isRemoved } }
     }
 
     override fun render(
@@ -45,30 +42,85 @@ class TrailRenderer: VisualEffectRenderer() {
         bufferSource: MultiBufferSource,
         partialTicks: Float
     ) {
-        trailTemplate.forEach { (id, trail) ->
-            trails.getOrPut(id) { mutableListOf() }.add(trail.invoke(partialTicks))
-        }
-
-        // 对缓存的拖影进行渲染，显然，越新的拖影越在列表之后，因此可用当前序列和下一个序列的拖影组成单位长方形，如此混合便可以遍历全部轨迹（也就是分成了微元）
-        trails.values.forEach {
-            it.forEachIndexed { index, trail ->
-                // 四个点组成单位长方形
-                val dT1 = it.elementAt(index)
-                val dT2 = if (index + 1 < it.size) it.elementAt(index + 1) else it.elementAt(index)
-                val pot1s = dT1.start.toVec3().subtract(camPos).toVector3f(); val pot1e = dT1.end.toVec3().subtract(camPos).toVector3f()
-                val pot2s = dT2.start.toVec3().subtract(camPos).toVector3f(); val pot2e = dT2.end.toVec3().subtract(camPos).toVector3f()
-                val color = trail.color.getColorComponents(null)
-                val light = LightTexture.FULL_BRIGHT
-                val overlay = OverlayTexture.NO_OVERLAY
-                fun p(p: Trail): Float = 1 - p.getProgress(partialTicks)
-                val normal = Vector3f(0f, 1f, 0f).normalize()
-                val buffer = bufferSource.getBuffer(RenderTypeUtil.transparentRepair(trail.getTexture()))
-                buffer.addVertex(pot1s.x, pot1s.y, pot1s.z).setColor(color[0], color[1], color[2], p(dT1)).setLight(light).setUv(1f, 0f).setOverlay(overlay).setNormal(normal.x, normal.y, normal.z)
-                buffer.addVertex(pot1e.x, pot1e.y, pot1e.z).setColor(color[0], color[1], color[2], p(dT1)).setLight(light).setUv(0f, 1f).setOverlay(overlay).setNormal(normal.x, normal.y, normal.z)
-                buffer.addVertex(pot2e.x, pot2e.y, pot2e.z).setColor(color[0], color[1], color[2], p(dT2)).setLight(light).setUv(0f, 1f).setOverlay(overlay).setNormal(normal.x, normal.y, normal.z)
-                buffer.addVertex(pot2s.x, pot2s.y, pot2s.z).setColor(color[0], color[1], color[2], p(dT2)).setLight(light).setUv(1f, 0f).setOverlay(overlay).setNormal(normal.x, normal.y, normal.z)
-            }
+        meshes.forEach { _, mesh ->
+            val buffer = bufferSource.getBuffer(RenderTypeUtil.transparentRepair(mesh.info.textureLocation))
+            mesh.frame(partialTicks)
+            renderMesh(mesh, camPos.toVector3f(), buffer, partialTicks)
         }
     }
 
+    private fun renderMesh(
+        mesh: TrailMesh,
+        camPos: Vector3f,
+        buffer: VertexConsumer,
+        partialTicks: Float
+    ) {
+        val light = LightTexture.FULL_BRIGHT
+        val overlay = OverlayTexture.NO_OVERLAY
+
+        // 使用四边形渲染（每4个顶点一个四边形）
+        mesh.zipRenderPoints().forEach { element ->
+            // 获取四边形四个顶点
+            val v0 = element.p1.start.sub(camPos, Vector3f())
+            val v1 = element.p1.end.sub(camPos, Vector3f())
+            val v2 = element.p2.start.sub(camPos, Vector3f())
+            val v3 = element.p2.end.sub(camPos, Vector3f())
+
+            val uv0 = element.uv1 // A点左侧UV
+            val uv1 = element.uv2 // A点右侧UV
+            val uv2 = element.uv3 // B点左侧UV
+            val uv3 = element.uv4 // B点右侧UV
+
+            // 计算法线（基于四边形平面）
+            val normal = Vector3f(0f, 1f, 0f)
+
+            // 颜色
+            val color1 = element.p1.getColor(partialTicks).rgb
+            val color2 = element.p2.getColor(partialTicks).rgb
+
+            // 构建四边形
+            buffer.addVertex(v0.x, v0.y, v0.z)
+                .setColor(color1)
+                .setUv(uv0.x, uv0.y)
+                .setOverlay(overlay)
+                .setLight(light)
+                .setNormal(normal.x, normal.y, normal.z)
+
+            buffer.addVertex(v1.x, v1.y, v1.z)
+                .setColor(color1)
+                .setUv(uv1.x, uv1.y)
+                .setOverlay(overlay)
+                .setLight(light)
+                .setNormal(normal.x, normal.y, normal.z)
+
+            buffer.addVertex(v3.x, v3.y, v3.z)
+                .setColor(color2)
+                .setUv(uv3.x, uv3.y)
+                .setOverlay(overlay)
+                .setLight(light)
+                .setNormal(normal.x, normal.y, normal.z)
+
+            buffer.addVertex(v2.x, v2.y, v2.z)
+                .setColor(color2)
+                .setUv(uv2.x, uv2.y)
+                .setOverlay(overlay)
+                .setLight(light)
+                .setNormal(normal.x, normal.y, normal.z)
+        }
+    }
+
+    private fun calculateNormal(v0: Vector3f, v1: Vector3f, v2: Vector3f, v3: Vector3f): Vector3f {
+        val edge1 = Vector3f(
+            (v1.x - v0.x).toFloat(),
+            (v1.y - v0.y).toFloat(),
+            (v1.z - v0.z).toFloat()
+        )
+        val edge2 = Vector3f(
+            (v2.x - v0.x).toFloat(),
+            (v2.y - v0.y).toFloat(),
+            (v2.z - v0.z).toFloat()
+        )
+        val normal = edge1.cross(edge2)
+        return normal.normalize()
+    }
 }

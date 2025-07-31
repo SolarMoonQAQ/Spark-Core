@@ -9,8 +9,8 @@ import net.minecraft.resources.ResourceLocation
 object RenderTypeUtil {
 
     @JvmStatic
-    fun transparentRepair(location: ResourceLocation, blur: Boolean = false): RenderType = RenderType.create(
-        "transparent_repair_entity", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536, true, true,
+    fun transparentRepair(location: ResourceLocation, mode: VertexFormat.Mode = VertexFormat.Mode.QUADS, blur: Boolean = false): RenderType = RenderType.create(
+        "transparent_repair_entity", DefaultVertexFormat.NEW_ENTITY, mode, 1536, true, true,
         RenderType.CompositeState.builder()
             .setShaderState(RenderType.RENDERTYPE_ITEM_ENTITY_TRANSLUCENT_CULL_SHADER)
             .setTextureState(RenderStateShard.TextureStateShard(location, blur, true))

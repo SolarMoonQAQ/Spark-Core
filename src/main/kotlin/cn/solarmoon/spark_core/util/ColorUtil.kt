@@ -15,3 +15,14 @@ object ColorUtil {
     }
 
 }
+
+fun Color.lerp(color2: Color, t: Float): Color {
+    val color1 = this
+    val r = (color1.red + (color2.red - color1.red) * t).toInt()
+    val g = (color1.green + (color2.green - color1.green) * t).toInt()
+    val b = (color1.blue + (color2.blue - color1.blue) * t).toInt()
+    val a = (color1.alpha + (color2.alpha - color1.alpha) * t).toInt()
+    return Color(r, g, b, a)
+}
+
+fun Color.setAlpha(alpha: Float): Color = Color(ColorUtil.getColorAndSetAlpha(rgb, alpha), true)

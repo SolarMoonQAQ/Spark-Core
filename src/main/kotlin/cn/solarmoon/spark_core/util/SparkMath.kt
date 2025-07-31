@@ -167,3 +167,15 @@ fun Transform.lerp(target: Transform, delta: Float) = Transform(
     rotation.toQuaternionf().slerp(target.rotation.toQuaternionf(), delta).toBQuaternion(),
     scale.toVector3f().lerp(target.scale.toVector3f(), delta).toBVector3f()
 )
+
+fun catmullromVector3f(prev: Vector3f, now: Vector3f, next: Vector3f, nextNext: Vector3f, t: Float): Vector3f {
+    return Vector3f(
+        Mth.catmullrom(t, prev.x, now.x, next.x, nextNext.x),
+        Mth.catmullrom(t, prev.y, now.y, next.y, nextNext.y),
+        Mth.catmullrom(t, prev.z, now.z, next.z, nextNext.z)
+    )
+}
+
+fun catmullromVec3(prev: Vec3, now: Vec3, next: Vec3, nextNext: Vec3, t: Float): Vec3 {
+    return catmullromVector3f(prev.toVector3f(), now.toVector3f(), next.toVector3f(), nextNext.toVector3f(), t).toVec3()
+}

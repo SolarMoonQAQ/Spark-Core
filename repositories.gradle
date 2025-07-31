@@ -27,14 +27,6 @@ dependencies {
     // 第一人称
     implementation "maven.modrinth:first-person-model:Sx5QD2SF"
 
-    jarJar(implementation('org.jgrapht:jgrapht-core:1.5.2'))
-    additionalRuntimeClasspath ('org.jgrapht:jgrapht-core:1.5.2')
-    // 添加 jgrapht-core 的传递依赖 apfloat
-    jarJar(implementation('org.apfloat:apfloat:1.10.1'))
-    additionalRuntimeClasspath ('org.apfloat:apfloat:1.10.1')
-    // 添加 jheaps
-    jarJar(implementation('org.jheaps:jheaps:0.14'))
-    additionalRuntimeClasspath('org.jheaps:jheaps:0.14')
     // 外部库------------------------------------------------------------------------------------------------------------
     // 状态机
     jarJar(implementation("io.github.nsk90:kstatemachine-jvm:0.33.0"))
@@ -42,6 +34,9 @@ dependencies {
     // js
     jarJar(implementation("org.mozilla:rhino:1.8.0"))
     additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
+    // 对象池
+    jarJar(implementation("org.apache.commons:commons-pool2:2.12.1"))
+    additionalRuntimeClasspath("org.apache.commons:commons-pool2:2.12.1")
     // ktor web server (使用最新版本3.2.1和CIO引擎，排除冲突依赖)
     jarJar(implementation("io.ktor:ktor-server-core-jvm:3.2.1") {
         exclude group: 'org.slf4j', module: 'slf4j-api'
@@ -83,7 +78,8 @@ dependencies {
     implementation("com.google.code.gson:gson:[2.10.1,2.11.0)")
     implementation 'commons-io:commons-io:2.11.0'
 
-    compileOnly files("compileOnly/mcef-neoforge-2.1.6-1.21.1.jar")
+    implementation files("compileOnly/mcef-neoforge-2.1.6-1.21.1.jar")
+    implementation files("compileOnly/CustomNPCs-Unofficial-NeoForge-1.21.1.20241226.jar")
 
     files(fileTree(dir: 'libs', includes: ['*.jar']))
     additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])

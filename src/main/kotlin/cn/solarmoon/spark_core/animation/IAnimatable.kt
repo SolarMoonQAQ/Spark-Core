@@ -156,12 +156,6 @@ interface IAnimatable<T> : JSAnimatable, Syncer {
     }
 
     /**
-     * 根据name索引创建一个新的动画实例
-     */
-    fun newAnimInstance(name: String, provider: (AnimInstance).() -> Unit = {}) =
-        AnimInstance.create(this, name, provider = provider)
-
-    /**
      * 当任意骨骼被更新后调用，可以在此基础上对骨骼的位移旋转等参数进行调整
      */
     fun onBoneUpdate(event: BoneUpdateEvent) {}
