@@ -213,7 +213,7 @@ object MultiModuleResourceExtractionUtil {
                 return null
             }
             // 在特定mod的文件中查找assets/sparkcore/资源
-            val resourcePath = modFileInfo.file.findResource("assets/sparkcore/")
+            val resourcePath = modFileInfo.file.findResource("sparkcore/")
             if (resourcePath == null) {
                 return null
             }
