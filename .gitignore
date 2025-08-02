@@ -4,26 +4,17 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+.env
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-/frontend/
-/docs/security/
-/docs/state_tree_system/
-/js_test/
-/参考代码/
+# OS specific
+.DS_Store!/plan/
+/.lingma/

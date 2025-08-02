@@ -57,7 +57,7 @@ object MultiModuleResourceExtractionUtil {
             var sparkcoreAssetsUrl = findCorrectResourceUrl(modId)
             // 如果新方法失败，fallback到原有的类加载器方式（向后兼容）
             if (sparkcoreAssetsUrl == null) {
-                sparkcoreAssetsUrl = modMainClass.classLoader.getResource("assets/sparkcore/")
+                sparkcoreAssetsUrl = modMainClass.classLoader.getResource("sparkcore/")
             } else {
                 SparkCore.LOGGER.info("调试 - NeoForge API查找成功: $sparkcoreAssetsUrl")
             }
@@ -70,7 +70,7 @@ object MultiModuleResourceExtractionUtil {
                 return true
             }
 
-            // 遍历assets/sparkcore/下的所有模块目录
+            // 遍历sparkcore/下的所有模块目录
             Files.list(sparkcoreAssetsPath).use { moduleStream ->
                 moduleStream
                     .filter { Files.isDirectory(it) }
@@ -91,7 +91,7 @@ object MultiModuleResourceExtractionUtil {
 
                             val success = ResourceExtractionUtil.extractResourcesFromJar(
                                 modMainClass,
-                                "assets/sparkcore/$moduleName/$resourceType",
+                                "sparkcore/$moduleName/$resourceType",
                                 targetModuleDir.toFile(),
                                 resourceType,
                                 SparkCore.LOGGER

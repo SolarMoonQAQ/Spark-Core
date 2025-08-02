@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.visual_effect
 
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.util.toVec3
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer.Companion.ALL_VISUAL_EFFECTS
 import cn.solarmoon.spark_core.visual_effect.trail.TrailInfo
@@ -26,7 +27,7 @@ object VisualEffectTicker {
         ALL_VISUAL_EFFECTS.forEach { it.tick() }
     }
 
-    private val HAND_TEXTURE = ResourceLocation.fromNamespaceAndPath("spark_core", "textures/hand.png")
+    private val HAND_TEXTURE = SparkResourcePathBuilder.buildTexturePath("sparkcore", "sparkcore", "textures/hand.png")
 
     @SubscribeEvent
     private fun test(event: EntityTickEvent.Pre) {
