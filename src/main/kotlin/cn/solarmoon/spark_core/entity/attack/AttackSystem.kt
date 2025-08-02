@@ -136,23 +136,23 @@ class AttackSystem {
     }
 
     private fun trySendSyncPacket() {
-        val currentEntity = associatedEntity
-        val currentCbId = collisionBoxId
-        if (currentEntity != null && currentCbId != null && !currentEntity.level().isClientSide) {
-            val payload = AttackSystemSyncPayload(
-                currentEntity.syncerType,
-                currentEntity.syncData,
-                currentCbId,
-                cbName,
-                _attackedEntities.toHashSet(), // 发送副本以避免并发修改问题和确保不可变性
-                ignoreInvulnerableTime,
-                autoResetEnabled,
-                ticksSinceLastReset, // Add new field
-                resetAfterTicks // Add new field
-            )
-            PacketDistributor.sendToPlayersTrackingEntity(currentEntity, payload)
-            SparkCore.LOGGER.debug("AttackSystem: Sent sync packet for entity {} and collisionBoxId {}", currentEntity.id, currentCbId)
-        }
+//        val currentEntity = associatedEntity
+//        val currentCbId = collisionBoxId
+//        if (currentEntity != null && currentCbId != null && !currentEntity.level().isClientSide) {
+//            val payload = AttackSystemSyncPayload(
+//                currentEntity.syncerType,
+//                currentEntity.syncData,
+//                currentCbId,
+//                cbName,
+//                _attackedEntities.toHashSet(), // 发送副本以避免并发修改问题和确保不可变性
+//                ignoreInvulnerableTime,
+//                autoResetEnabled,
+//                ticksSinceLastReset, // Add new field
+//                resetAfterTicks // Add new field
+//            )
+//            PacketDistributor.sendToPlayersTrackingEntity(currentEntity, payload)
+//            SparkCore.LOGGER.debug("AttackSystem: Sent sync packet for entity {} and collisionBoxId {}", currentEntity.id, currentCbId)
+//        }
     }
 
     fun customAttack(target: Entity, customLogic: () -> Boolean): Boolean {
