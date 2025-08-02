@@ -37,24 +37,7 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     private final ConcurrentHashMap<Integer, Skill> allSkills = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Skill> predictedSkills = new ConcurrentHashMap<>();
     private final AtomicInteger skillCount = new AtomicInteger();
-    private boolean jumpingLag = false;
     private boolean moving = false;
-    private StateMachine stateMachine;
-
-    @Inject(method = "setYRot", at = @At("HEAD"), cancellable = true)
-    private void setYRot(float yRot, CallbackInfo ci) {
-        if (CameraAdjusterKt.isCameraLocked(entity)) ci.cancel();
-    }
-
-    @Inject(method = "setYBodyRot", at = @At("HEAD"), cancellable = true)
-    private void setYBodyRot(float yRot, CallbackInfo ci) {
-        if (CameraAdjusterKt.isCameraLocked(entity)) ci.cancel();
-    }
-
-    @Inject(method = "setYHeadRot", at = @At("HEAD"), cancellable = true)
-    private void setYHeadRot(float yRot, CallbackInfo ci) {
-        if (CameraAdjusterKt.isCameraLocked(entity)) ci.cancel();
-    }
 
     @Override
     public @NotNull PreInput getPreInput() {
@@ -98,16 +81,6 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     }
 
     @Override
-    public boolean getJumpingLag() {
-        return jumpingLag;
-    }
-
-    @Override
-    public void setJumpingLag(boolean b) {
-        jumpingLag = b;
-    }
-
-    @Override
     public boolean isMoving() {
         return moving;
     }
@@ -115,16 +88,6 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     @Override
     public void setMoving(boolean b) {
         moving = b;
-    }
-
-    @Override
-    public @Nullable StateMachine getAnimStateMachine() {
-        return stateMachine;
-    }
-
-    @Override
-    public void setAnimStateMachine(@Nullable StateMachine stateMachine) {
-        this.stateMachine = stateMachine;
     }
 
 }

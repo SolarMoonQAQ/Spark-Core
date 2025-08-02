@@ -40,28 +40,6 @@ object SparkCapabilities {
         }
     }
 
-//    class Ex: IClientItemExtensions {
-//        private val renderer = GeoItemRenderer()
-//
-//        override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
-//            return renderer
-//        }
-//    }
-//
-//    private fun regM(event: RegisterClientExtensionsEvent) {
-//        event.registerItem(Ex(), TEST)
-//    }
-//
-//    private fun applyToItem(event: RegisterCapabilitiesEvent) {
-//        BuiltInRegistries.ITEM.forEach {
-//            event.registerItem(
-//                ITEM_ANIMATABLE,
-//                { stack, level -> ItemAnimatable(stack, level) },
-//                it
-//            )
-//        }
-//    }
-
     @JvmStatic
     fun register(bus: IEventBus) {
 //        bus.addListener(::applyToItem)

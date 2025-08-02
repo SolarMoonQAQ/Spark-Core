@@ -24,12 +24,11 @@ interface JSEntity {
 
     val entity get() = this as Entity
     // 调试
-    fun commonAttack(target: Entity, currentAttackPhase: Int) {
+    fun commonAttack(target: Entity) {
         val entity = entity
         if (entity.level().isClientSide) return
         if (target is LivingEntity) {
             if (entity is Player) {
-                SparkCore.LOGGER.info("attack on currentAttackPhase $currentAttackPhase")
                 entity.attack(target)
             } else if (entity is LivingEntity) {
                 entity.doHurtTarget(target)

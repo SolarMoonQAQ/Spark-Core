@@ -19,32 +19,6 @@ object CameraAdjuster {
 
     private val CAMERA_TURN: Vector2f = Vector2f()
 
-//    @SubscribeEvent
-//    private fun tick(event: EntityTickEvent.Pre) {
-//        val entity = event.entity
-//        if (entity is Player) return
-//        entity.setCameraLock(false)
-//    }
-
-//    @SubscribeEvent
-//    private fun tickP(event: EntityTickEvent.Post) {
-//        val entity = event.entity
-//        if (entity is Player) return
-//        if (entity.isCameraLocked()) {
-//            entity.yRot = entity.persistentData.getFloat("yRot")
-//            entity.yHeadRot = entity.persistentData.getFloat("yHeadRot")
-//        } else {
-//            entity.persistentData.putFloat("yRot", entity.yRot)
-//            entity.persistentData.putFloat("yHeadRot", entity.yHeadRot)
-//        }
-//    }
-
-//    @SubscribeEvent
-//    private fun tick(event: ClientTickEvent.Pre) {
-//        val player = Minecraft.getInstance().player ?: return
-//        player.setCameraLock(false)
-//    }
-
     @SubscribeEvent
     private fun lockHeadTurn(event: EntityTurnEvent) {
         val entity = event.entity

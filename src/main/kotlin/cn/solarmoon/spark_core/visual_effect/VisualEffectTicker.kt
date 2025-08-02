@@ -26,7 +26,7 @@ object VisualEffectTicker {
         ALL_VISUAL_EFFECTS.forEach { it.tick() }
     }
 
-    private val HAND_TEXTURE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/stone.png")
+    private val HAND_TEXTURE = ResourceLocation.fromNamespaceAndPath("spark_core", "textures/hand.png")
 
     @SubscribeEvent
     private fun test(event: EntityTickEvent.Pre) {
@@ -37,7 +37,7 @@ object VisualEffectTicker {
         fun checkPlayingOtherAnim(): Boolean {
             val controller = player.animController
             val animNow = controller.getPlayingAnim() ?: return false
-            return animNow.index.name.substringBefore(".") != "state"
+            return animNow.animIndex.name.substringBefore(".") != "state"
         }
 
         if (checkPlayingOtherAnim()) {

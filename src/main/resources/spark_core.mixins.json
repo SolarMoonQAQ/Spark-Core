@@ -5,7 +5,6 @@
   "compatibilityLevel": "JAVA_21",
   "plugin": "cn.solarmoon.spark_core.mixin.MixinConfig",
   "mixins": [
-    "animation.EntityMixin",
     "animation.LivingEntityMixin",
     "animation.LookControlMixin",
     "animation.animatable.PlayerMixin",

@@ -57,9 +57,8 @@ class PlayerBaseAnimStateMachine(
             val sleep = state("sleep") { payload = MainPlayDataProvider { 7 } }
             val fallFly = state("fall_fly") { payload = MainPlayDataProvider { 7 } }
             val fall = state("fall") { payload = MainPlayDataProvider { 7 } }
-
-            val jump = state("jump") { payload = BlendDataProvider { Modifier.jumpLag = false; BlendData(if (player.input.moveVector.length() > 0) 1.0 else 100.0) } }
-            val jumpLand = state("jump_land") { payload = BlendDataProvider { BlendData(if (player.input.moveVector.length() > 0) 1.0 else 100.0) } }
+            val jump = state("jump") { payload = BlendDataProvider { BlendData(if (player.input.moveVector.length() > 0) 1.0 else 100.0, 0, 0) } }
+            val jumpLand = state("jump_land") { payload = BlendDataProvider { BlendData(if (player.input.moveVector.length() > 0) 1.0 else 100.0, 0) } }
 
             initialChoiceState {
                 when {
@@ -95,6 +94,8 @@ class PlayerBaseAnimStateMachine(
     private fun IState.playRelativeAnim(animName: String) {
         val data = payload
         if (data !is AnimPlayDataProvider) return
+        SparkCore.LOGGER.info(animName)
+        Modifier.jumpLag = false
         val animationPath = SparkResourcePathBuilder.buildAnimationPath("spark_core", "spark_core", "player", animName)
         SparkRegistries.TYPED_ANIMATION.get(animationPath)?.let {
             val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, this, data))

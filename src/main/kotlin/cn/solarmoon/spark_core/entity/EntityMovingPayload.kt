@@ -10,6 +10,9 @@ import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
+import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 class EntityMovingPayload(
@@ -24,9 +27,13 @@ class EntityMovingPayload(
     companion object {
         @JvmStatic
         fun handleInBothSide(payload: EntityMovingPayload, context: IPayloadContext) {
-            val level = context.player().level()
+            val player = context.player()
+            val level = player.level()
             val entity = level.getEntity(payload.id) ?: return
             entity.isMoving = payload.moving
+            if (!level.isClientSide) {
+                PacketDistributor.sendToPlayersNear(level as ServerLevel, player as ServerPlayer, entity.x, entity.y, entity.z, 1024.0, payload)
+            }
         }
 
         @JvmStatic

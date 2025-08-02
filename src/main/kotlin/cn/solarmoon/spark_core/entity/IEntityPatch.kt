@@ -4,10 +4,6 @@ import ru.nsk.kstatemachine.statemachine.StateMachine
 
 interface IEntityPatch {
 
-    var jumpingLag: Boolean
-
     var isMoving: Boolean
-
-    var animStateMachine: StateMachine?
 
 }

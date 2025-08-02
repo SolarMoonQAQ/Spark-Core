@@ -37,6 +37,15 @@ dependencies {
     // 对象池
     jarJar(implementation("org.apache.commons:commons-pool2:2.12.1"))
     additionalRuntimeClasspath("org.apache.commons:commons-pool2:2.12.1")
+    // 图形库
+    jarJar(implementation('org.jgrapht:jgrapht-core:1.5.2'))
+    additionalRuntimeClasspath ('org.jgrapht:jgrapht-core:1.5.2')
+    // 添加 jgrapht-core 的传递依赖 apfloat
+    jarJar(implementation('org.apfloat:apfloat:1.10.1'))
+    additionalRuntimeClasspath ('org.apfloat:apfloat:1.10.1')
+    // 添加 jheaps
+    jarJar(implementation('org.jheaps:jheaps:0.14'))
+    additionalRuntimeClasspath('org.jheaps:jheaps:0.14')
     // ktor web server (使用最新版本3.2.1和CIO引擎，排除冲突依赖)
     jarJar(implementation("io.ktor:ktor-server-core-jvm:3.2.1") {
         exclude group: 'org.slf4j', module: 'slf4j-api'

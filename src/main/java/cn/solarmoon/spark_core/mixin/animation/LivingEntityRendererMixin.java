@@ -40,7 +40,7 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;hasPose(Lnet/minecraft/world/entity/Pose;)Z", ordinal = 0)
     )
     private boolean sleepRotD(LivingEntity instance, Pose pose) {
-        if (pose == Pose.SLEEPING && instance instanceof IAnimatable<?> animatable) return !VanillaModelHelper.shouldSwitchToAnim(animatable);
+        if (pose == Pose.SLEEPING && instance instanceof IAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable)) return false;
         return instance.hasPose(pose);
     }
 

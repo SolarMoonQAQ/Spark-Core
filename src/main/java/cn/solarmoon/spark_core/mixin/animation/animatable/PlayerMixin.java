@@ -20,6 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,11 +57,10 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
         baseUseAnimStateMachine = new EntityBaseUseAnimStateMachine(player);
     }
 
-    @Override
-    public void tick() {
+    @Inject(method = "tick", at = @At("HEAD"))
+    public void tick(CallbackInfo ci) {
         baseAnimStateMachine.progress();
         baseUseAnimStateMachine.progress();
-        super.tick();
     }
 
     @Override
