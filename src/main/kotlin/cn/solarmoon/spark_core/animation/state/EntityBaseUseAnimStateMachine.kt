@@ -7,10 +7,6 @@ import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.core.registries.Registries
-import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.InteractionHand
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.UseAnim
@@ -67,6 +63,7 @@ class EntityBaseUseAnimStateMachine(
             if (entity !is IEntityAnimatable<*>) return@onStateEntry
             lastBlendAnimId?.let { id -> entity.animController.removeBlend(id) }
             val entityLocation = BuiltInRegistries.ENTITY_TYPE.getKey(entity.type)
+            val lastState = b.transition.sourceState
             val sName = s.name ?: return@onStateEntry
             val animName = "state.use.$sName"
             val data = s.payload
@@ -85,11 +82,11 @@ class EntityBaseUseAnimStateMachine(
                 if (event.isCanceled) return@let
                 val anim = event.newAnim ?: event.originAnim
                 if (data is BlendDataProvider) {
-                    val bd = data.blendData()
+                    val bd = data.blendData(lastState)
                     anim.blend(entity, bd)
                     lastBlendAnimId = anim.index.locationName
                 } else if (data is MainPlayDataProvider) {
-                    val tt = data.transTime()
+                    val tt = data.transTime(lastState)
                     anim.play(entity, tt)
                 }
             }
