@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.util
 
-class Key<T>(val name: String? = null, val type: Class<T>) {
+class Key<T>(val name: String? = null) {
     companion object {
-        inline fun <reified T> create(name: String) = Key(name, T::class.java)
+        inline fun <reified T> create(name: String) = Key<T>(name)
     }
 }

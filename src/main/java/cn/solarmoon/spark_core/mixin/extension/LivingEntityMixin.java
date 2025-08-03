@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.mixin.extension;
 import cn.solarmoon.spark_core.entity.attack.IDamageSourceExtraData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,10 +16,11 @@ public class LivingEntityMixin {
     @Inject(method = "hurt", at = @At("HEAD"))
     private void hurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (entity.level().isClientSide) return;
-        var data = entity.getHurtData();
-        if (data != null) {
-            ((IDamageSourceExtraData)source).setExtraData(data);
-            entity.pushHurtData(null);
+        var data = entity.getAttackData();
+        if (!data.isEmpty()) {
+            ((IDamageSourceExtraData)source).getExtraData().write(data.getStorage());
+            // 一旦有数据立刻清空实体的数据缓存，保证每次数据指向的攻击唯一
+            data.clear();
         }
     }
 

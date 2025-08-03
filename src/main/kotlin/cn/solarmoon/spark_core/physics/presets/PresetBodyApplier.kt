@@ -2,10 +2,10 @@ package cn.solarmoon.spark_core.physics.presets
 
 
 import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
-import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithAnimatedBoneTicker
 import cn.solarmoon.spark_core.physics.presets.ticker.MoveWithBoundingBoxTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.util.div
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
@@ -13,8 +13,6 @@ import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.decoration.BlockAttachedEntity
-import net.minecraft.world.entity.monster.Vindicator
-import net.minecraft.world.entity.monster.Zombie
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
@@ -55,7 +53,7 @@ object PresetBodyApplier {
 //                }
 //            }
 //        }
-        if (entity is Player || entity is Zombie || entity is Vindicator) {
+        if (entity is Player) {
             entity.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach { bone ->
                 val body = PhysicsRigidBody(bone.name, entity, CompoundCollisionShape())
 

@@ -1,9 +1,7 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
-import cn.solarmoon.spark_core.camera.CameraAdjuster;
-import cn.solarmoon.spark_core.camera.CameraAdjusterKt;
 import cn.solarmoon.spark_core.entity.IEntityPatch;
-import cn.solarmoon.spark_core.entity.attack.CollisionHurtData;
+import cn.solarmoon.spark_core.entity.attack.HurtData;
 import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
 import cn.solarmoon.spark_core.preinput.IPreInputHolder;
 import cn.solarmoon.spark_core.preinput.PreInput;
@@ -16,13 +14,8 @@ import cn.solarmoon.spark_core.sync.Syncer;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import ru.nsk.kstatemachine.statemachine.StateMachine;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,7 +26,7 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     @Shadow private int id;
     private Entity entity = (Entity) (Object) this;
     private final PreInput preInput = new PreInput(entity);
-    private CollisionHurtData data;
+    private final HurtData data = new HurtData();
     private final ConcurrentHashMap<Integer, Skill> allSkills = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Skill> predictedSkills = new ConcurrentHashMap<>();
     private final AtomicInteger skillCount = new AtomicInteger();
@@ -45,12 +38,7 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     }
 
     @Override
-    public void pushHurtData(CollisionHurtData data) {
-        this.data = data;
-    }
-
-    @Override
-    public CollisionHurtData getHurtData() {
+    public HurtData getAttackData() {
         return data;
     }
 

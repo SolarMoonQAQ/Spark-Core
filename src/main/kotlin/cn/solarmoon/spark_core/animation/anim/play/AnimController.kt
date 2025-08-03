@@ -73,8 +73,9 @@ class AnimController(
         setAnimation(typed.create(animatable), transTime)
     }
 
-    fun blendAnimation(anim: BlendAnimation) {
-        blendSpace.putBlendAnim(anim)
+    fun blendAnimation(anim: BlendAnimation, refreshIfExist: Boolean = true) {
+        if (refreshIfExist) blendSpace.putBlendAnim(anim)
+        else blendSpace.putBlendIfAbsent(anim)
     }
 
     fun removeBlend(id: String) {

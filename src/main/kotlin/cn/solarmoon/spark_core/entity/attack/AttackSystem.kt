@@ -1,10 +1,6 @@
 package cn.solarmoon.spark_core.entity.attack
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.physics.sync.AttackSystemSyncPayload
-import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.world.entity.Entity
-import net.neoforged.neoforge.network.PacketDistributor
 
 /**
  * 统一的攻击方法，方便对攻击数据进行统一修改
@@ -110,8 +106,6 @@ class AttackSystem {
      * 是否已在此轮攻击中攻击过对应实体
      */
     fun hasAttacked(entity: Entity) = entity.id in _attackedEntities // 直接访问内部set，避免触发不必要的同步
-
-
 
     // 新增字段
     var ticksSinceLastReset: Int = 0
