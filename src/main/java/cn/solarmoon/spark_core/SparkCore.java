@@ -1,20 +1,15 @@
 package cn.solarmoon.spark_core;
 
 import cn.solarmoon.spark_core.config.SparkConfig;
-import cn.solarmoon.spark_core.js.JSHelperKt;
-import cn.solarmoon.spark_core.js.JSApi;
+import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
 import cn.solarmoon.spark_core.registry.client.SparkKeyMappings;
 import cn.solarmoon.spark_core.registry.client.SparkModelRegister;
-import cn.solarmoon.spark_core.registry.common.SparkRegistries;
-import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
-import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
 import cn.solarmoon.spark_core.registry.common.*;
-import cn.solarmoon.spark_core.resource.common.ModResourceInfo;
-import cn.solarmoon.spark_core.web.logging.SparkLogger;
 import cn.solarmoon.spark_core.resource.common.MultiModResourceRegistry;
-import cn.solarmoon.spark_core.rpc.WebSocketRpcServer;
+import cn.solarmoon.spark_core.web.logging.SparkLogger;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -23,6 +18,7 @@ import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 @Mod(SparkCore.MOD_ID)
 public class SparkCore {
@@ -63,6 +59,7 @@ public class SparkCore {
         SparkDataGenerator.register(modEventBus);
         SparkCapabilities.register(modEventBus);
         SparkConfig.register(modContainer);
+        SparkStateMachineRegister.register();
         PhysicsHelperKt.initBullet();
         SparkResourceRegister.register(modEventBus);
     }

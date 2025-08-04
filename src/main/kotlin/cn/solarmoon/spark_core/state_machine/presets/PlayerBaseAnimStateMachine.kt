@@ -1,13 +1,13 @@
-package cn.solarmoon.spark_core.animation.state
+package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
-import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
+import cn.solarmoon.spark_core.state_machine.StateMachineHandler
 import net.minecraft.client.player.LocalPlayer
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.block.LadderBlock
@@ -16,9 +16,7 @@ import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.entity.living.LivingEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 import ru.nsk.kstatemachine.event.Event
-import ru.nsk.kstatemachine.state.DefaultState
 import ru.nsk.kstatemachine.state.IState
-import ru.nsk.kstatemachine.state.State
 import ru.nsk.kstatemachine.state.activeStates
 import ru.nsk.kstatemachine.state.initialChoiceState
 import ru.nsk.kstatemachine.state.initialState
@@ -26,15 +24,22 @@ import ru.nsk.kstatemachine.state.state
 import ru.nsk.kstatemachine.state.transitionOn
 import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
 import ru.nsk.kstatemachine.statemachine.onStateEntry
+import ru.nsk.kstatemachine.statemachine.onStateExit
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
 
 class PlayerBaseAnimStateMachine(
     val player: Player
-) {
+): StateMachineHandler {
+
+    override var isActive = true
+
+    object ResetEvent: Event
 
     object SwitchEvent: Event
 
-    val baseMachine = if (!player.isLocalPlayer) null else createStdLibStateMachine {
+    var lastState: IState? = null
+
+    override val machine = if (!player.isLocalPlayer) null else createStdLibStateMachine {
         val player = player as LocalPlayer
 
         val none = initialState("none")
@@ -45,7 +50,7 @@ class PlayerBaseAnimStateMachine(
             val fly = state("fly") { setupMovementStates(player) }
             val climb = state("climb") {
                 val idle = state("$name.idle") { payload = MainPlayDataProvider { 7 } }
-                val move = state("$name.move") { payload = MainPlayDataProvider { 7 } }
+                val move = state("$name.move") { payload = MainPlayDataProvider { if (it == idle) 0 else 7 } }
                 initialChoiceState {
                     when {
                         !player.isSuppressingSlidingDownLadder && !player.onGround() || player.input.moveVector.length() > 0  -> move
@@ -83,7 +88,15 @@ class PlayerBaseAnimStateMachine(
             }
         }
 
-        onStateEntry { s, b ->
+        transitionOn<ResetEvent> {
+            targetState = { none }
+        }
+
+        onStateExit { s, t ->
+            lastState = s
+        }
+
+        onStateEntry { s, t ->
             val stateName = s.name ?: return@onStateEntry
             val animName = "state.$stateName"
             SparkCore.LOGGER.info("payload:${s.payload}")
@@ -104,11 +117,11 @@ class PlayerBaseAnimStateMachine(
             val data = event.data
 
             if (data is BlendDataProvider) {
-                val data = data.blendData()
+                val data = data.blendData(lastState)
                 anim.blend(player, data)
                 anim.blendToServer(player.id, data)
             } else if (data is MainPlayDataProvider) {
-                val tt = data.transTime()
+                val tt = data.transTime(lastState)
                 anim.play(player, tt)
                 anim.playToServer(player.id, tt)
             }
@@ -138,8 +151,8 @@ class PlayerBaseAnimStateMachine(
         return animNow.animIndex.name.substringBefore(".") != "state"
     }
 
-    fun progress() {
-        baseMachine?.processEventBlocking(SwitchEvent)
+    override fun progress() {
+        machine?.processEventBlocking(SwitchEvent)
     }
 
     object Modifier {

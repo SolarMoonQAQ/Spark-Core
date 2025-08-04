@@ -10,6 +10,7 @@
     "cn/solarmoon/spark_core/skill/SkillHost",
     "cn/solarmoon/spark_core/sync/Syncer",
     "cn/solarmoon/spark_core/preinput/IPreInputHolder",
+    "cn.solarmoon.spark_core.state_machine/IStateMachineHolder",
     "cn/solarmoon/spark_core/entity/IEntityPatch"
   ],
   "net/minecraft/client/player/LocalPlayer": [

@@ -24,7 +24,8 @@
     "js.PhysicsCollisionObjectMixin",
     "js.SkillMixin",
     "phys.EntityMixin",
-    "phys.LevelMixin"
+    "phys.LevelMixin",
+    "state_machine.EntityMixin"
   ],
   "client": [
     "animation.CapeLayerMixin",

@@ -4,8 +4,6 @@ import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
-import cn.solarmoon.spark_core.animation.state.EntityBaseUseAnimStateMachine;
-import cn.solarmoon.spark_core.animation.state.PlayerBaseAnimStateMachine;
 import cn.solarmoon.spark_core.ik.component.IKManager;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
@@ -20,9 +18,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,24 +38,9 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     // Use Map interface type, ConcurrentHashMap for potential thread safety (though likely accessed main-thread only)
     private final Map<String, Vec3> ikTargetPositions = new ConcurrentHashMap<>();
     private final Map<String, FabrikChain3D> ikChains = new ConcurrentHashMap<>();
-    private PlayerBaseAnimStateMachine baseAnimStateMachine;
-    private EntityBaseUseAnimStateMachine baseUseAnimStateMachine;
 
     protected PlayerMixin(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
-    }
-
-    @Override
-    public void onAddedToLevel() {
-        super.onAddedToLevel();
-        baseAnimStateMachine = new PlayerBaseAnimStateMachine(player);
-        baseUseAnimStateMachine = new EntityBaseUseAnimStateMachine(player);
-    }
-
-    @Inject(method = "tick", at = @At("HEAD"))
-    public void tick(CallbackInfo ci) {
-        baseAnimStateMachine.progress();
-        baseUseAnimStateMachine.progress();
     }
 
     @Override

@@ -3,11 +3,8 @@ package cn.solarmoon.spark_core.util
 import cn.solarmoon.spark_core.SparkCore
 import net.neoforged.fml.ModList
 import net.neoforged.fml.loading.FMLPaths
-import org.slf4j.Logger
-import java.io.File
 import java.net.URL
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 
 /**
@@ -125,7 +122,7 @@ object MultiModuleResourceExtractionUtil {
         val modules = mutableListOf<String>()
         
         try {
-            val sparkCoreUrl = modMainClass.classLoader.getResource("assets/spark_core/")
+            val sparkCoreUrl = modMainClass.classLoader.getResource("spark_core/")
             if (sparkCoreUrl != null) {
                 val sparkCorePath = Paths.get(sparkCoreUrl.toURI())
                 if (Files.exists(sparkCorePath)) {
@@ -154,7 +151,7 @@ object MultiModuleResourceExtractionUtil {
         resourceType: String
     ): Boolean {
         return try {
-            val resourceUrl = modMainClass.classLoader.getResource("assets/spark_core/$moduleName/$resourceType")
+            val resourceUrl = modMainClass.classLoader.getResource("spark_core/$moduleName/$resourceType")
             resourceUrl != null
         } catch (e: Exception) {
             false

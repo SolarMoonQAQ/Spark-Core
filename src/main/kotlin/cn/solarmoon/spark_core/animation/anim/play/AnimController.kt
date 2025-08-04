@@ -74,7 +74,7 @@ class AnimController(
     }
 
     fun blendAnimation(anim: BlendAnimation) {
-        blendSpace.putBlendAnim(anim)
+        blendSpace.tryPutBlendAnim(anim)
     }
 
     fun removeBlend(id: String) {

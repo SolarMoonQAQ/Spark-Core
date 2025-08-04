@@ -1,16 +1,15 @@
 package cn.solarmoon.spark_core.animation.anim.play.blend
 
-import io.netty.buffer.ByteBuf
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
-import java.util.UUID
 
 data class BlendData(
     val weight: Double = 1.0,
     val enterTransitionTime: Int = 7,
     var exitTransitionTime: Int = 7,
     val blendMask: BlendMask = BlendMask(),
-    val shouldClearWhenResetAnim: Boolean = false
+    val shouldClearWhenResetAnim: Boolean = false,
+    val refreshIfExist: Boolean = true
 ) {
 
     companion object {
@@ -21,6 +20,7 @@ data class BlendData(
                     buffer.readInt(),
                     buffer.readInt(),
                     BlendMask.STREAM_CODEC.decode(buffer),
+                    buffer.readBoolean(),
                     buffer.readBoolean()
                 )
             }
@@ -34,6 +34,7 @@ data class BlendData(
                 buffer.writeInt(value.exitTransitionTime)
                 BlendMask.STREAM_CODEC.encode(buffer, value.blendMask)
                 buffer.writeBoolean(value.shouldClearWhenResetAnim)
+                buffer.writeBoolean(value.refreshIfExist)
             }
 
         }

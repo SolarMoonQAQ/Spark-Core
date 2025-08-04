@@ -129,6 +129,14 @@ fun Vec3.wrapDegrees() = Vec3(
     Mth.wrapDegrees(z)
 )
 
+fun Vector3f.wrapDegrees(dist: Vector3f) = dist.set(
+    Mth.wrapDegrees(x),
+    Mth.wrapDegrees(y),
+    Mth.wrapDegrees(z)
+)
+
+fun Vector3f.wrapDegrees() = wrapDegrees(this)
+
 fun com.jme3.math.Vector3f.toVector3f() = Vector3f(x, y, z)
 
 fun com.jme3.math.Vector3f.toVec3() = toVector3f().toVec3()

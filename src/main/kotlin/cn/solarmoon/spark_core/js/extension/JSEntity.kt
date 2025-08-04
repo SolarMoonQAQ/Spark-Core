@@ -7,11 +7,8 @@ import cn.solarmoon.spark_core.entity.getRelativeVector
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
@@ -23,7 +20,7 @@ import kotlin.math.atan2
 interface JSEntity {
 
     val entity get() = this as Entity
-    // 调试
+
     fun commonAttack(target: Entity) {
         val entity = entity
         if (entity.level().isClientSide) return
