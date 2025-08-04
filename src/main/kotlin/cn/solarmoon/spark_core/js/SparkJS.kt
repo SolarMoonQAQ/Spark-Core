@@ -8,21 +8,60 @@ import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.neoforged.fml.util.LoaderException
 import net.neoforged.neoforge.common.NeoForge
 import org.mozilla.javascript.Context
+import org.mozilla.javascript.Scriptable
 
 abstract class SparkJS {
 
-    val context = Context.enter()
+    companion object {
+        // 使用ThreadLocal管理Context，避免线程冲突同时提高性能
+        private val threadLocalContext = ThreadLocal<Context>()
 
-    val scope = context.initStandardObjects()
+        // 全局共享的scope
+        private val globalScope: Scriptable by lazy {
+            getOrCreateContext().initStandardObjects()
+        }
+
+        /**
+         * 获取或创建当前线程的Context
+         * ThreadLocal确保隔离
+         */
+        private fun getOrCreateContext(): Context {
+            var context = threadLocalContext.get()
+            if (context == null) {
+                context = Context.enter()
+                threadLocalContext.set(context)
+            }
+            return context
+        }
+
+        /**
+         * 清理当前线程的Context（在线程结束时调用）
+         */
+        fun cleanupThreadContext() {
+            threadLocalContext.get()?.let {
+                Context.exit()
+                threadLocalContext.remove()
+            }
+        }
+    }
+
+    val scope: Scriptable get() = globalScope
 
     fun register() {
         NeoForge.EVENT_BUS.post(SparkJSComponentRegisterEvent(this))
     }
 
+    fun <T> withContext(block: (Context) -> T): T {
+        val context = getOrCreateContext()
+        return block(context)
+    }
+
     fun eval(script: String, contextName: String = "") {
-        runCatching {
-            context.evaluateString(scope, script, contextName, 1, null)
-        }.getOrElse { throw LoaderException("Js脚本加载失败: $contextName", it) }
+        withContext { context ->
+            runCatching {
+                context.evaluateString(scope, script, contextName, 1, null)
+            }.getOrElse { throw LoaderException("Js脚本加载失败: $contextName", it) }
+        }
     }
 
     fun validateApi(api: String) {

@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.JSComponent
 import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
-import cn.solarmoon.spark_core.js.put
 import cn.solarmoon.spark_core.skill.SkillManager
 import net.minecraft.resources.ResourceLocation
 import org.mozilla.javascript.Function
