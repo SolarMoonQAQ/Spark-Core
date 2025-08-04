@@ -6,4 +6,6 @@ interface IStateMachineHolder {
 
     val stateMachineHandlers: MutableMap<ResourceLocation, StateMachineHandler>
 
+    fun getStateMachineHandler(id: ResourceLocation): StateMachineHandler? = stateMachineHandlers[id]
+
 }

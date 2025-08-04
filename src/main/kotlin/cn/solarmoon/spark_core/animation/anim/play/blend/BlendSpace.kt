@@ -26,6 +26,11 @@ class BlendSpace {
         mainAnimMap[anim.id] = anim
     }
 
+    fun tryPutBlendAnim(anim: BlendAnimation) {
+        if (anim.data.refreshIfExist) putBlendAnim(anim)
+        else putBlendIfAbsent(anim)
+    }
+
     fun putBlendAnim(anim: BlendAnimation) {
         val same = blendAnimMap.remove(anim.id)
         same?.let {
