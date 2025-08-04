@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.resource.handler
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
@@ -76,10 +77,15 @@ class AnimationHandler(
             // 解码动画集
             val animationSetResult = OAnimationSet.CODEC.decode(JsonOps.INSTANCE, jsonElement).orThrow
             val animationSet = animationSetResult.first
-            
+
             // 存储到Origin映射
             OAnimationSet.ORIGINS[node.id] = animationSet
-            
+
+            // 规范化动画名称，确保符合ResourceLocation命名规范
+            animationSet.animations = animationSet.animations.mapKeys { (key, _) ->
+                normalizeResourceName(key)
+            } as LinkedHashMap<String, OAnimation>
+
             // 增加处理计数
             processedCount++
 
@@ -134,30 +140,28 @@ class AnimationHandler(
     }
     
     // ===== 注册表操作 =====
-    
+
     private fun registerToRegistry(location: ResourceLocation, animationSet: OAnimationSet) {
         try {
             // 为动画集中的每个动画创建 TypedAnimation 并注册
             animationSet.animations.forEach { (animName, _) ->
-                val animIndex = AnimIndex(location, animName)
-                val typedAnimation = TypedAnimation(animIndex) {}
-
                 // 规范化动画名称，确保符合ResourceLocation命名规范
                 val normalizedAnimName = normalizeResourceName(animName)
-
-                // 创建唯一的资源键，使用SparkResourcePathBuilder
-                // 从location路径中提取modId、moduleName和实体路径
+                val animIndex = AnimIndex(location, normalizedAnimName)
+                val typedAnimation = TypedAnimation(animIndex) {}
+                // 从location路径中提取基础信息，不依赖动画名的具体结构
+                // location.path 格式通常是: {moduleName}/animations/{entityPath}
                 val pathParts = location.path.split("/")
-                val animResourceLocation = run {
+                val flattenedPath = run {
+                    // 拍平entityPath后的路径
                     val moduleName = pathParts[0]
                     val entityPath = pathParts[2]
-                    SparkResourcePathBuilder.buildAnimationPath(
-                        location.namespace,
-                        moduleName,
-                        entityPath,
-                        normalizedAnimName
-                    )
+                    "$moduleName/animations/$entityPath/$normalizedAnimName"
                 }
+                val animResourceLocation = ResourceLocation.fromNamespaceAndPath(
+                    location.namespace,
+                    flattenedPath
+                )
                 val resourceKey = ResourceKey.create(typedAnimationRegistry.key(), animResourceLocation)
 
                 typedAnimationRegistry.register(resourceKey, typedAnimation, RegistrationInfo.BUILT_IN)
@@ -168,8 +172,6 @@ class AnimationHandler(
         }
     }
 
-
-    
     private fun unregisterFromRegistry(location: ResourceLocation) {
         try {
             // 获取要注销的动画集
@@ -177,25 +179,21 @@ class AnimationHandler(
             if (animationSet != null) {
                 // 注销动画集中的每个动画
                 animationSet.animations.forEach { (animName, _) ->
-                    // 使用相同的规范化逻辑和路径构建方式
+
                     val normalizedAnimName = normalizeResourceName(animName)
+                    // 从location路径中提取基础信息，不依赖动画名的具体结构
+                    // location.path 格式通常是: {moduleName}/animations/{entityPath}
                     val pathParts = location.path.split("/")
-                    val animResourceLocation = if (pathParts.size >= 3 && pathParts[1] == "animations") {
+                    val flattenedPath = run {
+                        // 拍平entityPath后的路径
                         val moduleName = pathParts[0]
                         val entityPath = pathParts[2]
-                        SparkResourcePathBuilder.buildAnimationPath(
-                            location.namespace,
-                            moduleName,
-                            entityPath,
-                            normalizedAnimName
-                        )
-                    } else {
-                        // 回退到原始方法
-                        ResourceLocation.fromNamespaceAndPath(
-                            location.namespace,
-                            "${location.path}/$normalizedAnimName"
-                        )
+                        "$moduleName/animations/$entityPath/$normalizedAnimName"
                     }
+                    val animResourceLocation = ResourceLocation.fromNamespaceAndPath(
+                        location.namespace,
+                        flattenedPath
+                    )
                     val resourceKey = ResourceKey.create(typedAnimationRegistry.key(), animResourceLocation)
                     typedAnimationRegistry.unregisterDynamic(resourceKey)
                     SparkCore.LOGGER.debug("动画已从注册表注销: $animResourceLocation (来自动画集: $location, 原始名称: $animName)")

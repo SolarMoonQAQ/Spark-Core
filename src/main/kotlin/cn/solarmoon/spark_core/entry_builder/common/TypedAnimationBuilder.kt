@@ -5,7 +5,9 @@ import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
+import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.core.RegistrationInfo
 import net.neoforged.neoforge.registries.DeferredRegister
 import java.util.function.Supplier
 
@@ -62,17 +64,41 @@ class TypedAnimationBuilder(private val register: DeferredRegister<TypedAnimatio
     }
 
     /**
+     * 构造并在注册阶段过后动态注册,类似于build()
+     *
+     * @return 注册的动画实例
+     */
+    fun registerDynamic(): TypedAnimation {
+        if (id.isEmpty()) {
+            throw IllegalStateException("ID must be set before registering dynamic TypedAnimation")
+        }
+        if (index == null) {
+            throw IllegalStateException("AnimIndex must be set before registering dynamic TypedAnimation")
+        }
+        
+        val namespace = register.namespace
+        val fullId = ResourceLocation.fromNamespaceAndPath(namespace, id)
+        val animation = TypedAnimation(index!!, provider)
+        val registry = SparkRegistries.TYPED_ANIMATION
+        val resourceKey = ResourceKey.create(registry.key(), fullId)
+        animationRegistry.register(resourceKey, animation, RegistrationInfo.BUILT_IN)
+        return animation
+    }
+
+    /**
      * 构造并在注册阶段过后动态注册
      *
      * @param fullId 完整的资源位置（包含命名空间）
      * @return 注册的动画实例
      */
     fun registerDynamic(fullId: ResourceLocation): TypedAnimation {
-        val animation = constructOnly()
+        if (index == null) {
+            throw IllegalStateException("AnimIndex must be set before registering dynamic TypedAnimation")
+        }
+        val animation = TypedAnimation(index!!, provider)
         val registry = SparkRegistries.TYPED_ANIMATION
-        val resourceKey = net.minecraft.resources.ResourceKey.create(registry.key(), fullId)
-        animationRegistry.register(resourceKey, animation, net.minecraft.core.RegistrationInfo.BUILT_IN)
+        val resourceKey = ResourceKey.create(registry.key(), fullId)
+        animationRegistry.register(resourceKey, animation, RegistrationInfo.BUILT_IN)
         return animation
     }
-
 }

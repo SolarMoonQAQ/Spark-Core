@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Mixin(Entity.class)
-public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, Syncer, IEntityPatch {
+    public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, Syncer, IEntityPatch {
 
     @Shadow private int id;
     private Entity entity = (Entity) (Object) this;

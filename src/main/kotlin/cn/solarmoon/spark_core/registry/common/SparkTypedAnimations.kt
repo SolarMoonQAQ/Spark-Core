@@ -13,8 +13,8 @@ import net.minecraft.world.entity.player.Player
 
 object SparkTypedAnimations {
 
-    @JvmStatic
-    fun register() {}
+     @JvmStatic
+     fun register() {}
 
 //    @JvmStatic
 //    val LAND_IDLE = createStateAnim("land.idle")

@@ -223,11 +223,11 @@ object MultiModuleResourceExtractionUtil {
 
     /**
      * 规范化资源名称，确保符合Minecraft ResourceLocation的命名规范
-     * 只允许 [a-z0-9/._-] 字符
+     * 只允许 [a-z0-9._-] 字符
      */
     fun normalizeResourceName(name: String): String {
         return name.lowercase()
-            .replace(Regex("[^a-z0-9/._-]"), "_")
+            .replace(Regex("[^a-z0-9._-]"), "_")
             .replace(Regex("_+"), "_") // 将连续的下划线合并为单个下划线
             .trim('_') // 移除开头和结尾的下划线
     }

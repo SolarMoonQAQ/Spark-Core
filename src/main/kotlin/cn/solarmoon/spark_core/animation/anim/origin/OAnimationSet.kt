@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation
  * 动画集合，代表一个模型的所有动画
  */
 data class OAnimationSet(
-    val animations: LinkedHashMap<String, OAnimation>
+    var animations: LinkedHashMap<String, OAnimation>
 ) {
 
     /**
