@@ -1,10 +1,7 @@
-package cn.solarmoon.spark_core.animation.state
+package cn.solarmoon.spark_core.state_machine.presets
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
-import cn.solarmoon.spark_core.entity.isAboveGround
-import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
@@ -14,24 +11,10 @@ import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
-import net.minecraft.client.Minecraft
 import net.minecraft.client.multiplayer.ClientLevel
-import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.LivingEntity
-import net.minecraft.world.entity.player.Player
-import net.minecraft.world.level.block.LadderBlock
-import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.client.event.ClientTickEvent
-import net.neoforged.neoforge.client.event.RenderPlayerEvent
-import net.neoforged.neoforge.common.NeoForge
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
-import net.neoforged.neoforge.event.entity.living.LivingEvent
-import net.neoforged.neoforge.event.tick.EntityTickEvent
-import net.neoforged.neoforge.event.tick.PlayerTickEvent
 import net.neoforged.neoforge.network.PacketDistributor
-import ru.nsk.kstatemachine.statemachine.processEventBlocking
 
 object CommonAnimApplier {
 

@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.animation.state
+package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
+import cn.solarmoon.spark_core.state_machine.StateMachineHandler
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.player.Player
@@ -28,13 +29,17 @@ import ru.nsk.kstatemachine.statemachine.processEventBlocking
 
 class PlayerBaseAnimStateMachine(
     val player: Player
-) {
+): StateMachineHandler {
+
+    override var isActive = true
+
+    object ResetEvent: Event
 
     object SwitchEvent: Event
 
     var lastState: IState? = null
 
-    val baseMachine = if (!player.isLocalPlayer) null else createStdLibStateMachine {
+    override val machine = if (!player.isLocalPlayer) null else createStdLibStateMachine {
         val player = player as LocalPlayer
 
         val none = initialState("none")
@@ -81,6 +86,10 @@ class PlayerBaseAnimStateMachine(
             targetState = {
                 if (checkPlayingOtherAnim()) none else base
             }
+        }
+
+        transitionOn<ResetEvent> {
+            targetState = { none }
         }
 
         onStateExit { s, t ->
@@ -142,8 +151,8 @@ class PlayerBaseAnimStateMachine(
         return animNow.animIndex.name.substringBefore(".") != "state"
     }
 
-    fun progress() {
-        baseMachine?.processEventBlocking(SwitchEvent)
+    override fun progress() {
+        machine?.processEventBlocking(SwitchEvent)
     }
 
     object Modifier {

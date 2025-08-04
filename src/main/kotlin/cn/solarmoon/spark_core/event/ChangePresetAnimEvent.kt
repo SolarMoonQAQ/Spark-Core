@@ -1,8 +1,7 @@
 package cn.solarmoon.spark_core.event
 
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
-import cn.solarmoon.spark_core.animation.state.AnimPlayDataProvider
+import cn.solarmoon.spark_core.state_machine.presets.AnimPlayDataProvider
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.Event

@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.animation.state
+package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
+import cn.solarmoon.spark_core.state_machine.StateMachineHandler
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
@@ -23,11 +24,13 @@ import ru.nsk.kstatemachine.statemachine.processEventBlocking
 
 class EntityBaseUseAnimStateMachine(
     val entity: LivingEntity
-) {
+): StateMachineHandler {
+
+    override var isActive = true
 
     object SwitchEvent: Event
 
-    val useMachine = createStdLibStateMachine {
+    override val machine = createStdLibStateMachine {
         val none = initialState("none")
         val eat = state("eat") { initHandState() }
         val drink = state("drink") { initHandState() }
@@ -103,8 +106,8 @@ class EntityBaseUseAnimStateMachine(
         }
     }
 
-    fun progress() {
-        useMachine.processEventBlocking(SwitchEvent)
+    override fun progress() {
+        machine.processEventBlocking(SwitchEvent)
     }
 
 }

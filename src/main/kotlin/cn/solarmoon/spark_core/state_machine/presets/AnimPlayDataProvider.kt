@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.animation.state
+package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
 import ru.nsk.kstatemachine.state.IState
