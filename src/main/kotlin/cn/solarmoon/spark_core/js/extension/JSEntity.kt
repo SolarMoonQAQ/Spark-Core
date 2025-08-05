@@ -52,6 +52,18 @@ interface JSEntity {
         }
     }
 
+    fun addMove(move: Vec3, orientationByInput: Boolean) {
+        val entity = entity
+        if (entity is Player && orientationByInput && entity.isLocalPlayer) {
+            val input = (entity as LocalPlayer).savedInput
+            val angle = atan2(input.moveVector.y, -input.moveVector.x) - PI.toFloat() / 2
+            val move = move.yRot(angle)
+            entity.addDeltaMovement(entity.getRelativeVector(move))
+        } else {
+            entity.addDeltaMovement(entity.getRelativeVector(move))
+        }
+    }
+
     fun addRelativeMovement(relative: Vec3, movement: Vec3) = entity.addRelativeMovement(relative, movement)
 
     fun hurt(damageSource: DamageSource, amount: Float) {

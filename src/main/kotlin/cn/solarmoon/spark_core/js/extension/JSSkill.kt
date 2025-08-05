@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillEvent
 import cn.solarmoon.spark_core.skill.SkillPhase
-import mezz.jei.api.recipe.IFocus
 import net.minecraft.world.entity.Entity
 import org.mozilla.javascript.Function
 
@@ -63,5 +62,7 @@ interface JSSkill {
     fun onTargetKnockBack(consumer: Function) = skill.onEvent<SkillEvent.TargetKnockBack> {
         consumer.call(js, it.event)
     }
+
+    fun getLocation() = skill.type.registryKey
 
 }

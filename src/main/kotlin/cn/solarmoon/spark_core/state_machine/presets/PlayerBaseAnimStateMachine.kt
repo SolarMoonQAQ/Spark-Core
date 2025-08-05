@@ -72,10 +72,10 @@ class PlayerBaseAnimStateMachine(
                     player.abilities.flying -> fly
                     player.onClimbable() -> climb
                     player.isFallFlying -> fallFly
-                    player.isSwimming -> swim
+                    (player.isUnderWater || player.canStartSwimming()) -> swim
                     player.isCrouching -> crouch
                     Modifier.jumpLag -> jump
-                    (player.y - player.yOld) < 0.001 && player.isAboveGround(1.0) && !player.onGround() -> fall
+                    (player.y - player.yOld) < 0.001 && player.isAboveGround(1.0) && !player.onGround() && !player.isInFluidType -> fall
                     activeStates().contains(fall) && !player.isAboveGround(1.0) -> jumpLand
                     else -> land
                 }
