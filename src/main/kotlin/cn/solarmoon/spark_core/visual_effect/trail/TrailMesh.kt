@@ -10,10 +10,18 @@ class TrailMesh(
     val mainPoints = mutableListOf<TrailPoint>()
     val renderPoints = mutableListOf<TrailPoint>()
 
+    private var active = false
     var dynamicStart: ((Float) -> Vector3f)? = null
     var dynamicEnd: ((Float) -> Vector3f)? = null
 
+    fun addPoint(start: (Float) -> Vector3f, end: (Float) -> Vector3f) {
+        addMainPoint(TrailPoint(start(1f), end(1f), info))
+        dynamicStart = start
+        dynamicEnd = end
+    }
+
     fun addMainPoint(point: TrailPoint) {
+        active = true
         mainPoints.add(point)
     }
 
@@ -22,14 +30,15 @@ class TrailMesh(
     }
 
     fun tick() {
-        mainPoints.forEach { it.tick() }
-        if (mainPoints.all { it.isExpired }) {
+        if (!active) {
             dynamicStart = null
             dynamicEnd = null
-            mainPoints.clear()
         }
+        mainPoints.forEach { it.tick() }
+        if (mainPoints.all { it.isExpired }) { mainPoints.clear() }
         renderPoints.forEach { it.tick() }
         if (renderPoints.all { it.isExpired }) { renderPoints.clear() }
+        active = false
     }
 
     fun frame(partialTicks: Float) {

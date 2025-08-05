@@ -21,20 +21,26 @@ open class SkillConfig(
         skill.onEvent<SkillEvent.TargetKnockBack> {
             if (!read("can_target_knockback", true)) it.event.isCanceled = true
         }
+        skill.onEvent<SkillEvent.TargetKnockBack> {
+            val origin = it.event.originalStrength.toDouble()
+            val strength = read("target_knockback_strength", origin)
+            if (strength != origin) it.event.strength = strength.toFloat()
+        }
         skill.onEvent<SkillEvent.TargetHurt> {
-            val damageMultiplier = read("damage_multiplier", 1f)
-            if (damageMultiplier != 1f) it.event.container.newDamage *= damageMultiplier
+            val damageMultiplier = read("damage_multiplier", 1.0)
+            if (damageMultiplier != 1.0) it.event.container.newDamage *= damageMultiplier.toFloat()
         }
     }
 
-    fun put(id: String, value: Any) {
+    fun set(id: String, value: Any) {
         storage[id] = value
     }
 
     inline fun <reified T: Any> read(key: String, defaultValue: T): T {
         val value = storage.get(key)
-        if (value == null) return defaultValue
+        if (defaultValue is Number && defaultValue !is Double) throw IllegalArgumentException("由于js的数字类型限制为double，因此配置参数[$key] 的类型不能为 ${defaultValue::class.simpleName}，请用double类型填写然后转为想要的类型。")
         return when (value) {
+            null -> defaultValue
             is T -> value
             else -> throw IllegalArgumentException("技能配置参数[$key] 的类型必须为 ${T::class.simpleName}")
         }

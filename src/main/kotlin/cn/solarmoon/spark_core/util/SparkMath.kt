@@ -64,22 +64,9 @@ fun Vec3.rotLerp(target: Vec3, progress: Double): Vec3 {
     return result.toEuler().toVec3()
 }
 
-fun Vector3f.rotLerp(target: Vector3f, progress: Double, dist: Vector3f): Vector3f {
-    return dist.set(toVec3().rotLerp(target.toVec3(), progress).toVector3f())
-}
-
-fun Vector3f.rotLerp(target: Vector3f, progress: Double): Vector3f {
-    return rotLerp(target, progress, this)
-}
-
-fun Vector3f.toVec3() = Vec3(x.toDouble(), y.toDouble(), z.toDouble())
-
-fun Vector3d.toVec3() = Vec3(x, y, z)
-
-fun Vec3.toVec3i() = Vec3i(x.toInt(), y.toInt(), z.toInt())
-
-fun Vector3d.toVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
-
+/**
+ * 在joml库的默认欧拉角转换中，出现了角度突变，推测是万向节锁导致的，因此此方法对pitch角的算法进行了修正，应当避免了joml库本身的问题
+ */
 fun Quaterniond.toEuler(): Vector3d {
     val angles = Vector3d()
     val q = Quaterniond(this)
@@ -102,6 +89,26 @@ fun Quaterniond.toEuler(): Vector3d {
 
     return angles
 }
+
+fun Vector3f.rotLerp(target: Vector3f, progress: Double, dist: Vector3f): Vector3f {
+    return dist.set(toVec3().rotLerp(target.toVec3(), progress).toVector3f())
+}
+
+fun Vector3f.rotLerp(target: Vector3f, progress: Double): Vector3f {
+    return rotLerp(target, progress, this)
+}
+
+fun Vector3f.toQuaternionf() = Quaternionf().rotateXYZ(x, y, z)
+
+fun Vec3.toQuaterniond() = Quaterniond().rotateXYZ(x, y, z)
+
+fun Vector3f.toVec3() = Vec3(x.toDouble(), y.toDouble(), z.toDouble())
+
+fun Vector3d.toVec3() = Vec3(x, y, z)
+
+fun Vec3.toVec3i() = Vec3i(x.toInt(), y.toInt(), z.toInt())
+
+fun Vector3d.toVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
 
 fun Double.toDegrees() = Math.toDegrees(this)
 

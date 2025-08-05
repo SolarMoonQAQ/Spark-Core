@@ -3,9 +3,9 @@ package cn.solarmoon.spark_core.animation.anim.play.blend
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
-import cn.solarmoon.spark_core.util.rotLerp
+import cn.solarmoon.spark_core.util.toQuaternionf
 import cn.solarmoon.spark_core.util.toVec3
-import cn.solarmoon.spark_core.util.wrapDegrees
+import org.joml.Quaternionf
 import org.joml.Vector3f
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -56,9 +56,15 @@ class BlendSpace {
      */
     fun blendBone(boneName: String, animatable: IAnimatable<*>?): KeyAnimData {
         val values = mainAnimMap.values + blendAnimMap.values
-        val totalWeight = values.filter { boneName in it.anim.origin.bones }.sumOf { it.currentWeight }
+        val totalWeight = values.filter { boneName in it.anim.origin.bones }.sumOf { it.currentWeight * it.data.blendMask.getWeight(boneName) }
+
+        // 如果总权重为0，则返回默认姿势（简化计算）
+        if (totalWeight <= 0.0) {
+            return KeyAnimData()
+        }
+
         val pos = Vector3f()
-        val rot = Vector3f()
+        val rot = Quaternionf(); var accumulatedWeight = 0f
         val scale = Vector3f(1f)
         values.forEach {
             val boneData = it.anim.origin.getBoneAnimation(boneName) ?: return@forEach
@@ -69,10 +75,21 @@ class BlendSpace {
                 Loop.HOLD_ON_LAST_FRAME -> it.anim.time
             }
             pos.add(boneData.getAnimPosAt(time, animatable).mul(pt))
-            rot.rotLerp(rot.add(boneData.getAnimRotAt(time, animatable).mul(pt), Vector3f()), 1.0).wrapDegrees()
+//            rot.slerp(boneData.getAnimRotAt(time, animatable).toQuaternionf(), pt)
             scale.add(boneData.getAnimScaleAt(time, animatable).mul(pt)).sub(Vector3f(pt))
+
+            // 计算pt和时间
+            val origRot = boneData.getAnimRotAt(time, animatable).toQuaternionf()
+            if (accumulatedWeight == 0f) {
+                rot.set(origRot)
+                accumulatedWeight = pt
+            } else {
+                val t = pt / (accumulatedWeight + pt)
+                rot.slerp(origRot, t)
+                accumulatedWeight += pt
+            }
         }
-        return KeyAnimData(pos.toVec3(), rot.toVec3(), scale.toVec3())
+        return KeyAnimData(pos.toVec3(), rot.getEulerAnglesXYZ(Vector3f()).toVec3(), scale.toVec3())
     }
 
     fun physTick(overallSpeed: Double = 1.0) {

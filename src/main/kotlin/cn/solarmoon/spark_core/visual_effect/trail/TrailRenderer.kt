@@ -11,26 +11,22 @@ import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector3f
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class TrailRenderer: VisualEffectRenderer() {
 
-    val meshes = mutableMapOf<String, TrailMesh>()
+    val meshes = ConcurrentLinkedQueue<TrailMesh>()
 
-    fun addPoint(id: String, start: (Float) -> Vector3f, end: (Float) -> Vector3f, info: TrailInfo) {
-        meshes.getOrPut(id) { TrailMesh(info) }.apply {
-//            addMainPoint(TrailPoint(start(0f), end(0f), info))
-//            addMainPoint(TrailPoint(start(0.25f), end(0.25f), info))
-//            addMainPoint(TrailPoint(start(0.75f), end(0.75f), info))
-            addMainPoint(TrailPoint(start(1f), end(1f), info))
-            dynamicStart = start
-            dynamicEnd = end
-        }
+    fun createMesh(info: TrailInfo): TrailMesh {
+        val mesh = TrailMesh(info)
+        meshes.add(mesh)
+        return mesh
     }
 
     override fun physTick(physLevel: PhysicsLevel) {}
 
     override fun tick() {
-        meshes.values.forEach {
+        meshes.forEach {
             it.tick()
         }
     }
@@ -42,7 +38,7 @@ class TrailRenderer: VisualEffectRenderer() {
         bufferSource: MultiBufferSource,
         partialTicks: Float
     ) {
-        meshes.forEach { _, mesh ->
+        meshes.forEach { mesh ->
             val buffer = bufferSource.getBuffer(RenderTypeUtil.transparentRepair(mesh.info.textureLocation))
             mesh.frame(partialTicks)
             renderMesh(mesh, camPos.toVector3f(), buffer, partialTicks)
