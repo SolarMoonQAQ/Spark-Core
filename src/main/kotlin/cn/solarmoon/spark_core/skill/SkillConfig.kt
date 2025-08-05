@@ -46,4 +46,11 @@ open class SkillConfig(
         }
     }
 
+    inline fun <reified T: Any> readNonNull(key: String): T {
+        val value = storage[key]
+        if (value == null) throw IllegalArgumentException("技能配置参数[$key] 不能为空")
+        if (value !is T) throw IllegalArgumentException("技能配置参数[$key] 的类型必须为 ${T::class.simpleName}")
+        return value
+    }
+
 }
