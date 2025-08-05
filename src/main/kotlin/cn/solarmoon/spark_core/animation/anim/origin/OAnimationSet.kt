@@ -24,7 +24,7 @@ data class OAnimationSet(
 
     fun hasAnimation(name: String) = animations[name] != null
 
-    companion object {
+    companion object{
         /**
          * 如果res是玩家，自动返回玩家的动画集合
          */

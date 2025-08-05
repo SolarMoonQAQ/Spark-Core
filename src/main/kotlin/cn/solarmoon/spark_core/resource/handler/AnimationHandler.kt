@@ -109,6 +109,14 @@ class AnimationHandler(
     }
     
     override fun processResourceModified(node: ResourceNode) {
+        val resourceId = node.id
+
+        // 先清理旧的AnimIndex.ORIGINS映射（如果存在）
+        val oldAnimationSet = OAnimationSet.ORIGINS[resourceId]
+        if (oldAnimationSet != null) {
+            clearAnimIndexMappings(resourceId, oldAnimationSet)
+        }
+
         // 修改等同于重新添加
         processResourceAdded(node)
     }
@@ -141,17 +149,51 @@ class AnimationHandler(
     
     // ===== 注册表操作 =====
 
+    /**
+     * 清理AnimIndex.ORIGINS中与指定动画集相关的映射
+     */
+    private fun clearAnimIndexMappings(location: ResourceLocation, animationSet: OAnimationSet) {
+        val pathParts = location.path.split("/")
+        if (pathParts.size >= 3) {
+            val entityPath = pathParts[2]
+            animationSet.animations.keys.forEach { animName ->
+                val normalizedAnimName = normalizeResourceName(animName)
+                val shortcutPath = ResourceLocation.fromNamespaceAndPath(
+                    "minecraft",
+                    "$entityPath/$normalizedAnimName"
+                )
+                AnimIndex.ORIGINS.remove(shortcutPath)
+                SparkCore.LOGGER.debug("移除动画快捷映射: $shortcutPath")
+            }
+        }
+    }
+
     private fun registerToRegistry(location: ResourceLocation, animationSet: OAnimationSet) {
         try {
             // 为动画集中的每个动画创建 TypedAnimation 并注册
             animationSet.animations.forEach { (animName, _) ->
                 // 规范化动画名称，确保符合ResourceLocation命名规范
                 val normalizedAnimName = normalizeResourceName(animName)
-                val animIndex = AnimIndex(location, normalizedAnimName)
+                val animIndex = AnimIndex(location, normalizedAnimName, useShortcutConversion = false)
                 val typedAnimation = TypedAnimation(animIndex) {}
-                // 从location路径中提取基础信息，不依赖动画名的具体结构
+
+                // 填充AnimIndex.ORIGINS映射表：minecraft:entityPath/animName -> location
+                // 从location路径中提取entityPath
                 // location.path 格式通常是: {moduleName}/animations/{entityPath}
                 val pathParts = location.path.split("/")
+                if (pathParts.size >= 3) {
+                    val entityPath = pathParts[2]
+                    // 创建快捷路径：minecraft:entityPath/animName
+                    val shortcutPath = ResourceLocation.fromNamespaceAndPath(
+                        "minecraft", // 固定使用minecraft命名空间
+                        "$entityPath/$normalizedAnimName"
+                    )
+                    // 映射到完整的动画集路径
+                    AnimIndex.ORIGINS[shortcutPath] = location
+                    SparkCore.LOGGER.debug("添加动画快捷映射: $shortcutPath -> $location")
+                }
+
+                // 原有的TypedAnimation注册逻辑
                 val flattenedPath = run {
                     // 拍平entityPath后的路径
                     val moduleName = pathParts[0]
@@ -178,6 +220,9 @@ class AnimationHandler(
             val animationSet = OAnimationSet.ORIGINS[location]
             if (animationSet != null) {
                 // 注销动画集中的每个动画
+                // 清理AnimIndex.ORIGINS映射表
+                clearAnimIndexMappings(location, animationSet)
+
                 animationSet.animations.forEach { (animName, _) ->
 
                     val normalizedAnimName = normalizeResourceName(animName)

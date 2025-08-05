@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.sync.AnimationDataSendingTask
 import net.minecraft.network.FriendlyByteBuf
@@ -36,13 +37,31 @@ data class AnimationDataSyncPayload(
         fun handleInClient(payload: AnimationDataSyncPayload, context: IPayloadContext) {
             context.enqueueWork {
                 SparkCore.LOGGER.info("Received Full AnimationDataSyncPayload on client. Animations count: ${payload.animations.size}")
-                
+
                 // 直接操作 OAnimationSet.ORIGINS，与新的 handle 机制保持一致
                 OAnimationSet.ORIGINS.clear()
+                // 同时清理AnimIndex.ORIGINS
+                AnimIndex.ORIGINS.clear()
+
                 payload.animations.forEach { (location, animationSet) ->
                     OAnimationSet.ORIGINS[location] = animationSet
                     SparkCore.LOGGER.debug("Added/Replaced animation set for: {} with OAnimationSet object", location)
+
+                    // 重建AnimIndex.ORIGINS映射
+                    val pathParts = location.path.split("/")
+                    if (pathParts.size >= 3) {
+                        val entityPath = pathParts[2]
+                        animationSet.animations.keys.forEach { animName ->
+                            val shortcutPath = ResourceLocation.fromNamespaceAndPath(
+                                "minecraft",
+                                "$entityPath/$animName"
+                            )
+                            AnimIndex.ORIGINS[shortcutPath] = location
+                        }
+                    }
                 }
+
+                SparkCore.LOGGER.info("Rebuilt AnimIndex.ORIGINS with {} shortcuts", AnimIndex.ORIGINS.size)
                 
                 SparkCore.LOGGER.info("OAnimationSet.ORIGINS updated with ${payload.animations.size} OAnimationSet objects.")
                 

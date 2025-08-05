@@ -224,7 +224,7 @@ data class DynamicRegistrySyncS2CPacket(
                     val animName = buf.readUtf()
                     buf.release()
 
-                    val animIndex = AnimIndex(indexLocation, animName)
+                    val animIndex = AnimIndex(indexLocation, animName, useShortcutConversion = false)
                     val animation = TypedAnimation(animIndex) {}
 
                     // 使用不触发回调的注册方式，避免客户端触发服务端回调

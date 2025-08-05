@@ -49,7 +49,6 @@ abstract class ResourceHandlerBase : IModuleAwareResourceHandler, IHotReloadAwar
                         // 无冲突，正常处理
                     }
                 }
-
                 processResourceModified(node)
                 ResourceHandlerLogger.logResourceModified(getResourceType(), node.id, node.getFullModuleId())
             } catch (e: Exception) {

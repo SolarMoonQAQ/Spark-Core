@@ -34,7 +34,7 @@ class AnimInstance private constructor(
                 SparkCore.LOGGER.warn("已更新ModelIndex.animPath为: $animPath")
             }
 
-            return create(holder, AnimIndex(animPath, name), provider)
+            return create(holder, AnimIndex(animPath, name, useShortcutConversion = false), provider)
         }
 
         @JvmStatic

@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
@@ -37,16 +38,44 @@ data class OAnimationSetSyncPayload(
         fun handleInClient(payload: OAnimationSetSyncPayload, context: IPayloadContext) {
             context.enqueueWork {
                 SparkCore.LOGGER.info("Received OAnimationSetSyncPayload for: ${payload.rootLocation}. Updating OAnimationSet.ORIGINS.")
-                
+
                 // 直接操作 OAnimationSet.ORIGINS，与新的 handle 机制保持一致
                 if (payload.animationSet.animations.isEmpty()) {
                     // 如果动画集为空，则从 ORIGINS 中移除
                     OAnimationSet.ORIGINS.remove(payload.rootLocation)
                     SparkCore.LOGGER.debug("Removed animation set for: {}", payload.rootLocation)
+
+                    // 同时清理AnimIndex.ORIGINS中相关的映射
+                    val pathParts = payload.rootLocation.path.split("/")
+                    if (pathParts.size >= 3) {
+                        val entityPath = pathParts[2]
+                        // 移除所有相关的快捷映射
+                        val toRemove = AnimIndex.ORIGINS.keys.filter { shortcut ->
+                            shortcut.namespace == "minecraft" && shortcut.path.startsWith("$entityPath/")
+                        }
+                        toRemove.forEach { shortcut ->
+                            AnimIndex.ORIGINS.remove(shortcut)
+                        }
+                        SparkCore.LOGGER.debug("Removed {} AnimIndex shortcuts for entity: {}", toRemove.size, entityPath)
+                    }
                 } else {
                     // 否则更新或添加动画集
                     OAnimationSet.ORIGINS[payload.rootLocation] = payload.animationSet
                     SparkCore.LOGGER.debug("Updated animation set for: {} with OAnimationSet object", payload.rootLocation)
+
+                    // 同时更新AnimIndex.ORIGINS映射
+                    val pathParts = payload.rootLocation.path.split("/")
+                    if (pathParts.size >= 3) {
+                        val entityPath = pathParts[2]
+                        payload.animationSet.animations.keys.forEach { animName ->
+                            val shortcutPath = ResourceLocation.fromNamespaceAndPath(
+                                "minecraft",
+                                "$entityPath/$animName"
+                            )
+                            AnimIndex.ORIGINS[shortcutPath] = payload.rootLocation
+                        }
+                        SparkCore.LOGGER.debug("Updated {} AnimIndex shortcuts for entity: {}", payload.animationSet.animations.size, entityPath)
+                    }
                 }
                 
                 // TODO: 考虑是否需要进一步的客户端刷新逻辑，例如针对使用这些动画的实体进行特定更新。
