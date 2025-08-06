@@ -22,7 +22,7 @@ import java.util.*
 /**
  * ### 动画体
  */
-interface IAnimatable<T> : JSAnimatable, Syncer {
+interface IAnimatable<T> : Syncer {
 
     /**
      * 一般而言输入this即可，用于调用该动画体的持有者
