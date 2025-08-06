@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.client.gui.screen
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.model.origin.OModel
-import cn.solarmoon.spark_core.client.gui.screen.JSScriptBrowserScreen
 import cn.solarmoon.spark_core.registry.client.SparkKeyMappings
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.client.Minecraft
@@ -26,7 +25,7 @@ object ModelEditorScreenTicker {
         val player = minecraft.player ?: return // 需要玩家实例
         
         // 检查JS脚本浏览器按键
-        if (SparkKeyMappings.OPEN_JS_SCRIPT_BROWSER.consumeClick()) {
+        if (SparkKeyMappings.OPEN_JS_SCRIPT_BROWSER.get().consumeClick()) {
             if (minecraft.screen == null) {
                 minecraft.setScreen(JSScriptBrowserScreen())
                 SparkCore.LOGGER.info("打开JS脚本浏览器")
@@ -34,7 +33,7 @@ object ModelEditorScreenTicker {
         }
         
         // 检查模型编辑器按键
-        if (SparkKeyMappings.OPEN_MODEL_EDITOR.consumeClick()) {
+        if (SparkKeyMappings.OPEN_MODEL_EDITOR.get().consumeClick()) {
             // 检查玩家是否手持特殊物品
              val requiredItem = SparkRegistries.MODEL_EDITOR_WAND.get()
              if (player.mainHandItem.`is`(requiredItem) || player.offhandItem.`is`(requiredItem)) { // Check if player holds the wand

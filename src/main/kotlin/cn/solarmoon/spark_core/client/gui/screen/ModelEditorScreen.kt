@@ -3,14 +3,13 @@ package cn.solarmoon.spark_core.client.gui.screen
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OModel
-import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.client.gui.browser.WebBrowserWidget
 import cn.solarmoon.spark_core.client.gui.screen.ModelEditorScreen.Axis.*
 import cn.solarmoon.spark_core.client.gui.widget.ModelTreeViewWidget
@@ -19,6 +18,7 @@ import cn.solarmoon.spark_core.physics.level.PhysicsWorld
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.registry.client.SparkKeyMappings
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder.buildAnimationPathFromModel
 import cn.solarmoon.spark_core.rpc.RpcClient
 import cn.solarmoon.spark_core.util.MultiModuleResourceExtractionUtil.normalizeResourceName
@@ -1192,7 +1192,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         }
 
         // 处理 Undo/Redo 快捷键 (如果焦点不在 Widget 上，或者 Widget 未处理)
-        if (SparkKeyMappings.MODEL_EDITOR_UNDO.matches(keyCode, scanCode)) {
+        if (SparkKeyMappings.MODEL_EDITOR_UNDO.get().matches(keyCode, scanCode)) {
             if (undoStack.isNotEmpty()) {
                 val action = undoStack.pop()
                 action.undo(treeView)
@@ -1201,7 +1201,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 return true
             }
         }
-        if (SparkKeyMappings.MODEL_EDITOR_REDO.matches(keyCode, scanCode)) {
+        if (SparkKeyMappings.MODEL_EDITOR_REDO.get().matches(keyCode, scanCode)) {
             if (redoStack.isNotEmpty()) {
                 val action = redoStack.pop()
                 action.redo(treeView)
