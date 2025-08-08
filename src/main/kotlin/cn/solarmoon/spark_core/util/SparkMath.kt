@@ -94,13 +94,15 @@ fun Vector3f.rotLerp(target: Vector3f, progress: Double, dist: Vector3f): Vector
     return dist.set(toVec3().rotLerp(target.toVec3(), progress).toVector3f())
 }
 
+operator fun Vec3.plus(v: Vec3) = add(v)
+
+operator fun Vec3.minus(v: Vec3) = subtract(v)
+
 fun Vector3f.rotLerp(target: Vector3f, progress: Double): Vector3f {
     return rotLerp(target, progress, this)
 }
 
 fun Vector3f.toQuaternionf() = Quaternionf().rotateXYZ(x, y, z)
-
-fun Vec3.toQuaterniond() = Quaterniond().rotateXYZ(x, y, z)
 
 fun Vector3f.toVec3() = Vec3(x.toDouble(), y.toDouble(), z.toDouble())
 

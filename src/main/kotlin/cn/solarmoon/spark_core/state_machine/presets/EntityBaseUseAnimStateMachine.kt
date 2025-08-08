@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
+import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
@@ -60,11 +60,9 @@ class EntityBaseUseAnimStateMachine(
             }
         }
 
-        var lastBlendAnimId: String? = null
-
         onStateEntry { s, b ->
             if (entity !is IEntityAnimatable<*>) return@onStateEntry
-            lastBlendAnimId?.let { id -> entity.animController.removeBlend(id) }
+            entity.animController.getLayer(DefaultLayer.BASE_ADDITIVE_LAYER).stopAnimation()
             val entityLocation = BuiltInRegistries.ENTITY_TYPE.getKey(entity.type)
             val lastState = b.transition.sourceState
             val sName = s.name ?: return@onStateEntry
@@ -84,22 +82,15 @@ class EntityBaseUseAnimStateMachine(
                 val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, it, this, data))
                 if (event.isCanceled) return@let
                 val anim = event.newAnim ?: event.originAnim
-                if (data is BlendDataProvider) {
-                    val bd = data.blendData(lastState)
-                    anim.blend(entity, bd)
-                    lastBlendAnimId = anim.index.locationName
-                } else if (data is MainPlayDataProvider) {
-                    val tt = data.transTime(lastState)
-                    anim.play(entity, tt)
-                }
+                anim.play(entity, data.layerId, data.data(lastState))
             }
         }
 
     }
 
     suspend fun IState.initHandState() {
-        val mainHand = state("$name.main_hand") { payload = BlendDataProvider { BlendData(10000.0) } }
-        val offHand = state("$name.off_hand") { payload = BlendDataProvider { BlendData(10000.0) } }
+        val mainHand = state("$name.main_hand") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER) }
+        val offHand = state("$name.off_hand") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER) }
         initialChoiceState {
             val useItem = entity.useItem
             if (ItemStack.isSameItemSameComponents(useItem, entity.mainHandItem)) mainHand else offHand

@@ -10,7 +10,9 @@ sealed class AnimEvent {
     /**
      * 下一个动画将要取代当前动画时触发
      */
-    data class SwitchOut(val next: AnimInstance?) : AnimEvent()
+    data class SwitchOut(val originNextAnim: AnimInstance?) : AnimEvent() {
+        var nextAnim = originNextAnim
+    }
 
     /**
      * 动画被cancel指令打断时触发

@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.util.PPhase
 import org.mozilla.javascript.Function
-import org.mozilla.javascript.Scriptable
 
 interface JSAnimation {
 
@@ -24,7 +23,7 @@ interface JSAnimation {
 
     fun onSwitchOut(consumer: Function) {
         anim.onEvent<AnimEvent.SwitchOut> {
-            val n = it.next
+            val n = it.originNextAnim
             consumer.call(js, n)
         }
     }

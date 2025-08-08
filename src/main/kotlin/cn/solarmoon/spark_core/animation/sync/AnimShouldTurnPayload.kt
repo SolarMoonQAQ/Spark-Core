@@ -14,10 +14,11 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 class AnimShouldTurnPayload private constructor(
     val syncerType: SyncerType,
     val syncData: SyncData,
+    val layerId: ResourceLocation,
     val shouldTurnHead: Boolean,
     val shouldTurnBody: Boolean
 ): CustomPacketPayload {
-    constructor(animatable: IAnimatable<*>, shouldTurnHead: Boolean, shouldTurnBody: Boolean): this(animatable.syncerType, animatable.syncData, shouldTurnHead, shouldTurnBody)
+    constructor(animatable: IAnimatable<*>, layerId: ResourceLocation, shouldTurnHead: Boolean, shouldTurnBody: Boolean): this(animatable.syncerType, animatable.syncData, layerId, shouldTurnHead, shouldTurnBody)
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
         return TYPE
@@ -28,8 +29,8 @@ class AnimShouldTurnPayload private constructor(
         fun handleInClient(payload: AnimShouldTurnPayload, context: IPayloadContext) {
             val level = context.player().level()
             val animatable = payload.syncerType.getSyncer(level, payload.syncData) as? IAnimatable<*> ?: return
-            animatable.animController.mainAnim?.let { it.shouldTurnBody = payload.shouldTurnBody }
-            animatable.animController.mainAnim?.let { it.shouldTurnHead = payload.shouldTurnHead }
+            animatable.animController.getLayer(payload.layerId)?.animation?.let { it.shouldTurnBody = payload.shouldTurnBody }
+            animatable.animController.getLayer(payload.layerId)?.animation?.let { it.shouldTurnHead = payload.shouldTurnHead }
         }
 
         @JvmStatic
@@ -41,6 +42,7 @@ class AnimShouldTurnPayload private constructor(
         val STREAM_CODEC: StreamCodec<RegistryFriendlyByteBuf, AnimShouldTurnPayload> = StreamCodec.composite(
             SyncerType.STREAM_CODEC, AnimShouldTurnPayload::syncerType,
             SyncData.STREAM_CODEC, AnimShouldTurnPayload::syncData,
+            ResourceLocation.STREAM_CODEC, AnimShouldTurnPayload::layerId,
             ByteBufCodecs.BOOL, AnimShouldTurnPayload::shouldTurnHead,
             ByteBufCodecs.BOOL, AnimShouldTurnPayload::shouldTurnBody,
             ::AnimShouldTurnPayload

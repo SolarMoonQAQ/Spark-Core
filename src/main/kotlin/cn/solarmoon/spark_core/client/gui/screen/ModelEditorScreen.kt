@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.anim.play.layer.getMainLayer
 import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OModel
@@ -2125,7 +2126,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             val animIndex = findAnimationIndex(animationName)
             if (animIndex != null) {
                 val animInstance = AnimInstance.create(animatable, animIndex)
-                animatable.animController.setAnimation(animInstance, 0)
+                animatable.animController.getMainLayer().setAnimation(animInstance)
                 SparkCore.LOGGER.debug("Successfully playing animation: $animationName from ${animIndex.index}")
             } else {
                 SparkCore.LOGGER.error("Could not find animation index for: $animationName")
@@ -2284,7 +2285,7 @@ private fun rayDistanceToLineSegment(
 fun IAnimatable<*>.stopAllAnimations() {
     // Setting the animation to null on the controller should stop the current one
     try {
-        this.animController.setAnimation(null, 0) // Use 0 transition time to stop immediately
+        this.animController.animLayers.values.forEach { it.setAnimation(null) } // Use 0 transition time to stop immediately
     } catch (e: Exception) {
         SparkCore.LOGGER.error("Failed to stop animations", e)
     }

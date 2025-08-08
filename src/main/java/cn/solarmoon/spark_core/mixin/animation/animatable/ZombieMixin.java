@@ -2,9 +2,8 @@ package cn.solarmoon.spark_core.mixin.animation.animatable;
 
 import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.AnimController;
-import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
-
+import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.ik.component.IKManager;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
@@ -34,7 +33,7 @@ public abstract class ZombieMixin extends Monster implements IEntityAnimatable<Z
     private final IForeignVariableStorage foreignStorage = new VariableStorage();
     private Zombie zombie = (Zombie) (Object) this;
     private final AnimController animController = new AnimController(zombie);
-    private final BoneGroup boneGroup = new BoneGroup(zombie);
+    private final BonePoseGroup boneGroup = new BonePoseGroup(zombie);
 
     protected ZombieMixin(EntityType<? extends Monster> entityType, Level level) {
         super(entityType, level);
@@ -52,7 +51,7 @@ public abstract class ZombieMixin extends Monster implements IEntityAnimatable<Z
     }
 
     @Override
-    public @NotNull BoneGroup getBones() {
+    public @NotNull BonePoseGroup getBones() {
         return boneGroup;
     }
 

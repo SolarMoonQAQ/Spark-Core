@@ -3,9 +3,9 @@ package cn.solarmoon.spark_core.web.service
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.blend.BlendAnimation
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
-import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
+import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.web.dto.*
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
@@ -50,7 +50,7 @@ object ResourceApiService {
     fun playAnimation(request: AnimationPlayRequest, level: ServerLevel, player: ServerPlayer): ApiResponse<Boolean> {
         return try {
             val entityId = request.entityId ?: player.id
-            val result = playAnimation(request.name, request.transTime, entityId, level)
+            val result = playAnimation(request.name, entityId, DefaultLayer.MAIN_LAYER, AnimLayerData(transitionTime = request.transTime), level)
             if (result) {
                 ApiResponse.success(true, "动画播放成功")
             } else {
@@ -59,28 +59,6 @@ object ResourceApiService {
         } catch (e: Exception) {
             SparkCore.LOGGER.error("API调用失败：playAnimation", e)
             ApiResponse.error("动画播放失败：${e.message}")
-        }
-    }
-
-    /**
-     * 混合动画
-     * @param request 动画混合请求
-     * @param level 服务器世界
-     * @param player 请求的玩家
-     * @return API响应，包含操作结果
-     */
-    fun blendAnimations(request: AnimationBlendRequest, level: ServerLevel, player: ServerPlayer): ApiResponse<Boolean> {
-        return try {
-            val entityId = request.entityId ?: player.id
-            val result = blendAnimations(request.anim1, request.anim2, request.weight, entityId, level)
-            if (result) {
-                ApiResponse.success(true, "动画混合成功")
-            } else {
-                ApiResponse.error("动画混合失败：实体不存在或不支持动画")
-            }
-        } catch (e: Exception) {
-            SparkCore.LOGGER.error("API调用失败：blendAnimations", e)
-            ApiResponse.error("动画混合失败：${e.message}")
         }
     }
 
@@ -130,13 +108,13 @@ object ResourceApiService {
     /**
      * 播放动画（复用自RpcHandler.playAnimation）
      */
-    private fun playAnimation(animName: String, transTime: Int, entityId: Int, level: ServerLevel): Boolean {
+    private fun playAnimation(animName: String, entityId: Int, layerId: ResourceLocation, data: AnimLayerData, level: ServerLevel): Boolean {
         try {
             val animatable = level.getEntity(entityId) as? IAnimatable<*> ?: return false
 
             // 在服务器端设置动画
             val animInstance = AnimInstance.create(animatable, animName)
-            animatable.animController.setAnimation(animInstance, transTime)
+            animatable.animController.getLayer(layerId).setAnimation(animInstance, data)
 
             SparkCore.LOGGER.info("服务器端为实体 $entityId 播放动画 $animName 成功")
             return true
@@ -146,26 +124,4 @@ object ResourceApiService {
         }
     }
 
-    /**
-     * 混合动画（复用自RpcHandler.blendAnimations）
-     */
-    private fun blendAnimations(anim1: String, anim2: String, weight: Double, entityId: Int?, level: ServerLevel): Boolean {
-        try {
-            if (entityId == null) return false
-            val animatable = level.getEntity(entityId) as? IAnimatable<*> ?: return false
-
-            // 在服务器端设置混合动画
-            val animInstance1 = AnimInstance.create(animatable, anim1)
-            val animInstance2 = AnimInstance.create(animatable, anim2)
-            animatable.animController.blendAnimation(BlendAnimation(animInstance1, BlendData(weight)))
-            animatable.animController.blendAnimation(BlendAnimation(animInstance2, BlendData(weight)))
-
-            //TODO: 同步到所有客户端
-            SparkCore.LOGGER.info("服务器端为实体 $entityId 混合动画 $anim1 和 $anim2 成功")
-            return true
-        } catch (e: Exception) {
-            SparkCore.LOGGER.error("服务器端混合动画失败", e)
-            return false
-        }
-    }
 }

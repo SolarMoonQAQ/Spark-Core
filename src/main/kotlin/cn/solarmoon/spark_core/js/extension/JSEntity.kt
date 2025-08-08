@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.camera.setCameraLock
 import cn.solarmoon.spark_core.entity.addRelativeMovement
 import cn.solarmoon.spark_core.entity.getRelativeVector
+import cn.solarmoon.spark_core.js.toVec3
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.core.registries.BuiltInRegistries
@@ -13,7 +14,7 @@ import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.phys.Vec3
+import org.mozilla.javascript.NativeArray
 import kotlin.math.PI
 import kotlin.math.atan2
 
@@ -40,8 +41,9 @@ interface JSEntity {
         }
     }
 
-    fun move(move: Vec3, orientationByInput: Boolean) {
+    fun move(move: NativeArray, orientationByInput: Boolean) {
         val entity = entity
+        val move = move.toVec3()
         if (entity is Player && orientationByInput && entity.isLocalPlayer) {
             val input = (entity as LocalPlayer).savedInput
             val angle = atan2(input.moveVector.y, -input.moveVector.x) - PI.toFloat() / 2
@@ -52,7 +54,8 @@ interface JSEntity {
         }
     }
 
-    fun addMove(move: Vec3, orientationByInput: Boolean) {
+    fun addMove(move: NativeArray, orientationByInput: Boolean) {
+        val move = move.toVec3()
         val entity = entity
         if (entity is Player && orientationByInput && entity.isLocalPlayer) {
             val input = (entity as LocalPlayer).savedInput
@@ -64,7 +67,7 @@ interface JSEntity {
         }
     }
 
-    fun addRelativeMovement(relative: Vec3, movement: Vec3) = entity.addRelativeMovement(relative, movement)
+    fun addRelativeMovement(relative: NativeArray, movement: NativeArray) = entity.addRelativeMovement(relative.toVec3(), movement.toVec3())
 
     fun hurt(damageSource: DamageSource, amount: Float) {
         entity.hurt(damageSource, amount)

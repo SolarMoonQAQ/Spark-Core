@@ -1,13 +1,11 @@
 package cn.solarmoon.spark_core.animation
 
 import au.edu.federation.caliko.FabrikChain3D
-import cn.solarmoon.spark_core.animation.anim.play.AnimController
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.Bone
-import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
+import cn.solarmoon.spark_core.animation.anim.play.BonePose
+import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
-import cn.solarmoon.spark_core.js.extension.JSAnimatable
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage
@@ -67,7 +65,7 @@ interface IAnimatable<T> : Syncer {
     /**
      * 实际可用的骨骼组
      */
-    var bones: BoneGroup
+    var bones: BonePoseGroup
 
     /**
      * 该动画体的原始模型
@@ -104,7 +102,7 @@ interface IAnimatable<T> : Syncer {
     /**
      * 获取指定的骨骼，没有时会创建一个新的
      */
-    fun getBone(name: String) = bones.getOrPut(name) { Bone(this, name) }
+    fun getBonePose(name: String) = bones.getOrPut(name) { BonePose(this, name) }
 
     /**
      * 获取动画体到其当前世界位置的变换矩阵
@@ -175,4 +173,5 @@ interface IAnimatable<T> : Syncer {
      * 这个 Map 由物理线程或初始化代码填充，并由物理线程读取。建议使用 ConcurrentHashMap。
      */
     val ikChains: MutableMap<String, FabrikChain3D> // 实现类需要初始化，例如： = ConcurrentHashMap()
+
 }

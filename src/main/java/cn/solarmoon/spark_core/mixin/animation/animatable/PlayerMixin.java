@@ -2,8 +2,8 @@ package cn.solarmoon.spark_core.mixin.animation.animatable;
 
 import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.AnimController;
-import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
+import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.ik.component.IKManager;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
@@ -32,7 +32,7 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     private final IForeignVariableStorage foreignStorage = new VariableStorage();
     private Player player = (Player) (Object) this;
     private final AnimController animController = new AnimController(player);
-    private final BoneGroup boneGroup = new BoneGroup(player);
+    private final BonePoseGroup boneGroup = new BonePoseGroup(player);
     // --- IEntityAnimatable Implementation ---private final MutableMap<String, Vec3> ikChains = ConcurrentMap();
     private final IKManager ikManager = new IKManager(this);
     // Use Map interface type, ConcurrentHashMap for potential thread safety (though likely accessed main-thread only)
@@ -55,7 +55,7 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     }
 
     @Override
-    public @NotNull BoneGroup getBones() {
+    public @NotNull BonePoseGroup getBones() {
         return boneGroup;
     }
 

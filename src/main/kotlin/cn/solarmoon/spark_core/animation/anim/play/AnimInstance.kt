@@ -74,12 +74,14 @@ class AnimInstance private constructor(
         eventHandlers.getOrPut(T::class) { mutableListOf() }.add { handler.invoke(this, it as T) }
     }
 
-    fun triggerEvent(event: AnimEvent) {
+    inline fun <reified T: AnimEvent> triggerEvent(event: T): T {
         eventHandlers[event::class]?.forEach { it(event) }
 
         if (event is AnimEvent.Completed || event is AnimEvent.SwitchOut || event is AnimEvent.Interrupted) {
             eventHandlers[AnimEvent.End::class]?.forEach { it(AnimEvent.End(event)) }
         }
+
+        return event
     }
 
     fun cancel() {

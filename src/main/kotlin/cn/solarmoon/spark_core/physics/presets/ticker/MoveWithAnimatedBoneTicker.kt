@@ -2,10 +2,10 @@ package cn.solarmoon.spark_core.physics.presets.ticker
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
-import cn.solarmoon.spark_core.util.toBQuaternion
 import cn.solarmoon.spark_core.physics.toBVector3f
-import cn.solarmoon.spark_core.util.toVec3
 import cn.solarmoon.spark_core.util.PPhase
+import cn.solarmoon.spark_core.util.toBQuaternion
+import cn.solarmoon.spark_core.util.toVec3
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
@@ -33,7 +33,7 @@ open class MoveWithAnimatedBoneTicker(
                     body.setPhysicsTransform(Transform(
                         animatable.getWorldBonePivot(boneName, offset.toVec3()).toBVector3f(),
                         animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion(),
-                        animatable.getBone(boneName).getScale().toBVector3f()
+                        animatable.getBonePose(boneName).getScale().toBVector3f()
                     ))
                 } catch (e: Exception) {
                     println(e)

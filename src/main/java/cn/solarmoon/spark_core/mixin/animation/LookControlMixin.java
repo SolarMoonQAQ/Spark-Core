@@ -1,8 +1,6 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
-import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.control.LookControl;
 import org.spongepowered.asm.mixin.Final;
@@ -20,8 +18,8 @@ public abstract class LookControlMixin {
     @Inject(method = "tick()V", at = @At("HEAD"), cancellable = true)
     private void sparkCore_onTick(CallbackInfo ci) {
         if (this.mob instanceof IEntityAnimatable<?> animatable) {
-            AnimInstance currentAnim = animatable.getAnimController().getPlayingAnim();
-            if (currentAnim != null && !currentAnim.getShouldTurnHead()) {
+            boolean currentAnim = animatable.getAnimController().getAnimLayers().values().stream().anyMatch(animationLayer -> animationLayer.getAnimation() != null && animationLayer.getAnimation().getShouldTurnHead());
+            if (!currentAnim) {
                 ci.cancel();
             }
         }

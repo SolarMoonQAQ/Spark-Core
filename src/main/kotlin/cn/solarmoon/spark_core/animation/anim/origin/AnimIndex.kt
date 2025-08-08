@@ -2,6 +2,8 @@ package cn.solarmoon.spark_core.animation.anim.origin
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import net.minecraft.network.codec.ByteBufCodecs
+import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
 
 data class AnimIndex(
@@ -28,6 +30,13 @@ data class AnimIndex(
                 Codec.BOOL.optionalFieldOf("useShortcutConversion", false).forGetter { it.useShortcutConversion }
             ).apply(it, ::AnimIndex)
         }
+
+        val STREAM_CODEC = StreamCodec.composite(
+            ResourceLocation.STREAM_CODEC, AnimIndex::inputPath,
+            ByteBufCodecs.STRING_UTF8, AnimIndex::name,
+            ByteBufCodecs.BOOL, AnimIndex::useShortcutConversion,
+            ::AnimIndex
+        )
 
         /**
          * 快捷路径映射表：minecraft:entityPath/animName -> 完整动画集路径

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.registry.common
 
+import cn.solarmoon.spark_core.animation.sync.AnimPlayPayload
 import cn.solarmoon.spark_core.animation.sync.AnimShouldTurnPayload
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.AnimationDataSendingTask
@@ -8,7 +9,6 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
-import cn.solarmoon.spark_core.animation.sync.TypedAnimBlendPayload
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPlayPayload
 import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSendingTask
 import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSyncPayload
@@ -21,16 +21,16 @@ import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
 import cn.solarmoon.spark_core.ik.sync.RequestSetIKTargetPayload
 import cn.solarmoon.spark_core.js.sync.JSIncrementalSyncS2CPacket
 import cn.solarmoon.spark_core.js.sync.JSPayload
-import cn.solarmoon.spark_core.js.sync.JSSendingTask
-import cn.solarmoon.spark_core.js.sync.JSTaskPayload
 import cn.solarmoon.spark_core.js.sync.JSScriptDataSendingTask
 import cn.solarmoon.spark_core.js.sync.JSScriptDataSyncPayload
-import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
+import cn.solarmoon.spark_core.js.sync.JSSendingTask
+import cn.solarmoon.spark_core.js.sync.JSTaskPayload
 import cn.solarmoon.spark_core.physics.sync.AddCollisionCallbackPayload
 import cn.solarmoon.spark_core.physics.sync.AttackSystemSyncPayload
+import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
-import cn.solarmoon.spark_core.resource.sync.UpdateDepsC2SPacket
 import cn.solarmoon.spark_core.resource.sync.DepsChangedS2CPacket
+import cn.solarmoon.spark_core.resource.sync.UpdateDepsC2SPacket
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -49,7 +49,7 @@ object SparkPayloadRegister {
         anim.configurationToClient(ModelDataPayload.TYPE, ModelDataPayload.STREAM_CODEC, ModelDataPayload::handleInClient)
         anim.configurationToServer(ModelDataSendingTask.Return.TYPE, ModelDataSendingTask.Return.STREAM_CODEC, ModelDataSendingTask.Return::onAct)
         anim.playBidirectional(TypedAnimPlayPayload.TYPE, TypedAnimPlayPayload.STREAM_CODEC, TypedAnimPlayPayload::handleBothSide)
-        anim.playBidirectional(TypedAnimBlendPayload.TYPE, TypedAnimBlendPayload.STREAM_CODEC, TypedAnimBlendPayload::handleBothSide)
+        anim.playBidirectional(AnimPlayPayload.TYPE, AnimPlayPayload.STREAM_CODEC, AnimPlayPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
         anim.playToClient(AnimShouldTurnPayload.TYPE, AnimShouldTurnPayload.STREAM_CODEC, AnimShouldTurnPayload::handleInClient)

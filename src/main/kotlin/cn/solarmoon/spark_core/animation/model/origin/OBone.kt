@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.Bone
-import cn.solarmoon.spark_core.animation.anim.play.BoneGroup
+import cn.solarmoon.spark_core.animation.anim.play.BonePose
+import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.data.SerializeHelper
 import com.mojang.serialization.Codec
@@ -34,7 +34,7 @@ data class OBone(
         cubes.forEach { it.rootBone = this }
     }
 
-    fun createDefaultBone(animatable: IAnimatable<*>) = Bone(animatable, name).apply { updateInternal(originKeyData) }
+    fun createDefaultBone(animatable: IAnimatable<*>) = BonePose(animatable, name).apply { updateInternal(originKeyData) }
 
     /**
      * 获取当前骨骼组的父组，没有就返回null
@@ -45,7 +45,7 @@ data class OBone(
      * 应用当前骨骼的变换到传入的矩阵中
      */
     fun applyTransform(
-        bones: BoneGroup,
+        bones: BonePoseGroup,
         ma: Matrix4f,
         partialTick: Float = 1f
     ): Matrix4f {
@@ -62,7 +62,7 @@ data class OBone(
      * 应用当前以及所有父类的骨骼的变换到传入的矩阵中
      */
     fun applyTransformWithParents(
-        bones: BoneGroup,
+        bones: BonePoseGroup,
         ma: Matrix4f,
         partialTick: Float = 1f
     ): Matrix4f {

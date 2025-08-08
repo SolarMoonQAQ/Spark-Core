@@ -18,7 +18,7 @@ object BoneModifier {
         val player = event.animatable
         if (player !is IEntityAnimatable<*> || player !is LivingEntity) return
         val old = event.oldData
-        if (event.bone.name == "head") {
+        if (event.bonePose.name == "head") {
             event.newData = KeyAnimData(
                 old.position,
                 event.newData.rotation.add(Vec3(-player.xRot.toDouble(), (-player.yHeadRot + player.yBodyRot).toDouble(), 0.0).toRadians()),
@@ -44,7 +44,7 @@ object BoneModifier {
     @SubscribeEvent
     private fun sleep(event: BoneUpdateEvent) {
         val animatable = event.animatable
-        if (event.bone.name == "root" && animatable is LivingEntity) {
+        if (event.bonePose.name == "root" && animatable is LivingEntity) {
             val bedDirection = animatable.bedOrientation
             if (bedDirection != null && animatable.isSleeping) {
                 val old = event.newData

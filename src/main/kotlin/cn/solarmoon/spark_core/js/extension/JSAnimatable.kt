@@ -1,11 +1,11 @@
 package cn.solarmoon.spark_core.js.extension
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
+import cn.solarmoon.spark_core.animation.anim.play.layer.getMainLayer
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
@@ -21,11 +21,11 @@ interface JSAnimatable {
     val js get() = js_animatable.animLevel.jsEngine
 
     fun getAnimation(): AnimInstance? {
-        return js_animatable.animController.getPlayingAnim()
+        return js_animatable.animController.getMainLayer().animation
     }
 
     fun playAnimation(anim: AnimInstance, transitionTime: Int) {
-        js_animatable.animController.setAnimation(anim, transitionTime)
+        js_animatable.animController.getMainLayer().setAnimation(anim, AnimLayerData(transitionTime = transitionTime))
     }
 
     fun createAnimation(index: String, name: String): AnimInstance {

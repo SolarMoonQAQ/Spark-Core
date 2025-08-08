@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.mixin.animation;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.vanilla.ITransformModel;
 import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
-import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -38,7 +37,7 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
     private void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable)) {
             setDefault();
-            if (shouldTransform() && animatable.getAnimController().getMainAnim() != null) {
+            if (shouldTransform() && animatable.getAnimController().isPlayingAnim()) {
                 var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 VanillaModelHelper.setRoot(leftArm, body);
                 VanillaModelHelper.setRoot(rightArm, body);

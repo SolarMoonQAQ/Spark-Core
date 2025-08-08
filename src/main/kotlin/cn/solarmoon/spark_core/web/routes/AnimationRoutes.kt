@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.web.dto.*
 import cn.solarmoon.spark_core.web.service.ResourceApiService
 import io.ktor.http.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -36,30 +35,6 @@ fun Route.configureAnimationRoutes() {
             } catch (e: Exception) {
                 SparkCore.LOGGER.error("播放动画API错误", e)
                 val errorResponse = RouteConfig.createErrorResponse("播放动画请求处理失败", e)
-                call.respond(HttpStatusCode.BadRequest, errorResponse)
-            }
-        }
-
-        // 混合动画
-        post("/blend") {
-            try {
-                val request = call.receive<AnimationBlendRequest>()
-                SparkCore.LOGGER.info("API请求：混合动画 - anim1=${request.anim1}, anim2=${request.anim2}, weight=${request.weight}, entityId=${request.entityId}")
-
-                val serverLevel = getServerLevel()
-                val serverPlayer = getServerPlayer()
-
-                if (serverLevel != null && serverPlayer != null) {
-                    val response = ResourceApiService.blendAnimations(request, serverLevel, serverPlayer)
-                    call.respond(HttpStatusCode.OK, response)
-                } else {
-                    val response = ApiResponse.error<Boolean>("服务器环境不可用，无法执行动画混合")
-                    call.respond(HttpStatusCode.ServiceUnavailable, response)
-                }
-
-            } catch (e: Exception) {
-                SparkCore.LOGGER.error("混合动画API错误", e)
-                val errorResponse = RouteConfig.createErrorResponse("混合动画请求处理失败", e)
                 call.respond(HttpStatusCode.BadRequest, errorResponse)
             }
         }

@@ -1,19 +1,11 @@
 package cn.solarmoon.spark_core.js
 
-import cn.solarmoon.spark_core.SparkCore
-import net.neoforged.fml.ModLoadingException
-import net.neoforged.fml.ModLoadingIssue
-import net.neoforged.fml.loading.FMLPaths
+import net.minecraft.world.phys.Vec3
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
+import org.mozilla.javascript.NativeArray
 import org.mozilla.javascript.Scriptable
 import org.mozilla.javascript.ScriptableObject
-import java.io.File
-import java.nio.file.FileVisitOption
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
-import kotlin.reflect.KClass
 
 
 // loadDefaultScripts函数已废弃，功能已迁移到DynamicJavaScriptHandler.initializeDefaultResources()
@@ -28,3 +20,7 @@ fun Scriptable.getMember(name: String) = ScriptableObject.getProperty(this, name
 fun Scriptable.getFunctionMember(name: String) = getMember(name) as? Function
 
 fun ScriptableObject.put(name: String, value: Any) = put(name, this, Context.javaToJS(value, this))
+
+fun NativeArray.toVec3() = Vec3(Context.toNumber(get(0)), Context.toNumber(get(1)), Context.toNumber(get(2)))
+
+fun Vec3.toNativeArray() = NativeArray(arrayOf(x, y, z))

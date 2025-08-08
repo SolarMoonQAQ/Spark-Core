@@ -3,12 +3,11 @@ package cn.solarmoon.spark_core.animation.anim.play
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.animation.anim.play.blend.BlendAnimation
-import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
-import cn.solarmoon.spark_core.animation.anim.play.blend.BlendMask
-import cn.solarmoon.spark_core.animation.sync.TypedAnimBlendPayload
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPlayPayload
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.sync.Syncer
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.neoforged.neoforge.network.PacketDistributor
 
@@ -38,36 +37,20 @@ class TypedAnimation(
         }
     }
 
-    fun play(animatable: IAnimatable<*>, transTime: Int) {
-        animatable.animController.setAnimation(create(animatable), transTime)
+    fun play(animatable: IAnimatable<*>, layerId: ResourceLocation, data: AnimLayerData) {
+        animatable.animController.getLayer(layerId).setAnimation(create(animatable), data)
     }
 
-    fun blend(animatable: IAnimatable<*>, blendData: BlendData) {
-        animatable.animController.blendAnimation(BlendAnimation(create(animatable), blendData))
-    }
-
-    fun playToClient(id: Int, transTime: Int, exceptPlayer: ServerPlayer? = null) {
+    fun playToClient(syncer: Syncer, layerId: ResourceLocation, data: AnimLayerData, exceptPlayer: ServerPlayer? = null) {
         exceptPlayer?.let {
-            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, TypedAnimPlayPayload(id, this.id, transTime))
+            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, TypedAnimPlayPayload(syncer, id, layerId, data))
         } ?: run {
-            PacketDistributor.sendToAllPlayers(TypedAnimPlayPayload(id, this.id, transTime))
+            PacketDistributor.sendToAllPlayers(TypedAnimPlayPayload(syncer, id, layerId, data))
         }
     }
 
-    fun playToServer(id: Int, transTime: Int) {
-        PacketDistributor.sendToServer(TypedAnimPlayPayload(id, this.id, transTime))
-    }
-
-    fun blendToClient(id: Int, blendData: BlendData, exceptPlayer: ServerPlayer? = null) {
-        exceptPlayer?.let {
-            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, TypedAnimBlendPayload(id, this.id, blendData))
-        } ?: run {
-            PacketDistributor.sendToAllPlayers(TypedAnimBlendPayload(id, this.id, blendData))
-        }
-    }
-
-    fun blendToServer(id: Int, blendData: BlendData) {
-        PacketDistributor.sendToServer(TypedAnimBlendPayload(id, this.id, blendData))
+    fun playToServer(syncer: Syncer, layerId: ResourceLocation, data: AnimLayerData) {
+        PacketDistributor.sendToServer(TypedAnimPlayPayload(syncer, this.id, layerId, data))
     }
 
     // 缓存计算的哈希值，避免每次都调用 getId

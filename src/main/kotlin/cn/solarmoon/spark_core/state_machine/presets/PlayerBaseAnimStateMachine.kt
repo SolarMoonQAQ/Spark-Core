@@ -1,7 +1,8 @@
 package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.play.blend.BlendData
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
+import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
@@ -49,8 +50,8 @@ class PlayerBaseAnimStateMachine(
             val swim = state("swim") { setupMovementStates(player) }
             val fly = state("fly") { setupMovementStates(player) }
             val climb = state("climb") {
-                val idle = state("$name.idle") { payload = MainPlayDataProvider { 7 } }
-                val move = state("$name.move") { payload = MainPlayDataProvider { if (it == idle) 0 else 7 } }
+                val idle = state("$name.idle") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+                val move = state("$name.move") { payload = AnimPlayDataProvider { if (it == idle) AnimLayerData(transitionTime = 0) else AnimLayerData(transitionTime = 7) } }
                 initialChoiceState {
                     when {
                         !player.isSuppressingSlidingDownLadder && !player.onGround() || player.input.moveVector.length() > 0  -> move
@@ -58,12 +59,12 @@ class PlayerBaseAnimStateMachine(
                     }
                 }
             }
-            val sit = state("sit") { payload = MainPlayDataProvider { 7 } }
-            val sleep = state("sleep") { payload = MainPlayDataProvider { 7 } }
-            val fallFly = state("fall_fly") { payload = MainPlayDataProvider { 7 } }
-            val fall = state("fall") { payload = MainPlayDataProvider { 7 } }
-            val jump = state("jump") { payload = BlendDataProvider { BlendData(if (player.input.moveVector.length() > 0) 1.0 else 100.0, 0, 0) } }
-            val jumpLand = state("jump_land") { payload = BlendDataProvider { BlendData(if (player.input.moveVector.length() > 0) 1.0 else 100.0, 0) } }
+            val sit = state("sit") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+            val sleep = state("sleep") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+            val fallFly = state("fall_fly") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+            val fall = state("fall") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+            val jump = state("jump") { payload = AnimPlayDataProvider(DefaultLayer.TEMPORARY_LAYER) { AnimLayerData(transitionTime = 0) } }
+            val jumpLand = state("jump_land") { payload = AnimPlayDataProvider(DefaultLayer.TEMPORARY_LAYER) { AnimLayerData(weight = if (player.input.moveVector.length() > 0) 0.5 else 1.0, transitionTime = 0) } }
 
             initialChoiceState {
                 when {
@@ -84,7 +85,7 @@ class PlayerBaseAnimStateMachine(
 
         transitionOn<SwitchEvent> {
             targetState = {
-                if (checkPlayingOtherAnim()) none else base
+                base
             }
         }
 
@@ -107,8 +108,8 @@ class PlayerBaseAnimStateMachine(
     private fun IState.playRelativeAnim(animName: String) {
         val data = payload
         if (data !is AnimPlayDataProvider) return
-        SparkCore.LOGGER.info(animName)
         Modifier.jumpLag = false
+        SparkCore.LOGGER.info(animName)
         val animationPath = SparkResourcePathBuilder.buildAnimationPath("spark_core", "spark_core", "player", animName)
         SparkRegistries.TYPED_ANIMATION.get(animationPath)?.let {
             val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, this, data))
@@ -116,23 +117,16 @@ class PlayerBaseAnimStateMachine(
             val anim = event.newAnim ?: event.originAnim
             val data = event.data
 
-            if (data is BlendDataProvider) {
-                val data = data.blendData(lastState)
-                anim.blend(player, data)
-                anim.blendToServer(player.id, data)
-            } else if (data is MainPlayDataProvider) {
-                val tt = data.transTime(lastState)
-                anim.play(player, tt)
-                anim.playToServer(player.id, tt)
-            }
+            anim.play(player, data.layerId, data.data(lastState))
+            anim.playToServer(player, data.layerId, data.data(lastState))
         }
     }
 
     private suspend fun IState.setupMovementStates(player: LocalPlayer) {
-        val idle = state("$name.idle") { payload = MainPlayDataProvider { 7 } }
-        val move = state("$name.move") { payload = MainPlayDataProvider { 7 } }
-        val moveBack = state("$name.move_back") { payload = MainPlayDataProvider { 7 } }
-        val sprint = state("$name.sprint") { payload = MainPlayDataProvider { 7 } }
+        val idle = state("$name.idle") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+        val move = state("$name.move") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+        val moveBack = state("$name.move_back") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+        val sprint = state("$name.sprint") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
 
         initialChoiceState {
             when {
@@ -143,12 +137,6 @@ class PlayerBaseAnimStateMachine(
                 else -> idle
             }
         }
-    }
-
-    fun checkPlayingOtherAnim(): Boolean {
-        val controller = player.animController
-        val animNow = controller.getPlayingAnim() ?: return false
-        return animNow.animIndex.name.substringBefore(".") != "state"
     }
 
     override fun progress() {
@@ -180,6 +168,7 @@ class PlayerBaseAnimStateMachine(
         @SubscribeEvent
         private fun jump(event: LivingEvent.LivingJumpEvent) {
             val player = event.entity
+//            if (player is Player) player.animController.getMainLayer().setAnimation(AnimInstance.create(player, AnimIndex(ResourceLocation.withDefaultNamespace("player"), "state.jump")), AnimLayerData(transitionTime = 0))
             if (player is Player && player.isLocalPlayer) jumpLag = true
         }
     }

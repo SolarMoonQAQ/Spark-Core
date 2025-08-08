@@ -26,8 +26,13 @@ public abstract class LivingEntityMixin extends Entity {
     private void tick(CallbackInfo ci) {
         if (entity instanceof IEntityAnimatable<?> animatable) {
             // 播放指定动画时将身体转到目视方向
-            var anim = animatable.getAnimController().getPlayingAnim();
-            if (anim != null && anim.getShouldTurnBody()) {
+            var controller = animatable.getAnimController();
+            if (
+                    controller.isPlayingAnim() &&
+                            controller.getAnimLayers().values().stream().anyMatch(animLayer ->
+                                    animLayer.getAnimation() != null && animLayer.getAnimation().getShouldTurnBody()
+                            )
+            ) {
                 tickHeadTurn(getYRot(), 100);
             }
         }

@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.mixin.animation.animatable;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import net.minecraft.client.model.AbstractZombieModel;
-import net.minecraft.client.model.ZombieModel;
 import net.minecraft.world.entity.monster.Monster;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,7 +17,7 @@ public class ZombieModelMixin<T extends Monster> {
             cancellable = true
     )
     private void anim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
-        if (entity instanceof IEntityAnimatable<?> animatable && animatable.getAnimController().getMainAnim() != null) {
+        if (entity instanceof IEntityAnimatable<?> animatable && animatable.getAnimController().isPlayingAnim()) {
             ci.cancel();
         }
     }

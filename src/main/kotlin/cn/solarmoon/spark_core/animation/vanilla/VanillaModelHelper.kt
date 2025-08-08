@@ -19,7 +19,7 @@ object VanillaModelHelper {
      * @return 正在播放默认的任意自定义动画则为true
      */
     @JvmStatic
-    fun shouldSwitchToAnim(animatable: IAnimatable<*>) = animatable.animController.blendSpace.isValid
+    fun shouldSwitchToAnim(animatable: IAnimatable<*>) = animatable.animController.isPlayingAnim
 
     @JvmStatic
     fun setRoot(child: ModelPart, root: ModelPart) {
@@ -47,7 +47,7 @@ object VanillaModelHelper {
     @JvmStatic
     fun applyTransform(animatable: IAnimatable<*>, boneName: String, part: ModelPart, partialTicks: Float) {
         if (part !is ITransformModelPart) return
-        val bone = animatable.getBone(boneName)
+        val bone = animatable.getBonePose(boneName)
         val pos = bone.getPosition(partialTicks).toVector3f().mul(16f).apply { x = -x; y = -y }
         val rot = bone.getRotation(partialTicks).toVector3f().apply { x = -x; y = -y }
         val scale = bone.getScale(partialTicks).toVector3f()

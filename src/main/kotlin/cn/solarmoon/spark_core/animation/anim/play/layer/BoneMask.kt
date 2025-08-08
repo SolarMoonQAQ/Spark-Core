@@ -1,9 +1,9 @@
-package cn.solarmoon.spark_core.animation.anim.play.blend
+package cn.solarmoon.spark_core.animation.anim.play.layer
 
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 
-class BlendMask(
+class BoneMask(
     // 骨骼名称到混合权重的映射（0.0-1.0）
     private val boneWeights: Map<String, Double> = emptyMap(),
     private val default: Double = 1.0
@@ -26,9 +26,9 @@ class BlendMask(
                 ::LinkedHashMap,
                 ByteBufCodecs.STRING_UTF8,
                 ByteBufCodecs.DOUBLE
-            ), BlendMask::boneWeights,
-            ByteBufCodecs.DOUBLE, BlendMask::default,
-            ::BlendMask
+            ), BoneMask::boneWeights,
+            ByteBufCodecs.DOUBLE, BoneMask::default,
+            ::BoneMask
         )
     }
 

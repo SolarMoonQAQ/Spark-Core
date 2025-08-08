@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.util.rotLerp
 import net.neoforged.neoforge.common.NeoForge
 
-class Bone(
+class BonePose(
     val holder: IAnimatable<*>,
     val name: String
 ) {
@@ -39,9 +39,9 @@ class Bone(
 
     fun getScale(partialTicks: Number = 1.0) = oData.scale.lerp(data.scale, partialTicks.toDouble())
 
-    fun copy() = Bone(holder, name).apply {
-        this@apply.data = this@Bone.data
-        this@apply.oData = this@Bone.data
+    fun copy() = BonePose(holder, name).apply {
+        this@apply.data = this@BonePose.data
+        this@apply.oData = this@BonePose.data
     }
 
 }

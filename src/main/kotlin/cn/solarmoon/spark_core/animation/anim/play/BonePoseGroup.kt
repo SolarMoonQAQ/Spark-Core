@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 
-class BoneGroup(val animatable: IAnimatable<*>): HashMap<String, Bone>() {
+class BonePoseGroup(val animatable: IAnimatable<*>): HashMap<String, BonePose>() {
 
     init {
         animatable.model.bones.forEach {
@@ -10,8 +10,8 @@ class BoneGroup(val animatable: IAnimatable<*>): HashMap<String, Bone>() {
         }
     }
     
-    fun copy(): BoneGroup {
-        val copy = BoneGroup(animatable)
+    fun copy(): BonePoseGroup {
+        val copy = BonePoseGroup(animatable)
         for ((key, value) in this) {
             copy[key] = value.copy()
         }

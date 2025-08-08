@@ -1,11 +1,8 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.js.extension.JSSkill
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.network.chat.Component
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
@@ -22,7 +19,7 @@ open class Skill {
     lateinit var level: Level
         private set
 
-    val config = SkillConfig(this)
+    val config = DefaultSkillConfig(this)
     val targetPool = SkillTargetPool(this)
 
     var canTransitionTo: (SkillPhase) -> Boolean = { true }
