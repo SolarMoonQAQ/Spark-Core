@@ -28,7 +28,8 @@ class BlendSpace(
 //            // 跳过不包含当前骨骼姿势层（即该动画中没有提及该骨骼），防止未出现的骨骼以默认0值覆盖了上层动画
 //            if (layer.animation != null && layer.animation!!.origin.getBoneAnimation(boneName) == null) return@forEach
             val bonePose = layer.getBonePose(boneName, animatable) ?: return@forEach
-            val weight = layer.getBoneWeight(boneName)
+            var weight = layer.getBoneWeight(boneName)
+            if (layer.animation == null && layer.isInTransition) weight *= (1 - layer.transitionProgress)
             when(layer.blendMode) {
                 BlendMode.OVERRIDE -> {
                     pos.lerp(bonePose.position.toVector3f(), weight.toFloat())

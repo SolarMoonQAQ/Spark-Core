@@ -17,4 +17,21 @@ data class KeyAnimData(
         )
     }
 
+    override fun equals(other: Any?): Boolean {
+        return other?.let {
+            it is KeyAnimData &&
+                    position == it.position &&
+                    rotation == it.rotation &&
+                    scale == it.scale
+        } == true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + position.hashCode()
+        result = 31 * result + rotation.hashCode()
+        result = 31 * result + scale.hashCode()
+        return result
+    }
+
 }

@@ -63,8 +63,8 @@ class PlayerBaseAnimStateMachine(
             val sleep = state("sleep") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
             val fallFly = state("fall_fly") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
             val fall = state("fall") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-            val jump = state("jump") { payload = AnimPlayDataProvider(DefaultLayer.TEMPORARY_LAYER) { AnimLayerData(transitionTime = 0) } }
-            val jumpLand = state("jump_land") { payload = AnimPlayDataProvider(DefaultLayer.TEMPORARY_LAYER) { AnimLayerData(weight = if (player.input.moveVector.length() > 0) 0.5 else 1.0, transitionTime = 0) } }
+            val jump = state("jump") { payload = AnimPlayDataProvider(DefaultLayer.MAIN_LAYER) { AnimLayerData(transitionTime = 0) } }
+            val jumpLand = state("jump_land") { payload = AnimPlayDataProvider(DefaultLayer.MAIN_LAYER) { AnimLayerData(weight = if (player.input.moveVector.length() > 0) 0.5 else 1.0, transitionTime = 0) } }
 
             initialChoiceState {
                 when {
@@ -106,9 +106,9 @@ class PlayerBaseAnimStateMachine(
     }
 
     private fun IState.playRelativeAnim(animName: String) {
+        Modifier.jumpLag = false
         val data = payload
         if (data !is AnimPlayDataProvider) return
-        Modifier.jumpLag = false
         SparkCore.LOGGER.info(animName)
         val animationPath = SparkResourcePathBuilder.buildAnimationPath("spark_core", "spark_core", "player", animName)
         SparkRegistries.TYPED_ANIMATION.get(animationPath)?.let {

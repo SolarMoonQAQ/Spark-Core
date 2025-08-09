@@ -19,6 +19,8 @@ class AnimationLayer(
     var animation: AnimInstance? = null
         private set
 
+    val animationCache = mutableListOf<Pair<AnimationLayer, AnimInstance>>()
+
     private var targetWeight = 0.0
     private var transitionTick = 0
     private var poseCache = mapOf<String, KeyAnimData?>()
@@ -88,7 +90,7 @@ class AnimationLayer(
     }
 
     fun stopAnimation(transitionTime: Int = 7) {
-        setAnimation(null, AnimLayerData(transitionTime = transitionTime))
+        setAnimation(null, data.copy(transitionTime = transitionTime))
     }
 
     fun getBoneWeight(boneName: String): Double {
@@ -96,7 +98,7 @@ class AnimationLayer(
     }
 
     fun getBonePose(boneName: String, animatable: IAnimatable<*>): KeyAnimData? {
-        val anim = animation ?: return null
+        val anim = animation ?: return if (isInTransition) poseCache[boneName]?.lerp(KeyAnimData(), transitionProgress) else null
         val oAnim = anim.origin
         val boneAnim = oAnim.getBoneAnimation(boneName) ?: return null
         val time = when (oAnim.loop) {
@@ -117,7 +119,7 @@ class AnimationLayer(
         if (transitionTick < transitionTime) transitionTick++
         else animation?.physTick(overallSpeed)
 
-        if (animation?.isCancelled == true) setAnimation(null)
+        if (animation?.isCancelled == true) stopAnimation()
     }
 
     fun tick() {
