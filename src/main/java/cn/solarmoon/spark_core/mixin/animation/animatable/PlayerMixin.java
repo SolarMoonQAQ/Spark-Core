@@ -101,4 +101,5 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
         // Return the map instance. The caller (IKManager) will modify it.
         return this.ikChains;
     }
+
 }

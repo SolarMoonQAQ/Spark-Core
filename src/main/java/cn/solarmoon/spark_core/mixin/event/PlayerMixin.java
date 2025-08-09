@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.mixin.event;
 
 import cn.solarmoon.spark_core.event.EntityGetWeaponEvent;
+import cn.solarmoon.spark_core.event.PlayerFallEvent;
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
@@ -29,6 +31,11 @@ public class PlayerMixin {
         var event = new EntityGetWeaponEvent(player, origin);
         NeoForge.EVENT_BUS.post(event);
         cir.setReturnValue(event.getWeapon());
+    }
+
+    @Inject(method = "causeFallDamage", at = @At("HEAD"))
+    private void fallOnGround(float fallDistance, float multiplier, DamageSource source, CallbackInfoReturnable<Boolean> cir) {
+        NeoForge.EVENT_BUS.post(new PlayerFallEvent(player, fallDistance, multiplier, source));
     }
 
 }

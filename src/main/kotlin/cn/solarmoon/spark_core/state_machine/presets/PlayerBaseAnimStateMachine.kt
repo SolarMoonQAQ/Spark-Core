@@ -5,7 +5,9 @@ import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
+import cn.solarmoon.spark_core.event.PlayerFallEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.registry.common.SparkStateMachineRegister
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler
 import net.minecraft.client.player.LocalPlayer
@@ -18,7 +20,6 @@ import net.neoforged.neoforge.event.entity.living.LivingEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 import ru.nsk.kstatemachine.event.Event
 import ru.nsk.kstatemachine.state.IState
-import ru.nsk.kstatemachine.state.activeStates
 import ru.nsk.kstatemachine.state.initialChoiceState
 import ru.nsk.kstatemachine.state.initialState
 import ru.nsk.kstatemachine.state.state
@@ -33,6 +34,10 @@ class PlayerBaseAnimStateMachine(
 ): StateMachineHandler {
 
     override var isActive = true
+
+    object JumpEvent: Event
+
+    object FallEvent: Event
 
     object ResetEvent: Event
 
@@ -75,11 +80,17 @@ class PlayerBaseAnimStateMachine(
                     player.isFallFlying -> fallFly
                     (player.isUnderWater || player.canStartSwimming()) -> swim
                     player.isCrouching -> crouch
-                    Modifier.jumpLag -> jump
                     (player.y - player.yOld) < 0.001 && player.isAboveGround(1.0) && !player.onGround() && !player.isInFluidType -> fall
-                    activeStates().contains(fall) && !player.isAboveGround(1.0) -> jumpLand
                     else -> land
                 }
+            }
+
+            transitionOn<JumpEvent> {
+                targetState = { jump }
+            }
+
+            transitionOn<FallEvent> {
+                targetState = { jumpLand }
             }
         }
 
@@ -169,7 +180,13 @@ class PlayerBaseAnimStateMachine(
         private fun jump(event: LivingEvent.LivingJumpEvent) {
             val player = event.entity
 //            if (player is Player) player.animController.getMainLayer().setAnimation(AnimInstance.create(player, AnimIndex(ResourceLocation.withDefaultNamespace("player"), "state.jump")), AnimLayerData(transitionTime = 0))
-            if (player is Player && player.isLocalPlayer) jumpLag = true
+            if (player is Player && player.isLocalPlayer) player.getStateMachineHandler(SparkStateMachineRegister.PLAYER_BASE_STATE)?.machine?.processEventBlocking(JumpEvent)
+        }
+
+        @SubscribeEvent
+        private fun test(event: PlayerFallEvent) {
+            val player = event.entity
+            if (player.isLocalPlayer && event.distance >= 1.0) player.getStateMachineHandler(SparkStateMachineRegister.PLAYER_BASE_STATE)?.machine?.processEventBlocking(FallEvent)
         }
     }
 

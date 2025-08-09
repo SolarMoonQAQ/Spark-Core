@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.entity
 
+import cn.solarmoon.spark_core.util.Side
 import cn.solarmoon.spark_core.util.toRadians
 import cn.solarmoon.spark_core.util.toVec3
-import cn.solarmoon.spark_core.util.Side
 import net.minecraft.client.player.Input
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.commands.arguments.EntityAnchorArgument
@@ -11,8 +11,6 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.level.ClipContext
-import net.minecraft.world.phys.HitResult
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector2d
 import kotlin.math.PI
@@ -175,15 +173,5 @@ fun Input.copy() = Input().apply {
 }
 
 fun Entity.isAboveGround(minDistance: Double): Boolean {
-    // 向下发射射线检测地面
-    val hitResult = level().clip(
-        ClipContext(
-            position(), // 起点：玩家当前位置
-            position().subtract(0.0, minDistance, 0.0), // 终点
-            ClipContext.Block.COLLIDER, // 检测碰撞箱
-            ClipContext.Fluid.NONE, // 不检测流体
-            this
-        )
-    )
-    return hitResult.type != HitResult.Type.BLOCK
+    return level().getBlockCollisions(this, boundingBox.move(0.0, -minDistance, 0.0)).toList().isEmpty()
 }
