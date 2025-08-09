@@ -68,8 +68,8 @@ class PlayerBaseAnimStateMachine(
             val sleep = state("sleep") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
             val fallFly = state("fall_fly") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
             val fall = state("fall") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-            val jump = state("jump") { payload = AnimPlayDataProvider(DefaultLayer.MAIN_LAYER) { AnimLayerData(transitionTime = 0) } }
-            val jumpLand = state("jump_land") { payload = AnimPlayDataProvider(DefaultLayer.MAIN_LAYER) { AnimLayerData(weight = if (player.input.moveVector.length() > 0) 0.5 else 1.0, transitionTime = 0) } }
+            val jump = state("jump") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER_1) { AnimLayerData(transitionTime = 0) } }
+            val jumpLand = state("jump_land") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER_1) { AnimLayerData(weight = if (player.input.moveVector.length() > 0) 0.5 else 1.0, transitionTime = 0) } }
 
             initialChoiceState {
                 when {

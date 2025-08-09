@@ -23,10 +23,11 @@ class AnimController(
 
     init {
         addLayer(AnimationLayer(DefaultLayer.BASE_LAYER, 0))
-        addLayer(AnimationLayer(DefaultLayer.BASE_ADDITIVE_LAYER, 1))
-        addLayer(AnimationLayer(DefaultLayer.MAIN_LAYER, 2))
-        addLayer(AnimationLayer(DefaultLayer.MAIN_ADDITIVE_LAYER, 3))
-        addLayer(AnimationLayer(DefaultLayer.TEMPORARY_LAYER, 4))
+        addLayer(AnimationLayer(DefaultLayer.BASE_ADDITIVE_LAYER_1, 1))
+        addLayer(AnimationLayer(DefaultLayer.BASE_ADDITIVE_LAYER_2, 2))
+        addLayer(AnimationLayer(DefaultLayer.MAIN_LAYER, 3))
+        addLayer(AnimationLayer(DefaultLayer.MAIN_ADDITIVE_LAYER, 4))
+        addLayer(AnimationLayer(DefaultLayer.TEMPORARY_LAYER, 5))
     }
 
     val isPlayingAnim get() = animLayers.values.any { it.animation != null || it.isInTransition }
