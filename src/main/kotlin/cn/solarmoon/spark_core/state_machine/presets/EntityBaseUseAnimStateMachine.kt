@@ -62,7 +62,7 @@ class EntityBaseUseAnimStateMachine(
 
         onStateEntry { s, b ->
             if (entity !is IEntityAnimatable<*>) return@onStateEntry
-            entity.animController.getLayer(DefaultLayer.BASE_ADDITIVE_LAYER_2).stopAnimation()
+            entity.animController.getLayer(DefaultLayer.BASE_ADDITIVE_LAYER).stopAnimation()
             val entityLocation = BuiltInRegistries.ENTITY_TYPE.getKey(entity.type)
             val lastState = b.transition.sourceState
             val sName = s.name ?: return@onStateEntry
@@ -89,8 +89,8 @@ class EntityBaseUseAnimStateMachine(
     }
 
     suspend fun IState.initHandState() {
-        val mainHand = state("$name.main_hand") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER_2) }
-        val offHand = state("$name.off_hand") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER_2) }
+        val mainHand = state("$name.main_hand") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER) }
+        val offHand = state("$name.off_hand") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER) }
         initialChoiceState {
             val useItem = entity.useItem
             if (ItemStack.isSameItemSameComponents(useItem, entity.mainHandItem)) mainHand else offHand

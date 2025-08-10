@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.skill
 
-class DefaultSkillConfig(
+open class DefaultSkillConfig(
     override val skill: Skill,
 ): SkillConfig {
 
@@ -12,15 +12,15 @@ class DefaultSkillConfig(
             if (read("ignore_attack_speed", false)) it.event.attackStrengthScale = 1f
         }
         skill.onEvent<SkillEvent.SweepAttack> {
-            if (!read("can_sweep_attack", true)) it.event.isSweeping = false
+            if (!read("enable_sweep_attack", true)) it.event.isSweeping = false
         }
         skill.onEvent<SkillEvent.CriticalHit> {
-            if (!read("can_critical_hit", true)) {
+            if (!read("enable_critical_hit", true)) {
                 if (it.event.vanillaMultiplier == 1.5f) it.event.isCriticalHit = false
             }
         }
         skill.onEvent<SkillEvent.TargetKnockBack> {
-            if (!read("can_target_knockback", true)) it.event.isCanceled = true
+            if (!read("enable_target_knockback", true)) it.event.isCanceled = true
         }
         skill.onEvent<SkillEvent.TargetKnockBack> {
             val origin = it.event.originalStrength.toDouble()

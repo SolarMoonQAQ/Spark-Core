@@ -55,6 +55,8 @@ class AnimationLayer(
 
     val isInTransition get() = transitionTick < transitionTime
 
+    val isPlaying get() = animation != null || isInTransition
+
     fun setAnimation(anim: AnimInstance?, data: AnimLayerData = AnimLayerData()) {
         val currentAnim = animation
         val nextAnim = anim
