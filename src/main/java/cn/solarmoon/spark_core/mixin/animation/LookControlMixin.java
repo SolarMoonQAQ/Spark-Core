@@ -18,10 +18,13 @@ public abstract class LookControlMixin {
     @Inject(method = "tick()V", at = @At("HEAD"), cancellable = true)
     private void sparkCore_onTick(CallbackInfo ci) {
         if (this.mob instanceof IEntityAnimatable<?> animatable) {
-            boolean currentAnim = animatable.getAnimController().getAnimLayers().values().stream().anyMatch(animationLayer -> animationLayer.getAnimation() != null && animationLayer.getAnimation().getShouldTurnHead());
-            if (!currentAnim) {
-                ci.cancel();
-            }
+            animatable.getAnimController().getAnimLayers().values().forEach(layer -> {
+                var currentAnim = layer.getAnimation();
+                if (currentAnim != null && !currentAnim.getShouldTurnHead()) {
+                    ci.cancel();
+                }
+            });
         }
     }
+
 }

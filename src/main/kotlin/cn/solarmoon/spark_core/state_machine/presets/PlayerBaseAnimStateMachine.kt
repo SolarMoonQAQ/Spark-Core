@@ -117,7 +117,6 @@ class PlayerBaseAnimStateMachine(
     }
 
     private fun IState.playRelativeAnim(animName: String) {
-        Modifier.jumpLag = false
         val data = payload
         if (data !is AnimPlayDataProvider) return
         SparkCore.LOGGER.info(animName)
@@ -155,8 +154,6 @@ class PlayerBaseAnimStateMachine(
     }
 
     object Modifier {
-        var jumpLag = false
-
         @SubscribeEvent
         private fun entityTick(event: EntityTickEvent.Post) {
             val player = event.entity
@@ -179,7 +176,6 @@ class PlayerBaseAnimStateMachine(
         @SubscribeEvent
         private fun jump(event: LivingEvent.LivingJumpEvent) {
             val player = event.entity
-//            if (player is Player) player.animController.getMainLayer().setAnimation(AnimInstance.create(player, AnimIndex(ResourceLocation.withDefaultNamespace("player"), "state.jump")), AnimLayerData(transitionTime = 0))
             if (player is Player && player.isLocalPlayer) player.getStateMachineHandler(SparkStateMachineRegister.PLAYER_BASE_STATE)?.machine?.processEventBlocking(JumpEvent)
         }
 

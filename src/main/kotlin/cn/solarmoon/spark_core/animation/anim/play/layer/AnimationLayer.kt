@@ -100,7 +100,7 @@ class AnimationLayer(
     }
 
     fun getBonePose(boneName: String, animatable: IAnimatable<*>): KeyAnimData? {
-        val anim = animation ?: return if (isInTransition) poseCache[boneName]?.lerp(KeyAnimData(), transitionProgress) else null
+        val anim = animation ?: return if (isInTransition) poseCache[boneName] else null
         val oAnim = anim.origin
         val boneAnim = oAnim.getBoneAnimation(boneName) ?: return null
         val time = when (oAnim.loop) {
