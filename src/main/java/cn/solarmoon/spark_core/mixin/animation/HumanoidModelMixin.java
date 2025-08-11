@@ -96,9 +96,4 @@ public class HumanoidModelMixin<T extends LivingEntity> implements ITransformMod
         this.transform = transform;
     }
 
-    @Inject(method = "poseBlockingArm", at = @At("HEAD"), cancellable = true)
-    private void test(ModelPart arm, boolean isRightArm, CallbackInfo ci) {
-        ci.cancel();
-    }
-
 }

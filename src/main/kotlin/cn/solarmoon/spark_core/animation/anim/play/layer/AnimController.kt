@@ -37,6 +37,10 @@ class AnimController(
 
     fun getLayer(id: ResourceLocation) = animLayers[id] ?: throw IllegalArgumentException("动画层 $id 不存在")
 
+    fun stopAllAnimation(transitionTime: Int = 0) {
+        animLayers.values.forEach { it.stopAnimation(transitionTime) }
+    }
+
     /**
      * 在指定时间内改变动画整体速度，时间结束后复原
      */

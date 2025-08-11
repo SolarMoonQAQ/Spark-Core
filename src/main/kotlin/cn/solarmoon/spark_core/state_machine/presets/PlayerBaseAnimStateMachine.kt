@@ -117,6 +117,7 @@ class PlayerBaseAnimStateMachine(
     }
 
     private fun IState.playRelativeAnim(animName: String) {
+        player.isBlocking
         val data = payload
         if (data !is AnimPlayDataProvider) return
         SparkCore.LOGGER.info(animName)
@@ -161,14 +162,15 @@ class PlayerBaseAnimStateMachine(
             if (player is Player && player.onClimbable()) {
                 player.lastClimbablePos.ifPresent { pos ->
                     val ladder = level.getBlockState(pos)
-                    val facing = ladder.getValue(LadderBlock.FACING)
-                    val facingRot = facing.opposite.toYRot()
-                    // 限制爬梯朝向
-                    player.setYBodyRot(facingRot)
-                    // 限制头角度在一定范围
-                    var angleDiff = Mth.degreesDifference(facingRot, player.yHeadRot) // 归一化差值
-                    angleDiff = angleDiff.coerceIn(-90f, 90f)                // 应用限制范围
-                    player.yHeadRot = facingRot + angleDiff                 // 重新组合角度
+                    ladder.getOptionalValue(LadderBlock.FACING).ifPresent { facing ->
+                        val facingRot = facing.opposite.toYRot()
+                        // 限制爬梯朝向
+                        player.setYBodyRot(facingRot)
+                        // 限制头角度在一定范围
+                        var angleDiff = Mth.degreesDifference(facingRot, player.yHeadRot) // 归一化差值
+                        angleDiff = angleDiff.coerceIn(-90f, 90f)                // 应用限制范围
+                        player.yHeadRot = facingRot + angleDiff                 // 重新组合角度
+                    }
                 }
             }
         }
@@ -180,7 +182,7 @@ class PlayerBaseAnimStateMachine(
         }
 
         @SubscribeEvent
-        private fun test(event: PlayerFallEvent) {
+        private fun fall(event: PlayerFallEvent) {
             val player = event.entity
             if (player.isLocalPlayer && event.distance >= 1.0) player.getStateMachineHandler(SparkStateMachineRegister.PLAYER_BASE_STATE)?.machine?.processEventBlocking(FallEvent)
         }
