@@ -37,6 +37,7 @@ import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
 import cn.solarmoon.spark_core.skill.payload.SkillSyncPayload
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakePayload
 import cn.solarmoon.spark_core.visual_effect.shadow.ShadowPayload
+import cn.solarmoon.spark_core.visual_effect.space_warp.SpaceWarpPayload
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
@@ -64,6 +65,7 @@ object SparkPayloadRegister {
         val visual = event.registrar("visual_effect")
         visual.playToClient(ShadowPayload.TYPE, ShadowPayload.STREAM_CODEC, ShadowPayload::handleInClient)
         visual.playToClient(CameraShakePayload.TYPE, CameraShakePayload.STREAM_CODEC, CameraShakePayload::handleInClient)
+        visual.playToClient(SpaceWarpPayload.TYPE, SpaceWarpPayload.STREAM_CODEC, SpaceWarpPayload::handleInClient)
 
         val skill = event.registrar("skill")
         skill.playToServer(SkillPredictPayload.TYPE, SkillPredictPayload.STREAM_CODEC, SkillPredictPayload::handleInServer)

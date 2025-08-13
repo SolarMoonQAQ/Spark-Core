@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.skill
 
-import cn.solarmoon.spark_core.event.MolangQueryRegisterEvent
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
 import net.neoforged.bus.api.SubscribeEvent

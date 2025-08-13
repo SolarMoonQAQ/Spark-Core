@@ -1,13 +1,9 @@
 package cn.solarmoon.spark_core.command
 
-import cn.solarmoon.spark_core.ik.visualizer.IKDebugRenderer
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
-import com.mojang.brigadier.Command
-import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.context.CommandContext
 import net.minecraft.commands.CommandBuildContext
 import net.minecraft.commands.CommandSourceStack
-import net.minecraft.commands.Commands
 import net.minecraft.network.chat.Component
 
 /**

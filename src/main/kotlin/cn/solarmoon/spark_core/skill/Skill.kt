@@ -22,10 +22,11 @@ open class Skill {
     val config = DefaultSkillConfig(this)
     val targetPool = SkillTargetPool(this)
 
-    var canTransitionTo: (SkillPhase) -> Boolean = { true }
+    var transitionGuard: (SkillPhase) -> Boolean = { true }
 
     var phase = SkillPhase.IDLE
         private set(value) {
+            if (value == field) return
             field = value
             when(value) {
                 SkillPhase.WINDUP -> {
@@ -54,6 +55,8 @@ open class Skill {
     var activeTickCount = 0
         private set
     var recoveryTickCount = 0
+        private set
+    var wrongTickCount = 0
         private set
 
     val eventHandlers = mutableMapOf<KClass<out SkillEvent>, MutableList<Skill.(SkillEvent) -> Unit>>()
@@ -92,7 +95,7 @@ open class Skill {
     }
 
     fun transitionTo(phase: SkillPhase): Boolean {
-        return if (this.phase != phase && canTransitionTo(phase)) {
+        return if (this.phase != phase && transitionGuard(phase)) {
             this.phase = phase
             true
         } else false
@@ -100,17 +103,18 @@ open class Skill {
 
     fun activate() {
         if (type.isIndependent) {
+            // 结束所有相同类型的技能，保证独立性质的技能同一时间只能存在一个
             holder.allSkills.values.filter { it.type.registryKey == type.registryKey && it.id != id }.forEach { it.end() }
         }
 
         when(phase) {
             SkillPhase.IDLE -> {
-                if (canTransitionTo(SkillPhase.WINDUP)) {
+                if (transitionGuard(SkillPhase.WINDUP)) {
                     transitionTo(SkillPhase.WINDUP)
                 }
             }
             else -> {
-                SparkCore.LOGGER.warn("技能已经触发，请创建新的技能实例并考虑手动结束当前技能以触发新的技能。")
+                SparkCore.LOGGER.warn("技能 $id - ${type.registryKey} 已经触发，请创建新的技能实例并考虑手动结束当前技能以触发新的技能。")
             }
         }
     }
@@ -130,7 +134,10 @@ open class Skill {
                 recoveryTickCount++
                 triggerEvent(SkillEvent.Recovery)
             }
-            else -> throw IllegalStateException("技能在错误的阶段更新")
+            else -> {
+                wrongTickCount++
+                if (wrongTickCount > 1) throw IllegalStateException("技能 $id - ${type.registryKey} 在错误的阶段更新")
+            }
         }
     }
 

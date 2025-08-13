@@ -10,8 +10,6 @@ object PreInputApplier {
         val entity = event.entity
         val preInput = entity.preInput
         preInput.tick()
-
-        preInput.tryExecute()
     }
 
 }

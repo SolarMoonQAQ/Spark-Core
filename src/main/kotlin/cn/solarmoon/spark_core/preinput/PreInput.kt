@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.preinput
 
 import cn.solarmoon.spark_core.event.OnPreInputExecuteEvent
-import cn.solarmoon.spark_core.skill.SkillHost
 import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.properties.Delegates
@@ -19,13 +18,11 @@ class PreInput(
 ) {
 
     private val inputQueue = ConcurrentLinkedDeque<PreInputData>()
-    private val allowedIds = mutableSetOf<String>()
-    var isEnabled = true
-        private set
-    val hasInput get() = inputQueue.isNotEmpty()
-
     private var cooldown = 0
-    private var isPlayingSkill by Delegates.observable(false) { _, old, new -> if (old != new && !new) cooldown = 1 }
+    var isLocked by Delegates.observable(false) { _, old, new -> if (old != new && !new) cooldown = 1 }
+        private set
+
+    val hasInput get() = inputQueue.isNotEmpty()
 
     fun hasInput(id: String): Boolean {
         return inputQueue.firstOrNull()?.id == id
@@ -33,67 +30,51 @@ class PreInput(
 
     fun setInput(id: String, maxRemainTime: Int = 5, priority: Int = 0, input: () -> Unit) {
         require(maxRemainTime > 0) { "预输入存续时间必须大于0" }
-        inputQueue.addFirst(PreInputData(this, id, input, 0, maxRemainTime))
+        inputQueue.addFirst(PreInputData(id, input, 0, maxRemainTime))
         val temp = inputQueue.sortedByDescending { priority }
         inputQueue.clear()
         inputQueue.addAll(temp)
     }
 
-    fun tryExecute() {
-        isPlayingSkill = (holder as? SkillHost)?.isPlayingSkill == true
-        if (!isPlayingSkill) {
-            if (cooldown > 0) cooldown--
-            else execute()
-        }
-    }
-
     private fun invoke(data: PreInputData) {
-        val event = NeoForge.EVENT_BUS.post(OnPreInputExecuteEvent.Pre(data))
-        if (event.isCanceled || !isInputAllowed(data.id)) return
+        val event = NeoForge.EVENT_BUS.post(OnPreInputExecuteEvent.Pre(this, data))
+        if (event.isCanceled) return
         data.input.invoke()
-        NeoForge.EVENT_BUS.post(OnPreInputExecuteEvent.Post(data))
+        NeoForge.EVENT_BUS.post(OnPreInputExecuteEvent.Post(this, data))
     }
 
-    fun execute() {
+    fun execute(extra: () -> Unit = {}) {
         inputQueue.pollFirst()?.let {
+            extra()
             invoke(it)
             inputQueue.clear()
         }
     }
 
-    fun executeIfPresent(vararg id: String) {
+    fun executeIfPresent(vararg id: String, extra: () -> Unit = {}) {
         inputQueue.firstOrNull { it.id in id }?.let {
-            if (isInputAllowed(it.id)) {
-                invoke(it)
-                inputQueue.clear()
-            }
+            extra()
+            invoke(it)
+            inputQueue.clear()
         }
     }
 
-    fun executeExcept(vararg id: String) {
+    fun executeExcept(vararg id: String, extra: () -> Unit = {}) {
         inputQueue.firstOrNull { it.id !in id }?.let {
-            if (isInputAllowed(it.id)) {
-                invoke(it)
-                inputQueue.clear()
-            }
+            extra()
+            invoke(it)
+            inputQueue.clear()
         }
-    }
-
-    fun allowInput(id: String) {
-        allowedIds.add(id)
-    }
-
-    fun disallowInput(id: String) {
-        allowedIds.remove(id)
-    }
-
-    fun isInputAllowed(id: String): Boolean {
-        return isEnabled || id in allowedIds
     }
 
     fun tick() {
         inputQueue.removeIf { data ->
             data.remain++ >= data.maxRemainTime
+        }
+
+        if (!isLocked) {
+            if (cooldown > 0) cooldown--
+            else execute()
         }
     }
 
@@ -101,17 +82,12 @@ class PreInput(
         inputQueue.clear()
     }
 
-    fun enable() {
-        if (!isEnabled) {
-            isEnabled = true
-            allowedIds.clear()
-        }
+    fun lock() {
+        isLocked = true
     }
 
-    fun disable() {
-        if (isEnabled) {
-            isEnabled = false
-        }
+    fun unlock() {
+        isLocked = false
     }
 
 }

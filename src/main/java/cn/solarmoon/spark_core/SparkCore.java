@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
 import cn.solarmoon.spark_core.registry.client.SparkKeyMappings;
 import cn.solarmoon.spark_core.registry.client.SparkModelRegister;
+import cn.solarmoon.spark_core.registry.client.SparkShaders;
 import cn.solarmoon.spark_core.registry.common.*;
 import cn.solarmoon.spark_core.resource.common.MultiModResourceRegistry;
 import cn.solarmoon.spark_core.web.logging.SparkLogger;
@@ -41,6 +42,7 @@ public class SparkCore {
             SparkClientEventRegister.register();
             SparkModelRegister.register(modEventBus);
             SparkKeyMappings.register();
+            SparkShaders.register(modEventBus);
             // 注册配置屏幕工厂
             modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
