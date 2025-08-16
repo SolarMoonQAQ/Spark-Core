@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.js
 
+import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
@@ -24,3 +25,7 @@ fun ScriptableObject.put(name: String, value: Any) = put(name, this, Context.jav
 fun NativeArray.toVec3() = Vec3(Context.toNumber(get(0)), Context.toNumber(get(1)), Context.toNumber(get(2)))
 
 fun Vec3.toNativeArray() = NativeArray(arrayOf(x, y, z))
+
+fun NativeArray.toVec2() = Vec2(Context.toNumber(get(0)).toFloat(), Context.toNumber(get(1)).toFloat())
+
+fun Vec2.toNativeArray() = NativeArray(arrayOf(x, y))

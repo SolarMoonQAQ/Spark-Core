@@ -2,13 +2,15 @@ package cn.solarmoon.spark_core.animation.anim.play.layer
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
+import cn.solarmoon.spark_core.util.toQuaternionf
 import cn.solarmoon.spark_core.util.toVec3
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.util.Mth
+import org.joml.Quaternionf
+import org.joml.Vector3f
+import kotlin.collections.filter
 
 class AnimationLayer(
     val id: ResourceLocation,
@@ -16,46 +18,14 @@ class AnimationLayer(
 ) {
 
     var data = AnimLayerData()
+        private set
     var animation: AnimInstance? = null
         private set
 
-    val animationCache = mutableListOf<Pair<AnimationLayer, AnimInstance>>()
+    val animSpaces = mutableMapOf<AnimInstance, AnimSpace>()
+    val boneSpaces = mutableMapOf<String, BoneSpace>()
 
-    private var targetWeight = 0.0
-    private var transitionTick = 0
-    private var poseCache = mapOf<String, KeyAnimData?>()
-
-    var weight: Double
-        get() = data.weight
-        set(value) {
-            if (value !in 0.0..1.0) throw IllegalArgumentException("动画层 $id 权重只能是 0.0 到 1.0 之间的值")
-            data = data.copy(weight = value)
-            targetWeight = value
-        }
-
-    var boneMask: BoneMask
-        get() = data.boneMask
-        set(value) {
-            data = data.copy(boneMask = value)
-        }
-
-    var transitionTime: Int
-        get() = data.transitionTime
-        set(value) {
-            data = data.copy(transitionTime = value)
-        }
-
-    var blendMode: BlendMode
-        get() = data.blendMode
-        set(value) {
-            data = data.copy(blendMode = value)
-        }
-
-    val transitionProgress get() = Mth.clamp(if (transitionTime == 0) 1.0 else transitionTick.toDouble() / transitionTime, 0.0, 1.0)
-
-    val isInTransition get() = transitionTick < transitionTime
-
-    val isPlaying get() = animation != null || isInTransition
+    val isPlaying get() = animSpaces.isNotEmpty()
 
     fun setAnimation(anim: AnimInstance?, data: AnimLayerData = AnimLayerData()) {
         val currentAnim = animation
@@ -76,56 +46,121 @@ class AnimationLayer(
 
         val event = currentAnim?.triggerEvent(AnimEvent.SwitchOut(nextAnim))
         val nextAnimE = event?.nextAnim ?: nextAnim
-        currentAnim?.cancel()
-
-        if (currentAnim == null) {
-            poseCache = mapOf()
-        } else {
-            poseCache = currentAnim.origin.bones.mapValues { getBonePose(it.key, currentAnim.holder) }
-        }
 
         this.data = data
-        transitionTick = 0
         animation = nextAnimE
         animation?.isCancelled = false
         animation?.triggerEvent(AnimEvent.SwitchIn(currentAnim))
+        animSpaces.forEach { it.key.cancel() }
+
+        // 进入（整层进入）
+        if (currentAnim == null && nextAnimE != null) {
+            nextAnimE.origin.bones.keys.forEach {
+                boneSpaces.put(it, BoneSpace(it).apply { setWeight(data.boneMask, data.enterTransitionTime) })
+            }
+            animSpaces[nextAnimE] = AnimSpace(nextAnimE).apply { start(0) }
+        }
+        // 退出（整层退出）
+        else if (currentAnim != null && nextAnimE == null) {
+            boneSpaces.forEach {
+                it.value.setWeight(0.0, data.exitTransitionTime)
+            }
+        }
+        // 切换（所有其它动画进入结束过渡，输入动画进入开始过渡）
+        else {
+            nextAnimE?.let {
+                it.origin.bones.keys.forEach {
+                    boneSpaces.put(it, BoneSpace(it).apply { setWeight(data.boneMask, 0) })
+                }
+                animSpaces.forEach { it.value.end(data.enterTransitionTime) }
+                animSpaces[it] = AnimSpace(it).apply { start(data.enterTransitionTime) }
+            }
+        }
     }
 
     fun stopAnimation(transitionTime: Int = 7) {
-        setAnimation(null, data.copy(transitionTime = transitionTime))
+        setAnimation(null, data.copy(exitTransitionTime = transitionTime))
+    }
+
+    fun setBoneMask(boneMask: BoneMask, transTime: Int = 7) {
+        data = data.copy(boneMask = boneMask)
+        boneSpaces.forEach { it.value.setWeight(boneMask, transTime) }
     }
 
     fun getBoneWeight(boneName: String): Double {
-        return boneMask.getWeight(boneName) * weight
+        return (boneSpaces[boneName]?.currentWeight ?: 0.0) * data.weight
     }
 
-    fun getBonePose(boneName: String, animatable: IAnimatable<*>): KeyAnimData? {
-        val anim = animation ?: return if (isInTransition) poseCache[boneName] else null
-        val oAnim = anim.origin
-        val boneAnim = oAnim.getBoneAnimation(boneName) ?: return null
-        val time = when (oAnim.loop) {
-            Loop.TRUE -> anim.time % anim.maxLength
-            Loop.ONCE -> anim.time
-            Loop.HOLD_ON_LAST_FRAME -> anim.time
+    fun getBonePose(boneName: String, animatable: IAnimatable<*>): KeyAnimData {
+        val values = animSpaces.values
+        val totalWeight = values.filter { boneName in it.anim.origin.bones }.sumOf { it.currentWeight }
+
+        // 如果总权重为0，则返回默认姿势（简化计算）
+        if (totalWeight <= 0.0) {
+            return KeyAnimData()
         }
-        val currentPose = poseCache[boneName] ?: KeyAnimData()
-        val targetPose = KeyAnimData(
-            boneAnim.getAnimPosAt(time, animatable).toVec3(),
-            boneAnim.getAnimRotAt(time, animatable).toVec3(),
-            boneAnim.getAnimScaleAt(time, animatable).toVec3()
-        )
-        return currentPose.lerp(targetPose, transitionProgress)
+
+        val pos = Vector3f()
+        val rot = Quaternionf(); var accumulatedWeight = 0f
+        val scale = Vector3f(1f)
+        values.forEach {
+            val boneData = it.anim.origin.getBoneAnimation(boneName) ?: return@forEach
+            val pt = (it.currentWeight / totalWeight).toFloat()
+            val time = it.anim.typedTime
+            pos.add(boneData.getAnimPosAt(time, animatable).mul(pt))
+//            rot.slerp(boneData.getAnimRotAt(time, animatable).toQuaternionf(), pt)
+            scale.add(boneData.getAnimScaleAt(time, animatable).mul(pt)).sub(Vector3f(pt))
+
+            // 计算pt和时间
+            val origRot = boneData.getAnimRotAt(time, animatable).toQuaternionf()
+            if (accumulatedWeight == 0f) {
+                rot.set(origRot)
+                accumulatedWeight = pt
+            } else {
+                val t = pt / (accumulatedWeight + pt)
+                rot.slerp(origRot, t)
+                accumulatedWeight += pt
+            }
+        }
+        return KeyAnimData(pos.toVec3(), rot.getEulerAnglesXYZ(Vector3f()).toVec3(), scale.toVec3())
     }
 
     fun physicsTick(overallSpeed: Double) {
-        if (transitionTick < transitionTime) transitionTick++
-        else animation?.physTick(overallSpeed)
+        // 先推进空间时间
+        animSpaces.values.forEach { it.physicsTick(overallSpeed) }
 
-        if (animation?.isCancelled == true) stopAnimation()
+        // 自动退出动画，仅对自然完成的动画有效，打断的动画的退出逻辑应在setAnimation中完成
+        // 情况A：只剩一个动画空间，且该动画已取消 → 走整层退出（让 BoneSpace 淡出）
+        if (animSpaces.size == 1) {
+            val only = animSpaces.values.first()
+            // 避免重复触发：确保当前 layer 的 animation 还指向这个动画
+            if (only.anim.isCancelled && only.transitionState != TransitionState.EXIT && animation == only.anim) {
+                // 触发整层退出（BoneSpace 会根据 mask 淡出；AnimSpace 不再做局部 end）
+                stopAnimation(data.exitTransitionTime)
+                // 立刻返回，避免下面的“对单个空间 end”的逻辑再介入
+                boneSpaces.forEach { it.value.physicsTick() }
+                return
+            }
+        }
+        // 情况B：多个动画空间并存 → 对“已取消但尚未 EXIT”的空间做局部 end
+        else if (animSpaces.size > 1) {
+            animSpaces.values
+                .filter { it.anim.isCancelled && it.transitionState != TransitionState.EXIT }
+                .forEach { it.end(data.enterTransitionTime) }
+        }
+
+        // 清理已移除空间
+        animSpaces.filter { it.value.isRemoved }.keys.toList().forEach { animSpaces.remove(it) }
+
+        // 推进骨骼权重过渡
+        boneSpaces.forEach { it.value.physicsTick() }
     }
 
+
     fun tick() {
-        if (!isInTransition) animation?.tick()
+        animSpaces.values.forEach {
+            it.tick()
+        }
     }
 
     /**

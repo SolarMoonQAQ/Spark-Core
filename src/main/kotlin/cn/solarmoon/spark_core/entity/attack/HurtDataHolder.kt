@@ -4,6 +4,6 @@ import cn.solarmoon.spark_core.util.BlackBoard
 
 interface HurtDataHolder {
 
-    val attackData: BlackBoard
+    val hurtData: BlackBoard
 
 }

@@ -65,7 +65,7 @@ fun Vec3.rotLerp(target: Vec3, progress: Double): Vec3 {
 }
 
 /**
- * 在joml库的默认欧拉角转换中，出现了角度突变，推测是万向节锁导致的，因此此方法对pitch角的算法进行了修正，应当避免了joml库本身的问题
+ * 在joml库的默认欧拉角转换中，出现了角度突变，推测是奇点位置未考虑导致的，因此此方法对pitch角的算法进行了修正，应当避免了joml库本身的问题
  */
 fun Quaterniond.toEuler(): Vector3d {
     val angles = Vector3d()

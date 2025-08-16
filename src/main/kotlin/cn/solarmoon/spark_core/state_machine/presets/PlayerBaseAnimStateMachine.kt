@@ -55,8 +55,8 @@ class PlayerBaseAnimStateMachine(
             val swim = state("swim") { setupMovementStates(player) }
             val fly = state("fly") { setupMovementStates(player) }
             val climb = state("climb") {
-                val idle = state("$name.idle") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-                val move = state("$name.move") { payload = AnimPlayDataProvider { if (it == idle) AnimLayerData(transitionTime = 0) else AnimLayerData(transitionTime = 7) } }
+                val idle = state("$name.idle") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
+                val move = state("$name.move") { payload = AnimPlayDataProvider { if (it == idle) AnimLayerData(enterTransitionTime = 0) else AnimLayerData(enterTransitionTime = 7) } }
                 initialChoiceState {
                     when {
                         !player.isSuppressingSlidingDownLadder && !player.onGround() || player.input.moveVector.length() > 0  -> move
@@ -64,12 +64,12 @@ class PlayerBaseAnimStateMachine(
                     }
                 }
             }
-            val sit = state("sit") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-            val sleep = state("sleep") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-            val fallFly = state("fall_fly") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-            val fall = state("fall") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-            val jump = state("jump") { payload = AnimPlayDataProvider(DefaultLayer.MAIN_LAYER) { AnimLayerData(transitionTime = 0) } }
-            val jumpLand = state("jump_land") { payload = AnimPlayDataProvider(DefaultLayer.MAIN_LAYER) { AnimLayerData(weight = if (player.input.moveVector.length() > 0) 0.5 else 1.0, transitionTime = 0) } }
+            val sit = state("sit") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
+            val sleep = state("sleep") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
+            val fallFly = state("fall_fly") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
+            val fall = state("fall") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
+            val jump = state("jump") { payload = AnimPlayDataProvider(DefaultLayer.MAIN_LAYER) { AnimLayerData(enterTransitionTime = 0) } }
+            val jumpLand = state("jump_land") { payload = AnimPlayDataProvider(DefaultLayer.MAIN_LAYER) { AnimLayerData(weight = if (player.input.moveVector.length() > 0) 0.5 else 1.0, enterTransitionTime = 0) } }
 
             initialChoiceState {
                 when {
@@ -134,10 +134,10 @@ class PlayerBaseAnimStateMachine(
     }
 
     private suspend fun IState.setupMovementStates(player: LocalPlayer) {
-        val idle = state("$name.idle") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-        val move = state("$name.move") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-        val moveBack = state("$name.move_back") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
-        val sprint = state("$name.sprint") { payload = AnimPlayDataProvider { AnimLayerData(transitionTime = 7) } }
+        val idle = state("$name.idle") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
+        val move = state("$name.move") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
+        val moveBack = state("$name.move_back") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
+        val sprint = state("$name.sprint") { payload = AnimPlayDataProvider { AnimLayerData(enterTransitionTime = 7) } }
 
         initialChoiceState {
             when {

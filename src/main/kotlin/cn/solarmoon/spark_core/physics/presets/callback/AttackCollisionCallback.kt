@@ -21,7 +21,7 @@ interface AttackCollisionCallback: CollisionCallback {
         val attacker = o1.owner as? Entity ?: return
         (o2.owner as? Entity)?.apply {
             attackSystem.customAttack(this) {
-                this@apply.attackData.write(SparkHurtDatas.COLLISION, CollisionHurtData(o1, o2, manifoldId))
+                this@apply.hurtData.write(SparkHurtDatas.COLLISION, CollisionHurtData(o1, o2, manifoldId))
                 preAttack(attackSystem.attackedEntities.isEmpty(), attacker, this@apply, o1, o2, manifoldId)
                 if (!doAttack(attacker, this@apply, o1, o2, manifoldId)) return@customAttack false
                 postAttack(attacker, this@apply, o1, o2, manifoldId)

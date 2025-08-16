@@ -2,38 +2,54 @@ package cn.solarmoon.spark_core.preinput
 
 import cn.solarmoon.spark_core.event.OnPreInputExecuteEvent
 import net.neoforged.neoforge.common.NeoForge
-import java.util.concurrent.ConcurrentLinkedDeque
-import kotlin.properties.Delegates
+import java.util.ArrayDeque
 
 /**
- * ### 预输入
- * > 装载在[net.minecraft.world.entity.Entity]中的预输入，使用[getPreInput]来获取并修改
- * - 预输入通过id进行标识，每次设置预输入都会覆盖上一个预输入内容
- * - 预输入在生物tick中进行计时，默认存在半秒后会自动清除留存的指令
- * - 预输入不会在游戏中保存，游戏重启后会丢失
- * - 预输入可在双端进行操作，但如果考虑到操作的即时反馈，建议只在客户端进行
+ * 优化后的预输入系统 - 符合常规动作游戏设计
+ * 特点：
+ * 1. 先进先出（FIFO）策略
+ * 2. 限制最大缓存数量（默认保留最近4个输入）
+ * 3. 自动清理过期输入（默认0.5秒）
  */
 class PreInput(
-    val holder: IPreInputHolder
+    val holder: IPreInputHolder,
 ) {
 
-    private val inputQueue = ConcurrentLinkedDeque<PreInputData>()
-    private var cooldown = 0
-    var isLocked by Delegates.observable(false) { _, old, new -> if (old != new && !new) cooldown = 1 }
+    private val maxBufferSize: Int = 4 // 默认保留最近4个输入
+    private val inputBuffer = ArrayDeque<PreInputData>(maxBufferSize)
+    var isLocked = false
         private set
 
-    val hasInput get() = inputQueue.isNotEmpty()
+    val hasInput get() = inputBuffer.isNotEmpty()
 
     fun hasInput(id: String): Boolean {
-        return inputQueue.firstOrNull()?.id == id
+        return inputBuffer.any { it.id == id }
     }
 
-    fun setInput(id: String, maxRemainTime: Int = 5, priority: Int = 0, input: () -> Unit) {
+    /**
+     * 添加预输入
+     * @param id 输入标识
+     * @param maxRemainTime 最大存续时间（单位：tick）
+     * @param input 要执行的输入动作
+     */
+    fun setInput(id: String, maxRemainTime: Int = 5, input: () -> Unit) {
         require(maxRemainTime > 0) { "预输入存续时间必须大于0" }
-        inputQueue.addFirst(PreInputData(id, input, 0, maxRemainTime))
-        val temp = inputQueue.sortedByDescending { priority }
-        inputQueue.clear()
-        inputQueue.addAll(temp)
+
+        // 先查找是否已有相同 ID 的输入
+        val existing = inputBuffer.firstOrNull { it.id == id }
+        if (existing != null) {
+            // 覆盖旧输入内容 & 重置计时
+            existing.input = input
+            existing.remain = 0
+            existing.maxRemainTime = maxRemainTime
+            return
+        }
+
+        // 没有则按 FIFO 策略入队
+        if (inputBuffer.size >= maxBufferSize) {
+            inputBuffer.removeFirst()
+        }
+        inputBuffer.add(PreInputData(id, input, 0, maxRemainTime))
     }
 
     private fun invoke(data: PreInputData) {
@@ -43,43 +59,52 @@ class PreInput(
         NeoForge.EVENT_BUS.post(OnPreInputExecuteEvent.Post(this, data))
     }
 
-    fun execute(extra: () -> Unit = {}) {
-        inputQueue.pollFirst()?.let {
+    fun execute(extra: () -> Unit = {}): Boolean {
+        inputBuffer.pollFirst()?.let {
             extra()
             invoke(it)
-            inputQueue.clear()
+            return true
         }
+        return false
     }
 
-    fun executeIfPresent(vararg id: String, extra: () -> Unit = {}) {
-        inputQueue.firstOrNull { it.id in id }?.let {
+    fun executeIfPresent(vararg id: String, extra: () -> Unit = {}): Boolean {
+        inputBuffer.firstOrNull { it.id in id }?.let {
             extra()
             invoke(it)
-            inputQueue.clear()
+            inputBuffer.remove(it)
+            return true
         }
+        return false
     }
 
-    fun executeExcept(vararg id: String, extra: () -> Unit = {}) {
-        inputQueue.firstOrNull { it.id !in id }?.let {
+    fun executeExcept(vararg id: String, extra: () -> Unit = {}): Boolean {
+        inputBuffer.firstOrNull { it.id !in id }?.let {
             extra()
             invoke(it)
-            inputQueue.clear()
+            inputBuffer.remove(it)
+            return true
         }
+        return false
     }
 
+    /**
+     * 每tick更新，清理过期输入
+     */
     fun tick() {
-        inputQueue.removeIf { data ->
-            data.remain++ >= data.maxRemainTime
-        }
+        // 更新所有输入的存续时间
+        inputBuffer.forEach { it.remain++ }
+
+        // 移除所有过期的输入
+        inputBuffer.removeIf { it.remain >= it.maxRemainTime }
 
         if (!isLocked) {
-            if (cooldown > 0) cooldown--
-            else execute()
+            execute()
         }
     }
 
     fun clear() {
-        inputQueue.clear()
+        inputBuffer.clear()
     }
 
     fun lock() {
@@ -88,6 +113,13 @@ class PreInput(
 
     fun unlock() {
         isLocked = false
+    }
+
+    /**
+     * 获取当前缓冲区中的所有输入（按添加顺序）
+     */
+    fun getInputSequence(): List<String> {
+        return inputBuffer.map { it.id }
     }
 
 }

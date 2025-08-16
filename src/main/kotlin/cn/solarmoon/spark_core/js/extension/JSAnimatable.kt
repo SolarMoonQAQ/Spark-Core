@@ -7,15 +7,9 @@ import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.getMainLayer
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
-import cn.solarmoon.spark_core.js.toVec3
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
-import cn.solarmoon.spark_core.util.toVec3
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.PacketDistributor
-import org.mozilla.javascript.NativeArray
-import java.awt.Color
 
 interface JSAnimatable {
 
@@ -28,7 +22,7 @@ interface JSAnimatable {
     }
 
     fun playAnimation(anim: AnimInstance, transitionTime: Int) {
-        js_animatable.animController.getMainLayer().setAnimation(anim, AnimLayerData(transitionTime = transitionTime))
+        js_animatable.animController.getMainLayer().setAnimation(anim, AnimLayerData(enterTransitionTime = transitionTime))
     }
 
     fun createAnimation(index: String, name: String): AnimInstance {
@@ -47,29 +41,29 @@ interface JSAnimatable {
         }
     }
 
-    fun summonShadow(maxLifeTime: Int, color: Int) {
-        val animatable = js_animatable
-        if (animatable is Entity && !animatable.animLevel.isClientSide) {
-            SparkVisualEffects.SHADOW.addToClient(animatable.id, maxLifeTime, Color(color))
-        }
-    }
-
-    fun summonSpaceWarp(
-        bone: String,
-        offset: NativeArray,
-        radius: Float,
-        strength: Float,
-        lifeTime: Int,
-        hz: Float
-    ) {
-        val animatable = js_animatable
-        if (animatable is Entity && !animatable.animLevel.isClientSide) {
-            SparkVisualEffects.SPACE_WARP.addToClient(
-                animatable.getWorldBonePivot(bone, offset.toVec3()).toVec3(),
-                radius, strength, lifeTime, hz
-            )
-        }
-    }
+//    fun summonShadow(maxLifeTime: Int, color: Int) {
+//        val animatable = js_animatable
+//        if (animatable is Entity && !animatable.animLevel.isClientSide) {
+//            SparkVisualEffects.SHADOW.addToClient(animatable.id, maxLifeTime, Color(color))
+//        }
+//    }
+//
+//    fun summonSpaceWarp(
+//        bone: String,
+//        offset: NativeArray,
+//        radius: Float,
+//        strength: Float,
+//        lifeTime: Int,
+//        hz: Float
+//    ) {
+//        val animatable = js_animatable
+//        if (animatable is Entity && !animatable.animLevel.isClientSide) {
+//            SparkVisualEffects.SPACE_WARP.addToClient(
+//                animatable.getWorldBonePivot(bone, offset.toVec3()).toVec3(),
+//                radius, strength, lifeTime, hz
+//            )
+//        }
+//    }
 
 //    fun summonParticleSplash(
 //        bone: String,

@@ -62,6 +62,12 @@ class AnimInstance private constructor(
 
     val step get() = speed / PhysicsLevel.TPS
 
+    val typedTime get() = when (origin.loop) {
+        Loop.TRUE -> time % origin.animationLength
+        Loop.ONCE -> time
+        Loop.HOLD_ON_LAST_FRAME -> time
+    }
+
     fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / maxLength).coerceIn(0.0, 1.0)
 
     fun step(overallSpeed: Double = 1.0) {

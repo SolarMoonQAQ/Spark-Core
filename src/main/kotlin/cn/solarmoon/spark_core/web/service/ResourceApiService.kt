@@ -50,7 +50,7 @@ object ResourceApiService {
     fun playAnimation(request: AnimationPlayRequest, level: ServerLevel, player: ServerPlayer): ApiResponse<Boolean> {
         return try {
             val entityId = request.entityId ?: player.id
-            val result = playAnimation(request.name, entityId, DefaultLayer.MAIN_LAYER, AnimLayerData(transitionTime = request.transTime), level)
+            val result = playAnimation(request.name, entityId, DefaultLayer.MAIN_LAYER, AnimLayerData(enterTransitionTime = request.transTime), level)
             if (result) {
                 ApiResponse.success(true, "动画播放成功")
             } else {

@@ -16,7 +16,7 @@ public class LivingEntityMixin {
     @Inject(method = "hurt", at = @At("HEAD"))
     private void hurt(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (entity.level().isClientSide) return;
-        var data = entity.getAttackData();
+        var data = entity.getHurtData();
         if (!data.isEmpty()) {
             ((IDamageSourceExtraData)source).getExtraData().write(data.getStorage());
             // 一旦有数据立刻清空实体的数据缓存，保证每次数据指向的攻击唯一

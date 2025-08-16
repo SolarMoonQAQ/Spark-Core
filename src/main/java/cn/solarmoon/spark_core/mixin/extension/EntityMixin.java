@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
     }
 
     @Override
-    public HurtData getAttackData() {
+    public HurtData getHurtData() {
         return data;
     }
 

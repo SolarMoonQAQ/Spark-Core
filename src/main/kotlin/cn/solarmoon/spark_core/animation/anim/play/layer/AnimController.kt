@@ -29,7 +29,7 @@ class AnimController(
         addLayer(AnimationLayer(DefaultLayer.TEMPORARY_LAYER, 4))
     }
 
-    val isPlayingAnim get() = animLayers.values.any { it.animation != null || it.isInTransition }
+    val isPlayingAnim get() = animLayers.values.any { it.isPlaying }
 
     fun addLayer(layer: AnimationLayer) {
         animLayers[layer.id] = layer
