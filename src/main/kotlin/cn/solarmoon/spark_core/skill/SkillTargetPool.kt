@@ -4,14 +4,14 @@ import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.PacketDistributor
-import kotlin.collections.remove
 
 class SkillTargetPool(private val skill: Skill) {
 
     private val targets = linkedSetOf<Entity>()
 
     fun init() {
-        skill.sync { data, context ->
+        skill.onEvent<SkillEvent.Sync> { event ->
+            val data = event.data
             if (data.getBoolean("#AddTarget")) {
                 addTarget(level.getEntity(data.getInt("#Target"))!!)
             }

@@ -59,6 +59,10 @@ class AnimInstance private constructor(
         internal set
     var eventHandlers = mutableMapOf<KClass<out AnimEvent>, MutableList<AnimInstance.(AnimEvent) -> Unit>>()
         private set
+    var keyframeRanges = mutableMapOf<String, KeyframeRange>()
+        private set
+    var previousTime = 0.0
+        private set
 
     val step get() = speed / PhysicsLevel.TPS
 
@@ -106,12 +110,14 @@ class AnimInstance private constructor(
         copy.shouldTurnHead = shouldTurnHead
         copy.rejectNewAnim = rejectNewAnim
         copy.eventHandlers = eventHandlers.toMutableMap()
+        copy.keyframeRanges = keyframeRanges.mapValues { it.value.copy() }.toMutableMap()
         return copy
     }
 
     fun refresh() {
         time = 0.0
         totalTime = 0.0
+        keyframeRanges.values.forEach { it.reset() }
     }
 
     fun tick() {
@@ -119,6 +125,8 @@ class AnimInstance private constructor(
     }
 
     fun physTick(overallSpeed: Double = 1.0) {
+        previousTime = time
+
         when(origin.loop) {
             Loop.TRUE -> {
                 step()
@@ -134,6 +142,30 @@ class AnimInstance private constructor(
                 if (time < maxLength) step(overallSpeed)
             }
         }
+
+        keyframeRanges.forEach { (id, range) -> range.check(this) }
+    }
+
+    // 关键帧系统方法
+    /**
+     * 注册一个关键帧范围
+     * @param id 范围的唯一标识符
+     * @param start 开始时间
+     * @param end 结束时间
+     * @return KeyframeRange对象，可用于注册事件处理器
+     */
+    fun registerKeyframeRange(id: String, start: Double, end: Double): KeyframeRange {
+        val range = KeyframeRange(id, start, end)
+        keyframeRanges[id] = range
+        return range
+    }
+
+    /**
+     * 移除一个关键帧范围
+     * @param id 范围的唯一标识符
+     */
+    fun removeKeyframeRange(id: String) {
+        keyframeRanges.remove(id)
     }
 
 }

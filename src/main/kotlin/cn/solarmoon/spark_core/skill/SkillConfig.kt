@@ -2,11 +2,11 @@ package cn.solarmoon.spark_core.skill
 
 interface SkillConfig {
 
-    val skill: Skill
-
     val storage: LinkedHashMap<String, Any>
 
-    fun init() {}
+    fun init(skill: Skill) {
+        skill.triggerEvent(SkillEvent.ConfigInit)
+    }
 
     fun set(id: String, value: Any) {
         storage[id] = value
@@ -27,6 +27,13 @@ inline fun <reified T: Any> SkillConfig.read(key: String, defaultValue: T): T {
 inline fun <reified T: Any> SkillConfig.readNonNull(key: String): T {
     val value = storage[key]
     if (value == null) throw IllegalArgumentException("技能配置参数[$key] 不能为空")
+    if (value !is T) throw IllegalArgumentException("技能配置参数[$key] 的类型必须为 ${T::class.simpleName}")
+    return value
+}
+
+inline fun <reified T: Any> SkillConfig.readNullable(key: String): T? {
+    val value = storage[key]
+    if (value == null) return null
     if (value !is T) throw IllegalArgumentException("技能配置参数[$key] 的类型必须为 ${T::class.simpleName}")
     return value
 }

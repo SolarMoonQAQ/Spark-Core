@@ -19,7 +19,7 @@ open class Skill {
     lateinit var level: Level
         private set
 
-    val config = DefaultSkillConfig(this)
+    val config = DefaultSkillConfig()
     val targetPool = SkillTargetPool(this)
 
     var transitionGuard: (SkillPhase) -> Boolean = { true }
@@ -60,8 +60,6 @@ open class Skill {
         private set
 
     val eventHandlers = mutableMapOf<KClass<out SkillEvent>, MutableList<Skill.(SkillEvent) -> Unit>>()
-    private val initHandlers = mutableListOf<Skill.() -> Unit>()
-    private val syncHandlers = mutableListOf<Skill.(CompoundTag, IPayloadContext) -> Unit>()
 
     val isActivated get() = phase !in arrayOf(SkillPhase.IDLE, SkillPhase.END)
 
@@ -70,17 +68,10 @@ open class Skill {
         this.type = type
         this.holder = holder
         this.level = level
-        initHandlers.forEach { it.invoke(this) }
-        config.init()
+
+        config.init(this)
+        triggerEvent(SkillEvent.Init)
         targetPool.init()
-    }
-
-    fun init(handler: Skill.() -> Unit) {
-        initHandlers.add(handler)
-    }
-
-    fun sync(handler: Skill.(CompoundTag, IPayloadContext) -> Unit) {
-        syncHandlers.add(handler)
     }
 
     inline fun <reified T : SkillEvent> onEvent(crossinline handler: Skill.(T) -> Unit) {
@@ -157,7 +148,7 @@ open class Skill {
         } else if (data.getBoolean("endC")) {
             end()
         } else {
-            syncHandlers.forEach { it.invoke(this, data, context) }
+            triggerEvent(SkillEvent.Sync(data, context))
         }
     }
 

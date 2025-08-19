@@ -1,13 +1,11 @@
 package cn.solarmoon.spark_core.skill
 
-open class DefaultSkillConfig(
-    override val skill: Skill,
-): SkillConfig {
+open class DefaultSkillConfig: SkillConfig {
 
     override val storage: LinkedHashMap<String, Any> = linkedMapOf()
 
-    override fun init() {
-        super.init()
+    override fun init(skill: Skill) {
+        super.init(skill)
         skill.onEvent<SkillEvent.PlayerGetAttackStrength> {
             if (read("ignore_attack_speed", false)) it.event.attackStrengthScale = 1f
         }
