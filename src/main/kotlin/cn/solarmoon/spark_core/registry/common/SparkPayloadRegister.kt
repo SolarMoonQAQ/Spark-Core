@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.animation.sync.AnimPlayPayload
 import cn.solarmoon.spark_core.animation.sync.AnimShouldTurnPayload
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
+import cn.solarmoon.spark_core.animation.sync.AnimStopPayload
 import cn.solarmoon.spark_core.animation.sync.AnimationDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.AnimationDataSyncPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
@@ -34,6 +35,7 @@ import cn.solarmoon.spark_core.resource.sync.UpdateDepsC2SPacket
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
+import cn.solarmoon.spark_core.skill.payload.SkillRejectPayload
 import cn.solarmoon.spark_core.skill.payload.SkillSyncPayload
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakePayload
 import cn.solarmoon.spark_core.visual_effect.shadow.ShadowPayload
@@ -51,6 +53,7 @@ object SparkPayloadRegister {
         anim.configurationToServer(ModelDataSendingTask.Return.TYPE, ModelDataSendingTask.Return.STREAM_CODEC, ModelDataSendingTask.Return::onAct)
         anim.playBidirectional(TypedAnimPlayPayload.TYPE, TypedAnimPlayPayload.STREAM_CODEC, TypedAnimPlayPayload::handleBothSide)
         anim.playBidirectional(AnimPlayPayload.TYPE, AnimPlayPayload.STREAM_CODEC, AnimPlayPayload::handleBothSide)
+        anim.playBidirectional(AnimStopPayload.TYPE, AnimStopPayload.STREAM_CODEC, AnimStopPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
         anim.playToClient(AnimShouldTurnPayload.TYPE, AnimShouldTurnPayload.STREAM_CODEC, AnimShouldTurnPayload::handleInClient)
@@ -69,6 +72,7 @@ object SparkPayloadRegister {
 
         val skill = event.registrar("skill")
         skill.playToServer(SkillPredictPayload.TYPE, SkillPredictPayload.STREAM_CODEC, SkillPredictPayload::handleInServer)
+        skill.playToClient(SkillRejectPayload.TYPE, SkillRejectPayload.STREAM_CODEC, SkillRejectPayload::handleInClient)
         skill.playToClient(SkillPredictSyncPayload.TYPE, SkillPredictSyncPayload.STREAM_CODEC, SkillPredictSyncPayload::handleInClient)
         skill.playToClient(SkillSyncPayload.TYPE, SkillSyncPayload.STREAM_CODEC, SkillSyncPayload::handleInClient)
         skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)

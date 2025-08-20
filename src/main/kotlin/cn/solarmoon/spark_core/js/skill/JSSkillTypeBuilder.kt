@@ -6,9 +6,11 @@ import cn.solarmoon.spark_core.skill.ScriptSource
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillConfig
 import cn.solarmoon.spark_core.skill.SkillEvent
+import cn.solarmoon.spark_core.skill.SkillStartCondition
 import cn.solarmoon.spark_core.skill.SkillType
 import cn.solarmoon.spark_core.skill.skillType
 import net.minecraft.resources.ResourceLocation
+import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
 
 class JSSkillTypeBuilder(val js: SparkJS) {
@@ -18,6 +20,7 @@ class JSSkillTypeBuilder(val js: SparkJS) {
         private set
     private val preFunctions = mutableListOf<(SkillConfig, Skill) -> Unit>()
     private val functions = mutableListOf<Skill.() -> Unit>()
+    private val conditions = mutableListOf<SkillStartCondition>()
 
     /**
      * 当前正在处理的脚本文件名
@@ -29,6 +32,12 @@ class JSSkillTypeBuilder(val js: SparkJS) {
 
     fun setPriority(value: Int) {
         priority = value
+    }
+
+    fun addCondition(id: String, reason: String, check: Function) {
+        conditions.add(SkillStartCondition(id, reason, { host, level ->
+            Context.toBoolean(check.call(js, host, level))
+        }))
     }
 
     fun accept(consumer: Function) {
@@ -43,7 +52,7 @@ class JSSkillTypeBuilder(val js: SparkJS) {
         }
     }
 
-    fun build(): SkillType<*> = skillType(id) {
+    fun build(): SkillType<*> = skillType(id, conditions.toList()) {
         onEvent<SkillEvent.ConfigInit> {
             preFunctions.forEach { it.invoke(config, this) }
         }
@@ -58,7 +67,7 @@ class JSSkillTypeBuilder(val js: SparkJS) {
         }
     }
 
-    fun buildBy(type: SkillType<*>) = skillType(id, { type.provider() }) {
+    fun buildBy(type: SkillType<*>) = skillType(id, conditions.toMutableList().apply { addAll(type.conditions) }, { type.provider() }) {
         onEvent<SkillEvent.ConfigInit> {
             preFunctions.forEach { it.invoke(config, this) }
         }

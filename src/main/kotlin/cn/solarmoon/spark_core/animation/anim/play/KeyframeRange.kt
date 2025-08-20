@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
+import cn.solarmoon.spark_core.js.SparkJS
 import kotlin.reflect.KClass
 
 class KeyframeRange(
@@ -8,6 +10,8 @@ class KeyframeRange(
     val start: Double,
     val end: Double
 ) {
+
+    internal lateinit var jsEngine: SparkJS
 
     var hasEntered = false
         private set
@@ -46,10 +50,9 @@ class KeyframeRange(
         currentTime = time
         val loop = anim.origin.loop
         val isInRange = time in start..end
-        val wasInRange = anim.previousTime in start..end
 
         // 进入范围
-        if (isInRange && !wasInRange && !hasEntered) {
+        if (isInRange && !hasEntered) {
             hasEntered = true
             triggerEvent(KeyframeEvent.Enter)
         }
@@ -60,7 +63,7 @@ class KeyframeRange(
         }
 
         // 退出范围
-        if (!isInRange && wasInRange && !hasExited) {
+        if (!isInRange && !hasExited && hasEntered) {
             hasExited = true
             triggerEvent(KeyframeEvent.Exit)
         }

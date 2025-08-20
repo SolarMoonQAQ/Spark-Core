@@ -29,18 +29,14 @@ interface JSAnimation {
     }
 
     fun onEnd(consumer: Function) {
-        anim.holder.animLevel.submitImmediateTask(PPhase.POST) {
-            anim.onEvent<AnimEvent.End> {
-                consumer.call(js, it.by.javaClass.simpleName)
-            }
+        anim.onEvent<AnimEvent.End> {
+            consumer.call(js)
         }
     }
 
     fun onCompleted(consumer: Function) {
-        anim.holder.animLevel.submitImmediateTask(PPhase.POST) {
-            anim.onEvent<AnimEvent.Completed> {
-                consumer.call(js)
-            }
+        anim.onEvent<AnimEvent.Completed> {
+            consumer.call(js)
         }
     }
 
@@ -53,5 +49,9 @@ interface JSAnimation {
     fun setShouldTurnBody(bool: Boolean) {
         anim.shouldTurnBody = bool
     }
+
+    fun registerKeyframeRangeEnd(id: String, end: Double) = anim.registerKeyframeRange(id, 0.0, end)
+
+    fun registerKeyframeRangeStart(id: String, start: Double) = anim.registerKeyframeRange(id, start, anim.maxLength)
 
 }

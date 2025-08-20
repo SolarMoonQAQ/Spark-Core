@@ -15,7 +15,7 @@ sealed class AnimEvent {
     }
 
     /**
-     * 动画被cancel指令打断时触发
+     * 动画被cancel指令打断时触发（不是由于其它动画进入，而是仅对该动画本身的切断）
      */
     object Interrupted : AnimEvent()
 
@@ -27,7 +27,7 @@ sealed class AnimEvent {
     /**
      * 动画无论因何种原因被设为删除时触发（自然结束、被其它动画打断、手动打断）
      */
-    data class End(val by: AnimEvent) : AnimEvent()
+    object End : AnimEvent()
 
     /**
      * 动画生命周期tick时触发

@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
+import cn.solarmoon.spark_core.util.PPhase
 import net.minecraft.resources.ResourceLocation
 import kotlin.reflect.KClass
 
@@ -56,12 +57,13 @@ class AnimInstance private constructor(
     var shouldTurnHead = true
     var rejectNewAnim: (AnimInstance?) -> Boolean = { false }
     var isCancelled = true
-        internal set
+        internal set(value) {
+            if (!field && value) triggerEvent(AnimEvent.End)
+            field = value
+        }
     var eventHandlers = mutableMapOf<KClass<out AnimEvent>, MutableList<AnimInstance.(AnimEvent) -> Unit>>()
         private set
     var keyframeRanges = mutableMapOf<String, KeyframeRange>()
-        private set
-    var previousTime = 0.0
         private set
 
     val step get() = speed / PhysicsLevel.TPS
@@ -86,11 +88,6 @@ class AnimInstance private constructor(
 
     inline fun <reified T: AnimEvent> triggerEvent(event: T): T {
         eventHandlers[event::class]?.forEach { it(event) }
-
-        if (event is AnimEvent.Completed || event is AnimEvent.SwitchOut || event is AnimEvent.Interrupted) {
-            eventHandlers[AnimEvent.End::class]?.forEach { it(AnimEvent.End(event)) }
-        }
-
         return event
     }
 
@@ -122,28 +119,27 @@ class AnimInstance private constructor(
 
     fun tick() {
         triggerEvent(AnimEvent.Tick)
+        keyframeRanges.forEach { (id, range) -> range.check(this) }
     }
 
     fun physTick(overallSpeed: Double = 1.0) {
-        previousTime = time
-
         when(origin.loop) {
             Loop.TRUE -> {
                 step()
             }
             Loop.ONCE -> {
                 if (time < maxLength) step(overallSpeed)
-                else {
-                    isCancelled = true
-                    triggerEvent(AnimEvent.Completed)
+                else if (!isCancelled) {
+                    holder.animLevel.submitImmediateTask(PPhase.POST) {
+                        isCancelled = true
+                        triggerEvent(AnimEvent.Completed)
+                    }
                 }
             }
             Loop.HOLD_ON_LAST_FRAME -> {
                 if (time < maxLength) step(overallSpeed)
             }
         }
-
-        keyframeRanges.forEach { (id, range) -> range.check(this) }
     }
 
     // 关键帧系统方法
@@ -155,7 +151,7 @@ class AnimInstance private constructor(
      * @return KeyframeRange对象，可用于注册事件处理器
      */
     fun registerKeyframeRange(id: String, start: Double, end: Double): KeyframeRange {
-        val range = KeyframeRange(id, start, end)
+        val range = KeyframeRange(id, start, end).apply { jsEngine = holder.animLevel.jsEngine }
         keyframeRanges[id] = range
         return range
     }

@@ -47,7 +47,7 @@ object SkillApplier {
     @SubscribeEvent
     private fun onActualHurt(event: LivingDamageEvent.Pre) {
         event.entity.activeSkills.forEach {
-            it.triggerEvent(SkillEvent.ActualHurt(event))
+            it.triggerEvent(SkillEvent.ActualHurt.Pre(event))
         }
 
         SkillManager.getSkillsByTarget(event.entity).forEach {
@@ -58,7 +58,7 @@ object SkillApplier {
     @SubscribeEvent
     private fun onActualHurt(event: LivingDamageEvent.Post) {
         event.entity.activeSkills.forEach {
-            it.triggerEvent(SkillEvent.ActualHurt(event))
+            it.triggerEvent(SkillEvent.ActualHurt.Post(event))
         }
 
         SkillManager.getSkillsByTarget(event.entity).forEach {

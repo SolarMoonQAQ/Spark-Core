@@ -31,7 +31,7 @@ object JSPhysicsHelper: JSComponent() {
         ) {
             isContactResponse = false
             isKinematic = true
-            collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
+            collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_NONE
             setGravity(Vector3f())
             addPhysicsTicker(MoveWithAnimatedBoneTicker(boneName, offset.toVec3().toBVector3f()))
             init?.call(engine, this)

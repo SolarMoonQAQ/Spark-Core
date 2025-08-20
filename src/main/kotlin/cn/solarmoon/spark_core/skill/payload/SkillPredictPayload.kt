@@ -2,13 +2,16 @@ package cn.solarmoon.spark_core.skill.payload
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.skill.SkillHost
+import cn.solarmoon.spark_core.skill.SkillStartRejectedException
 import cn.solarmoon.spark_core.skill.SkillType
+import cn.solarmoon.spark_core.skill.payload.SkillRejectPayload
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.level.ServerPlayer
 import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
@@ -29,9 +32,26 @@ class SkillPredictPayload private constructor(
             val level = context.player().level()
             val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return
             val type = payload.skillType
+
+            // 服务端硬校验启动条件
+            type.conditions.forEach {
+                try {
+                    it.test(host, level)
+                } catch (ex: SkillStartRejectedException) {
+                    PacketDistributor.sendToPlayer(
+                        context.player() as ServerPlayer,
+                        SkillRejectPayload(host, payload.clientId, ex.reason)
+                    )
+                    return
+                }
+            }
+
+            // 创建正式技能并同步
             val skill = type.createSkillWithoutSync(host.skillCount.incrementAndGet(), host, level)
             if (payload.active) skill.activate()
-            PacketDistributor.sendToAllPlayers(SkillPredictSyncPayload(host, type, payload.clientId, skill.id, payload.active))
+            PacketDistributor.sendToAllPlayers(
+                SkillPredictSyncPayload(host, type, payload.clientId, skill.id, payload.active)
+            )
         }
 
         @JvmStatic

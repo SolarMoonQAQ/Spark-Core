@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.anim.play.layer
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.sync.AnimPlayPayload
+import cn.solarmoon.spark_core.animation.sync.AnimStopPayload
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
@@ -61,6 +62,20 @@ class AnimController(
         val player = animatable.animatable
         if (player !is Player || !player.isLocalPlayer) throw IllegalArgumentException("只有本地玩家才能播放动画到服务端，对于一般实体请以服务端为准同步到客户端")
         PacketDistributor.sendToServer(AnimPlayPayload(animatable, index, layerId, data))
+    }
+
+    fun stopAnimToClient(layerId: ResourceLocation, transitionTime: Int, exceptPlayer: ServerPlayer? = null) {
+        exceptPlayer?.let {
+            PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, AnimStopPayload(animatable, layerId, transitionTime))
+        } ?: run {
+            PacketDistributor.sendToAllPlayers(AnimStopPayload(animatable, layerId, transitionTime))
+        }
+    }
+
+    fun stopAnimToServer(layerId: ResourceLocation, transitionTime: Int) {
+        val player = animatable.animatable
+        if (player !is Player || !player.isLocalPlayer) throw IllegalArgumentException("只有本地玩家才能暂停动画到服务端，对于一般实体请以服务端为准同步到客户端")
+        PacketDistributor.sendToServer(AnimStopPayload(animatable, layerId, transitionTime))
     }
 
     fun physTick() {

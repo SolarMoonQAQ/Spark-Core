@@ -2,10 +2,19 @@ package cn.solarmoon.spark_core.skill
 
 import net.minecraft.resources.ResourceLocation
 
-fun skillType(id: ResourceLocation, builder: Skill.() -> Unit): SkillType<Skill> = skillType(id, { Skill() }, builder)
+fun skillType(
+    id: ResourceLocation,
+    conditions: List<SkillStartCondition> = listOf(),
+    builder: Skill.() -> Unit
+): SkillType<Skill> = skillType(id, conditions, { Skill() }, builder)
 
-inline fun <reified T: Skill> skillType(id: ResourceLocation, crossinline origin: () -> T, crossinline builder: T.() -> Unit): SkillType<T> {
-    val type = SkillType(id) {
+inline fun <reified T: Skill> skillType(
+    id: ResourceLocation,
+    conditions: List<SkillStartCondition> = listOf(),
+    crossinline origin: () -> T,
+    crossinline builder: T.() -> Unit
+): SkillType<T> {
+    val type = SkillType(id, conditions = conditions) {
         val skill = origin()
         builder.invoke(skill)
         skill

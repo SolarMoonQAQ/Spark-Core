@@ -11,9 +11,13 @@ import net.neoforged.neoforge.event.entity.player.SweepAttackEvent
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 open class SkillEvent {
+    class Rejected(val condition: SkillStartCondition): SkillEvent()
     class Hurt(val event: LivingIncomingDamageEvent): SkillEvent()
     class TargetHurt(val event: LivingIncomingDamageEvent): SkillEvent()
-    class ActualHurt(val event: LivingDamageEvent): SkillEvent()
+    abstract class ActualHurt: SkillEvent() {
+        class Pre(val event: LivingDamageEvent.Pre): ActualHurt()
+        class Post(val event: LivingDamageEvent.Post): ActualHurt()
+    }
     abstract class TargetActualHurt: SkillEvent() {
         class Pre(val event: LivingDamageEvent.Pre): TargetActualHurt()
         class Post(val event: LivingDamageEvent.Post): TargetActualHurt()

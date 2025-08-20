@@ -50,7 +50,7 @@ class AnimSpace(
     }
 
     fun tick() {
-        if (!isInTransition) anim.tick()
+        anim.tick()
     }
 
 }

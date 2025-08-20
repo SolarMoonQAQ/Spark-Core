@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
+import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.toQuaternionf
 import cn.solarmoon.spark_core.util.toVec3
 import net.minecraft.resources.ResourceLocation
@@ -35,8 +36,6 @@ class AnimationLayer(
             /** 检查动画所需的骨骼有效性 */
             val valid = testAnimValidity(nextAnim)
             if (valid.isNotEmpty()) {
-                nextAnim.isCancelled = false
-                nextAnim.cancel()
                 SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：${nextAnim.holder.animatable} 的动画 ${nextAnim.animIndex} 无法播放")
                 return
             }
@@ -49,9 +48,9 @@ class AnimationLayer(
 
         this.data = data
         animation = nextAnimE
+        animSpaces.forEach { it.key.cancel() }
         animation?.isCancelled = false
         animation?.triggerEvent(AnimEvent.SwitchIn(currentAnim))
-        animSpaces.forEach { it.key.cancel() }
 
         // 进入（整层进入）
         if (currentAnim == null && nextAnimE != null) {
@@ -136,7 +135,9 @@ class AnimationLayer(
             // 避免重复触发：确保当前 layer 的 animation 还指向这个动画
             if (only.anim.isCancelled && only.transitionState != TransitionState.EXIT && animation == only.anim) {
                 // 触发整层退出（BoneSpace 会根据 mask 淡出；AnimSpace 不再做局部 end）
-                stopAnimation(data.exitTransitionTime)
+                only.anim.holder.animLevel.submitImmediateTask(PPhase.POST) {
+                    stopAnimation(data.exitTransitionTime)
+                }
                 // 立刻返回，避免下面的“对单个空间 end”的逻辑再介入
                 boneSpaces.forEach { it.value.physicsTick() }
                 return
