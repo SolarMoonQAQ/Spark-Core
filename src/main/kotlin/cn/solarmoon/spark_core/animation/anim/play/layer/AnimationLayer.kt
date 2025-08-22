@@ -154,9 +154,7 @@ class AnimationLayer(
         // 清理已移除空间
         animSpaces.filter { it.value.isRemoved }.keys.toList().forEach { animSpaces.remove(it) }
         if (animation == null && boneSpaces.all { it.value.isRemoved }) {
-            animSpaces.values.firstOrNull()?.anim?.holder?.animLevel?.submitImmediateTask(PPhase.POST) {
-                animSpaces.clear()
-            }
+            animSpaces.clear()
         }
     }
 

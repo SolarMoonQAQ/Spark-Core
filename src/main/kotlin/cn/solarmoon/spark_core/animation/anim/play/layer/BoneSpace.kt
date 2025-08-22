@@ -20,7 +20,7 @@ class BoneSpace(
 
     val isInTransition get() = transitionState != TransitionState.NONE
 
-    val isRemoved get() = currentWeight < 0.0001 && targetWeight == 0.0
+    val isRemoved get() = currentWeight == 0.0 && targetWeight == 0.0
 
     fun setWeight(weight: Double, transTime: Int) {
         startWeight = currentWeight

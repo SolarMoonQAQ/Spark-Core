@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.skill.SkillHost
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
-import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -24,14 +23,16 @@ class SkillRejectPayload private constructor(
     companion object {
         @JvmStatic
         fun handleInClient(payload: SkillRejectPayload, context: IPayloadContext) {
-            val level = context.player().level()
-            val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return
+            context.enqueueWork {
+                val level = context.player().level()
+                val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return@enqueueWork
 
-            // 结束预测技能（触发End事件与清理）
-            val skill = host.predictedSkills[payload.clientId] ?: return
-            skill.end()
-            // 调试期提示原因
-            SparkCore.LOGGER.error("$host 的技能 ${skill.type.registryKey} 在服务端启用失败： ${payload.reason}")
+                // 结束预测技能（触发End事件与清理）
+                val skill = host.predictedSkills[payload.clientId] ?: return@enqueueWork
+                skill.end()
+                // 调试期提示原因
+                SparkCore.LOGGER.error("$host 的技能 ${skill.type.registryKey} 在服务端启用失败： ${payload.reason}")
+            }
         }
 
         @JvmStatic

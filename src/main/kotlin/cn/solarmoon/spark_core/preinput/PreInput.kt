@@ -35,20 +35,14 @@ class PreInput(
     fun setInput(id: String, maxRemainTime: Int = 5, input: () -> Unit) {
         require(maxRemainTime > 0) { "预输入存续时间必须大于0" }
 
-        // 先查找是否已有相同 ID 的输入
-        val existing = inputBuffer.firstOrNull { it.id == id }
-        if (existing != null) {
-            // 覆盖旧输入内容 & 重置计时
-            existing.input = input
-            existing.remain = 0
-            existing.maxRemainTime = maxRemainTime
-            return
-        }
+        // 先移除所有相同ID的输入，确保FIFO顺序
+        inputBuffer.removeAll { it.id == id }
 
-        // 没有则按 FIFO 策略入队
+        // 如果队列已满，移除最旧的输入
         if (inputBuffer.size >= maxBufferSize) {
             inputBuffer.removeFirst()
         }
+
         inputBuffer.add(PreInputData(id, input, 0, maxRemainTime))
     }
 
@@ -69,21 +63,29 @@ class PreInput(
     }
 
     fun executeIfPresent(vararg id: String, extra: () -> Unit = {}): Boolean {
-        inputBuffer.firstOrNull { it.id in id }?.let {
-            extra()
-            invoke(it)
-            inputBuffer.remove(it)
-            return true
+        val iterator = inputBuffer.iterator()
+        while (iterator.hasNext()) {
+            val data = iterator.next()
+            if (data.id in id) {
+                iterator.remove()
+                extra()
+                invoke(data)
+                return true
+            }
         }
         return false
     }
 
     fun executeExcept(vararg id: String, extra: () -> Unit = {}): Boolean {
-        inputBuffer.firstOrNull { it.id !in id }?.let {
-            extra()
-            invoke(it)
-            inputBuffer.remove(it)
-            return true
+        val iterator = inputBuffer.iterator()
+        while (iterator.hasNext()) {
+            val data = iterator.next()
+            if (data.id !in id) {
+                iterator.remove()
+                extra()
+                invoke(data)
+                return true
+            }
         }
         return false
     }
@@ -92,12 +94,13 @@ class PreInput(
      * 每tick更新，清理过期输入
      */
     fun tick() {
-        // 更新所有输入的存续时间
-        inputBuffer.forEach { it.remain++ }
-
-        // 移除所有过期的输入
+        // 先移除所有过期的输入
         inputBuffer.removeIf { it.remain >= it.maxRemainTime }
 
+        // 然后更新剩余输入的存续时间
+        inputBuffer.forEach { it.remain++ }
+
+        // 最后尝试执行（如果未锁定）
         if (!isLocked) {
             execute()
         }

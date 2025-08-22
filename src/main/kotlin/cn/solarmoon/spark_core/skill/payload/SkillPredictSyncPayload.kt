@@ -26,21 +26,27 @@ class SkillPredictSyncPayload private constructor(
     companion object {
         @JvmStatic
         fun handleInClient(payload: SkillPredictSyncPayload, context: IPayloadContext) {
-            val level = context.player().level()
-            val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return
+            context.enqueueWork {
+                val level = context.player().level()
+                val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return@enqueueWork
 
-            // 客户端自己发起的预测（是否启用已在客户端侧发送时决定）
-            if (host == context.player()) {
-                val skill = host.predictedSkills.remove(payload.clientId) ?: return
-                skill.id = payload.serverId
-                host.allSkills[skill.id] = skill
+                // 客户端自己发起的预测（是否启用已在客户端侧发送时决定）
+                if (host == context.player()) {
+                    val skill = host.predictedSkills.remove(payload.clientId) ?: return@enqueueWork
+                    skill.id = payload.serverId
+                    host.allSkills[skill.id] = skill
+                    // 服务端验证后如果发现客户端并没有进行技能，则强制进行
+                    if (!skill.isActivated && payload.active) {
+                        SparkCore.LOGGER.warn("服务端验证后发现客户端技能未激活，强制进行技能 ${skill.type.registryKey}")
+                        skill.activate()
+                    }
+                }
+                // 其他客户端的预测需要新建
+                else {
+                    val skill = payload.skillType.createSkillWithoutSync(payload.serverId, host, level)
+                    if (payload.active) skill.activate()
+                }
             }
-            // 其他客户端的预测需要新建
-            else {
-                val skill = payload.skillType.createSkillWithoutSync(payload.serverId, host, level)
-                if (payload.active) skill.activate()
-            }
-
         }
 
         @JvmStatic
