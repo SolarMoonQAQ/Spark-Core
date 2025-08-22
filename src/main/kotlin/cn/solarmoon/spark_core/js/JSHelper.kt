@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.js
 
 import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
+import org.joml.Vector2d
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
 import org.mozilla.javascript.NativeArray
@@ -27,5 +28,7 @@ fun NativeArray.toVec3() = Vec3(Context.toNumber(get(0)), Context.toNumber(get(1
 fun Vec3.toNativeArray() = NativeArray(arrayOf(x, y, z))
 
 fun NativeArray.toVec2() = Vec2(Context.toNumber(get(0)).toFloat(), Context.toNumber(get(1)).toFloat())
+
+fun NativeArray.toVector2d() = Vector2d(Context.toNumber(get(0)), Context.toNumber(get(1)))
 
 fun Vec2.toNativeArray() = NativeArray(arrayOf(x, y))

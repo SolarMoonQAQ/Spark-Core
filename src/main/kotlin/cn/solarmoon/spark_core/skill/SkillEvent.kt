@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
 import net.minecraft.nbt.CompoundTag
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent
@@ -28,6 +29,8 @@ open class SkillEvent {
     class PlayerGetAttackStrength(val event: PlayerGetAttackStrengthEvent): SkillEvent()
     class CriticalHit(val event: CriticalHitEvent): SkillEvent()
     class SweepAttack(val event: SweepAttackEvent): SkillEvent()
+    class Death(val event: LivingDeathEvent): SkillEvent()
+    class TargetDeath(val event: LivingDeathEvent): SkillEvent()
     object Init: SkillEvent()
     object WindupStart: SkillEvent()
     object Windup: SkillEvent()

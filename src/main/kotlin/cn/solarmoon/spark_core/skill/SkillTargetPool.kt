@@ -5,11 +5,13 @@ import net.minecraft.nbt.CompoundTag
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.PacketDistributor
 
-class SkillTargetPool(private val skill: Skill) {
+class SkillTargetPool() {
 
+    private lateinit var skill: Skill
     private val targets = linkedSetOf<Entity>()
 
-    fun init() {
+    fun init(skill: Skill) {
+        this.skill = skill
         skill.onEvent<SkillEvent.Sync> { event ->
             val data = event.data
             if (data.getBoolean("#AddTarget")) {

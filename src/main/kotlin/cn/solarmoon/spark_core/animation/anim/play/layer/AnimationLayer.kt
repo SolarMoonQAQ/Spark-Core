@@ -11,6 +11,7 @@ import cn.solarmoon.spark_core.util.toVec3
 import net.minecraft.resources.ResourceLocation
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.filter
 
 class AnimationLayer(
@@ -23,8 +24,8 @@ class AnimationLayer(
     var animation: AnimInstance? = null
         private set
 
-    val animSpaces = mutableMapOf<AnimInstance, AnimSpace>()
-    val boneSpaces = mutableMapOf<String, BoneSpace>()
+    val animSpaces = ConcurrentHashMap<AnimInstance, AnimSpace>()
+    val boneSpaces = ConcurrentHashMap<String, BoneSpace>()
 
     val isPlaying get() = animSpaces.isNotEmpty()
 
@@ -138,9 +139,6 @@ class AnimationLayer(
                 only.anim.holder.animLevel.submitImmediateTask(PPhase.POST) {
                     stopAnimation(data.exitTransitionTime)
                 }
-                // 立刻返回，避免下面的“对单个空间 end”的逻辑再介入
-                boneSpaces.forEach { it.value.physicsTick() }
-                return
             }
         }
         // 情况B：多个动画空间并存 → 对“已取消但尚未 EXIT”的空间做局部 end
@@ -150,13 +148,17 @@ class AnimationLayer(
                 .forEach { it.end(data.enterTransitionTime) }
         }
 
-        // 清理已移除空间
-        animSpaces.filter { it.value.isRemoved }.keys.toList().forEach { animSpaces.remove(it) }
-
         // 推进骨骼权重过渡
         boneSpaces.forEach { it.value.physicsTick() }
-    }
 
+        // 清理已移除空间
+        animSpaces.filter { it.value.isRemoved }.keys.toList().forEach { animSpaces.remove(it) }
+        if (animation == null && boneSpaces.all { it.value.isRemoved }) {
+            animSpaces.values.firstOrNull()?.anim?.holder?.animLevel?.submitImmediateTask(PPhase.POST) {
+                animSpaces.clear()
+            }
+        }
+    }
 
     fun tick() {
         animSpaces.values.forEach {

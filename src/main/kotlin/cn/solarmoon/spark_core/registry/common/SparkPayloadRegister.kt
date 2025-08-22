@@ -10,6 +10,7 @@ import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
 import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
+import cn.solarmoon.spark_core.animation.sync.TypedAnim2PlayPayload
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPlayPayload
 import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSendingTask
 import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSyncPayload
@@ -52,6 +53,7 @@ object SparkPayloadRegister {
         anim.configurationToClient(ModelDataPayload.TYPE, ModelDataPayload.STREAM_CODEC, ModelDataPayload::handleInClient)
         anim.configurationToServer(ModelDataSendingTask.Return.TYPE, ModelDataSendingTask.Return.STREAM_CODEC, ModelDataSendingTask.Return::onAct)
         anim.playBidirectional(TypedAnimPlayPayload.TYPE, TypedAnimPlayPayload.STREAM_CODEC, TypedAnimPlayPayload::handleBothSide)
+        anim.playBidirectional(TypedAnim2PlayPayload.TYPE, TypedAnim2PlayPayload.STREAM_CODEC, TypedAnim2PlayPayload::handleBothSide)
         anim.playBidirectional(AnimPlayPayload.TYPE, AnimPlayPayload.STREAM_CODEC, AnimPlayPayload::handleBothSide)
         anim.playBidirectional(AnimStopPayload.TYPE, AnimStopPayload.STREAM_CODEC, AnimStopPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)

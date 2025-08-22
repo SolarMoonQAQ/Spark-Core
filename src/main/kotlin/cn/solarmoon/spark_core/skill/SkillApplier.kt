@@ -6,6 +6,7 @@ import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent
@@ -103,6 +104,18 @@ object SkillApplier {
     private fun sweep(event: SweepAttackEvent) {
         event.entity.activeSkills.forEach {
             it.triggerEvent(SkillEvent.SweepAttack(event))
+        }
+    }
+
+    @SubscribeEvent
+    private fun die(event: LivingDeathEvent) {
+        val entity = event.entity
+        entity.activeSkills.forEach {
+            it.triggerEvent(SkillEvent.Death(event))
+        }
+
+        SkillManager.getSkillsByTarget(entity).forEach {
+            it.triggerEvent(SkillEvent.TargetDeath(event))
         }
     }
 

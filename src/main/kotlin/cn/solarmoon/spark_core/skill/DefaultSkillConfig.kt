@@ -29,6 +29,9 @@ open class DefaultSkillConfig: SkillConfig {
             val damageMultiplier = read("damage_multiplier", 1.0)
             if (damageMultiplier != 1.0) it.event.container.newDamage *= damageMultiplier.toFloat()
         }
+        skill.onEvent<SkillEvent.Death> {
+            if (read("end_on_death", true)) skill.end()
+        }
     }
 
 }

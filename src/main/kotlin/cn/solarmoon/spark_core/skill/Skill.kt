@@ -20,7 +20,7 @@ open class Skill {
         private set
 
     val config = DefaultSkillConfig()
-    val targetPool = SkillTargetPool(this)
+    val targetPool = SkillTargetPool()
 
     var transitionGuard: (SkillPhase) -> Boolean = { true }
 
@@ -71,7 +71,7 @@ open class Skill {
 
         config.init(this)
         triggerEvent(SkillEvent.Init)
-        targetPool.init()
+        targetPool.init(this)
     }
 
     inline fun <reified T : SkillEvent> onEvent(crossinline handler: Skill.(T) -> Unit) {
@@ -142,7 +142,7 @@ open class Skill {
         if (end()) PacketDistributor.sendToAllPlayers(SkillPayload(this, CompoundTag().apply { putBoolean("endC", true) }))
     }
 
-    fun sync(data: CompoundTag, context: IPayloadContext) {
+    internal fun sync(data: CompoundTag, context: IPayloadContext) {
         if (data.getBoolean("endS")) {
             endOnServer()
         } else if (data.getBoolean("endC")) {

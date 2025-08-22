@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.util.PPhase
 import net.minecraft.resources.ResourceLocation
+import org.joml.Vector2d
 import kotlin.reflect.KClass
 
 class AnimInstance private constructor(
@@ -154,6 +155,16 @@ class AnimInstance private constructor(
         val range = KeyframeRange(id, start, end).apply { jsEngine = holder.animLevel.jsEngine }
         keyframeRanges[id] = range
         return range
+    }
+
+    fun registerKeyframeRanges(id: String, vararg range: Vector2d, provider: KeyframeRange.(Int) -> Unit = {}): List<KeyframeRange> {
+        val kfs = mutableListOf<KeyframeRange>()
+        range.forEachIndexed { index, r ->
+            val kf = registerKeyframeRange("$id$index", r.x, r.y)
+            provider(kf, index)
+            kfs.add(kf)
+        }
+        return kfs.toList()
     }
 
     /**

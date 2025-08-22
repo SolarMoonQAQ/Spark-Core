@@ -25,10 +25,15 @@ class SkillPayload private constructor(
     companion object {
         @JvmStatic
         fun handleInBothSide(payload: SkillPayload, context: IPayloadContext) {
-            val level = context.player().level()
-            val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return
-            val skill = host.getSkill(payload.id) ?: return
-            skill.sync(payload.data, context)
+            context.enqueueWork {
+                val level = context.player().level()
+                val host = payload.syncerType.getSyncer(level, payload.syncData) as? SkillHost ?: return@enqueueWork
+                val skill = host.getSkill(payload.id) ?: return@enqueueWork
+                skill.sync(payload.data, context)
+            }.exceptionally {
+                SparkCore.LOGGER.error("技能 ${payload.id} 同步发生错误", it)
+                null
+            }
         }
 
         @JvmStatic

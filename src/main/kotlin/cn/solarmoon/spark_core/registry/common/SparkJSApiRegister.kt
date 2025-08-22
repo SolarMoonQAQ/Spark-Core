@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.event.SparkJSComponentRegisterEvent
 import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
 import cn.solarmoon.spark_core.js.JSApi
+import cn.solarmoon.spark_core.js.config.JSConfigApi
 import cn.solarmoon.spark_core.js.extension.*
 import cn.solarmoon.spark_core.js.extension.JSResourcePath
 import cn.solarmoon.spark_core.js.ik.JSIKApi
@@ -22,6 +23,7 @@ object SparkJSApiRegister {
         event.register(JSSkillApi)
         event.register(JSIKApi)  // 修复：添加JSIKApi的注册
         event.register(JSResourcePathApi)  // 添加资源路径API
+        event.register(JSConfigApi)
     }
 
     private fun regCom(event: SparkJSComponentRegisterEvent) {

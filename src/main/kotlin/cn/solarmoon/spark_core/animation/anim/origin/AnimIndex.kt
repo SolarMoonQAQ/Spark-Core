@@ -14,7 +14,7 @@ data class AnimIndex(
     /**
      * 实际的动画集路径，经过快捷路径转换处理
      */
-    val index: ResourceLocation = if (useShortcutConversion) {
+    val index: ResourceLocation get() = if (useShortcutConversion) {
         // 尝试从ORIGINS中查找完整路径
         val shortcutPath = ResourceLocation.fromNamespaceAndPath(inputPath.namespace, "${inputPath.path}/$name")
         ORIGINS[shortcutPath] ?: inputPath

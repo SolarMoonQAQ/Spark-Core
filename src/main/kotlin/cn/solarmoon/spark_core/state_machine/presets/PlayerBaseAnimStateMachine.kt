@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
-import cn.solarmoon.spark_core.event.PlayerFallEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.registry.common.SparkStateMachineRegister
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
@@ -181,11 +180,11 @@ class PlayerBaseAnimStateMachine(
             if (player is Player && player.isLocalPlayer) player.getStateMachineHandler(SparkStateMachineRegister.PLAYER_BASE_STATE)?.machine?.processEventBlocking(JumpEvent)
         }
 
-        @SubscribeEvent
-        private fun fall(event: PlayerFallEvent) {
-            val player = event.entity
-            if (player.isLocalPlayer && event.distance >= 1.0) player.getStateMachineHandler(SparkStateMachineRegister.PLAYER_BASE_STATE)?.machine?.processEventBlocking(FallEvent)
-        }
+//        @SubscribeEvent
+//        private fun fall(event: PlayerFallEvent) {
+//            val player = event.entity
+//            if (player.isLocalPlayer && event.distance >= 1.0) player.getStateMachineHandler(SparkStateMachineRegister.PLAYER_BASE_STATE)?.machine?.processEventBlocking(FallEvent)
+//        }
     }
 
 }

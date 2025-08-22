@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.js.SparkJS
 import kotlin.reflect.KClass
@@ -22,6 +21,8 @@ class KeyframeRange(
     private var currentTime = 0.0
 
     val progress get() = ((currentTime - start) / (end - start)).coerceIn(0.0, 1.0)
+
+    val isInProgress get() = hasEntered && !hasExited
 
     inline fun <reified T : KeyframeEvent> onEvent(crossinline handler: KeyframeRange.(T) -> Unit) {
         @Suppress("UNCHECKED_CAST")
