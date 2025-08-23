@@ -34,7 +34,6 @@ class AnimationLayer(
         val nextAnim = anim
 
         if (nextAnim != null) {
-            /** 检查动画所需的骨骼有效性 */
             val valid = testAnimValidity(nextAnim)
             if (valid.isNotEmpty()) {
                 SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：${nextAnim.holder.animatable} 的动画 ${nextAnim.animIndex} 无法播放")
@@ -53,27 +52,51 @@ class AnimationLayer(
         animation?.isCancelled = false
         animation?.triggerEvent(AnimEvent.SwitchIn(currentAnim))
 
-        // 进入（整层进入）
-        if (currentAnim == null && nextAnimE != null) {
-            nextAnimE.origin.bones.keys.forEach {
-                boneSpaces.put(it, BoneSpace(it).apply { setWeight(data.boneMask, data.enterTransitionTime) })
-            }
-            animSpaces[nextAnimE] = AnimSpace(nextAnimE).apply { start(0) }
-        }
-        // 退出（整层退出）
-        else if (currentAnim != null && nextAnimE == null) {
-            boneSpaces.forEach {
-                it.value.setWeight(0.0, data.exitTransitionTime)
-            }
-        }
-        // 切换（所有其它动画进入结束过渡，输入动画进入开始过渡）
-        else {
-            nextAnimE?.let {
-                it.origin.bones.keys.forEach {
-                    boneSpaces.put(it, BoneSpace(it).apply { setWeight(data.boneMask, 0) })
+        when {
+            // 进入
+            currentAnim == null && nextAnimE != null -> {
+                nextAnimE.origin.bones.keys.forEach {
+                    boneSpaces[it] = BoneSpace(it).apply {
+                        setWeight(data.boneMask, data.enterTransitionTime)
+                    }
                 }
-                animSpaces.forEach { it.value.end(data.enterTransitionTime) }
-                animSpaces[it] = AnimSpace(it).apply { start(data.enterTransitionTime) }
+                animSpaces[nextAnimE] = AnimSpace(nextAnimE).apply { start(0) }
+            }
+            // 退出
+            currentAnim != null && nextAnimE == null -> {
+                boneSpaces.forEach {
+                    it.value.setWeight(0.0, data.exitTransitionTime)
+                }
+            }
+            // 切换
+            else -> {
+                if (nextAnimE != null) {
+                    val oldBones = currentAnim?.origin?.bones?.keys ?: emptySet()
+                    val newBones = nextAnimE.origin.bones.keys
+                    val bonesToReset = oldBones - newBones // 新动画不包含的骨骼
+
+                    // 对新动画包含的骨骼立即加入
+                    newBones.forEach {
+                        boneSpaces[it] = BoneSpace(it).apply {
+                            setWeight(data.boneMask, 0)
+                        }
+                    }
+
+                    // 对缺失骨骼过渡回默认
+                    bonesToReset.forEach {
+                        boneSpaces[it] = BoneSpace(it).apply {
+                            setWeight(0.0, data.enterTransitionTime)
+                        }
+                    }
+
+                    // 旧动画开始结束过渡
+                    animSpaces.forEach { it.value.end(data.enterTransitionTime) }
+
+                    // 新动画开始进入过渡
+                    animSpaces[nextAnimE] = AnimSpace(nextAnimE).apply {
+                        start(data.enterTransitionTime)
+                    }
+                }
             }
         }
     }

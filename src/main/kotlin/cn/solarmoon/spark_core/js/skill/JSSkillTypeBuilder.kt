@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.js.skill
 
+import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.skill.ScriptSource
@@ -35,9 +36,15 @@ class JSSkillTypeBuilder(val js: SparkJS) {
     }
 
     fun addCondition(id: String, reason: String, check: Function) {
-        conditions.add(SkillStartCondition(id, reason, { host, level ->
+        conditions.add(SkillStartCondition(id, reason) { host, level ->
             Context.toBoolean(check.call(js, host, level))
-        }))
+        })
+    }
+
+    fun addEntityAnimatableCondition() {
+        conditions.add(SkillStartCondition("need_entity_animatable", "技能持有者必须是实体且为动画体") { holder, level ->
+            holder is IEntityAnimatable<*>
+        } )
     }
 
     fun accept(consumer: Function) {

@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.preinput
 
-import cn.solarmoon.spark_core.event.OnPreInputExecuteEvent
+import cn.solarmoon.spark_core.event.PreInputEvent
 import net.neoforged.neoforge.common.NeoForge
 import java.util.ArrayDeque
 
@@ -47,10 +47,10 @@ class PreInput(
     }
 
     private fun invoke(data: PreInputData) {
-        val event = NeoForge.EVENT_BUS.post(OnPreInputExecuteEvent.Pre(this, data))
+        val event = NeoForge.EVENT_BUS.post(PreInputEvent.Execute.Pre(this, data))
         if (event.isCanceled) return
         data.input.invoke()
-        NeoForge.EVENT_BUS.post(OnPreInputExecuteEvent.Post(this, data))
+        NeoForge.EVENT_BUS.post(PreInputEvent.Execute.Post(this, data))
     }
 
     fun execute(extra: () -> Unit = {}): Boolean {
@@ -111,11 +111,13 @@ class PreInput(
     }
 
     fun lock() {
-        isLocked = true
+        val event = NeoForge.EVENT_BUS.post(PreInputEvent.Lock(this))
+        if (!event.isCanceled) isLocked = true
     }
 
     fun unlock() {
-        isLocked = false
+        val event = NeoForge.EVENT_BUS.post(PreInputEvent.Unlock(this))
+        if (!event.isCanceled) isLocked = false
     }
 
     /**
