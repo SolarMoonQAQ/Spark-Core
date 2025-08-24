@@ -1,13 +1,22 @@
 package cn.solarmoon.spark_core.util
 
+import com.mojang.serialization.Codec
 import net.minecraft.client.player.Input
+import net.minecraft.network.chat.Component
+import net.minecraft.util.StringRepresentable
 import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
 
-enum class MoveDirection {
-    FORWARD, BACKWARD, LEFT, RIGHT;
+enum class MoveDirection(
+    private val id: String
+): StringRepresentable {
+    FORWARD("forward"), BACKWARD("backward"), LEFT("left"), RIGHT("right");
 
-    val simpleName get() = toString().lowercase()
+    val translatableName = Component.translatable("move_direction.${serializedName}")
+
+    override fun getSerializedName(): String {
+        return id
+    }
 
     companion object {
         /**
@@ -24,6 +33,8 @@ enum class MoveDirection {
                 else -> null
             }
         }
+
+        val CODEC: Codec<MoveDirection> = StringRepresentable.fromEnum(::values)
     }
 
 }
