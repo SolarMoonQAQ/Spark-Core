@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.tags.TagKey
 import net.minecraft.util.RandomSource
-import net.neoforged.fml.loading.FMLEnvironment
 import net.neoforged.neoforge.registries.callback.RegistryCallback
 import net.neoforged.neoforge.registries.datamaps.DataMapType
 import java.util.*
@@ -23,7 +22,6 @@ import java.util.stream.Collectors
 import java.util.stream.Stream
 import kotlin.concurrent.withLock
 import kotlin.math.max
-import kotlin.reflect.KClass
 
 /**
  * 动态感知注册表
@@ -32,11 +30,9 @@ import kotlin.reflect.KClass
  * 实现 Registry<T> 接口的关键查询方法，并提供 registerDynamic/unregisterDynamic 方法
  *
  * @param staticRegistry 被包装的静态注册表
- * @param valueType 注册表存储的元素的 KClass
  */
 class DynamicAwareRegistry<T: Any>(
     private val staticRegistry: Registry<T>,
-    val valueType: KClass<T>
 ) : Registry<T>, WritableRegistry<T> {
 
     private var isStaticPhaseOver: Boolean = false

@@ -3,18 +3,17 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.model.origin.OModel
+import cn.solarmoon.spark_core.animation.texture.OTexture
 import cn.solarmoon.spark_core.ik.component.TypedIKComponent
+import cn.solarmoon.spark_core.js.origin.OJSScript
 import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
-import cn.solarmoon.spark_core.js.origin.OJSScript
-import cn.solarmoon.spark_core.animation.texture.OTexture
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.Rarity
-import kotlin.reflect.KClass
 import kotlin.reflect.full.memberProperties
 
 object SparkRegistries {
@@ -23,14 +22,12 @@ object SparkRegistries {
     val TYPED_ANIMATION =
         (SparkCore.REGISTER.registry<TypedAnimation>()
             .id("typed_animation")
-            .valueType(TypedAnimation::class) // Pass KClass for DynamicAwareRegistry
             .build { it.sync(true).create() } as? DynamicAwareRegistry<TypedAnimation>)
             ?.apply {
                 // 'this' is now safely cast to DynamicAwareRegistry<TypedAnimation>
                 this.onDynamicRegister = { key, value ->
                     // 只在服务端发送同步包，避免客户端发送clientbound包错误
                     try {
-
                         val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
                         if (server != null) {
                             val packet = DynamicRegistrySyncS2CPacket.createForTypedAnimationAdd(key.location().namespace, key.location(), value)
@@ -63,7 +60,6 @@ object SparkRegistries {
     val MODELS =
         (SparkCore.REGISTER.registry<OModel>()
             .id("models")
-            .valueType(OModel::class) // Pass KClass for DynamicAwareRegistry
             .build { it.sync(true).create() } as? DynamicAwareRegistry<OModel>)
             ?.apply {
                 // 'this' is now safely cast to DynamicAwareRegistry<OModel>
@@ -101,21 +97,18 @@ object SparkRegistries {
     @JvmStatic
     val SYNCER_TYPE = SparkCore.REGISTER.registry<SyncerType>()
         .id("syncer_type")
-        .valueType(SyncerType::class) 
         .build { it.sync(true).create() }
 
     @Suppress("UNCHECKED_CAST")
     @JvmStatic
     val SYNC_DATA_STREAM_CODEC = SparkCore.REGISTER.registry<StreamCodec<RegistryFriendlyByteBuf, out SyncData>>()
         .id("sync_data_stream_codec")
-        .valueType(StreamCodec::class as KClass<out StreamCodec<RegistryFriendlyByteBuf, out SyncData>>) 
         .build { it.sync(true).create() }
 
     @JvmStatic
     val IK_COMPONENT_TYPE =
         (SparkCore.REGISTER.registry<TypedIKComponent>()
             .id("ik_component_type")
-            .valueType(TypedIKComponent::class)
             .build { it.sync(true).create() } as? DynamicAwareRegistry<TypedIKComponent>)
             ?.apply {
                 this.onDynamicRegister = { key, value ->
@@ -152,7 +145,6 @@ object SparkRegistries {
     val JS_SCRIPTS =
         (SparkCore.REGISTER.registry<OJSScript>()
             .id("js_scripts")
-            .valueType(OJSScript::class)
             .build { it.sync(true).create() } as? DynamicAwareRegistry<OJSScript>)
             ?.apply {
                 this.onDynamicRegister = { key, value ->
@@ -190,7 +182,6 @@ object SparkRegistries {
     val DYNAMIC_TEXTURES =
         (SparkCore.REGISTER.registry<OTexture>()
             .id("dynamic_textures")
-            .valueType(OTexture::class)
             .build { it.sync(true).create() } as? DynamicAwareRegistry<OTexture>)
             ?.apply {
                 this.onDynamicRegister = { key, value ->
@@ -241,16 +232,12 @@ object SparkRegistries {
      * @return The matching DynamicAwareRegistry<T> if found, otherwise null.
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> findRegistryByElementType(elementType: KClass<T>): DynamicAwareRegistry<T>? {
+    fun <T : Any> findRegistryByElementType(): DynamicAwareRegistry<T>? {
         return SparkRegistries::class.memberProperties
             .filter { it.returnType.classifier == DynamicAwareRegistry::class }.firstNotNullOfOrNull { prop ->
                 try {
                     val registryInstance = prop.getter.call(this) as? DynamicAwareRegistry<*>
-                    if (registryInstance?.valueType == elementType) {
-                        registryInstance as? DynamicAwareRegistry<T>
-                    } else {
-                        null
-                    }
+                    registryInstance as? DynamicAwareRegistry<T>
                 } catch (e: Exception) {
                     SparkCore.LOGGER.error("Error accessing registry property ${prop.name}: ${e.message}", e)
                     null

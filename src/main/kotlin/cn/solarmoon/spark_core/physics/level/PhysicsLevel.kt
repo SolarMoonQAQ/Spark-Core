@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
 import cn.solarmoon.spark_core.physics.collision.BlockCollisionHelper
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
@@ -16,6 +17,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import net.minecraft.core.BlockPos
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.ChunkAccess
@@ -62,6 +64,9 @@ abstract class PhysicsLevel(
     var lastStepTickTime = 0L
     var overloadWarnCooldown = 0
 
+    var entities = listOf<Entity>()
+        private set
+
     //地形碰撞相关
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
     val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
@@ -91,6 +96,9 @@ abstract class PhysicsLevel(
      * 在主线程每tick调用，向物理线程发送模拟请求，物理线程接收到请求后会立刻模拟约1主线程tick时间的物理步进，此时主线程会继续执行后续内容
      */
     fun requestStep() {
+        // 保存当前tick的实体列表
+        entities = requestEntities()
+
         // 如果物理线程已经在运行，发出警告并等待其完成
         if (overloadWarnCooldown > 0) overloadWarnCooldown--
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
@@ -212,6 +220,10 @@ abstract class PhysicsLevel(
         }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
         processTasks(PPhase.PRE)
+
+        entities.forEach {
+            NeoForge.EVENT_BUS.post(PhysicsEntityTickEvent(it))
+        }
     }
 
     override fun physicsTick(space: PhysicsSpace, timeStep: Float) {
@@ -234,5 +246,7 @@ abstract class PhysicsLevel(
             SparkCore.LOGGER.error("物理线程连续崩溃，停止恢复！")
         }
     }
+
+    abstract fun requestEntities(): List<Entity>
 
 }

@@ -1,21 +1,14 @@
 package cn.solarmoon.spark_core.physics.level
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
-import com.jme3.bullet.PhysicsSpace
 import net.minecraft.server.level.ServerLevel
-import net.minecraft.world.level.Level
-import net.neoforged.neoforge.common.NeoForge
+import net.minecraft.world.entity.Entity
 
 class ServerPhysicsLevel(
     override val mcLevel: ServerLevel
 ) : PhysicsLevel("Server PhysicsThread", mcLevel) {
 
-    override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
-        super.prePhysicsTick(space, timeStep)
-        mcLevel.allEntities.filterNotNull().forEach {
-            NeoForge.EVENT_BUS.post(PhysicsEntityTickEvent(it))
-        }
+    override fun requestEntities(): List<Entity> {
+        return mcLevel.allEntities.toList()
     }
 
 }

@@ -1,16 +1,11 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
-import cn.solarmoon.spark_core.skill.payload.SkillRejectPayload
 import cn.solarmoon.spark_core.skill.payload.SkillSyncPayload
-import io.netty.buffer.ByteBuf
-import net.minecraft.core.RegistryAccess
 import net.minecraft.network.chat.Component
-import net.minecraft.network.codec.StreamCodec
+import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
 import kotlin.collections.set
@@ -83,17 +78,10 @@ class SkillType<S: Skill>(
     }
 
     companion object {
-        val STREAM_CODEC = object : StreamCodec<ByteBuf, SkillType<*>> {
-            override fun decode(buffer: ByteBuf): SkillType<*> {
-                return SkillManager.values.elementAt(buffer.readInt())
-            }
-
-            override fun encode(buffer: ByteBuf, value: SkillType<*>) {
-                val index = SkillManager.values.indexOf(value)
-                buffer.writeInt(index)
-            }
-
-        }
+        val STREAM_CODEC = ByteBufCodecs.INT.map(
+            { SkillManager.values.elementAt(it) },
+            { SkillManager.values.indexOf(it) }
+        )
     }
 
 }

@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.state_machine.presets
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.entity.isAboveGround
@@ -110,7 +109,7 @@ class PlayerBaseAnimStateMachine(
         onStateEntry { s, t ->
             val stateName = s.name ?: return@onStateEntry
             val animName = "state.$stateName"
-            SparkCore.LOGGER.info("payload:${s.payload}")
+//            SparkCore.LOGGER.info("payload:${s.payload}")
             s.playRelativeAnim(animName)
         }
     }
@@ -119,7 +118,7 @@ class PlayerBaseAnimStateMachine(
         player.isBlocking
         val data = payload
         if (data !is AnimPlayDataProvider) return
-        SparkCore.LOGGER.info(animName)
+//        SparkCore.LOGGER.info(animName)
         val animationPath = SparkResourcePathBuilder.buildAnimationPath("spark_core", "spark_core", "player", animName)
         SparkRegistries.TYPED_ANIMATION.get(animationPath)?.let {
             val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, this, data))

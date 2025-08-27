@@ -82,7 +82,7 @@ dependencies {
 
     // 本地库------------------------------------------------------------------------------------------------------------
     // 其它mod
-    runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
+    implementation files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
     implementation("com.google.code.gson:gson:[2.10.1,2.11.0)")
     implementation 'commons-io:commons-io:2.11.0'
