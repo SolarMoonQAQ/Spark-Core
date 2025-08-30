@@ -17,6 +17,7 @@ object SparkClientEventRegister {
         add(CameraShakeApplier)
         add(LocalController)
         add(ModelEditorScreenTicker)
+        add(SparkClientLifecycle)
     }
 
     private fun add(event: Any) {

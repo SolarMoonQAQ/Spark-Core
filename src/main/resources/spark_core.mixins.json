@@ -28,7 +28,8 @@
     "js.SkillMixin",
     "phys.EntityMixin",
     "phys.LevelMixin",
-    "state_machine.EntityMixin"
+    "state_machine.EntityMixin",
+    "extension.MappedRegistryMixin"
   ],
   "client": [
     "animation.CapeLayerMixin",
