@@ -23,8 +23,7 @@ object SparkResourceRegister {
      * 必须在资源处理器初始化之前完成，以确保动态注册表准备就绪
      */
     private fun onCommonSetup(event: FMLCommonSetupEvent) {
-        SparkCore.LOGGER.info("通用设置阶段，标记动态注册表静态阶段完成...")
-        markAllDynamicRegistriesStaticComplete()
+        SparkCore.LOGGER.info("通用设置阶段：资源系统初始化预处理完成（VirtualRegistry 无需静态阶段标记）")
     }
 
     /**
@@ -59,18 +58,7 @@ object SparkResourceRegister {
     /**
      * 预先标记所有动态注册表的静态阶段完成
      */
-    private fun markAllDynamicRegistriesStaticComplete() {
-        try {
-            SparkRegistries.TYPED_ANIMATION.markStaticRegistrationComplete()
-            SparkRegistries.MODELS.markStaticRegistrationComplete()
-            SparkRegistries.DYNAMIC_TEXTURES.markStaticRegistrationComplete()
-            SparkRegistries.JS_SCRIPTS.markStaticRegistrationComplete()
-            SparkRegistries.IK_COMPONENT_TYPE.markStaticRegistrationComplete()
-            SparkCore.LOGGER.info("所有动态注册表的静态阶段已标记完成")
-        } catch (e: Exception) {
-            SparkCore.LOGGER.error("标记动态注册表静态阶段完成时出错", e)
-        }
-    }
+    // VirtualRegistry 不需要静态阶段标记
 
     /**
      * 注册资源系统相关的事件监听器
