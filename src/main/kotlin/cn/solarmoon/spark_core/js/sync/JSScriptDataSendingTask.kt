@@ -31,23 +31,19 @@ class JSScriptDataSendingTask : ICustomConfigurationTask {
                 val registryKey = entry.key
                 val jsScript = entry.value
                 scriptsToSync[registryKey.location()] = jsScript
-                
                 SparkCore.LOGGER.debug("从注册表获取 JS脚本: ${registryKey.location()} -> API: ${jsScript.apiId}, 文件: ${jsScript.fileName}")
             }
-            
             SparkCore.LOGGER.info("从注册表获取到 ${scriptsToSync.size} 个 JS脚本（包括静态和动态注册的）")
-        } ?: run {
-            SparkCore.LOGGER.warn("JS_SCRIPTS 注册表为空，将发送空的JS脚本数据")
         }
 
         if (scriptsToSync.isNotEmpty()) {
             val payload = JSScriptDataSyncPayload(scriptsToSync)
-            sender.accept(payload)
+            try { sender.accept(payload) } catch (t: Throwable) { System.err.println("[JSScriptDataSendingTask] send failed: " + t.toString()); t.printStackTrace(); return }
             SparkCore.LOGGER.info("成功向新玩家发送了包含 ${scriptsToSync.size} 个 JS脚本的同步包（来源：完整注册表）。等待客户端确认...")
         } else {
             SparkCore.LOGGER.info("注册表中没有加载任何 JS脚本数据，将向新玩家发送空的同步包。")
             val payload = JSScriptDataSyncPayload(LinkedHashMap())
-            sender.accept(payload)
+            try { sender.accept(payload) } catch (t: Throwable) { System.err.println("[JSScriptDataSendingTask] send failed: " + t.toString()); t.printStackTrace(); return }
         }
     }
 
@@ -84,3 +80,4 @@ class JSScriptDataSendingTask : ICustomConfigurationTask {
         }
     }
 } 
+

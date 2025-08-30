@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.registry.dynamic.DynamicIdManager
 import cn.solarmoon.spark_core.js.origin.OJSScript
 import cn.solarmoon.spark_core.animation.texture.OTexture
 import io.netty.buffer.Unpooled
@@ -31,7 +32,8 @@ data class DynamicRegistrySyncS2CPacket(
     val registryKey: ResourceKey<out Registry<*>>,
     val entryId: ResourceLocation,
     val operationType: OperationType,
-    val entryData: ByteArray
+    val entryData: ByteArray,
+    val assignedId: Int = -1  // 服务端分配的ID，用于同步
 ) : CustomPacketPayload {
 
     companion object {
@@ -49,6 +51,7 @@ data class DynamicRegistrySyncS2CPacket(
                 buf.writeResourceLocation(packet.entryId)
                 buf.writeEnum(packet.operationType)
                 buf.writeByteArray(packet.entryData)
+                buf.writeInt(packet.assignedId)
             }
 
             override fun decode(buf: FriendlyByteBuf): DynamicRegistrySyncS2CPacket {
@@ -58,11 +61,12 @@ data class DynamicRegistrySyncS2CPacket(
                 val entryId = buf.readResourceLocation()
                 val operationType = buf.readEnum(OperationType::class.java)
                 val entryData = buf.readByteArray()
-                return DynamicRegistrySyncS2CPacket(modId,registryKey, entryId, operationType, entryData)
+                val assignedId = buf.readInt()
+                return DynamicRegistrySyncS2CPacket(modId, registryKey, entryId, operationType, entryData, assignedId)
             }
         }
 
-        fun createForTypedAnimationAdd(modId: String,id: ResourceLocation, animation: TypedAnimation): DynamicRegistrySyncS2CPacket {
+        fun createForTypedAnimationAdd(modId: String, id: ResourceLocation, animation: TypedAnimation, assignedId: Int): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
             buf.writeResourceLocation(animation.index.index)
             buf.writeUtf(animation.index.name)
@@ -76,11 +80,12 @@ data class DynamicRegistrySyncS2CPacket(
                 SparkRegistries.TYPED_ANIMATION.key(),
                 id,
                 OperationType.ADD,
-                bytes
+                bytes,
+                assignedId
             )
         }
 
-        fun createForModelAdd(modId: String, id: ResourceLocation, model: OModel): DynamicRegistrySyncS2CPacket {
+        fun createForModelAdd(modId: String, id: ResourceLocation, model: OModel, assignedId: Int): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
             OModel.STREAM_CODEC.encode(buf, model)
 
@@ -93,11 +98,12 @@ data class DynamicRegistrySyncS2CPacket(
                 SparkRegistries.MODELS.key(),
                 id,
                 OperationType.ADD,
-                bytes
+                bytes,
+                assignedId
             )
         }
 
-        fun createForJSScriptAdd(modId: String, id: ResourceLocation, script: OJSScript): DynamicRegistrySyncS2CPacket {
+        fun createForJSScriptAdd(modId: String, id: ResourceLocation, script: OJSScript, assignedId: Int): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
             OJSScript.STREAM_CODEC.encode(buf, script)
 
@@ -110,11 +116,12 @@ data class DynamicRegistrySyncS2CPacket(
                 SparkRegistries.JS_SCRIPTS.key(),
                 id,
                 OperationType.ADD,
-                bytes
+                bytes,
+                assignedId
             )
         }
 
-        fun createForTextureAdd(modId: String, id: ResourceLocation, texture: OTexture): DynamicRegistrySyncS2CPacket {
+        fun createForTextureAdd(modId: String, id: ResourceLocation, texture: OTexture, assignedId: Int): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
             OTexture.STREAM_CODEC.encode(buf, texture)
 
@@ -127,7 +134,8 @@ data class DynamicRegistrySyncS2CPacket(
                 SparkRegistries.DYNAMIC_TEXTURES.key(),
                 id,
                 OperationType.ADD,
-                bytes
+                bytes,
+                assignedId
             )
         }
 
@@ -213,9 +221,24 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-                    // 检查是否已存在，避免重复注册导致循环发包
+                    // 先同步服务端分配的ID，确保ID映射在注册之前完成
+                    if (packet.assignedId != -1) {
+                        val registryName = packet.registryKey.location().toString()
+                        DynamicIdManager.applySyncedId(registryName, packet.entryId, packet.assignedId)
+                        SparkCore.LOGGER.debug("已先同步ID映射 TypedAnimation {}: {}", packet.entryId, packet.assignedId)
+                    } else {
+                        SparkCore.LOGGER.warn("收到无效的同步ID {} 用于 TypedAnimation {}", packet.assignedId, packet.entryId)
+                        return
+                    }
+
+                    // 检查是否已存在，如果存在则更新ID映射
                     if (dynamicRegistry.containsKey(packet.entryId)) {
-                        SparkCore.LOGGER.debug("TypedAnimation {} already exists, skipping ADD sync", packet.entryId)
+                        // 更新现有条目的ID映射
+                        if (dynamicRegistry.updateDynamicId(packet.entryId, packet.assignedId)) {
+                            SparkCore.LOGGER.info("Updated ID mapping for existing TypedAnimation {} to {}", packet.entryId, packet.assignedId)
+                        } else {
+                            SparkCore.LOGGER.warn("Failed to update ID mapping for TypedAnimation {}", packet.entryId)
+                        }
                         return
                     }
 
@@ -228,8 +251,14 @@ data class DynamicRegistrySyncS2CPacket(
                     val animation = TypedAnimation(animIndex) {}
 
                     // 使用不触发回调的注册方式，避免客户端触发服务端回调
-                    dynamicRegistry.registerDynamic(packet.entryId, animation, packet.modId, replace = false, triggerCallback = false)
-                    SparkCore.LOGGER.info("Dynamically registered TypedAnimation ${packet.entryId} from server")
+                    dynamicRegistry.registerDynamic(packet.entryId, animation, packet.modId, replace = true, triggerCallback = false)
+                    
+                    // 再次确保ID映射正确（防止注册过程中ID被临时值覆盖）
+                    if (!dynamicRegistry.updateDynamicId(packet.entryId, packet.assignedId)) {
+                        SparkCore.LOGGER.warn("注册后ID映射确认失败 TypedAnimation {}", packet.entryId)
+                    }
+                    
+                    SparkCore.LOGGER.info("Dynamically registered TypedAnimation {} from server with ID {}", packet.entryId, packet.assignedId)
                 }
                 OperationType.REMOVE -> {
                     if (!dynamicRegistry.containsKey(packet.entryId)) {
@@ -247,9 +276,24 @@ data class DynamicRegistrySyncS2CPacket(
 
             when (packet.operationType) {
                 OperationType.ADD -> {
-                    // 检查是否已存在，避免重复注册导致循环发包
+                    // 先同步服务端分配的ID，确保ID映射在注册之前完成
+                    if (packet.assignedId != -1) {
+                        val registryName = packet.registryKey.location().toString()
+                        DynamicIdManager.applySyncedId(registryName, packet.entryId, packet.assignedId)
+                        SparkCore.LOGGER.debug("已先同步ID映射 OModel {}: {}", packet.entryId, packet.assignedId)
+                    } else {
+                        SparkCore.LOGGER.warn("收到无效的同步ID {} 用于 OModel {}", packet.assignedId, packet.entryId)
+                        return
+                    }
+
+                    // 检查是否已存在，如果存在则更新ID映射
                     if (dynamicRegistry.containsKey(packet.entryId)) {
-                        SparkCore.LOGGER.debug("OModel {} already exists, skipping ADD sync", packet.entryId)
+                        // 更新现有条目的ID映射
+                        if (dynamicRegistry.updateDynamicId(packet.entryId, packet.assignedId)) {
+                            SparkCore.LOGGER.info("Updated ID mapping for existing OModel {} to {}", packet.entryId, packet.assignedId)
+                        } else {
+                            SparkCore.LOGGER.warn("Failed to update ID mapping for OModel {}", packet.entryId)
+                        }
                         return
                     }
 
@@ -258,8 +302,14 @@ data class DynamicRegistrySyncS2CPacket(
                     buf.release()
 
                     // 使用不触发回调的注册方式，避免客户端触发服务端回调
-                    dynamicRegistry.registerDynamic(packet.entryId, model, packet.modId, replace = false)
-                    SparkCore.LOGGER.info("Dynamically registered OModel ${packet.entryId} from server")
+                    dynamicRegistry.registerDynamic(packet.entryId, model, packet.modId, replace = true, triggerCallback = false)
+                    
+                    // 再次确保ID映射正确（防止注册过程中ID被临时值覆盖）
+                    if (!dynamicRegistry.updateDynamicId(packet.entryId, packet.assignedId)) {
+                        SparkCore.LOGGER.warn("注册后ID映射确认失败 OModel {}", packet.entryId)
+                    }
+                    
+                    SparkCore.LOGGER.info("Dynamically registered OModel {} from server with ID {}", packet.entryId, packet.assignedId)
                 }
                 OperationType.REMOVE -> {
                     if (!dynamicRegistry.containsKey(packet.entryId)) {
@@ -283,13 +333,20 @@ data class DynamicRegistrySyncS2CPacket(
                         return
                     }
 
+                    // 同步服务端分配的ID到客户端
+                    if (packet.assignedId != -1) {
+                        val registryName = packet.registryKey.location().toString()
+                        DynamicIdManager.applySyncedId(registryName, packet.entryId, packet.assignedId)
+                        SparkCore.LOGGER.debug("Synced ID for OJSScript {}: {}", packet.entryId, packet.assignedId)
+                    }
+
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val script = OJSScript.STREAM_CODEC.decode(buf)
                     buf.release()
 
                     // 使用不触发回调的注册方式，避免客户端触发服务端回调
                     dynamicRegistry.registerDynamic(packet.entryId, script, packet.modId, replace = false)
-                    SparkCore.LOGGER.info("Dynamically registered OJSScript ${packet.entryId} from server")
+                    SparkCore.LOGGER.info("Dynamically registered OJSScript ${packet.entryId} from server with ID ${packet.assignedId}")
                 }
                 OperationType.REMOVE -> {
                     if (!dynamicRegistry.containsKey(packet.entryId)) {
@@ -313,13 +370,20 @@ data class DynamicRegistrySyncS2CPacket(
                         return
                     }
 
+                    // 同步服务端分配的ID到客户端
+                    if (packet.assignedId != -1) {
+                        val registryName = packet.registryKey.location().toString()
+                        DynamicIdManager.applySyncedId(registryName, packet.entryId, packet.assignedId)
+                        SparkCore.LOGGER.debug("Synced ID for OTexture {}: {}", packet.entryId, packet.assignedId)
+                    }
+
                     val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
                     val texture = OTexture.STREAM_CODEC.decode(buf)
                     buf.release()
 
                     // 使用不触发回调的注册方式，避免客户端触发服务端回调
                     dynamicRegistry.registerDynamic(packet.entryId, texture, packet.modId, replace = false)
-                    SparkCore.LOGGER.info("Dynamically registered OTexture ${packet.entryId} from server")
+                    SparkCore.LOGGER.info("Dynamically registered OTexture ${packet.entryId} from server with ID ${packet.assignedId}")
                 }
                 OperationType.REMOVE -> {
                     if (!dynamicRegistry.containsKey(packet.entryId)) {
@@ -334,7 +398,7 @@ data class DynamicRegistrySyncS2CPacket(
 
         @Deprecated("Use createForTypedAnimationAdd and send manually or a new specific sync method", ReplaceWith("createForTypedAnimationAdd"))
         private fun syncTypedAnimationToClients(modId: String, id: ResourceLocation, animation: TypedAnimation) {
-            val packet = createForTypedAnimationAdd(modId, id, animation)
+            val packet = createForTypedAnimationAdd(modId, id, animation, -1) // 使用默认ID
             PacketDistributor.sendToAllPlayers(packet)
             SparkCore.LOGGER.info("Sent dynamic TypedAnimation ADD sync packet for $id to all clients")
         }

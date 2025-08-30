@@ -28,6 +28,8 @@ object JSSkillApi: JSApi, JSComponent() {
 
     fun create(id: String, by: String? = null, consumer: Function) {
         val builder = JSSkillTypeBuilder(engine)
+        // 为了调试，保存ID字符串（不设置id属性，因为那是lateinit的）
+        builder.debugIdString = id
         preLoads.add(
             builder to {
                 builder.id = ResourceLocation.parse(id)
@@ -40,9 +42,26 @@ object JSSkillApi: JSApi, JSComponent() {
     }
 
     override fun onLoad() {
+        SparkCore.LOGGER.debug("JSSkillApi onLoad开始 (线程: {}, preLoads数量: {})", 
+            Thread.currentThread().name, preLoads.size)
+        
+        // 记录排序前的顺序
+        preLoads.forEachIndexed { index, (builder, _) ->
+            SparkCore.LOGGER.debug("  排序前[{}]: {} (优先级: {})", index, builder.debugIdString ?: "未知ID", builder.priority)
+        }
+        
         preLoads.sortByDescending { it.first.priority }
+        
+        // 记录排序后的顺序
+        preLoads.forEachIndexed { index, (builder, _) ->
+            SparkCore.LOGGER.debug("  排序后[{}]: {} (优先级: {})", index, builder.debugIdString ?: "未知ID", builder.priority)
+        }
+        
         preLoads.forEach { it.second.invoke() }
         preLoads.clear()
+        
+        // 打印最终的技能注册顺序
+        SkillManager.debugPrintSkillOrder("JSSkillApi onLoad完成")
     }
 
     /**
