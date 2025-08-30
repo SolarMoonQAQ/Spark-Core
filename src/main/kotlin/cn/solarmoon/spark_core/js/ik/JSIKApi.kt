@@ -50,11 +50,10 @@ object JSIKApi: JSApi,JSComponent() {
                 configureAction.invoke() // 确保配置已应用
                 val typeToRegister: TypedIKComponent? = builder.build() // 构建类型实例，假设 build() 存在并返回 TypedIKComponent?
                 if (typeToRegister != null) {
-                    // 通过 SparkCore.REGISTER 使用 DeferredRegister 模式
-                    // 假设 SparkCore.REGISTER.ikComponentType() 返回一个 DeferredRegister<TypedIKComponent>
-                    // 并且它有一个接受路径和供应器的构建方法
-                    SparkCore.REGISTER.ikComponentType().build(typeToRegister.id.path) { typeToRegister }
-                    logger.info("JS 提交用于注册的 TypedIKComponent：${typeToRegister.id}") // 使用日志记录器
+                    val reg = cn.solarmoon.spark_core.registry.common.SparkRegistries.IK_COMPONENT_TYPE
+                    val key = net.minecraft.resources.ResourceKey.create(reg.key(), typeToRegister.id)
+                    reg.register(key, typeToRegister, net.minecraft.core.RegistrationInfo.BUILT_IN)
+                    logger.info("JS 已注册 TypedIKComponent：${typeToRegister.id}")
                 } else {
                      logger.error("构建 TypedIKComponent 失败，来自 JS 定义：${builder.id}")
                 }

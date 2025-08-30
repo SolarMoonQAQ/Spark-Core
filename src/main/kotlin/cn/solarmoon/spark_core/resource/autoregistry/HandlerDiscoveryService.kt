@@ -126,7 +126,7 @@ object HandlerDiscoveryService {
             // 第三步：初始化依赖系统
             // 所有资源节点加载完成后，开始计算依赖关系
             try {
-                cn.solarmoon.spark_core.resource.graph.ResourceGraphManager.initializeDependencySystem()
+                ResourceGraphManager.initializeDependencySystem()
                 SparkCore.LOGGER.info("依赖系统初始化完成，所有资源依赖关系已建立")
             } catch (e: Exception) {
                 SparkCore.LOGGER.error("依赖系统初始化失败", e)
