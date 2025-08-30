@@ -8,6 +8,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import net.neoforged.neoforge.server.ServerLifecycleHooks
+import cn.solarmoon.spark_core.util.ServerThreading
 
 /**
  * 动画控制路由配置
@@ -20,17 +21,14 @@ fun Route.configureAnimationRoutes() {
                 val request = call.receive<AnimationPlayRequest>()
                 SparkCore.LOGGER.info("API请求：播放动画 - name=${request.name}, transTime=${request.transTime}, entityId=${request.entityId}")
 
-                // 获取服务器世界和玩家（暂时使用模拟实现）
-                val serverLevel = getServerLevel()
-                val serverPlayer = getServerPlayer()
-
-                if (serverLevel != null && serverPlayer != null) {
-                    val response = ResourceApiService.playAnimation(request, serverLevel, serverPlayer)
-                    call.respond(HttpStatusCode.OK, response)
-                } else {
-                    val response = ApiResponse.error<Boolean>("服务器环境不可用，无法执行动画播放")
-                    call.respond(HttpStatusCode.ServiceUnavailable, response)
-                }
+                val response = ServerThreading.callOnServerBlocking { srv ->
+                    val level = srv.overworld()
+                    val player = srv.playerList.players.firstOrNull()
+                    if (player != null) {
+                        ResourceApiService.playAnimation(request, level, player)
+                    } else ApiResponse.error("服务器没有在线玩家可作为上下文")
+                } ?: ApiResponse.error("服务器环境不可用，无法执行动画播放")
+                call.respond(HttpStatusCode.OK, response)
 
             } catch (e: Exception) {
                 SparkCore.LOGGER.error("播放动画API错误", e)
@@ -45,16 +43,14 @@ fun Route.configureAnimationRoutes() {
                 val request = call.receive<AnimationReplaceStateRequest>()
                 SparkCore.LOGGER.info("API请求：替换状态动画 - state=${request.state}, animation=${request.animation}, entityId=${request.entityId}")
 
-                val serverLevel = getServerLevel()
-                val serverPlayer = getServerPlayer()
-
-                if (serverLevel != null && serverPlayer != null) {
-                    val response = ResourceApiService.replaceStateAnimation(request, serverLevel, serverPlayer)
-                    call.respond(HttpStatusCode.OK, response)
-                } else {
-                    val response = ApiResponse.error<Boolean>("服务器环境不可用，无法执行状态动画替换")
-                    call.respond(HttpStatusCode.ServiceUnavailable, response)
-                }
+                val response = ServerThreading.callOnServerBlocking { srv ->
+                    val level = srv.overworld()
+                    val player = srv.playerList.players.firstOrNull()
+                    if (player != null) {
+                        ResourceApiService.replaceStateAnimation(request, level, player)
+                    } else ApiResponse.error("服务器没有在线玩家可作为上下文")
+                } ?: ApiResponse.error("服务器环境不可用，无法执行状态动画替换")
+                call.respond(HttpStatusCode.OK, response)
 
             } catch (e: Exception) {
                 SparkCore.LOGGER.error("替换状态动画API错误", e)
@@ -70,10 +66,9 @@ fun Route.configureAnimationRoutes() {
  */
 private fun getServerLevel(): net.minecraft.server.level.ServerLevel? {
     return try {
-        val server = ServerLifecycleHooks.getCurrentServer()
-        server?.overworld()
+        ServerThreading.callOnServerBlocking { it.overworld() }
     } catch (e: Exception) {
-        SparkCore.LOGGER.debug("无法获取服务器世界: ${e.message}")
+        SparkCore.LOGGER.debug("无法获取服务器世界: ${'$'}{e.message}")
         null
     }
 }
@@ -83,11 +78,9 @@ private fun getServerLevel(): net.minecraft.server.level.ServerLevel? {
  */
 private fun getServerPlayer(): net.minecraft.server.level.ServerPlayer? {
     return try {
-        val server = ServerLifecycleHooks.getCurrentServer()
-        val players = server?.playerList?.players
-        players?.firstOrNull()
+        ServerThreading.callOnServerBlocking { it.playerList.players.firstOrNull() }
     } catch (e: Exception) {
-        SparkCore.LOGGER.debug("无法获取服务器玩家: ${e.message}")
+        SparkCore.LOGGER.debug("无法获取服务器玩家: ${'$'}{e.message}")
         null
     }
 }

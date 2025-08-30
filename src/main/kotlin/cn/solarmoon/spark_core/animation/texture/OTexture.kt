@@ -48,7 +48,8 @@ data class OTexture(
         @JvmStatic
         fun get(res: ResourceLocation): OTexture? {
             // 优先从动态注册表获取
-            SparkRegistries.DYNAMIC_TEXTURES?.let { registry ->
+            run {
+                val registry = SparkRegistries.DYNAMIC_TEXTURES
                 val resourceKey = net.minecraft.resources.ResourceKey.create(registry.key(), res)
                 registry.get(resourceKey)?.let { return it }
             }
@@ -65,7 +66,8 @@ data class OTexture(
             val result = mutableMapOf<ResourceLocation, OTexture>()
             
             // 从动态注册表获取
-            SparkRegistries.DYNAMIC_TEXTURES?.let { registry ->
+            run {
+                val registry = SparkRegistries.DYNAMIC_TEXTURES
                 registry.entrySet().forEach { entry ->
                     result[entry.key.location()] = entry.value
                 }
@@ -85,7 +87,8 @@ data class OTexture(
         @JvmStatic
         fun exists(res: ResourceLocation): Boolean {
             // 优先检查动态注册表
-            SparkRegistries.DYNAMIC_TEXTURES?.let { registry ->
+            run {
+                val registry = SparkRegistries.DYNAMIC_TEXTURES
                 val resourceKey = net.minecraft.resources.ResourceKey.create(registry.key(), res)
                 if (registry.get(resourceKey) != null) return true
             }
