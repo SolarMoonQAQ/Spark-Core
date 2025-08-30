@@ -16,6 +16,7 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.*
 import com.google.gson.Gson
 import net.neoforged.neoforge.server.ServerLifecycleHooks
+import cn.solarmoon.spark_core.util.ServerThreading
 import java.io.PrintWriter
 import java.io.StringWriter
 
@@ -194,16 +195,13 @@ object KtorWebServer {
      */
     fun getServerLevel(): net.minecraft.server.level.ServerLevel? {
         try {
-            val server = ServerLifecycleHooks.getCurrentServer()
-            if (server != null) {
-                // 获取主世界（Overworld）
-                val overworld = server.overworld()
+            val result = ServerThreading.callOnServerBlocking { it.overworld() }
+            if (result != null) {
                 SparkCore.LOGGER.debug("成功获取服务器主世界实例")
-                return overworld
             } else {
                 SparkCore.LOGGER.debug("服务器实例不可用，可能服务器未启动")
-                return null
             }
+            return result
         } catch (e: Exception) {
             SparkCore.LOGGER.error("获取服务器世界实例失败", e)
             return null
@@ -217,21 +215,13 @@ object KtorWebServer {
      */
     fun getServerPlayer(): net.minecraft.server.level.ServerPlayer? {
         try {
-            val server = ServerLifecycleHooks.getCurrentServer()
-            if (server != null) {
-                val playerList = server.playerList.players
-                if (playerList.isNotEmpty()) {
-                    val player = playerList[0] // 获取第一个在线玩家
-                    SparkCore.LOGGER.debug("获取到服务器玩家: ${player.name.string}")
-                    return player
-                } else {
-                    SparkCore.LOGGER.debug("当前没有在线玩家")
-                    return null
-                }
+            val player = ServerThreading.callOnServerBlocking { srv -> srv.playerList.players.firstOrNull() }
+            if (player != null) {
+                SparkCore.LOGGER.debug("获取到服务器玩家: ${'$'}{player.name.string}")
             } else {
-                SparkCore.LOGGER.debug("服务器实例不可用，可能服务器未启动")
-                return null
+                SparkCore.LOGGER.debug("服务器不可用或当前没有在线玩家")
             }
+            return player
         } catch (e: Exception) {
             SparkCore.LOGGER.error("获取服务器玩家实例失败", e)
             return null
