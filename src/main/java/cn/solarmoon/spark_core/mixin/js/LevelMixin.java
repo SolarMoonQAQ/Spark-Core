@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 @Mixin(Level.class)
 public abstract class LevelMixin implements ISparkJSHolder, JSLevel  {
 
-    private final Level level = (Level) (Object) this;
     private SparkJS jsEngine;
 
     @Inject(method = "<init>", at = @At("RETURN"))

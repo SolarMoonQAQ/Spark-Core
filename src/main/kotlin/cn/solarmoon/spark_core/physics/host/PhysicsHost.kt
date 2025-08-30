@@ -33,7 +33,7 @@ interface PhysicsHost {
                         // 处理已存在的碰撞体
                         existing?.let { oldBody ->
                             if (!allowOverride) {
-                                SparkCore.LOGGER.error("Body '${body.name}' 已存在，启用 allowOverride 以覆盖")
+                                SparkCore.LOGGER.error("物理体 ${this@PhysicsHost} 的Body '${body.name}' 已存在，启用 allowOverride 以覆盖")
                                 return@compute oldBody // 返回旧值，不覆盖
                             }
                             // 允许覆盖时，先移除旧碰撞体

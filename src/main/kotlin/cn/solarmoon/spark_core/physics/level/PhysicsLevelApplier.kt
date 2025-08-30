@@ -6,7 +6,6 @@ import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.level.ChunkEvent
 import net.neoforged.neoforge.event.level.LevelEvent
 import net.neoforged.neoforge.event.tick.LevelTickEvent
-import net.neoforged.neoforge.event.tick.ServerTickEvent
 
 object PhysicsLevelApplier {
 
