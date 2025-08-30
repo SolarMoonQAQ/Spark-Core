@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.js.ServerSparkJS
 import cn.solarmoon.spark_core.js.origin.OJSScript
 import cn.solarmoon.spark_core.js.sync.JSIncrementalSyncS2CPacket
-import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
+import cn.solarmoon.spark_core.registry.virtual.HotReloadRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
@@ -26,7 +26,7 @@ import kotlin.io.path.readText
  */
 @AutoRegisterHandler
 class JavaScriptHandler(
-    private val jsRegistry: DynamicAwareRegistry<OJSScript>
+    private val jsRegistry: HotReloadRegistry<OJSScript>
 ) : ResourceHandlerBase() {
 
     companion object {
@@ -57,7 +57,7 @@ class JavaScriptHandler(
     override fun getPriority(): Int = 30 // 中等优先级
 
     // 提供对注册表的访问 (for DynamicResourceApplier)
-    val jsRegistryAccess: DynamicAwareRegistry<OJSScript>
+    val jsRegistryAccess: HotReloadRegistry<OJSScript>
         get() = this.jsRegistry
 
     // ===== 资源处理核心逻辑 =====
@@ -159,25 +159,31 @@ class JavaScriptHandler(
     private var serverJSInstance: ServerSparkJS? = null
 
     private fun registerToRegistry(location: ResourceLocation, script: OJSScript) {
-        try {
-            val resourceKey = ResourceKey.create(jsRegistry.key(), location)
-            jsRegistry.register(resourceKey, script, RegistrationInfo.BUILT_IN)
-
-            SparkCore.LOGGER.debug("脚本已注册到注册表: $location")
-        } catch (e: Exception) {
-            throw ResourceHandlerException.RegistryOperationException("REGISTER", location.toString(), e)
+        val work: () -> Unit = {
+            try {
+                val resourceKey = ResourceKey.create(jsRegistry.key(), location)
+                jsRegistry.register(resourceKey, script, RegistrationInfo.BUILT_IN)
+                SparkCore.LOGGER.debug("脚本已注册到注册表: $location")
+            } catch (e: Exception) {
+                throw ResourceHandlerException.RegistryOperationException("REGISTER", location.toString(), e)
+            }
         }
+        val server = ServerLifecycleHooks.getCurrentServer()
+        if (server != null) server.execute(work) else work.invoke()
     }
 
     private fun unregisterFromRegistry(location: ResourceLocation) {
-        try {
-            val resourceKey = ResourceKey.create(jsRegistry.key(), location)
-            jsRegistry.unregisterDynamic(resourceKey)
-
-            SparkCore.LOGGER.debug("脚本已从注册表注销: $location")
-        } catch (e: Exception) {
-            throw ResourceHandlerException.RegistryOperationException("UNREGISTER", location.toString(), e)
+        val work: () -> Unit = {
+            try {
+                val resourceKey = ResourceKey.create(jsRegistry.key(), location)
+                jsRegistry.unregisterDynamic(resourceKey)
+                SparkCore.LOGGER.debug("脚本已从注册表注销: $location")
+            } catch (e: Exception) {
+                throw ResourceHandlerException.RegistryOperationException("UNREGISTER", location.toString(), e)
+            }
         }
+        val server = ServerLifecycleHooks.getCurrentServer()
+        if (server != null) server.execute(work) else work.invoke()
     }
 
     private fun executeScript(script: OJSScript) {
@@ -209,14 +215,20 @@ class JavaScriptHandler(
 
     private fun syncToClients(location: ResourceLocation, script: OJSScript, changeType: ChangeType) {
         try {
-            JSIncrementalSyncS2CPacket.syncScriptToClients(
-                location.namespace,
-                script.apiId,
-                script.fileName,
-                script.content,
-                changeType == ChangeType.MODIFIED
-            )
-            SparkCore.LOGGER.debug("脚本同步到客户端: $location ($changeType)")
+            val ran = cn.solarmoon.spark_core.util.ServerThreading.runOnServer {
+                JSIncrementalSyncS2CPacket.syncScriptToClients(
+                    location.namespace,
+                    script.apiId,
+                    script.fileName,
+                    script.content,
+                    changeType == ChangeType.MODIFIED
+                )
+            }
+            if (ran) {
+                SparkCore.LOGGER.debug("脚本同步到客户端: $location ($changeType)")
+            } else {
+                SparkCore.LOGGER.debug("服务器未运行，跳过脚本同步: $location ($changeType)")
+            }
         } catch (e: Exception) {
             SparkCore.LOGGER.error("同步脚本到客户端失败: $location", e)
         }

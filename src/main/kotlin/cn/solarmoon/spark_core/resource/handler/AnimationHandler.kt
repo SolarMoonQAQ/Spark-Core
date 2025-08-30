@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
-import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
+import cn.solarmoon.spark_core.registry.virtual.HotReloadRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
@@ -29,7 +29,7 @@ import kotlin.io.path.readText
  */
 @AutoRegisterHandler
 class AnimationHandler(
-    private val typedAnimationRegistry: DynamicAwareRegistry<TypedAnimation>
+    private val typedAnimationRegistry: HotReloadRegistry<TypedAnimation>
 ) : ResourceHandlerBase() {
 
     companion object {
@@ -60,7 +60,7 @@ class AnimationHandler(
     override fun getPriority(): Int = 10 // 较高优先级
     
     // 提供对注册表的访问 (for DynamicResourceApplier)
-    val typedAnimationRegistryAccess: DynamicAwareRegistry<TypedAnimation>
+    val typedAnimationRegistryAccess: HotReloadRegistry<TypedAnimation>
         get() = this.typedAnimationRegistry
     
     // ===== 资源处理核心逻辑 =====
@@ -169,86 +169,68 @@ class AnimationHandler(
     }
 
     private fun registerToRegistry(location: ResourceLocation, animationSet: OAnimationSet) {
-        try {
-            // 为动画集中的每个动画创建 TypedAnimation 并注册
-            animationSet.animations.forEach { (animName, _) ->
-                // 规范化动画名称，确保符合ResourceLocation命名规范
-                val normalizedAnimName = normalizeResourceName(animName)
-                val animIndex = AnimIndex(location, normalizedAnimName, useShortcutConversion = false)
-                val typedAnimation = TypedAnimation(animIndex) {}
-
-                // 填充AnimIndex.ORIGINS映射表：minecraft:entityPath/animName -> location
-                // 从location路径中提取entityPath
-                // location.path 格式通常是: {moduleName}/animations/{entityPath}
-                val pathParts = location.path.split("/")
-                if (pathParts.size >= 3) {
-                    val entityPath = pathParts[2]
-                    // 创建快捷路径：minecraft:entityPath/animName
-                    val shortcutPath = ResourceLocation.fromNamespaceAndPath(
-                        "minecraft", // 固定使用minecraft命名空间
-                        "$entityPath/$normalizedAnimName"
-                    )
-                    // 映射到完整的动画集路径
-                    AnimIndex.ORIGINS[shortcutPath] = location
-                    SparkCore.LOGGER.debug("添加动画快捷映射: $shortcutPath -> $location")
-                }
-
-                // 原有的TypedAnimation注册逻辑
-                val flattenedPath = run {
-                    // 拍平entityPath后的路径
-                    val moduleName = pathParts[0]
-                    val entityPath = pathParts[2]
-                    "$moduleName/animations/$entityPath/$normalizedAnimName"
-                }
-                val animResourceLocation = ResourceLocation.fromNamespaceAndPath(
-                    location.namespace,
-                    flattenedPath
-                )
-                val resourceKey = ResourceKey.create(typedAnimationRegistry.key(), animResourceLocation)
-
-                typedAnimationRegistry.register(resourceKey, typedAnimation, RegistrationInfo.BUILT_IN)
-                SparkCore.LOGGER.debug("动画已注册到注册表: $animResourceLocation (来自动画集: $location, 原始名称: $animName)")
-            }
-        } catch (e: Exception) {
-            throw ResourceHandlerException.RegistryOperationException("REGISTER", location.toString(), e)
-        }
-    }
-
-    private fun unregisterFromRegistry(location: ResourceLocation) {
-        try {
-            // 获取要注销的动画集
-            val animationSet = OAnimationSet.ORIGINS[location]
-            if (animationSet != null) {
-                // 注销动画集中的每个动画
-                // 清理AnimIndex.ORIGINS映射表
-                clearAnimIndexMappings(location, animationSet)
-
+        val work: () -> Unit = {
+            try {
+                // 为动画集中的每个动画创建 TypedAnimation 并注册
                 animationSet.animations.forEach { (animName, _) ->
-
                     val normalizedAnimName = normalizeResourceName(animName)
-                    // 从location路径中提取基础信息，不依赖动画名的具体结构
-                    // location.path 格式通常是: {moduleName}/animations/{entityPath}
+                    val animIndex = AnimIndex(location, normalizedAnimName, useShortcutConversion = false)
+                    val typedAnimation = TypedAnimation(animIndex) {}
+
                     val pathParts = location.path.split("/")
+                    if (pathParts.size >= 3) {
+                        val entityPath = pathParts[2]
+                        val shortcutPath = ResourceLocation.fromNamespaceAndPath("minecraft", "$entityPath/$normalizedAnimName")
+                        AnimIndex.ORIGINS[shortcutPath] = location
+                        SparkCore.LOGGER.debug("添加动画快捷映射: $shortcutPath -> $location")
+                    }
+
                     val flattenedPath = run {
-                        // 拍平entityPath后的路径
                         val moduleName = pathParts[0]
                         val entityPath = pathParts[2]
                         "$moduleName/animations/$entityPath/$normalizedAnimName"
                     }
-                    val animResourceLocation = ResourceLocation.fromNamespaceAndPath(
-                        location.namespace,
-                        flattenedPath
-                    )
+                    val animResourceLocation = ResourceLocation.fromNamespaceAndPath(location.namespace, flattenedPath)
                     val resourceKey = ResourceKey.create(typedAnimationRegistry.key(), animResourceLocation)
-                    typedAnimationRegistry.unregisterDynamic(resourceKey)
-                    SparkCore.LOGGER.debug("动画已从注册表注销: $animResourceLocation (来自动画集: $location, 原始名称: $animName)")
+                    typedAnimationRegistry.register(resourceKey, typedAnimation, RegistrationInfo.BUILT_IN)
+                    SparkCore.LOGGER.debug("动画已注册到注册表: $animResourceLocation (来自动画集: $location, 原始名称: $animName)")
                 }
-            } else {
-                SparkCore.LOGGER.warn("无法注销动画集 $location：在 ORIGINS 中未找到")
+            } catch (e: Exception) {
+                throw ResourceHandlerException.RegistryOperationException("REGISTER", location.toString(), e)
             }
-        } catch (e: Exception) {
-            throw ResourceHandlerException.RegistryOperationException("UNREGISTER", location.toString(), e)
         }
+        val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+        if (server != null) server.execute(work) else work.invoke()
+    }
+
+    private fun unregisterFromRegistry(location: ResourceLocation) {
+        val work: () -> Unit = {
+            try {
+                val animationSet = OAnimationSet.ORIGINS[location]
+                if (animationSet != null) {
+                    clearAnimIndexMappings(location, animationSet)
+                    animationSet.animations.forEach { (animName, _) ->
+                        val normalizedAnimName = normalizeResourceName(animName)
+                        val pathParts = location.path.split("/")
+                        val flattenedPath = run {
+                            val moduleName = pathParts[0]
+                            val entityPath = pathParts[2]
+                            "$moduleName/animations/$entityPath/$normalizedAnimName"
+                        }
+                        val animResourceLocation = ResourceLocation.fromNamespaceAndPath(location.namespace, flattenedPath)
+                        val resourceKey = ResourceKey.create(typedAnimationRegistry.key(), animResourceLocation)
+                        typedAnimationRegistry.unregisterDynamic(resourceKey)
+                        SparkCore.LOGGER.debug("动画已从注册表注销: $animResourceLocation (来自动画集: $location, 原始名称: $animName)")
+                    }
+                } else {
+                    SparkCore.LOGGER.warn("无法注销动画集 $location：在 ORIGINS 中未找到")
+                }
+            } catch (e: Exception) {
+                throw ResourceHandlerException.RegistryOperationException("UNREGISTER", location.toString(), e)
+            }
+        }
+        val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+        if (server != null) server.execute(work) else work.invoke()
     }
     
     // ===== 初始化 =====
