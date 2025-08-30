@@ -45,9 +45,8 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val soundDeferredRegister = DeferredRegister.create(Registries.SOUND_EVENT, modId)
     val dataComponentDeferredRegister = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, modId)
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
-    val typedAnimationDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.TYPED_ANIMATION, modId) }
+    // 热重载域不再使用 DeferredRegister;这里只保留原版支持的注册表
     val syncerTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SYNCER_TYPE, modId) }
-    val ikComponentTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.IK_COMPONENT_TYPE, modId) } // Add deferred register for IK types
 
     fun register(bus: IEventBus) {
         modBus = bus
@@ -114,12 +113,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     fun layer() = LayerBuilder(modId, modBus!!)
     fun keyMapping() = KeyMappingBuilder(modId, modBus!!)
 
-    fun typedAnimation(): TypedAnimationBuilder {
-        if (!typedAnimationDeferredRegister.isInitialized()) {
-            typedAnimationDeferredRegister.value.register(modBus!!)
-        }
-        return TypedAnimationBuilder(typedAnimationDeferredRegister.value)
-    }
+    // Removed: typedAnimation() 在运行时使用 VirtualRegistry;不支持通过 DeferredRegister 进行静态注册
 
     fun syncerType(): SyncerTypeBuilder {
         if (!syncerTypeDeferredRegister.isInitialized()) {
@@ -127,12 +121,4 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
         }
         return SyncerTypeBuilder(syncerTypeDeferredRegister.value)
     }
-
-    fun ikComponentType(): IKComponentTypeBuilder { // Add builder method for IK types
-        if (!ikComponentTypeDeferredRegister.isInitialized()) {
-            ikComponentTypeDeferredRegister.value.register(modBus!!)
-        }
-        return IKComponentTypeBuilder(ikComponentTypeDeferredRegister.value)
-    }
-
 }

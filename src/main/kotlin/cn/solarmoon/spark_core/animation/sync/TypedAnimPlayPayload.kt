@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.Syncer
 import cn.solarmoon.spark_core.sync.SyncerType
+import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -30,13 +31,27 @@ class TypedAnimPlayPayload private constructor(
     companion object {
         @JvmStatic
         fun handleBothSide(payload: TypedAnimPlayPayload, context: IPayloadContext) {
-            val level = context.player().level()
-            val entity = payload.syncerType.getSyncer(level, payload.syncData)
-            if (entity !is IAnimatable<*>) return
-            val anim = SparkRegistries.TYPED_ANIMATION.byId(payload.animId) ?: return
-            anim.play(entity, payload.layerId, payload.layerData)
-            // 从单人客户端发来的同步需要再同步给其它玩家客户端
-            if (!level.isClientSide) anim.playToClient(entity, payload.layerId, payload.layerData, context.player() as? ServerPlayer)
+            context.enqueueWork {
+                val level = context.player().level()
+                if (level.isClientSide) {
+                    if (!AnimationSyncState.isTypedAnimationsReady()) {
+                        AnimationSyncState.enqueueTypedAnimPlay(payload)
+                        SparkCore.LOGGER.warn("客户端动画索引未就绪，已暂存一次动画播放请求 id={}", payload.animId)
+                        return@enqueueWork
+                    } else {
+                        AnimationSyncState.flushTypedAnimPlays(level)
+                    }
+                }
+                val entity = payload.syncerType.getSyncer(level, payload.syncData)
+                if (entity !is IAnimatable<*>) return@enqueueWork
+                val anim = SparkRegistries.TYPED_ANIMATION.byId(payload.animId) ?: return@enqueueWork
+                anim.play(entity, payload.layerId, payload.layerData)
+                // 从单人客户端发来的同步需要再同步给其它玩家客户端
+                if (!level.isClientSide) anim.playToClient(entity, payload.layerId, payload.layerData, context.player() as? ServerPlayer)
+            }.exceptionally {
+                SparkCore.LOGGER.error("处理 TypedAnimPlayPayload 时发生异常", it)
+                null
+            }
         }
 
         @JvmStatic
