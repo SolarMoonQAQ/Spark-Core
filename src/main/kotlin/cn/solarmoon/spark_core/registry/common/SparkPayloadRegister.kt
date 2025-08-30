@@ -14,6 +14,8 @@ import cn.solarmoon.spark_core.animation.sync.TypedAnim2PlayPayload
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPlayPayload
 import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSendingTask
 import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSyncPayload
+import cn.solarmoon.spark_core.animation.sync.TypedAnimationDataSendingTask
+import cn.solarmoon.spark_core.animation.sync.TypedAnimationDataSyncPayload
 import cn.solarmoon.spark_core.entity.EntityMovingPayload
 import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
 import cn.solarmoon.spark_core.ik.sync.IKDataPayload
@@ -65,6 +67,9 @@ object SparkPayloadRegister {
         // 纹理全量同步
         anim.configurationToClient(TextureDataSyncPayload.TYPE, TextureDataSyncPayload.STREAM_CODEC, TextureDataSyncPayload::handleInClient)
         anim.configurationToServer(TextureDataSendingTask.AckPayload.TYPE, TextureDataSendingTask.AckPayload.STREAM_CODEC, TextureDataSendingTask.AckPayload::handleOnServer)
+        // TypedAnimation全量同步
+        anim.configurationToClient(TypedAnimationDataSyncPayload.TYPE, TypedAnimationDataSyncPayload.STREAM_CODEC, TypedAnimationDataSyncPayload::handleInClient)
+        anim.configurationToServer(TypedAnimationDataSendingTask.AckPayload.TYPE, TypedAnimationDataSendingTask.AckPayload.STREAM_CODEC, TypedAnimationDataSendingTask.AckPayload::handleOnServer)
 
 
         val visual = event.registrar("visual_effect")
@@ -80,7 +85,7 @@ object SparkPayloadRegister {
         skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)
 
         val js = event.registrar("js")
-        skill.playToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
+        js.playToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
         js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
         js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
         js.playToClient(JSIncrementalSyncS2CPacket.TYPE, JSIncrementalSyncS2CPacket.STREAM_CODEC, JSIncrementalSyncS2CPacket::handleInClient)
@@ -117,9 +122,9 @@ object SparkPayloadRegister {
         event.register(JSSendingTask())
         event.register(IKDataSendingTask())
         event.register(AnimationDataSendingTask())
-        // 注册新的全量同步配置任务
-        event.register(JSScriptDataSendingTask())
         event.register(TextureDataSendingTask())
+        event.register(TypedAnimationDataSendingTask())
+        event.register(JSScriptDataSendingTask())
     }
 
     @JvmStatic
