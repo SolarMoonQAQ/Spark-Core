@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OLocator
 import cn.solarmoon.spark_core.animation.model.origin.OModel
-import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
+import cn.solarmoon.spark_core.registry.virtual.HotReloadRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
@@ -30,7 +30,7 @@ import kotlin.io.path.readText
  */
 @AutoRegisterHandler
 class ModelHandler(
-    private val modelRegistry: DynamicAwareRegistry<OModel>
+    private val modelRegistry: HotReloadRegistry<OModel>
 ) : ResourceHandlerBase() {
 
     companion object {
@@ -60,7 +60,7 @@ class ModelHandler(
     override fun getPriority(): Int = 20 // 中等优先级
     
     // 提供对注册表的访问 (for DynamicResourceApplier)
-    val modelRegistryAccess: DynamicAwareRegistry<OModel>
+    val modelRegistryAccess: HotReloadRegistry<OModel>
         get() = this.modelRegistry
     
     // ===== 资源处理核心逻辑 =====
@@ -189,24 +189,30 @@ class ModelHandler(
     // ===== 注册表操作 =====
     
     private fun registerToRegistry(location: ResourceLocation, model: OModel) {
-        try {
-            val resourceKey = ResourceKey.create(modelRegistry.key(), location)
-            modelRegistry.register(resourceKey, model, RegistrationInfo.BUILT_IN)
-            
-            SparkCore.LOGGER.debug("模型已注册到注册表: $location")
-        } catch (e: Exception) {
-            throw ResourceHandlerException.RegistryOperationException("REGISTER", location.toString(), e)
+        val work: () -> Unit = {
+            try {
+                val resourceKey = ResourceKey.create(modelRegistry.key(), location)
+                modelRegistry.register(resourceKey, model, RegistrationInfo.BUILT_IN)
+                SparkCore.LOGGER.debug("模型已注册到注册表: $location")
+            } catch (e: Exception) {
+                throw ResourceHandlerException.RegistryOperationException("REGISTER", location.toString(), e)
+            }
         }
+        val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+        if (server != null) server.execute(work) else work.invoke()
     }
     
     private fun unregisterFromRegistry(location: ResourceLocation) {
-        try {
-            modelRegistry.unregisterDynamic(location)
-            
-            SparkCore.LOGGER.debug("模型已从注册表注销: $location")
-        } catch (e: Exception) {
-            throw ResourceHandlerException.RegistryOperationException("UNREGISTER", location.toString(), e)
+        val work: () -> Unit = {
+            try {
+                modelRegistry.unregisterDynamic(location)
+                SparkCore.LOGGER.debug("模型已从注册表注销: $location")
+            } catch (e: Exception) {
+                throw ResourceHandlerException.RegistryOperationException("UNREGISTER", location.toString(), e)
+            }
         }
+        val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+        if (server != null) server.execute(work) else work.invoke()
     }
 
     

@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.resource.handler
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.ik.component.TypedIKComponent
 import cn.solarmoon.spark_core.ik.origin.OIKConstraint
-import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
+import cn.solarmoon.spark_core.registry.virtual.HotReloadRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
@@ -25,7 +25,7 @@ import kotlin.io.path.readText
  */
 @AutoRegisterHandler
 class IKConstraintHandler(
-    private val ikComponentRegistry: DynamicAwareRegistry<TypedIKComponent>
+    private val ikComponentRegistry: HotReloadRegistry<TypedIKComponent>
 ) : ResourceHandlerBase() {
 
     companion object {
@@ -56,7 +56,7 @@ class IKConstraintHandler(
     override fun getPriority(): Int = 40 // 中等优先级
     
     // 提供对注册表的访问 (for DynamicResourceApplier)
-    val ikComponentRegistryAccess: DynamicAwareRegistry<TypedIKComponent>
+    val ikComponentRegistryAccess: HotReloadRegistry<TypedIKComponent>
         get() = this.ikComponentRegistry
     
     // ===== 资源处理核心逻辑 =====

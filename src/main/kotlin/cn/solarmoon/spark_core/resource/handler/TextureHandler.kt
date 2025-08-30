@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.resource.handler
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.texture.OTexture
-import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
+import cn.solarmoon.spark_core.registry.virtual.HotReloadRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
@@ -28,7 +28,7 @@ import javax.imageio.ImageIO
  */
 @AutoRegisterHandler
 class TextureHandler(
-    private val textureRegistry: DynamicAwareRegistry<OTexture>
+    private val textureRegistry: HotReloadRegistry<OTexture>
 ) : ResourceHandlerBase() {
 
     companion object {
@@ -59,7 +59,7 @@ class TextureHandler(
     override fun getPriority(): Int = 50 // 较低优先级，纹理通常在其他资源之后处理
     
     // 提供对注册表的访问 (for DynamicResourceApplier)
-    val textureRegistryAccess: DynamicAwareRegistry<OTexture>
+    val textureRegistryAccess: HotReloadRegistry<OTexture>
         get() = this.textureRegistry
     
     // ===== 资源处理核心逻辑 =====
@@ -257,25 +257,31 @@ class TextureHandler(
     // ===== 注册表操作 =====
     
     private fun registerToRegistry(location: ResourceLocation, texture: OTexture) {
-        try {
-            val resourceKey = ResourceKey.create(textureRegistry.key(), location)
-            textureRegistry.register(resourceKey, texture, RegistrationInfo.BUILT_IN)
-            
-            SparkCore.LOGGER.debug("纹理已注册到注册表: $location")
-        } catch (e: Exception) {
-            throw ResourceHandlerException.RegistryOperationException("REGISTER", location.toString(), e)
+        val work: () -> Unit = {
+            try {
+                val resourceKey = ResourceKey.create(textureRegistry.key(), location)
+                textureRegistry.register(resourceKey, texture, RegistrationInfo.BUILT_IN)
+                SparkCore.LOGGER.debug("纹理已注册到注册表: $location")
+            } catch (e: Exception) {
+                throw ResourceHandlerException.RegistryOperationException("REGISTER", location.toString(), e)
+            }
         }
+        val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+        if (server != null) server.execute(work) else work.invoke()
     }
     
     private fun unregisterFromRegistry(location: ResourceLocation) {
-        try {
-            val resourceKey = ResourceKey.create(textureRegistry.key(), location)
-            textureRegistry.unregisterDynamic(resourceKey)
-            
-            SparkCore.LOGGER.debug("纹理已从注册表注销: $location")
-        } catch (e: Exception) {
-            throw ResourceHandlerException.RegistryOperationException("UNREGISTER", location.toString(), e)
+        val work: () -> Unit = {
+            try {
+                val resourceKey = ResourceKey.create(textureRegistry.key(), location)
+                textureRegistry.unregisterDynamic(resourceKey)
+                SparkCore.LOGGER.debug("纹理已从注册表注销: $location")
+            } catch (e: Exception) {
+                throw ResourceHandlerException.RegistryOperationException("UNREGISTER", location.toString(), e)
+            }
         }
+        val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
+        if (server != null) server.execute(work) else work.invoke()
     }
 
     

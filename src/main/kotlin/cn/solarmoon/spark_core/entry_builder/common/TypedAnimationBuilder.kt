@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimProvider
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import cn.solarmoon.spark_core.registry.dynamic.DynamicAwareRegistry
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.core.RegistrationInfo
