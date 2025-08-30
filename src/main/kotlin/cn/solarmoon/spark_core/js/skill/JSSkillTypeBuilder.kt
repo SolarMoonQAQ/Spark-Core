@@ -29,6 +29,12 @@ class JSSkillTypeBuilder(val js: SparkJS) {
      */
     var currentFileName: String? = null
 
+    /**
+     * 调试用ID字符串，用于日志记录
+     * 因为id是lateinit的，所以在onLoad时无法访问
+     */
+    var debugIdString: String? = null
+
     fun getId() = id.toString()
 
     fun setPriority(value: Int) {

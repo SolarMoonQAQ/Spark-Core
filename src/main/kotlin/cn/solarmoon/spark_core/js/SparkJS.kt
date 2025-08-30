@@ -80,6 +80,10 @@ abstract class SparkJS {
             
             // 按 API 分组脚本
             val scriptsByApi = scripts.values.groupBy { it.apiId }
+            SparkCore.LOGGER.debug("脚本加载顺序验证 (线程: {}):", Thread.currentThread().name)
+            scripts.forEach { (key, script) ->
+                SparkCore.LOGGER.debug("  - 脚本: {} (API: {})", key, script.apiId)
+            }
             
             scriptsByApi.forEach { (apiId, apiScripts) ->
                 try {
