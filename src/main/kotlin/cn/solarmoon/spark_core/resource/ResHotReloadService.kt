@@ -110,6 +110,11 @@ object ResHotReloadService {
         val absolutePathStr = runtimeDirFile.absolutePath
         if (directoryMonitors.containsKey(absolutePathStr)) {
             SparkCore.LOGGER.warn("目录 {} (ID: {}) 已经被注册监控。", runtimeDir, directoryId)
+            // 即使监控已存在，也主动触发一次现有文件扫描，
+            // 以便在客户端登出清理后、再次进入集成服务器时重新回填动态注册表。
+            if (runtimeDirFile.exists() && runtimeDirFile.isDirectory) {
+                processExistingFilesInDirectory(runtimeDirFile, handler, directoryId)
+            }
             return
         }
 
