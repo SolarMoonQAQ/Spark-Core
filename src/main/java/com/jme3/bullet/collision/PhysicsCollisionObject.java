@@ -248,7 +248,6 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
         collisionListeners.add(listener);
     }
 
-
     // *************************************************************************
     // new methods exposed
 

@@ -111,9 +111,9 @@ repositories {
             includeGroup "curse.maven"
         }
     }
-    maven {
-        url = "https://maven.jaackson.me"
-    }
+//    maven {
+//        url = "https://maven.jaackson.me"
+//    }
     maven {
         name "KosmX's maven"
         url 'https://maven.kosmx.dev/'

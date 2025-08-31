@@ -7,6 +7,7 @@ import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSoftSpace
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
+import com.jme3.bullet.SolverMode
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.util.NativeLibrary
@@ -25,6 +26,14 @@ class PhysicsWorld(val level: PhysicsLevel, numSolvers: Int = 1): PhysicsSoftSpa
         PhysicsBody.setDeactivationDeadline(3f)
         addTickListener(level)
         isForceUpdateAllAabbs = false
+        this.solverInfo.setMode(
+            SolverMode.SIMD
+            or SolverMode.WarmStart
+            or SolverMode.CacheFriendly
+            or SolverMode.CacheDirection
+            or SolverMode.ArticulatedWarmStart
+            or SolverMode.Interleave
+        )
     }
 
     /**

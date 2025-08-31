@@ -97,7 +97,7 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
         Vec3 sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
         float distance = (float) listener.getTransform().position().distanceTo(sourcePos);
         float range = sound.getRange(sourcePos);
-        float volume = sound.getVolume(sourcePos);
+        float volume = sound.getVolume();
         //平方衰减
         // Square fall-off
         float rate = 1f - Math.min(distance / range, 1f);
@@ -122,9 +122,9 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
 
         // 多普勒因子
         // Doppler factor
-        return 1.0f + relativeSpeed / SpreadingSoundInstance.getSoundSpeed(
+        return (1.0f + relativeSpeed / SpreadingSoundInstance.getSoundSpeed(
                 sourcePos.scale(0.5)
                         .add(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().scale(0.5)),
-                Minecraft.getInstance().level) * sound.getPitch(sourcePos);
+                Minecraft.getInstance().level)) * sound.getPitch();
     }
 }

@@ -48,6 +48,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
 
     /**
      * <p>针对单次声源的构造函数，用于创建单个定点声源的音效实例，可特别指定声源名称供子类使用</p>
+     *
      * @param soundEvent
      * @param soundType
      * @param name
@@ -88,6 +89,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
 
     /**
      * <p>针对持续发出声音的声源的构造函数，用于创建位置速度音高等时刻改变声源的音效实例，可特别指定声源名称供子类使用</p>
+     *
      * @param soundEvent
      * @param soundType
      * @param name
@@ -168,8 +170,18 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         return this.pitches.get(position);
     }
 
+    @Override
+    public float getPitch() {
+        return this.pitch;
+    }
+
     public float getVolume(Vec3 position) {
         return this.volumes.get(position);
+    }
+
+    @Override
+    public float getVolume() {
+        return this.volume;
     }
 
     public void setPitch(float pitch) {
@@ -180,4 +192,9 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.volume = volume;
     }
 
+
+    @Override
+    public boolean canStartSilent() {
+        return true;
+    }
 }
