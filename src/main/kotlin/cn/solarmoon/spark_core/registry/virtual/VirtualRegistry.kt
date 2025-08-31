@@ -1,17 +1,14 @@
 package cn.solarmoon.spark_core.registry.virtual
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.registry.dynamic.DynamicIdManager
 import net.minecraft.core.*
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
-import net.neoforged.neoforge.registries.datamaps.DataMapType
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
-import kotlin.reflect.KClass
 
 /**
 * VirtualRegistry：与普通/NeoForge 全局注册表解耦的内存注册表。
@@ -19,7 +16,6 @@ import kotlin.reflect.KClass
  */
 class VirtualRegistry<T : Any>(
     private val registryKeyLocation: ResourceLocation,
-    val valueType: KClass<T>
 ): HotReloadRegistry<T> {
 
     var onDynamicRegister: ((key: ResourceKey<T>, value: T) -> Unit)? = null

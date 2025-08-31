@@ -2,12 +2,14 @@ package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler
 import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.world.InteractionHand
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.UseAnim
@@ -41,11 +43,19 @@ class EntityBaseUseAnimStateMachine(
         val spear = state("spear") { initHandState() }
         val tootHorn = state("toot_horn") { initHandState() }
         val spyglass = state("spyglass") { initHandState() }
+        val swing = state("swing") {
+            val provider = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER) { AnimLayerData(enterTransitionTime = 0) }
+            val mainHand = state("$name.main_hand") { payload = provider }
+            val offHand = state("$name.off_hand") { payload = provider }
+            initialChoiceState {
+                if (entity.swingingArm == InteractionHand.MAIN_HAND) mainHand else offHand
+            }
+        }
 
         transitionOn<SwitchEvent> {
             targetState = {
                 val useAnim = entity.useItem.useAnimation
-                when(useAnim) {
+                val s1 = when(useAnim) {
                     UseAnim.EAT -> eat
                     UseAnim.DRINK -> drink
                     UseAnim.BOW -> bow
@@ -55,8 +65,13 @@ class EntityBaseUseAnimStateMachine(
                     UseAnim.SPEAR -> spear
                     UseAnim.TOOT_HORN -> tootHorn
                     UseAnim.SPYGLASS -> spyglass
+                    else -> null
+                }
+                val s2 = when {
+                    entity.attackAnim > 0 -> swing
                     else -> none
                 }
+                s1 ?: s2
             }
         }
 
@@ -89,9 +104,9 @@ class EntityBaseUseAnimStateMachine(
 
     }
 
-    suspend fun IState.initHandState() {
-        val mainHand = state("$name.main_hand") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER) }
-        val offHand = state("$name.off_hand") { payload = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER) }
+    suspend fun IState.initHandState(provider: AnimPlayDataProvider = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER)) {
+        val mainHand = state("$name.main_hand") { payload = provider }
+        val offHand = state("$name.off_hand") { payload = provider }
         initialChoiceState {
             val useItem = entity.useItem
             if (ItemStack.isSameItemSameComponents(useItem, entity.mainHandItem)) mainHand else offHand

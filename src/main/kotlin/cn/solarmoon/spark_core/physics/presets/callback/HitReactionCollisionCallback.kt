@@ -1,13 +1,12 @@
 package cn.solarmoon.spark_core.physics.presets.callback
 
-import cn.solarmoon.spark_core.entity.attack.AttackSystem
 import cn.solarmoon.spark_core.event.HitPhysicsEvent
+import cn.solarmoon.spark_core.physics.collision.ManifoldPoint
 import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.common.NeoForge
-import org.joml.Vector3f
-import com.jme3.math.Vector3f as JmeVector3f
 
 /**
  * 封装受击事件的详细信息。
@@ -32,14 +31,14 @@ data class HitData(
 interface HitReactionCollisionCallback : AttackCollisionCallback {
 
     // 新实现：manifoldId 版本的 onProcessed，确保物理上下文贯通
-    override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, manifoldId: Long) {
-        super.onProcessed(o1, o2, manifoldId)
+    override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, o1Point: ManifoldPoint, o2Point: ManifoldPoint, manifoldId: Long) {
+        super.onProcessed(o1, o2, o1Point, o2Point, manifoldId)
         val entity1 = o1.owner as? Entity
         val entity2 = o2.owner as? Entity
         if (entity1 == null || entity2 == null) return
         // 正确用法：直接用 ManifoldPoints 的静态方法获取碰撞信息
-        val hitPointWorldJme = JmeVector3f()
-        val hitNormalWorldJme = JmeVector3f()
+        val hitPointWorldJme = Vector3f()
+        val hitNormalWorldJme = Vector3f()
         ManifoldPoints.getPositionWorldOnB(manifoldId, hitPointWorldJme)
         ManifoldPoints.getNormalWorldOnB(manifoldId, hitNormalWorldJme)
         val impulse = ManifoldPoints.getAppliedImpulse(manifoldId)
@@ -47,7 +46,7 @@ interface HitReactionCollisionCallback : AttackCollisionCallback {
         val hitPointWorldJoml = Vector3f(hitPointWorldJme.x, hitPointWorldJme.y, hitPointWorldJme.z)
         val hitNormalWorldJoml = Vector3f(hitNormalWorldJme.x, hitNormalWorldJme.y, hitNormalWorldJme.z)
         // 新增：计算方向与强度
-        val direction = hitNormalWorldJoml.normalize(Vector3f()) // 以法线方向为相对方向（如需更复杂可调整）
+        val direction = hitNormalWorldJoml.normalize() // 以法线方向为相对方向（如需更复杂可调整）
         val intensity = impulse // 直接使用 impulse，可后续归一化
         val hitData = HitData(
             hitEntity = entity1,

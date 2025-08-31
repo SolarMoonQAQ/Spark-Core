@@ -95,8 +95,8 @@ object EntityPhysicsManager {
             if (frozen) {
                 // 冻结刚体
                 body.activate(false)
-                body.setAngularVelocity(Vector3f.ZERO)
-                body.setLinearVelocity(Vector3f.ZERO)
+                body.setAngularVelocity(Vector3f())
+                body.setLinearVelocity(Vector3f())
             } else {
                 // 恢复到原始状态
                 val originalState = originalBodyStates[body] ?: true

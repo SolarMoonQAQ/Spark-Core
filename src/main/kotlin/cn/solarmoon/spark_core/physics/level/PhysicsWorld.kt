@@ -7,7 +7,6 @@ import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSoftSpace
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
-import com.jme3.bullet.SolverMode
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.util.NativeLibrary
@@ -46,10 +45,7 @@ class PhysicsWorld(val level: PhysicsLevel, numSolvers: Int = 1): PhysicsSoftSpa
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
-    override fun onContactStarted(manifoldId: Long) {
-        super.onContactStarted(manifoldId)
-    }
-            /**
+    /**
      * 处理接触点
      */
     override fun onContactProcessed(
@@ -57,16 +53,18 @@ class PhysicsWorld(val level: PhysicsLevel, numSolvers: Int = 1): PhysicsSoftSpa
         pcoB: PhysicsCollisionObject,
         manifoldPointId: Long
     ) {
+        val o1Point = ManifoldPoint(manifoldPointId, 0)
+        val o2Point = ManifoldPoint(manifoldPointId, 1)
         if (pcoA.isCollisionGroupContains(pcoB)) {
             pcoA.isColliding = true
-            pcoA.collisionListeners.forEach { it.onProcessed(pcoA, pcoB, manifoldPointId) }
+            pcoA.collisionListeners.forEach { it.onProcessed(pcoA, pcoB, o1Point, o2Point, manifoldPointId) }
         }
         if (pcoB.isCollisionGroupContains(pcoA)) {
             pcoB.isColliding = true
-            pcoB.collisionListeners.forEach { it.onProcessed(pcoB, pcoA, manifoldPointId) }
+            pcoB.collisionListeners.forEach { it.onProcessed(pcoB, pcoA, o2Point, o1Point, manifoldPointId) }
         }
 
-        NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(manifoldPointId, pcoA, pcoB))
+        NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(pcoA, pcoB, o1Point, o2Point, manifoldPointId))
     }
 
     override fun addCollisionObject(pco: PhysicsCollisionObject) {

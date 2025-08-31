@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.entity.attack
 
+import cn.solarmoon.spark_core.physics.collision.ManifoldPoint
 import com.jme3.bullet.collision.PhysicsCollisionObject
 
 /**
@@ -10,6 +11,8 @@ import com.jme3.bullet.collision.PhysicsCollisionObject
 data class CollisionHurtData(
     val attackBody: PhysicsCollisionObject,
     val damagedBody: PhysicsCollisionObject,
+    val pointA: ManifoldPoint,
+    val pointB: ManifoldPoint,
     val manifoldId: Long
 ) {
 

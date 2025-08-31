@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.entity
 
-import net.minecraft.world.entity.Pose
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent

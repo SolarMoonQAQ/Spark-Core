@@ -1,10 +1,10 @@
 package com.jme3.npc_adapter.event;
 
+import cn.solarmoon.spark_core.physics.collision.ManifoldPoint;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.bus.api.Event;
-import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.common.NeoForge;
 
 /**
  * 物理碰撞相关事件的基类，用于处理Spark Core的物理碰撞事件。
@@ -30,11 +30,15 @@ public class SparkPhysicsEvent extends Event {
      */
     public static class CollisionStartEvent extends SparkPhysicsEvent {
         public final PhysicsCollisionObject other;
+        public final ManifoldPoint aPoint;
+        public final ManifoldPoint bPoint;
         public final long manifoldId;
         
-        public CollisionStartEvent(PhysicsCollisionObject collisionObject, PhysicsCollisionObject other, long manifoldId) {
+        public CollisionStartEvent(PhysicsCollisionObject collisionObject, PhysicsCollisionObject other, ManifoldPoint aPoint, ManifoldPoint bPoint, long manifoldId) {
             super(collisionObject);
             this.other = other;
+            this.aPoint = aPoint;
+            this.bPoint = bPoint;
             this.manifoldId = manifoldId;
         }
     }
@@ -44,11 +48,15 @@ public class SparkPhysicsEvent extends Event {
      */
     public static class CollisionProcessedEvent extends SparkPhysicsEvent {
         public final PhysicsCollisionObject other;
+        public final ManifoldPoint aPoint;
+        public final ManifoldPoint bPoint;
         public final long manifoldId;
         
-        public CollisionProcessedEvent(PhysicsCollisionObject collisionObject, PhysicsCollisionObject other, long manifoldId) {
+        public CollisionProcessedEvent(PhysicsCollisionObject collisionObject, PhysicsCollisionObject other, ManifoldPoint aPoint, ManifoldPoint bPoint, long manifoldId) {
             super(collisionObject);
             this.other = other;
+            this.aPoint = aPoint;
+            this.bPoint = bPoint;
             this.manifoldId = manifoldId;
         }
     }
@@ -58,11 +66,15 @@ public class SparkPhysicsEvent extends Event {
      */
     public static class CollisionEndEvent extends SparkPhysicsEvent {
         public final PhysicsCollisionObject other;
+        public final ManifoldPoint aPoint;
+        public final ManifoldPoint bPoint;
         public final long manifoldId;
         
-        public CollisionEndEvent(PhysicsCollisionObject collisionObject, PhysicsCollisionObject other, long manifoldId) {
+        public CollisionEndEvent(PhysicsCollisionObject collisionObject, PhysicsCollisionObject other, ManifoldPoint aPoint, ManifoldPoint bPoint, long manifoldId) {
             super(collisionObject);
             this.other = other;
+            this.aPoint = aPoint;
+            this.bPoint = bPoint;
             this.manifoldId = manifoldId;
         }
     }
@@ -75,6 +87,9 @@ public class SparkPhysicsEvent extends Event {
         public final Entity target;
         public final PhysicsCollisionObject aBody;
         public final PhysicsCollisionObject bBody;
+        public final ManifoldPoint aPoint;
+        public final ManifoldPoint bPoint;
+
         public final long manifoldId;
         public final String phase; // "pre", "do", "post"
         
@@ -83,6 +98,8 @@ public class SparkPhysicsEvent extends Event {
             Entity target,
             PhysicsCollisionObject aBody,
             PhysicsCollisionObject bBody,
+            ManifoldPoint aPoint,
+            ManifoldPoint bPoint,
             long manifoldId,
             String phase
         ) {
@@ -91,6 +108,8 @@ public class SparkPhysicsEvent extends Event {
             this.target = target;
             this.aBody = aBody;
             this.bBody = bBody;
+            this.aPoint = aPoint;
+            this.bPoint = bPoint;
             this.manifoldId = manifoldId;
             this.phase = phase;
         }

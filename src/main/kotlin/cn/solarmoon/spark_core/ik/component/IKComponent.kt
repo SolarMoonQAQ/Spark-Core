@@ -35,11 +35,11 @@ class IKComponent(
     var groundCheckDistance: Float = 1.0f
 
     /** 地面检测前的原始目标位置（通常来自动画/逻辑） */
-    var desiredTargetPosition: Vector3f = Vector3f.ZERO.clone()
+    var desiredTargetPosition: Vector3f = Vector3f()
         private set // 仅允许通过更新方法设置
 
     /** 考虑地面接触后的实际目标位置（传递给IK求解器） */
-    var actualTargetPosition: Vector3f = Vector3f.ZERO.clone()
+    var actualTargetPosition: Vector3f = Vector3f()
         private set // 仅允许通过更新方法设置
 
     /** 如果地面检测找到有效地面，则为true */
@@ -47,7 +47,7 @@ class IKComponent(
         private set // 仅允许通过更新方法设置
 
     /** 执行器到父骨骼的偏移量 */
-    var offset: Vector3f = Vector3f.ZERO
+    var offset: Vector3f = Vector3f()
 
 
     val targetBoneName: String = type.bonePathNames.last()
@@ -79,8 +79,8 @@ class IKComponent(
             }
         } catch (e: Exception) {
             // 如果获取失败，使用零向量作为默认值
-            this.desiredTargetPosition.set(Vector3f.ZERO)
-            this.actualTargetPosition.set(Vector3f.ZERO)
+            this.desiredTargetPosition.set(Vector3f())
+            this.actualTargetPosition.set(Vector3f())
         }
     }
 
@@ -164,9 +164,9 @@ class IKComponent(
             // hitPoint = rayStart + (rayEnd - rayStart) * closestHit.hitFraction
 
             val direction = rayEnd.subtract(rayStart) // Calculate direction vector (end - start)
-            val scaledDirection = direction.multLocal(closestHit.hitFraction) // Scale direction by hit fraction (modifies 'direction')
+            val scaledDirection = direction.mult(closestHit.hitFraction) // Scale direction by hit fraction (modifies 'direction')
             // 计算世界空间中的命中点
-            val worldHitPoint = Vector3f(rayStart).addLocal(scaledDirection)
+            val worldHitPoint = Vector3f(rayStart).add(scaledDirection)
 
             // 将世界空间中的命中点转换回本地空间
             val localHitPoint = IKCoordinateTransformer.worldToLocalSpaceJME(host, worldHitPoint)

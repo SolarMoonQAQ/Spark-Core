@@ -2,28 +2,16 @@ package cn.solarmoon.spark_core.resource.graph
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.ResourceGraphEvent
-import cn.solarmoon.spark_core.resource.common.ModuleIdUtils
 import cn.solarmoon.spark_core.resource.origin.OAssetMetadata
 import cn.solarmoon.spark_core.resource.origin.ODependencyType
 import cn.solarmoon.spark_core.resource.origin.OModuleInfo
 import cn.solarmoon.spark_core.resource.origin.OResourceDependency
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.common.NeoForge
-import org.jgrapht.graph.SimpleDirectedGraph
 import org.jgrapht.graph.AsSubgraph
+import org.jgrapht.graph.SimpleDirectedGraph
 import org.jgrapht.traverse.DepthFirstIterator
-import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.io.path.exists
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.readText
-import java.io.File
-import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.pathString
 
 /**
@@ -35,7 +23,6 @@ import kotlin.io.path.pathString
 object ResourceGraphManager {
 
     private val graph = SimpleDirectedGraph<ResourceNode, EdgeType>(EdgeType::class.java)
-    private val gson = Gson()
 
     // 延迟依赖计算机制
     private val pendingDependencyNodes = mutableListOf<ResourceNode>()

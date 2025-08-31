@@ -11,10 +11,8 @@ import cn.solarmoon.spark_core.registry.virtual.VirtualRegistry
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
-import net.minecraft.core.Registry
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
-import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.Rarity
@@ -26,8 +24,7 @@ object SparkRegistries {
     // Hot-reload registries: Virtual only, not part of vanilla/NeoForge registries
     @JvmStatic
     val TYPED_ANIMATION = VirtualRegistry<TypedAnimation>(
-        ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "typed_animation"),
-        TypedAnimation::class
+        ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "typed_animation")
     ).apply {
         this.onDynamicRegister = { key, value ->
             try {
@@ -61,7 +58,6 @@ object SparkRegistries {
     @JvmStatic
     val MODELS = VirtualRegistry<OModel>(
         ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "models"),
-        OModel::class
     ).apply {
         this.onDynamicRegister = { key, value ->
             try {
@@ -95,7 +91,6 @@ object SparkRegistries {
     @JvmStatic
     val DYNAMIC_TEXTURES = VirtualRegistry<OTexture>(
         ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "dynamic_textures"),
-        OTexture::class
     ).apply {
         this.onDynamicRegister = { key, value ->
             try {
@@ -129,7 +124,6 @@ object SparkRegistries {
     @JvmStatic
     val JS_SCRIPTS = VirtualRegistry<OJSScript>(
         ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "js_scripts"),
-        OJSScript::class
     ).apply {
         this.onDynamicRegister = { key, value ->
             try {
@@ -163,13 +157,11 @@ object SparkRegistries {
     @JvmStatic
     val IK_COMPONENT_TYPE = VirtualRegistry<TypedIKComponent>(
         ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "ik_component_type"),
-        TypedIKComponent::class
     )
 
     @JvmStatic
     val SYNCER_TYPE = SparkCore.REGISTER.registry<SyncerType>()
         .id("syncer_type")
-        .valueType(SyncerType::class)
         .build { it.sync(true).create() }
 
 
@@ -177,7 +169,6 @@ object SparkRegistries {
     @JvmStatic
     val SYNC_DATA_STREAM_CODEC = SparkCore.REGISTER.registry<StreamCodec<RegistryFriendlyByteBuf, out SyncData>>()
         .id("sync_data_stream_codec")
-        .valueType(StreamCodec::class)
         .build { it.sync(true).create() }
 
     @JvmStatic
@@ -194,9 +185,7 @@ object SparkRegistries {
         return SparkRegistries::class.memberProperties.firstNotNullOfOrNull { prop ->
             try {
                 val instance = prop.getter.call(this)
-                if (instance is VirtualRegistry<*> && instance.valueType == elementType) {
-                    instance as VirtualRegistry<T>
-                } else null
+                instance as? VirtualRegistry<T>
             } catch (e: Exception) {
                 SparkCore.LOGGER.error("Error accessing registry property ${prop.name}: ${e.message}", e)
                 null

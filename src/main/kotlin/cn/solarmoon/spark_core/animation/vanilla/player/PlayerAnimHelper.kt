@@ -15,5 +15,11 @@ object PlayerAnimHelper {}
 fun AbstractClientPlayer.shouldRenderArmAnimInFirstPersonEvent(): PlayerRenderAnimInFirstPersonEvent {
     val isInFirstPerson = Minecraft.getInstance().options.cameraType.isFirstPerson
     val isMainCamera = Minecraft.getInstance().cameraEntity == this
-    return NeoForge.EVENT_BUS.post(PlayerRenderAnimInFirstPersonEvent(this, isInFirstPerson && isMainCamera && !(RealCameraCompat.isActive() || FirstPersonModelCompat.isActive())))
+    return NeoForge.EVENT_BUS.post(PlayerRenderAnimInFirstPersonEvent(
+        this,
+        isInFirstPerson
+                && isMainCamera
+                && !(RealCameraCompat.isActive() || FirstPersonModelCompat.isActive())
+                //&& !Minecraft.getInstance().options.hideGui
+    ))
 }

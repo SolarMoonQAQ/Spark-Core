@@ -2,8 +2,8 @@ package cn.solarmoon.spark_core.resource.graph
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.resource.origin.OAssetMetadata
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
+import com.mojang.serialization.JsonOps
 import net.minecraft.resources.ResourceLocation
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -18,9 +18,7 @@ import kotlin.io.path.readText
  * 提供统一的元数据加载接口，支持多种元数据格式和来源。
  */
 object ResourceMetadataLoader {
-    
-    private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
-    
+
     /**
      * 元数据缓存
      * 缓存已加载的元数据以提升性能
@@ -79,7 +77,7 @@ object ResourceMetadataLoader {
      */
     fun loadMetadataFromContent(content: String): OAssetMetadata {
         return try {
-            gson.fromJson(content, OAssetMetadata::class.java) ?: OAssetMetadata.EMPTY
+            OAssetMetadata.CODEC.decode(JsonOps.INSTANCE, JsonParser.parseString(content)).orThrow.first
         } catch (e: Exception) {
             SparkCore.LOGGER.error("解析元数据内容失败", e)
             OAssetMetadata.EMPTY
@@ -236,7 +234,7 @@ object ResourceMetadataLoader {
     fun saveMetadataFor(resourceFile: Path, metadata: OAssetMetadata): Boolean {
         return try {
             val metadataFile = getMetadataFilePath(resourceFile)
-            val content = gson.toJson(metadata)
+            val content = OAssetMetadata.CODEC.encodeStart(JsonOps.INSTANCE, metadata).orThrow.toString()
             metadataFile.toFile().writeText(content)
             
             // 更新缓存

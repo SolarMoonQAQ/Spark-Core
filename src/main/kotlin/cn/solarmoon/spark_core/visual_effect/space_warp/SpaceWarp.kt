@@ -1,15 +1,14 @@
 package cn.solarmoon.spark_core.visual_effect.space_warp
 
+import net.minecraft.util.Mth
 import net.minecraft.world.phys.Vec3
-import kotlin.math.PI
-import kotlin.math.sin
 
 data class SpaceWarp(
     val pos: Vec3,
-    val maxRadiusMeters: Float,    // 最大扩散半径（米）
+    val minRadius: Float,
+    val maxRadius: Float,    // 最大扩散半径（米）
     val baseStrength: Float,       // 初始强度
     val maxLifeTime: Int,          // 存活 tick
-    val pulseHz: Float = 0f        // 可选脉动频率
 ) {
     var age = 0
         private set
@@ -19,30 +18,18 @@ data class SpaceWarp(
     fun tick() { age++ }
 
     /** 归一化进度 0~1 */
-    private val progress get() = age.toFloat() / maxLifeTime.toFloat()
+    fun getProgress(partialTicks: Float) = (age.toFloat() + partialTicks) / maxLifeTime.toFloat()
 
     /** 当前半径：前期加速，后期减速 */
-    fun radiusNow(): Float {
-        val p = progress
-        // 二次缓出曲线（ease-out quadratic）
-        return maxRadiusMeters * (1f - (1f - p) * (1f - p))
-    }
-
-    /** 当前波带宽度：开头厚，中间适中，尾段再厚一点 */
-    fun bandWidthNow(): Float {
-        val p = progress
-        return 2.5f - 0.5f * sin(p * PI).toFloat()
+    fun getRadius(partialTicks: Float): Float {
+        val p = getProgress(partialTicks)
+        return Mth.lerp(p, minRadius, maxRadius)
     }
 
     /** 当前强度：初始爆发高，逐渐衰减 */
-    fun strengthNow(): Float {
-        val p = progress
+    fun getStrength(partialTicks: Float): Float {
+        val p = getProgress(partialTicks)
         var s = baseStrength * (1f - p * 0.85f)
-
-        if (pulseHz > 0f) {
-            val t = age / 20f
-            s *= (0.5f + 0.5f * sin(2f * PI.toFloat() * pulseHz * t))
-        }
         return s.coerceAtLeast(0f)
     }
 }

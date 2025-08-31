@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.physics.collision.ManifoldPoint
 import com.jme3.bullet.collision.PhysicsCollisionObject
 
 class CollisionManager {
@@ -31,8 +32,10 @@ class CollisionManager {
             val a = PhysicsCollisionObject.findInstance(idA)
             val b = PhysicsCollisionObject.findInstance(idB)
             if (a != null && b != null) {
-                if (a.isCollisionGroupContains(b)) a.collisionListeners.forEach { a.isColliding = true; it.onStarted(a, b, manifold) }
-                if (b.isCollisionGroupContains(a)) b.collisionListeners.forEach { b.isColliding = true; it.onStarted(b, a, manifold) }
+                val o1Point = ManifoldPoint(manifold, 0)
+                val o2Point = ManifoldPoint(manifold, 1)
+                if (a.isCollisionGroupContains(b)) a.collisionListeners.forEach { a.isColliding = true; it.onStarted(a, b, o1Point, o2Point, manifold) }
+                if (b.isCollisionGroupContains(a)) b.collisionListeners.forEach { b.isColliding = true; it.onStarted(b, a, o2Point, o1Point, manifold) }
             }
         }
 
@@ -43,8 +46,10 @@ class CollisionManager {
             val a = PhysicsCollisionObject.findInstance(idA)
             val b = PhysicsCollisionObject.findInstance(idB)
             if (a != null && b != null) {
-                a.collisionListeners.forEach { a.isColliding = false; it.onEnded(a, b, manifold) }
-                b.collisionListeners.forEach { b.isColliding = false; it.onEnded(b, a, manifold) }
+                val o1Point = ManifoldPoint(manifold, 0)
+                val o2Point = ManifoldPoint(manifold, 1)
+                a.collisionListeners.forEach { a.isColliding = false; it.onEnded(a, b, o1Point, o2Point, manifold) }
+                b.collisionListeners.forEach { b.isColliding = false; it.onEnded(b, a, o2Point, o1Point, manifold) }
             }
         }
     }

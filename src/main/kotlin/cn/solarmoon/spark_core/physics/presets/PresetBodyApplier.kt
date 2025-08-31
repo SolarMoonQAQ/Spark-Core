@@ -32,7 +32,7 @@ object PresetBodyApplier {
                 entity.bindBody(body, level.physicsLevel, true) {
                     (this.collisionShape as CompoundCollisionShape).initWithAnimatedBone(bone)
                     this.isContactResponse = false
-                    this.setGravity(Vector3f.ZERO)
+                    this.setGravity(Vector3f())
                     this.setEnableSleep(false)
                     this.isKinematic = true
                     this.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
@@ -51,7 +51,7 @@ object PresetBodyApplier {
                 bindBody(body, level.physicsLevel) {
                     this.isContactResponse = false
                     this.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK
-                    this.setGravity(Vector3f.ZERO)
+                    this.setGravity(Vector3f())
                     this.setEnableSleep(false)
                     this.isKinematic = true
                     this.addPhysicsTicker(MoveWithBoundingBoxTicker(true))

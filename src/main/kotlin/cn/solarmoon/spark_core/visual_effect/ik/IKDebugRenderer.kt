@@ -1,12 +1,9 @@
 package cn.solarmoon.spark_core.ik.visualizer
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.ik.component.IKComponent
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBVector3f
-
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.math.Vector3f
@@ -15,7 +12,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.RenderType
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 import java.util.ArrayList
@@ -78,7 +74,7 @@ class IKDebugRenderer : VisualEffectRenderer() {
             }.toBVector3f()
 
             // --- Perform client-side raycast for visualization ---
-            val rayStart = desiredTargetWorldJME.add(component.value.groundCheckOffset)
+            val rayStart = desiredTargetWorldJME.addLocal(component.value.groundCheckOffset)
             val rayEnd = rayStart.subtract(0f, component.value.groundCheckDistance, 0f)
             val results = ArrayList<PhysicsRayTestResult>()
             physicsWorld.rayTest(rayStart, rayEnd, results) // Use the available rayTest
@@ -102,7 +98,7 @@ class IKDebugRenderer : VisualEffectRenderer() {
             if (closestHit != null) {
                 // Calculate hit point manually
                 val hitDir = rayEnd.subtract(rayStart)
-                clientActualTargetPos = rayStart.add(hitDir.multLocal(closestHit.hitFraction))
+                clientActualTargetPos = rayStart.add(hitDir.mult(closestHit.hitFraction))
                 clientIsGrounded = true
             }
 

@@ -33,7 +33,7 @@ open class MoveWithAnimatedBoneTicker(
                     body.setPhysicsTransform(Transform(
                         animatable.getWorldBonePivot(boneName, offset.toVec3()).toBVector3f(),
                         animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion(),
-                        animatable.getBonePose(boneName).getScale().toBVector3f()
+                        animatable.getBonePose(boneName).getScale().toVector3f().toBVector3f()
                     ))
                 } catch (e: Exception) {
                     println(e)

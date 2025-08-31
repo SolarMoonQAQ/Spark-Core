@@ -8,8 +8,8 @@ import cn.solarmoon.spark_core.resource.graph.ModuleGraphManager
 import cn.solarmoon.spark_core.resource.graph.ResourceGraphManager
 import cn.solarmoon.spark_core.resource.graph.ResourceNode
 import cn.solarmoon.spark_core.resource.origin.OModuleInfo
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
+import com.mojang.serialization.JsonOps
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.fml.loading.FMLPaths
 import java.nio.file.Files
@@ -36,8 +36,6 @@ class MetaHandler : ResourceHandlerBase() {
             }
         }
     }
-
-    private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
 
     override fun getSupportedExtensions(): Set<String> = setOf(OModuleInfo.DESCRIPTOR_FILE_NAME, "spark")
 
@@ -91,7 +89,7 @@ class MetaHandler : ResourceHandlerBase() {
                         SparkCore.LOGGER.debug("发现Spark包: $modId:$moduleName (文件: $fileName)")
 
                         // 注册为资源节点，以保持一致性
-                        ResourceGraphManager.addOrUpdateResource(sparkFile, OModuleInfo.DESCRIPTOR_FILE_NAME)
+                        //ResourceGraphManager.addOrUpdateResource(sparkFile, OModuleInfo.DESCRIPTOR_FILE_NAME)
                         parseAndRegisterModule(sparkFile, modId, moduleName, true)
                     }
             }
@@ -155,7 +153,7 @@ class MetaHandler : ResourceHandlerBase() {
 
         if (descriptorContent != null) {
             try {
-                val originalModuleInfo = gson.fromJson(descriptorContent, OModuleInfo::class.java)
+                val originalModuleInfo = OModuleInfo.CODEC.decode(JsonOps.INSTANCE, JsonParser.parseString(descriptorContent)).orThrow.first
 
                 // 为四层目录结构生成正确的模块ID格式：modId:moduleName
                 val fullModuleId = "$modId:$moduleName"

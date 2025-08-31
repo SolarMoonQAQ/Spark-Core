@@ -12,10 +12,10 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 
 data class SpaceWarpPayload(
     val pos: Vec3,
-    val maxRadiusMeters: Float,
+    val minRadius: Float,
+    val maxRadius: Float,
     val baseStrength: Float,
-    val lifeTime: Int,
-    val pulseHz: Float
+    val lifeTime: Int
 ): CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> = TYPE
@@ -25,10 +25,10 @@ data class SpaceWarpPayload(
         fun handleInClient(payload: SpaceWarpPayload, context: IPayloadContext) {
             val warp = SpaceWarp(
                 pos = payload.pos,
-                maxRadiusMeters = payload.maxRadiusMeters,
+                minRadius = payload.minRadius,
+                maxRadius = payload.maxRadius,
                 baseStrength = payload.baseStrength,
                 maxLifeTime = payload.lifeTime,
-                pulseHz = payload.pulseHz
             )
             SparkVisualEffects.SPACE_WARP.add(warp)
         }
@@ -43,18 +43,18 @@ data class SpaceWarpPayload(
             object : StreamCodec<FriendlyByteBuf, SpaceWarpPayload> {
                 override fun encode(buf: FriendlyByteBuf, value: SpaceWarpPayload) {
                     SerializeHelper.VEC3_STREAM_CODEC.encode(buf, value.pos)
-                    buf.writeFloat(value.maxRadiusMeters)
+                    buf.writeFloat(value.minRadius)
+                    buf.writeFloat(value.maxRadius)
                     buf.writeFloat(value.baseStrength)
                     buf.writeInt(value.lifeTime)
-                    buf.writeFloat(value.pulseHz)
                 }
                 override fun decode(buf: FriendlyByteBuf): SpaceWarpPayload {
                     val pos = SerializeHelper.VEC3_STREAM_CODEC.decode(buf)
-                    val radius = buf.readFloat()
+                    val radius0 = buf.readFloat()
+                    val radius1 = buf.readFloat()
                     val strength = buf.readFloat()
                     val lifeTime = buf.readInt()
-                    val pulse = buf.readFloat()
-                    return SpaceWarpPayload(pos, radius, strength, lifeTime, pulse)
+                    return SpaceWarpPayload(pos, radius0, radius1, strength, lifeTime)
                 }
             }
     }

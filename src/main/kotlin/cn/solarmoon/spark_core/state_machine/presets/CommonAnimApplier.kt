@@ -34,7 +34,7 @@ object CommonAnimApplier {
             entityHost.bindBody(body, entityHost.physicsLevel, true) {
                 (this.collisionShape as CompoundCollisionShape).initWithAnimatedBone(bone)
                 this.isContactResponse = false
-                this.setGravity(Vector3f.ZERO)
+                this.setGravity(Vector3f())
                 this.setEnableSleep(false)
                 this.isKinematic = true
                 this.collideWithGroups = PhysicsCollisionObject.COLLISION_GROUP_OBJECT or PhysicsCollisionObject.COLLISION_GROUP_BLOCK

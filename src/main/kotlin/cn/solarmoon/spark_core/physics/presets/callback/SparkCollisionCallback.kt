@@ -1,13 +1,11 @@
 package cn.solarmoon.spark_core.physics.presets.callback
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
+import cn.solarmoon.spark_core.physics.collision.ManifoldPoint
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.npc_adapter.event.SparkPhysicsEvent.CollisionProcessedEvent
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.Entity
-import net.neoforged.fml.ModList
 import net.neoforged.neoforge.common.NeoForge
 
 /**
@@ -37,6 +35,8 @@ class SparkCollisionCallback @JvmOverloads constructor(
         target: Entity,
         aBody: PhysicsCollisionObject,
         bBody: PhysicsCollisionObject,
+        aPoint: ManifoldPoint,
+        bPoint: ManifoldPoint,
         manifoldId: Long
     ) {
         if (!isFirst) return
@@ -44,7 +44,7 @@ class SparkCollisionCallback @JvmOverloads constructor(
         
         attacker.level().submitImmediateTask(PPhase.POST) {
             // 发送 SparkCore 通用事件
-            val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
+            val event = CollisionProcessedEvent(aBody, bBody, aPoint, bPoint, manifoldId)
             NeoForge.EVENT_BUS.post(event)
         }
     }
@@ -54,13 +54,15 @@ class SparkCollisionCallback @JvmOverloads constructor(
         target: Entity,
         aBody: PhysicsCollisionObject,
         bBody: PhysicsCollisionObject,
+        aPoint: ManifoldPoint,
+        bPoint: ManifoldPoint,
         manifoldId: Long
     ): Boolean {
         if (attacker.level().isClientSide) return false
         
         attacker.level().submitImmediateTask(PPhase.POST) {
             // 发送 SparkCore 通用事件
-            val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
+            val event = CollisionProcessedEvent(aBody, bBody, aPoint, bPoint, manifoldId)
             NeoForge.EVENT_BUS.post(event)
         }
         return true
@@ -71,13 +73,15 @@ class SparkCollisionCallback @JvmOverloads constructor(
         target: Entity,
         aBody: PhysicsCollisionObject,
         bBody: PhysicsCollisionObject,
+        aPoint: ManifoldPoint,
+        bPoint: ManifoldPoint,
         manifoldId: Long
     ) {
         if (attacker.level().isClientSide) return
         
         attacker.level().submitImmediateTask(PPhase.POST) {
             // 发送 SparkCore 通用事件
-            val event = CollisionProcessedEvent(aBody, bBody, manifoldId)
+            val event = CollisionProcessedEvent(aBody, bBody, aPoint, bPoint, manifoldId)
             NeoForge.EVENT_BUS.post(event)
         }
     }

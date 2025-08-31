@@ -58,7 +58,6 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.tan
-import com.jme3.math.Vector3f as JMEVector3f
 
 class ModelEditorScreen(private val modelLocation: ResourceLocation, private val textureLocation: ResourceLocation) :
     Screen(Component.translatable("${SparkCore.MOD_ID}.screen.model_editor.title")) {
@@ -917,16 +916,16 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             debugRayDirection = rayDirection
 
             // 转换为JME的Vector3f
-            val jmeRayOrigin = JMEVector3f(rayOrigin.x, rayOrigin.y, rayOrigin.z)
-            val jmeRayDirection = JMEVector3f(rayDirection.x, rayDirection.y, rayDirection.z)
+            val jmeRayOrigin = Vector3f(rayOrigin.x, rayOrigin.y, rayOrigin.z)
+            val jmeRayDirection = Vector3f(rayDirection.x, rayDirection.y, rayDirection.z)
 
             // 计算射线终点（射线长度设为100单位）
-            val jmeRayEnd = JMEVector3f(jmeRayOrigin)
-            jmeRayEnd.addLocal(jmeRayDirection.mult(100f))
+            val jmeRayEnd = Vector3f(jmeRayOrigin)
+            jmeRayEnd.add(jmeRayDirection.mul(100f, Vector3f()))
 
             // 执行射线检测
             val results = ArrayList<PhysicsRayTestResult>()
-            physicsWorld.rayTest(jmeRayOrigin, jmeRayEnd, results)
+            physicsWorld.rayTest(jmeRayOrigin.toBVector3f(), jmeRayEnd.toBVector3f(), results)
 
             // 首先检查是否点击了坐标轴
             // 在IK模式下，检查末端执行器骨骼的坐标轴和IK目标坐标轴
