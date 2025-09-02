@@ -1,17 +1,8 @@
 package cn.solarmoon.spark_core.js.sync
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.animation.model.origin.OModel
-import cn.solarmoon.spark_core.animation.sync.ModelDataPayload
-import cn.solarmoon.spark_core.animation.sync.ModelDataSendingTask
-import cn.solarmoon.spark_core.js.ClientSparkJS
 import cn.solarmoon.spark_core.js.JSApi
-import cn.solarmoon.spark_core.js.ServerSparkJS
-import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.origin.OJSScript
-import net.minecraft.client.Minecraft
-import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
@@ -59,7 +50,7 @@ class JSPayload(
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.map({mutableMapOf()}, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.map({mutableMapOf()}, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.STRING_UTF8)), JSPayload::api,
+            ByteBufCodecs.map(::LinkedHashMap, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.map({mutableMapOf()}, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.STRING_UTF8)), JSPayload::api,
             ::JSPayload
         )
     }

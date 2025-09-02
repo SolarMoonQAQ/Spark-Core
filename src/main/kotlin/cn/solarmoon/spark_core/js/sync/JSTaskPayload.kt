@@ -35,7 +35,7 @@ class JSTaskPayload(
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.map({mutableMapOf()}, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.map({mutableMapOf()}, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.STRING_UTF8)), JSTaskPayload::api,
+            ByteBufCodecs.map(::LinkedHashMap, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.map({mutableMapOf()}, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.STRING_UTF8)), JSTaskPayload::api,
             ::JSTaskPayload
         )
     }

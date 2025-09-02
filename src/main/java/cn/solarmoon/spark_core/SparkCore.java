@@ -67,4 +67,9 @@ public class SparkCore {
         PhysicsHelperKt.initBullet();
         SparkResourceRegister.register(modEventBus);
     }
+
+    public static Logger logger(String suffix) {
+        return LoggerFactory.getLogger("星火核心" + "/" + suffix);
+    }
+
 }

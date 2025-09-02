@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.event
 
-import cn.solarmoon.spark_core.resource2.SparkPackModule
+import cn.solarmoon.spark_core.resource2.modules.SparkPackModule
 import net.neoforged.bus.api.Event
 
 class SparkPackageReaderRegisterEvent(
@@ -8,7 +8,7 @@ class SparkPackageReaderRegisterEvent(
 ): Event() {
 
     fun register(reader: SparkPackModule) {
-        registry[reader.moduleName] = reader
+        registry[reader.id] = reader
     }
 
 }

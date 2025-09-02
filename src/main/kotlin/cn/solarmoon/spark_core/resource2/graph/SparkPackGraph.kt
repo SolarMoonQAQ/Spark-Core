@@ -48,7 +48,7 @@ class SparkPackGraph(
 
     companion object {
         val STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.map(::HashMap, ResourceLocation.STREAM_CODEC, SparkPackage.STREAM_CODEC), SparkPackGraph::originNodes,
+            ByteBufCodecs.map(::LinkedHashMap, ResourceLocation.STREAM_CODEC, SparkPackage.STREAM_CODEC), SparkPackGraph::originNodes,
             ::SparkPackGraph
         )
     }

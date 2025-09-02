@@ -1,10 +1,15 @@
-package cn.solarmoon.spark_core.resource2
+package cn.solarmoon.spark_core.resource2.modules
 
 import cn.solarmoon.spark_core.resource2.graph.SparkPackage
 
 interface SparkPackModule {
 
-    val moduleName: String
+    val id: String
+
+    /**
+     * 所有该模块内容开始读取之前调用此方法
+     */
+    fun onStart() {}
 
     /**
      * @param pathSegments 模块目录下的层层递进目录（不含模块名和文件名）（比如 animations/minecraft/player/test.json，此参数则为list["minecraft", "player"]）

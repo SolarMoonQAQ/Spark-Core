@@ -11,7 +11,7 @@ data class SparkPackage(
     companion object {
         val STREAM_CODEC = StreamCodec.composite(
             SparkPackMetaInfo.STREAM_CODEC, SparkPackage::meta,
-            ByteBufCodecs.map(::HashMap, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.BYTE_ARRAY), SparkPackage::entries,
+            ByteBufCodecs.map(::LinkedHashMap, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.BYTE_ARRAY), SparkPackage::entries,
             ::SparkPackage
         )
     }

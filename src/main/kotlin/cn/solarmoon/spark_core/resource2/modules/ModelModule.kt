@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
 import cn.solarmoon.spark_core.animation.model.origin.OLocator
 import cn.solarmoon.spark_core.animation.model.origin.OModel
-import cn.solarmoon.spark_core.resource2.SparkPackModule
 import cn.solarmoon.spark_core.resource2.graph.SparkPackage
 import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.util.toRadians
@@ -20,7 +19,11 @@ import kotlin.collections.set
 
 class ModelModule: SparkPackModule {
 
-    override val moduleName: String = "models"
+    override val id: String = "models"
+
+    override fun onStart() {
+        OModel.ORIGINS.clear()
+    }
 
     override fun read(
         pathSegments: List<String>,
@@ -70,7 +73,7 @@ class ModelModule: SparkPackModule {
     }
 
     override fun onFinish() {
-        SparkCore.LOGGER.info("已加载 ${OModel.ORIGINS.size} 种类型的模型")
+        SparkCore.logger("模型加载器").info("\n\uD83D\uDEB6已加载模型\uD83D\uDEB6\n✅${OModel.ORIGINS.map { it.key }}")
     }
 
 }

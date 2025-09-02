@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.resource2.modules
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.resource2.SparkPackModule
 import cn.solarmoon.spark_core.resource2.graph.SparkPackage
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
@@ -11,7 +10,11 @@ import java.nio.charset.StandardCharsets
 
 class AnimationModule: SparkPackModule {
 
-    override val moduleName: String = "animations"
+    override val id: String = "animations"
+
+    override fun onStart() {
+        OAnimationSet.ORIGINS.clear()
+    }
 
     override fun read(
         pathSegments: List<String>,
@@ -27,7 +30,15 @@ class AnimationModule: SparkPackModule {
     }
 
     override fun onFinish() {
-        SparkCore.LOGGER.info("已为 ${OAnimationSet.ORIGINS.size} 个模型读取到动画集，共包含 ${OAnimationSet.ORIGINS.values.sumOf { it.animations.size } } 个动画")
+        val logMsg = buildString {
+            append("\n\uD83E\uDDD1\u200D\uD83E\uDDBD已为 ${OAnimationSet.ORIGINS.size} 个模型读取到动画集\uD83E\uDDD1\u200D\uD83E\uDDBD\n")
+            OAnimationSet.ORIGINS.forEach { (modelId, set) ->
+                append("✅$modelId: [")
+                append(set.animations.keys.joinToString(", "))
+                append("]\n")
+            }
+        }
+        SparkCore.logger("动画加载器").info(logMsg)
     }
 
 }

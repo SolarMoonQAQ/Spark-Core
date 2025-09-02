@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.js
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
+import cn.solarmoon.spark_core.event.SparkJSRegisterEvent2
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.neoforged.fml.ModLoader
 
@@ -19,7 +19,7 @@ interface JSApi {
 
         fun register() {
             val regs = mutableSetOf<JSApi>()
-            ModLoader.postEvent(SparkJSRegisterEvent(regs))
+            ModLoader.postEvent(SparkJSRegisterEvent2(regs))
             ALL = buildMap { regs.forEach { put(it.id, it) } }
             SparkCore.LOGGER.info("已注册脚本模块：${ALL.keys}")
         }

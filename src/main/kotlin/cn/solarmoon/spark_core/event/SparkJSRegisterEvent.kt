@@ -1,17 +1,16 @@
 package cn.solarmoon.spark_core.event
 
-import cn.solarmoon.spark_core.js.JSApi
-import cn.solarmoon.spark_core.js.JSComponent
-import cn.solarmoon.spark_core.js.SparkJS
+import cn.solarmoon.spark_core.js2.modules.JSModule
 import net.neoforged.bus.api.Event
-import net.neoforged.fml.event.IModBusEvent
+import org.graalvm.polyglot.Value
 
 class SparkJSRegisterEvent(
-    private val allApi: MutableSet<JSApi>
-): Event(), IModBusEvent {
+    private val modules: MutableMap<String, JSModule>,
+    val bindings: Value
+): Event() {
 
-    fun register(api: JSApi) {
-        allApi.add(api)
+    fun registerModule(module: JSModule) {
+        modules[module.id] = module
     }
 
 }
