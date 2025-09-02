@@ -9,10 +9,12 @@ import com.jme3.math.Transform
 import net.minecraft.core.Vec3i
 import net.minecraft.util.Mth
 import net.minecraft.world.level.ChunkPos
+import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3f
 import org.joml.Quaterniond
 import org.joml.Quaternionf
+import org.joml.Vector2d
 import org.joml.Vector3d
 import org.joml.Vector3f
 import java.lang.Math
@@ -113,6 +115,8 @@ fun Vec3.toVec3i() = Vec3i(x.toInt(), y.toInt(), z.toInt())
 fun Vector3d.toVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
 
 fun Double.toDegrees() = Math.toDegrees(this)
+
+fun Vec2.toVector2d() = Vector2d(x.toDouble(), y.toDouble())
 
 fun Vec3.toDegrees() = Vec3(
     x.toDegrees(),

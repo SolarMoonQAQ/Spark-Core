@@ -73,7 +73,7 @@ class ModelModule: SparkPackModule {
     }
 
     override fun onFinish() {
-        SparkCore.logger("模型加载器").info("\n\uD83D\uDEB6已加载模型\uD83D\uDEB6\n✅${OModel.ORIGINS.map { it.key }}")
+        SparkCore.logger("模型加载器").info("\n\uD83D\uDEB6已加载模型\uD83D\uDEB6\n✅${OModel.ORIGINS.map { it.key }}\n")
     }
 
 }

@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'idea'
-    id 'net.neoforged.moddev' version '1.0.14'
+    id 'net.neoforged.moddev' version '2.0.107'
     id 'org.jetbrains.kotlin.jvm' version '2.0.21'
     id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.21'
 }

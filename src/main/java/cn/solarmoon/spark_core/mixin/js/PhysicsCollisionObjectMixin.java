@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.mixin.js;
 
-import cn.solarmoon.spark_core.js.extension.JSPhysicsCollisionObject;
+import cn.solarmoon.spark_core.js2.extension.JSPhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
-import org.mozilla.javascript.Scriptable;
+import org.graalvm.polyglot.Value;
 import org.spongepowered.asm.mixin.Mixin;
 
 import java.util.LinkedHashMap;
@@ -12,10 +12,10 @@ import java.util.Map;
 @Mixin(PhysicsCollisionObject.class)
 public class PhysicsCollisionObjectMixin implements JSPhysicsCollisionObject {
     
-    private final Map<String, List< Scriptable>> callBacks = new LinkedHashMap<>();
+    private final Map<String, List< Value>> callBacks = new LinkedHashMap<>();
     
     @Override
-    public Map<String, List< Scriptable>> getCallbackFunctions() {
+    public Map<String, List<Value>> getCallbackFunctions() {
         return callBacks;
     }
 }

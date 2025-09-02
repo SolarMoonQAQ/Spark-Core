@@ -23,7 +23,13 @@ data class SparkPackagePayload(
             context.enqueueWork {
                 SparkPackLoader.graph.originNodes.clear()
                 SparkPackLoader.graph.originNodes.putAll(payload.graph.originNodes)
-                SparkCore.LOGGER.info("已从服务器接收 {} 个拓展包", payload.graph.originNodes.size)
+                SparkPackLoader.LOGGER.info(buildString {
+                    appendLine()
+                    appendLine("💻已从服务器接收拓展包💻")
+                    append("[")
+                    append(SparkPackLoader.graph.originNodes.keys.joinToString(", "))
+                    append("]\n")
+                })
                 SparkPackLoader.readPackageContent()
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))

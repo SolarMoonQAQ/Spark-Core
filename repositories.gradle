@@ -34,14 +34,18 @@ dependencies {
     jarJar(implementation("org.mozilla:rhino:1.8.0"))
     additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
 
-    implementation("org.graalvm.sdk:graal-sdk:20.2.0")
-    implementation('org.graalvm.js:js:20.2.0')
-    implementation('org.graalvm.js:js-scriptengine:20.2.0')
-    implementation('org.graalvm.truffle:truffle-api:20.2.0')
-    additionalRuntimeClasspath('org.graalvm.sdk:graal-sdk:20.2.0')
-    additionalRuntimeClasspath('org.graalvm.js:js:20.2.0')
-    additionalRuntimeClasspath('org.graalvm.js:js-scriptengine:20.2.0')
-    additionalRuntimeClasspath('org.graalvm.truffle:truffle-api:20.2.0')
+    jarJar(implementation("org.graalvm.polyglot:polyglot:24.1.1"))
+    jarJar(implementation("org.graalvm.js:js-community:24.1.1"))
+    // 显式添加缺失的 SDK 模块
+    jarJar(implementation("org.graalvm.sdk:word:24.1.1"))
+    jarJar(implementation("org.graalvm.sdk:collections:24.1.1"))
+    jarJar(implementation("org.graalvm.sdk:nativeimage:24.1.1"))
+    additionalRuntimeClasspath("org.graalvm.polyglot:polyglot:24.1.1")
+    additionalRuntimeClasspath("org.graalvm.js:js-community:24.1.1")
+    additionalRuntimeClasspath("org.graalvm.sdk:word:24.1.1")
+    additionalRuntimeClasspath("org.graalvm.sdk:collections:24.1.1")
+    additionalRuntimeClasspath("org.graalvm.sdk:nativeimage:24.1.1")
+
     // 对象池
     jarJar(implementation("org.apache.commons:commons-pool2:2.12.1"))
     additionalRuntimeClasspath("org.apache.commons:commons-pool2:2.12.1")

@@ -6,6 +6,8 @@ interface JSModule {
 
     val id: String
 
+    fun onInitialize() {}
+
     /**
      * 该模块下每加载完毕一个脚本时调用
      */

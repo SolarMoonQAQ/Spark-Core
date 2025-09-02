@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
@@ -16,13 +17,18 @@ class AnimInstance private constructor(
 
     companion object {
         @JvmStatic
-        fun create(holder: IAnimatable<*>, name: String, provider: AnimInstance.() -> Unit = {}): AnimInstance {
+        fun create(holder: IAnimatable<*>, name: String, provider: AnimInstance.() -> Unit = {}): AnimInstance? {
             return create(holder, AnimIndex(holder.modelIndex.modelPath, name), provider)
         }
 
         @JvmStatic
         fun create(holder: IAnimatable<*>, index: AnimIndex, provider: AnimInstance.() -> Unit = {}) =
-            AnimInstance(holder, index).apply { provider.invoke(this) }
+            try {
+                AnimInstance(holder, index).apply { provider.invoke(this) }
+            } catch (e: Exception) {
+                SparkCore.logger("动画").error(e.message)
+                null
+            }
     }
 
     val origin = OAnimationSet.getOrEmpty(animIndex.modelPath).getValidAnimation(animIndex.name)

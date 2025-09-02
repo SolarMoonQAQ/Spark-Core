@@ -82,7 +82,7 @@ class EntityBaseUseAnimStateMachine(
             if (data !is AnimPlayDataProvider) return@onStateEntry
             val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, AnimInstance.create(entity, animName), this, data))
             if (event.isCanceled) return@onStateEntry
-            val anim = (event.newAnim ?: event.originAnim).apply { shouldTurnBody = true }
+            val anim = (event.newAnim ?: event.originAnim)?.apply { shouldTurnBody = true } ?: return@onStateEntry
             entity.animController.getLayer(data.layerId).setAnimation(anim, data.data(lastState))
         }
 

@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.resource2
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.SparkPackageReaderRegisterEvent
 import cn.solarmoon.spark_core.resource2.graph.SparkPackGraph
-import cn.solarmoon.spark_core.resource2.graph.SparkPackage
 import cn.solarmoon.spark_core.resource2.modules.SparkPackModule
 import cn.solarmoon.spark_core.resource2.readable.ReadableDirectory
 import cn.solarmoon.spark_core.resource2.readable.ReadableZip
@@ -69,12 +68,10 @@ object SparkPackLoader {
         }
 
         // 按顺序加载所有的资源的所有已注册模块
-        var currentLoadingPack: SparkPackage? = null
-        modules.forEach { (id, reader) ->
-            reader.onStart()
-            val prefix = "$id/"
-            orderedPacks.forEach { pack ->
-                currentLoadingPack = pack
+        modules.forEach { it.value.onStart() }
+        orderedPacks.forEach { pack ->
+            modules.forEach { (id, module) ->
+                val prefix = "$id/"
                 pack.entries
                     .filter { it.key.startsWith(prefix) }
                     .forEach { (path, content) ->
@@ -83,17 +80,15 @@ object SparkPackLoader {
                         val fileName = parts.last()
                         val pathSegments = if (parts.size > 1) parts.dropLast(1) else emptyList()
                         try {
-                            reader.read(pathSegments, fileName, content, pack)
+                            module.read(pathSegments, fileName, content, pack)
                         } catch (e: Exception) {
-                            LOGGER.error("包 ${pack.meta.id} 读取 ${reader.id} 模块失败: $e")
+                            LOGGER.error("包 ${pack.meta.id} 读取 ${module.id} 模块失败: $e")
                         }
                     }
             }
-            reader.onFinish()
-            currentLoadingPack?.let {
-                LOGGER.info("拓展包 ${it.meta.id} 已加载完毕")
-            }
+            LOGGER.info("拓展包 ${pack.meta.id} 已加载完毕")
         }
+        modules.forEach { it.value.onFinish() }
     }
 
 }

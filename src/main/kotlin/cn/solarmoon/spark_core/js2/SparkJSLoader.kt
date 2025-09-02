@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.js2
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
 import cn.solarmoon.spark_core.js2.modules.JSModule
 import net.minecraft.resources.ResourceLocation
@@ -11,9 +12,10 @@ import java.nio.charset.StandardCharsets
 
 object SparkJSLoader {
 
-    val context = Context.newBuilder("js")
-        .allowHostAccess(HostAccess.ALL) // 在 JS 中访问 Java 对象
-        .build()
+    val LOGGER = SparkCore.logger("JS脚本")
+
+    lateinit var context: Context
+        private set
 
     val bindings get() = context.getBindings("js")
 
@@ -25,17 +27,28 @@ object SparkJSLoader {
 
     fun initialize() {
         inScripts.clear()
+        if (::context.isInitialized) context.close()
+        context = createContext()
         NeoForge.EVENT_BUS.post(SparkJSRegisterEvent(inModules, bindings))
+        inModules.values.forEach { it.onInitialize() }
     }
 
+    fun createContext() = Context.newBuilder("js")
+        .allowHostAccess(HostAccess.ALL) // 在 JS 中访问 Java 对象
+        .build()
+
     fun load(script: JavaScript) {
-        val src = Source.newBuilder("js", script.stringContent, script.index.toString())
-            .encoding(StandardCharsets.UTF_8)
-            .build()
-        val value = context.eval(src)
-        script.value = value
-        inScripts[script.index] = script
-        inModules[script.index.namespace]?.onLoaded(script)
+        try {
+            val src = Source.newBuilder("js", script.stringContent, script.index.toString())
+                .encoding(StandardCharsets.UTF_8)
+                .build()
+            val value = context.eval(src)
+            script.value = value
+            inScripts[script.index] = script
+            inModules[script.index.namespace]?.onLoaded(script)
+        } catch (e: Exception) {
+            LOGGER.error("加载脚本失败: ${script.index}", e)
+        }
     }
 
     fun getScript(index: ResourceLocation): JavaScript? {

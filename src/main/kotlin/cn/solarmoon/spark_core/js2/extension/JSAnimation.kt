@@ -1,49 +1,47 @@
-package cn.solarmoon.spark_core.js.extension
+package cn.solarmoon.spark_core.js2.extension
 
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.js.call
-import cn.solarmoon.spark_core.js.toVector2d
-import org.mozilla.javascript.Function
-import org.mozilla.javascript.NativeArray
+import cn.solarmoon.spark_core.js2.toArray
+import cn.solarmoon.spark_core.js2.toVec2
+import cn.solarmoon.spark_core.util.toVector2d
+import org.graalvm.polyglot.Value
 
 interface JSAnimation {
 
     val anim get() = this as AnimInstance
 
-    val js get() = anim.holder.animLevel.jsEngine
-
     fun getProgress() = anim.getProgress(1f)
 
-    fun onSwitchIn(consumer: Function) {
+    fun onSwitchIn(consumer: Value) {
         anim.onEvent<AnimEvent.SwitchIn> {
             val p = it.previous
-            consumer.call(js, p)
+            consumer.execute(p)
         }
     }
 
-    fun onSwitchOut(consumer: Function) {
+    fun onSwitchOut(consumer: Value) {
         anim.onEvent<AnimEvent.SwitchOut> {
             val n = it.originNextAnim
-            consumer.call(js, n)
+            consumer.execute(n)
         }
     }
 
-    fun onEnd(consumer: Function) {
+    fun onEnd(consumer: Value) {
         anim.onEvent<AnimEvent.End> {
-            consumer.call(js)
+            consumer.execute()
         }
     }
 
-    fun onCompleted(consumer: Function) {
+    fun onCompleted(consumer: Value) {
         anim.onEvent<AnimEvent.Completed> {
-            consumer.call(js)
+            consumer.execute()
         }
     }
 
-    fun onStart(consumer: Function) {
+    fun onStart(consumer: Value) {
         anim.onEvent<AnimEvent.SwitchIn> {
-            consumer.call(js, it.previous)
+            consumer.execute(it.previous)
         }
     }
 
@@ -55,8 +53,8 @@ interface JSAnimation {
 
     fun registerKeyframeRangeStart(id: String, start: Double) = anim.registerKeyframeRange(id, start, anim.maxLength)
 
-    fun registerKeyframeRanges(id: String, ranges: NativeArray, provider: Function) = anim.registerKeyframeRanges(id, *ranges.map { (it as NativeArray).toVector2d() }.toTypedArray()) {
-        provider.call(js, this, it)
+    fun registerKeyframeRanges(id: String, ranges: Value, provider: Value) = anim.registerKeyframeRanges(id, *ranges.toArray { it.toVec2().toVector2d() }) {
+        provider.execute(this, it)
     }
 
 }

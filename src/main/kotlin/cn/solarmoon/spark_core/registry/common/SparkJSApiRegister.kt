@@ -7,6 +7,8 @@ import cn.solarmoon.spark_core.js.extension.*
 import cn.solarmoon.spark_core.js.extension.JSResourcePath
 import cn.solarmoon.spark_core.js.ik.JSIKApi
 import cn.solarmoon.spark_core.js.skill.JSSkillApi
+import cn.solarmoon.spark_core.js2.extension.JSLogger
+import cn.solarmoon.spark_core.js2.extension.JSSkillHelper
 import cn.solarmoon.spark_core.js2.modules.DefaultJSModule
 import cn.solarmoon.spark_core.js2.modules.SkillJSModule
 import net.neoforged.bus.api.IEventBus
@@ -28,6 +30,8 @@ object SparkJSApiRegister {
         event.registerModule(SkillJSModule())
 
         event.bindings.putMember("Logger", JSLogger)
+        event.bindings.putMember("Skill", JSSkillHelper)
+        event.bindings.putMember("PhysicsHelper", cn.solarmoon.spark_core.js2.extension.JSPhysicsHelper)
     }
 
     private fun regCom(event: SparkJSComponentRegisterEvent) {

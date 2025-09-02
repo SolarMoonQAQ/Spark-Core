@@ -34,7 +34,7 @@ class TypedAnimation(
     fun create(animatable: IAnimatable<*>): AnimInstance {
         return AnimInstance.create(animatable, index) {
             provider.invoke(this)
-        }
+        }!!
     }
 
     fun play(animatable: IAnimatable<*>, layerId: ResourceLocation, data: AnimLayerData) {

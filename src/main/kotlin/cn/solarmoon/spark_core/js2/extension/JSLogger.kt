@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.js.extension
+package cn.solarmoon.spark_core.js2.extension
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.js.JSComponent

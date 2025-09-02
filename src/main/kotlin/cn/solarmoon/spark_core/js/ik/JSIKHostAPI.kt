@@ -3,9 +3,9 @@ package cn.solarmoon.spark_core.js.ik
 // 如果需要，导入你的网络处理器
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
 import cn.solarmoon.spark_core.ik.sync.IKSyncTargetPayload
-import cn.solarmoon.spark_core.js.extension.JSEntity
+import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
+import cn.solarmoon.spark_core.js2.extension.JSEntity
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec3

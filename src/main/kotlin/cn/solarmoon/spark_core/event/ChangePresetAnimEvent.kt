@@ -12,7 +12,7 @@ abstract class ChangePresetAnimEvent: Event() {
 
     class PlayerState(
         val player: Player,
-        val originAnim: AnimInstance,
+        val originAnim: AnimInstance?,
         val state: IState,
         var data: AnimPlayDataProvider
     ): ChangePresetAnimEvent(), ICancellableEvent {
@@ -21,7 +21,7 @@ abstract class ChangePresetAnimEvent: Event() {
 
     class EntityUseState(
         val entity: LivingEntity,
-        val originAnim: AnimInstance,
+        val originAnim: AnimInstance?,
         val state: IState,
         var data: AnimPlayDataProvider
     ): ChangePresetAnimEvent(), ICancellableEvent {

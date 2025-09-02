@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.mixin.js;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.js.extension.JSAnimatable;
+import cn.solarmoon.spark_core.js2.extension.JSAnimatable;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(IAnimatable.class)

@@ -26,7 +26,7 @@ class AnimationModule: SparkPackModule {
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val animationSet = OAnimationSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
         val id = ResourceLocation.fromNamespaceAndPath(pathSegments[0], pathSegments[1])
-        OAnimationSet.ORIGINS[id] = animationSet
+        OAnimationSet.ORIGINS.getOrPut(id) { OAnimationSet.EMPTY }.animations.putAll(animationSet.animations)
     }
 
     override fun onFinish() {

@@ -119,7 +119,7 @@ class PlayerBaseAnimStateMachine(
 
         val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, AnimInstance.create(player, animName), this, provider))
         if (event.isCanceled) return
-        val anim = event.newAnim ?: event.originAnim
+        val anim = (event.newAnim ?: event.originAnim) ?: return
         val data = event.data
         val layer = data.layerId
         val layerData = data.data(lastState)
