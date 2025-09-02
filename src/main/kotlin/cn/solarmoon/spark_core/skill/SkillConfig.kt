@@ -15,8 +15,9 @@ interface SkillConfig {
 }
 
 inline fun <reified T: Any> SkillConfig.read(key: String, defaultValue: T): T {
-    val value = storage.get(key)
+    var value = storage.get(key)
     if (defaultValue is Number && defaultValue !is Double) throw IllegalArgumentException("由于js的数字类型限制为double，因此配置参数[$key] 的类型不能为 ${defaultValue::class.simpleName}，请用double类型填写然后转为想要的类型。")
+    if (defaultValue is Double && value is Int) value = value.toDouble()
     return when (value) {
         null -> defaultValue
         is T -> value

@@ -23,8 +23,8 @@ interface JSLevel {
         level.playSound(null, pos, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()))
     }
 
-    fun playSound(pos: BlockPos, sound: String, source: String, volume: Float, pitch: Float) {
-        level.playSound(null, pos, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()), volume, pitch)
+    fun playSound(pos: BlockPos, sound: String, source: String, volume: Double, pitch: Double) {
+        level.playSound(null, pos, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()), volume.toFloat(), pitch.toFloat())
     }
 
 }

@@ -24,18 +24,8 @@ object SparkPackResourceLoader {
     fun copyResourceModulesToRun(modMainClass: Class<*>) {
         val runModulesDir = FMLPaths.GAMEDIR.get().resolve(MODULE_NAME)
         Files.createDirectories(runModulesDir)
-
-        val sourceDir: Path = if (modMainClass.protectionDomain.codeSource.location.path.contains("build/classes")) {
-            SparkCore.LOGGER.info("在开发环境下打包资源拓展文件...")
-            // 从运行目录(run-client)回到模块根目录
-            val projectRoot = Paths.get("").toAbsolutePath().parent
-            val devResourceDir = projectRoot.resolve("src").resolve("main").resolve("resources").resolve(MODULE_NAME)
-            Files.createDirectories(devResourceDir)
-            devResourceDir
-        } else {
-            val url = modMainClass.classLoader.getResource(MODULE_NAME) ?: return
-            Paths.get(url.toURI())
-        }
+        val url = modMainClass.classLoader.getResource(MODULE_NAME) ?: return
+        val sourceDir = Paths.get(url.toURI())
 
         Files.list(sourceDir).use { modules ->
             modules.filter { Files.isDirectory(it) }.forEach { moduleDir ->

@@ -34,17 +34,8 @@ dependencies {
     jarJar(implementation("org.mozilla:rhino:1.8.0"))
     additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
 
-    jarJar(implementation("org.graalvm.polyglot:polyglot:24.1.1"))
-    jarJar(implementation("org.graalvm.js:js-community:24.1.1"))
-    // 显式添加缺失的 SDK 模块
-    jarJar(implementation("org.graalvm.sdk:word:24.1.1"))
-    jarJar(implementation("org.graalvm.sdk:collections:24.1.1"))
-    jarJar(implementation("org.graalvm.sdk:nativeimage:24.1.1"))
-    additionalRuntimeClasspath("org.graalvm.polyglot:polyglot:24.1.1")
-    additionalRuntimeClasspath("org.graalvm.js:js-community:24.1.1")
-    additionalRuntimeClasspath("org.graalvm.sdk:word:24.1.1")
-    additionalRuntimeClasspath("org.graalvm.sdk:collections:24.1.1")
-    additionalRuntimeClasspath("org.graalvm.sdk:nativeimage:24.1.1")
+    jarJar(implementation("cn.solarmoon:spark-core-graaljs-neoforge:${minecraft_version}-${graaljs_version}"))
+    additionalRuntimeClasspath("cn.solarmoon:spark-core-graaljs-neoforge:${minecraft_version}-${graaljs_version}")
 
     // 对象池
     jarJar(implementation("org.apache.commons:commons-pool2:2.12.1"))
@@ -160,6 +151,13 @@ repositories {
     }
     maven {
         url = 'https://maven.azuredoom.com/mods'
+    }
+    maven {
+        url = "https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core"
+        credentials {
+            username = System.getenv("GITMAVEN_USERNAME")
+            password = System.getenv("SolarMoonCore_TOKEN")
+        }
     }
     flatDir {
         dir 'libs'

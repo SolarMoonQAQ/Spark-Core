@@ -21,7 +21,7 @@ data class SparkPackagePayload(
         @JvmStatic
         fun handleInClient(payload: SparkPackagePayload, context: IPayloadContext) {
             context.enqueueWork {
-                SparkPackLoader.graph.originNodes.clear()
+                SparkPackLoader.initialize()
                 SparkPackLoader.graph.originNodes.putAll(payload.graph.originNodes)
                 SparkPackLoader.LOGGER.info(buildString {
                     appendLine()
