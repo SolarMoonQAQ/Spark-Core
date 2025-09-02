@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "spirit_of_fight:item/wooden_warhammer",
+    "particle": "spirit_of_fight:item/wooden_warhammer"
+  }
+}

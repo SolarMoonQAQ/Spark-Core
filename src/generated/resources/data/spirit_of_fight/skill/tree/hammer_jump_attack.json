@@ -1,0 +1,25 @@
+{
+  "item": {
+    "tag": "c:hammers"
+  },
+  "nodes": [
+    {
+      "type": "spirit_of_fight:node",
+      "conditions": [
+        {
+          "type": "spirit_of_fight:jumping"
+        },
+        {
+          "type": "spirit_of_fight:key_input",
+          "map": {
+            "key.attack": "release"
+          }
+        }
+      ],
+      "pre_input_id": "attack",
+      "reserve_time": 0,
+      "skill": "spirit_of_fight:sword_jump_attack"
+    }
+  ],
+  "priority": 2
+}

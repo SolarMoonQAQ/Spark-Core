@@ -1,0 +1,50 @@
+{
+  "item": {
+    "tag": "c:hammers"
+  },
+  "nodes": [
+    {
+      "type": "spirit_of_fight:node",
+      "conditions": [
+        {
+          "type": "spirit_of_fight:sprinting"
+        },
+        {
+          "type": "spirit_of_fight:wield_style",
+          "value": "default"
+        },
+        {
+          "type": "spirit_of_fight:key_input",
+          "map": {
+            "key.attack": "release"
+          }
+        }
+      ],
+      "pre_input_id": "attack",
+      "reserve_time": 0,
+      "skill": "spirit_of_fight:hammer.default.sprint_attack"
+    },
+    {
+      "type": "spirit_of_fight:node",
+      "conditions": [
+        {
+          "type": "spirit_of_fight:sprinting"
+        },
+        {
+          "type": "spirit_of_fight:wield_style",
+          "value": "special"
+        },
+        {
+          "type": "spirit_of_fight:key_input",
+          "map": {
+            "key.attack": "release"
+          }
+        }
+      ],
+      "pre_input_id": "attack",
+      "reserve_time": 0,
+      "skill": "spirit_of_fight:hammer.special.sprint_attack"
+    }
+  ],
+  "priority": 1
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "spirit_of_fight:item/spear_in_hand",
+  "textures": {
+    "0": "spirit_of_fight:item/netherite_spear_in_hand",
+    "particle": "spirit_of_fight:item/netherite_spear"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "item": {
+    "tag": "c:gloves"
+  },
+  "nodes": [
+    {
+      "type": "spirit_of_fight:condition",
+      "children": [
+        {
+          "type": "spirit_of_fight:node",
+          "conditions": [
+            {
+              "type": "spirit_of_fight:sprinting"
+            },
+            {
+              "type": "spirit_of_fight:key_input",
+              "map": {
+                "key.attack": "release"
+              }
+            }
+          ],
+          "pre_input_id": "attack",
+          "reserve_time": 0,
+          "skill": "spirit_of_fight:gloves.default.sprint_attack"
+        }
+      ],
+      "conditions": [
+        {
+          "type": "spirit_of_fight:wield_style",
+          "value": "default"
+        }
+      ]
+    },
+    {
+      "type": "spirit_of_fight:condition",
+      "children": [
+        {
+          "type": "spirit_of_fight:node",
+          "conditions": [
+            {
+              "type": "spirit_of_fight:sprinting"
+            },
+            {
+              "type": "spirit_of_fight:key_input",
+              "map": {
+                "key.attack": "release"
+              }
+            }
+          ],
+          "pre_input_id": "attack",
+          "reserve_time": 0,
+          "skill": "spirit_of_fight:gloves.special.sprint_attack"
+        }
+      ],
+      "conditions": [
+        {
+          "type": "spirit_of_fight:wield_style",
+          "value": "special"
+        }
+      ]
+    }
+  ],
+  "priority": 1
+}

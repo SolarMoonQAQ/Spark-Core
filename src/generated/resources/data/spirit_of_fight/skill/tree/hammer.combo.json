@@ -1,0 +1,157 @@
+{
+  "item": {
+    "tag": "c:hammers"
+  },
+  "nodes": [
+    {
+      "type": "spirit_of_fight:condition",
+      "children": [
+        {
+          "type": "spirit_of_fight:node",
+          "children": [
+            {
+              "type": "spirit_of_fight:node",
+              "children": [
+                {
+                  "type": "spirit_of_fight:node",
+                  "conditions": [
+                    {
+                      "type": "spirit_of_fight:key_input",
+                      "active_time": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "map": {
+                        "key.attack": "release"
+                      }
+                    }
+                  ],
+                  "pre_input_id": "attack",
+                  "reserve_time": 0,
+                  "skill": "spirit_of_fight:hammer.default.combo_3"
+                }
+              ],
+              "conditions": [
+                {
+                  "type": "spirit_of_fight:key_input",
+                  "active_time": [
+                    [
+                      0,
+                      3
+                    ]
+                  ],
+                  "map": {
+                    "key.attack": "release"
+                  }
+                }
+              ],
+              "pre_input_id": "attack",
+              "reserve_time": 5,
+              "skill": "spirit_of_fight:hammer.default.combo_2"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "spirit_of_fight:key_input",
+              "active_time": [
+                [
+                  0,
+                  3
+                ]
+              ],
+              "map": {
+                "key.attack": "release"
+              }
+            }
+          ],
+          "pre_input_id": "attack",
+          "reserve_time": 5,
+          "skill": "spirit_of_fight:hammer.default.combo_1"
+        }
+      ],
+      "conditions": [
+        {
+          "type": "spirit_of_fight:wield_style",
+          "value": "default"
+        }
+      ]
+    },
+    {
+      "type": "spirit_of_fight:condition",
+      "children": [
+        {
+          "type": "spirit_of_fight:node",
+          "children": [
+            {
+              "type": "spirit_of_fight:node",
+              "children": [
+                {
+                  "type": "spirit_of_fight:node",
+                  "conditions": [
+                    {
+                      "type": "spirit_of_fight:key_input",
+                      "active_time": [
+                        [
+                          0,
+                          3
+                        ]
+                      ],
+                      "map": {
+                        "key.attack": "release"
+                      }
+                    }
+                  ],
+                  "pre_input_id": "attack",
+                  "reserve_time": 0,
+                  "skill": "spirit_of_fight:hammer.special.combo_3"
+                }
+              ],
+              "conditions": [
+                {
+                  "type": "spirit_of_fight:key_input",
+                  "active_time": [
+                    [
+                      0,
+                      3
+                    ]
+                  ],
+                  "map": {
+                    "key.attack": "release"
+                  }
+                }
+              ],
+              "pre_input_id": "attack",
+              "reserve_time": 5,
+              "skill": "spirit_of_fight:hammer.special.combo_2"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "spirit_of_fight:key_input",
+              "active_time": [
+                [
+                  0,
+                  3
+                ]
+              ],
+              "map": {
+                "key.attack": "release"
+              }
+            }
+          ],
+          "pre_input_id": "attack",
+          "reserve_time": 5,
+          "skill": "spirit_of_fight:hammer.special.combo_1"
+        }
+      ],
+      "conditions": [
+        {
+          "type": "spirit_of_fight:wield_style",
+          "value": "special"
+        }
+      ]
+    }
+  ]
+}

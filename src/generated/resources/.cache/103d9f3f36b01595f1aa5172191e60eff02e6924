@@ -1,0 +1,20 @@
+// 1.21.1	2025-08-25T04:36:02.9971744	Registries
+a9fe01b1723dac920c4263cf51ec44cf749c7d41 data/spirit_of_fight/skill/tree/gloves.block.json
+9d2f90dfd9ffbf779ebc2c47c1b99eec1bf4415f data/spirit_of_fight/skill/tree/gloves.combo.json
+6676c6b5eb6295d75f024d06d319eb77f0697df1 data/spirit_of_fight/skill/tree/gloves.dodge.json
+d113fd3ad483a899366b0fd6886a55acf8f0f756 data/spirit_of_fight/skill/tree/gloves.sprint_attack.json
+6db93b373258388581853301c1d33a9a8e8e2942 data/spirit_of_fight/skill/tree/gloves.switch_attack.json
+c3f1a3d5f276faa38cb39dbf7cad87366062208a data/spirit_of_fight/skill/tree/hammer.block.json
+fdc0f702086547b1c293c087b05a7dfdf88405c9 data/spirit_of_fight/skill/tree/hammer.combo.json
+71c77fd611e7209972251dc7150f06616bc09f6d data/spirit_of_fight/skill/tree/hammer.dodge.json
+6675b0f2cf983317c0b60a7124948f55581de12e data/spirit_of_fight/skill/tree/hammer.sprint_attack.json
+0785ed35e0a4ee40591ee2a3ac65d2ac89b86837 data/spirit_of_fight/skill/tree/hammer.switch_attack.json
+61c3c3ebf01dea47e13bfc3e155c054a96b762e9 data/spirit_of_fight/skill/tree/hammer_jump_attack.json
+34e0e9efbf4d5a08c8276dcbee2c8814fbc04231 data/spirit_of_fight/skill/tree/spear.combo.json
+95e5b1c51a277c43e9883434f5b0b465201295c9 data/spirit_of_fight/skill/tree/spear.switch_attack.json
+8dd80287a6360ea1b90f84c787b47c113a19607a data/spirit_of_fight/skill/tree/sword.block.json
+4c6d6c00b47131f308cbe52990fa97d9963a0de0 data/spirit_of_fight/skill/tree/sword.combo.json
+fbc2cfad33a31e5f40a84dfe5db16ffc480303f5 data/spirit_of_fight/skill/tree/sword.dodge.json
+4eef4c05387cc1346b0a3f85ab176eb5bd78753f data/spirit_of_fight/skill/tree/sword.sprint_attack.json
+e39f7d5f1e9d2a4063d90fa0591bc8fe716dadb6 data/spirit_of_fight/skill/tree/sword.switch_attack.json
+ebfa832f48fd435044aeff14afa546868989d7ed data/spirit_of_fight/skill/tree/sword_jump_attack.json

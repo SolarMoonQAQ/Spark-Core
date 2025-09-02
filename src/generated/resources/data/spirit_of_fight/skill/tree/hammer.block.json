@@ -1,0 +1,33 @@
+{
+  "item": {
+    "tag": "c:hammers"
+  },
+  "nodes": [
+    {
+      "type": "spirit_of_fight:node",
+      "children": [
+        {
+          "type": "spirit_of_fight:stop",
+          "conditions": [
+            {
+              "type": "spirit_of_fight:reverse",
+              "condition": {
+                "type": "spirit_of_fight:input_direction",
+                "direction": "backward"
+              }
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "type": "spirit_of_fight:input_direction",
+          "direction": "backward"
+        }
+      ],
+      "pre_input_id": "guard",
+      "reserve_time": 0,
+      "skill": "spirit_of_fight:hammer.block"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+.eclipse
+eclipse
+run
+
+# Files from Forge MDK
+forge*changelog.txt
+
+.gitattributes
+gradlew
+gradlew.bat
+mcmodsrepo
+run-data
+CREDITS.txt
+changelog.txt
+setting.gradle
+.kotlin
+lib
+
+

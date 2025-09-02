@@ -1,0 +1,24 @@
+{
+  "item": {
+    "tag": "c:hammers"
+  },
+  "nodes": [
+    {
+      "type": "spirit_of_fight:node",
+      "conditions": [
+        {
+          "type": "spirit_of_fight:key_input",
+          "map": {
+            "key.spirit_of_fight.dodge": "pulse"
+          }
+        },
+        {
+          "type": "spirit_of_fight:on_ground"
+        }
+      ],
+      "pre_input_id": "dodge",
+      "reserve_time": 0,
+      "skill": "spirit_of_fight:hammer.dodge"
+    }
+  ]
+}

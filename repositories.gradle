@@ -1,0 +1,88 @@
+dependencies {
+    // jei
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+    runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    // 玉
+    implementation "maven.modrinth:jade:${jade_version}"
+    // Kotlin
+    implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}:slim"
+    additionalRuntimeClasspath ('org.jetbrains.kotlin:kotlin-stdlib')
+    additionalRuntimeClasspath ('org.jetbrains.kotlin:kotlin-reflect')
+    additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-coroutines-core')
+    additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-serialization-core')
+    additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-serialization-json')
+
+    // 其它mod
+    runtimeOnly files(fileTree(dir: 'lib', includes: ['*.jar']))
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url 'https://jitpack.io'
+    }
+    maven {
+        name = "Progwml6 maven"
+        url = "https://dvs1.progwml6.com/files/maven/"
+    }
+    maven {
+        name = "ModMaven"
+        url = "https://modmaven.dev"
+    }
+    maven {
+        url = "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
+        url = "https://maven.jaackson.me"
+    }
+    maven {
+        name "KosmX's maven"
+        url 'https://maven.kosmx.dev/'
+    }
+    maven {
+        name = "Jared's maven"
+        url = "https://maven.blamejared.com/"
+    }
+    maven {
+        name = 'tterrag maven'
+        url = 'https://maven.tterrag.com/'
+    }
+    maven {
+        url "https://api.modrinth.com/maven"
+    }
+    maven {
+        url "https://maven.ryanliptak.com/"
+    }
+    maven {
+        url = "https://maven.theillusivec4.top/"
+    }
+    maven {
+        name = 'Kotlin for Forge'
+        url = 'https://thedarkcolour.github.io/KotlinForForge/'
+    }
+    maven {
+        name = 'GeckoLib'
+        url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroup("software.bernie.geckolib")
+        }
+    }
+    maven {
+        url = 'https://maven.azuredoom.com/mods'
+    }
+    maven {
+        url = "https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core"
+        credentials {
+            username = System.getenv("GITMAVEN_USERNAME")
+            password = System.getenv("SolarMoonCore_TOKEN")
+        }
+    }
+    flatDir {
+        dir 'lib'
+    }
+}

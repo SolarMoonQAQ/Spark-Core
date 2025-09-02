@@ -1,0 +1,7 @@
+{
+  "parent": "spirit_of_fight:item/warhammer_in_hand",
+  "textures": {
+    "0": "spirit_of_fight:item/diamond_warhammer_in_hand",
+    "particle": "spirit_of_fight:item/diamond_warhammer"
+  }
+}

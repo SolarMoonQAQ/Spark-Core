@@ -1,0 +1,22 @@
+{
+  "item": {
+    "tag": "c:hammers"
+  },
+  "nodes": [
+    {
+      "type": "spirit_of_fight:node",
+      "conditions": [
+        {
+          "type": "spirit_of_fight:key_input",
+          "map": {
+            "key.spirit_of_fight.special_attack": "press"
+          }
+        }
+      ],
+      "pre_input_id": "special_attack",
+      "reserve_time": 0,
+      "skill": "spirit_of_fight:hammer.switch_attack"
+    }
+  ],
+  "priority": 3
+}
