@@ -4,19 +4,19 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.network.FriendlyByteBuf
+import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.network.ConfigurationTask
 import net.neoforged.neoforge.network.configuration.ICustomConfigurationTask
 import net.neoforged.neoforge.network.handling.IPayloadContext
-import java.util.function.Consumer
-import net.minecraft.network.codec.ByteBufCodecs
 import java.util.LinkedHashMap
+import java.util.function.Consumer
 
 /**
  * 配置任务，用于在新玩家加入时向其发送全量的动画数据。
- * 写法仿照 ModelDataSendingTask.kt。
+ * 写法仿照 SparkPackageSendingTask.kt。
  */
 class AnimationDataSendingTask : ICustomConfigurationTask {
 
@@ -30,7 +30,7 @@ class AnimationDataSendingTask : ICustomConfigurationTask {
             registry.entrySet().forEach { entry ->
                 val registryKey = entry.key
                 val typedAnimation = entry.value
-                val animationSetLocation = typedAnimation.index.index
+                val animationSetLocation = typedAnimation.index.modelPath
 
                 // 从 TypedAnimation 提取对应的 OAnimationSet
                 val animationSet = convertTypedAnimationToOAnimationSet(typedAnimation)
@@ -62,7 +62,7 @@ class AnimationDataSendingTask : ICustomConfigurationTask {
      * 通过 TypedAnimation 的 index.index (ResourceLocation) 从静态 ORIGINS 获取 OAnimationSet
      */
     private fun convertTypedAnimationToOAnimationSet(typedAnimation: cn.solarmoon.spark_core.animation.anim.play.TypedAnimation): OAnimationSet {
-        val animationSetLocation = typedAnimation.index.index
+        val animationSetLocation = typedAnimation.index.modelPath
         return OAnimationSet.ORIGINS[animationSetLocation] ?: OAnimationSet.EMPTY
     }
 

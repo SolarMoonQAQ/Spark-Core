@@ -1,14 +1,11 @@
 package cn.solarmoon.spark_core.state_machine.presets
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
+import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.item.ItemStack
@@ -78,28 +75,15 @@ class EntityBaseUseAnimStateMachine(
         onStateEntry { s, b ->
             if (entity !is IEntityAnimatable<*>) return@onStateEntry
             entity.animController.getLayer(DefaultLayer.BASE_ADDITIVE_LAYER).stopAnimation()
-            val entityLocation = BuiltInRegistries.ENTITY_TYPE.getKey(entity.type)
             val lastState = b.transition.sourceState
             val sName = s.name ?: return@onStateEntry
             val animName = "state.use.$sName"
             val data = s.payload
             if (data !is AnimPlayDataProvider) return@onStateEntry
-            SparkCore.LOGGER.info(animName)
-            // 使用SparkResourcePathBuilder构建四层格式的动画路径
-            val basePath = SparkResourcePathBuilder.buildAnimationPathFromEntityAuto(entity.type)
-            val animationPath = SparkResourcePathBuilder.buildAnimationPath(
-                basePath.namespace,
-                basePath.path.split("/")[0], // moduleName
-                basePath.path.split("/").drop(2).joinToString("/"), // entityPath
-                animName
-            )
-            SparkRegistries.TYPED_ANIMATION.get(animationPath)?.let {
-                val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, it, this, data))
-                if (event.isCanceled) return@let
-                val anim = event.newAnim ?: event.originAnim
-                val rAnim = anim.create(entity).apply { shouldTurnBody = true }
-                entity.animController.getLayer(data.layerId).setAnimation(rAnim, data.data(lastState))
-            }
+            val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, AnimInstance.create(entity, animName), this, data))
+            if (event.isCanceled) return@onStateEntry
+            val anim = (event.newAnim ?: event.originAnim).apply { shouldTurnBody = true }
+            entity.animController.getLayer(data.layerId).setAnimation(anim, data.data(lastState))
         }
 
     }

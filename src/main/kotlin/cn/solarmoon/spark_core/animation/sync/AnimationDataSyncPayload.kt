@@ -1,9 +1,7 @@
 package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.animation.sync.AnimationDataSendingTask
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -41,7 +39,7 @@ data class AnimationDataSyncPayload(
                 // 直接操作 OAnimationSet.ORIGINS，与新的 handle 机制保持一致
                 OAnimationSet.ORIGINS.clear()
                 // 同时清理AnimIndex.ORIGINS
-                AnimIndex.ORIGINS.clear()
+                //AnimIndex.ORIGINS.clear()
 
                 payload.animations.forEach { (location, animationSet) ->
                     OAnimationSet.ORIGINS[location] = animationSet
@@ -56,12 +54,12 @@ data class AnimationDataSyncPayload(
                                 "minecraft",
                                 "$entityPath/$animName"
                             )
-                            AnimIndex.ORIGINS[shortcutPath] = location
+                            //AnimIndex.ORIGINS[shortcutPath] = location
                         }
                     }
                 }
 
-                SparkCore.LOGGER.info("Rebuilt AnimIndex.ORIGINS with {} shortcuts", AnimIndex.ORIGINS.size)
+                //SparkCore.LOGGER.info("Rebuilt AnimIndex.ORIGINS with {} shortcuts", AnimIndex.ORIGINS.size)
                 
                 SparkCore.LOGGER.info("OAnimationSet.ORIGINS updated with ${payload.animations.size} OAnimationSet objects.")
                 

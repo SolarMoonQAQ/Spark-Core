@@ -140,7 +140,7 @@ object RouteConfig {
 
                 // 配置各个功能模块的路由
                 this.configureAnimationRoutes()
-                this.configureModelRoutes()
+                //this.configureModelRoutes()
                 this.configureLegacyResourceRoutes()
                 this.configureDebugRoutes()
                 this.configureLogRoutes()

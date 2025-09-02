@@ -325,14 +325,14 @@ object DependencyCalculator {
     private fun validateBoneCompatibility(animationLocation: ResourceLocation, modelLocation: ResourceLocation): Boolean {
         try {
             // 获取模型的骨骼信息
-            val model = cn.solarmoon.spark_core.animation.model.origin.OModel.get(modelLocation)
+            val model = cn.solarmoon.spark_core.animation.model.origin.OModel.getOrEmpty(modelLocation)
             if (model == cn.solarmoon.spark_core.animation.model.origin.OModel.EMPTY) {
                 SparkCore.LOGGER.warn("模型不存在或为空: $modelLocation")
                 return false
             }
 
             // 获取动画的骨骼信息
-            val animationSet = cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet.get(animationLocation)
+            val animationSet = cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet.getOrEmpty(animationLocation)
             if (animationSet == cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet.EMPTY) {
                 SparkCore.LOGGER.warn("动画不存在或为空: $animationLocation")
                 return false
@@ -367,7 +367,7 @@ object DependencyCalculator {
      */
     private fun getRequiredBonesFromAnimation(animationLocation: ResourceLocation): List<String> {
         return try {
-            val animationSet = cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet.get(animationLocation)
+            val animationSet = cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet.getOrEmpty(animationLocation)
             if (animationSet != cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet.EMPTY) {
                 animationSet.animations.values.flatMap { it.bones.keys }.distinct()
             } else {

@@ -182,4 +182,5 @@ class MetaHandler : ResourceHandlerBase() {
     override fun cleanupModuleResource(resourceLocation: ResourceLocation) {
         // 模块卸载时的清理逻辑
     }
+
 } 

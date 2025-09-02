@@ -1,0 +1,22 @@
+package cn.solarmoon.spark_core.resource2
+
+import cn.solarmoon.spark_core.resource2.graph.SparkPackage
+
+interface SparkPackModule {
+
+    val moduleName: String
+
+    /**
+     * @param pathSegments 模块目录下的层层递进目录（不含模块名和文件名）（比如 animations/minecraft/player/test.json，此参数则为list["minecraft", "player"]）
+     * @param fileName     文件名
+     * @param content      文件内容（字节码）
+     * @param pack         当前压缩包
+     */
+    fun read(pathSegments: List<String>, fileName: String, content: ByteArray, pack: SparkPackage)
+
+    /**
+     * 所有该模块内容读取完毕后调用此方法
+     */
+    fun onFinish() {}
+
+}

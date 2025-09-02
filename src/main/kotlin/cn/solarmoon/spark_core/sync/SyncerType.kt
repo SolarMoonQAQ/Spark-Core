@@ -19,6 +19,7 @@ abstract class SyncerType {
     }
 
     companion object {
+        val CODEC = SparkRegistries.SYNCER_TYPE.byNameCodec()
         val STREAM_CODEC = ByteBufCodecs.registry(SparkRegistries.SYNCER_TYPE.key())
     }
 

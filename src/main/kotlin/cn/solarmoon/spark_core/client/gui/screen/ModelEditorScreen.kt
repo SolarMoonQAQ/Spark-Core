@@ -2126,7 +2126,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             if (animIndex != null) {
                 val animInstance = AnimInstance.create(animatable, animIndex)
                 animatable.animController.getMainLayer().setAnimation(animInstance)
-                SparkCore.LOGGER.debug("Successfully playing animation: $animationName from ${animIndex.index}")
+                SparkCore.LOGGER.debug("Successfully playing animation: $animationName from ${animIndex}")
             } else {
                 SparkCore.LOGGER.error("Could not find animation index for: $animationName")
                 minecraft?.gui?.chat?.addMessage(Component.literal("Animation not found: $animationName"))

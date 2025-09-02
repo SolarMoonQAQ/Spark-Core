@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.visual_effect.space_warp
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
+import cn.solarmoon.spark_core.util.SerializeHelper
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload

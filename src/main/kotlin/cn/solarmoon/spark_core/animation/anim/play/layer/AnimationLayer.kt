@@ -36,7 +36,7 @@ class AnimationLayer(
         if (nextAnim != null) {
             val valid = testAnimValidity(nextAnim)
             if (valid.isNotEmpty()) {
-                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼：${nextAnim.holder.animatable} 的动画 ${nextAnim.animIndex} 无法播放")
+                SparkCore.LOGGER.warn("缺少要播放的动画所需的骨骼: $valid ${nextAnim.holder.animatable} 的动画 ${nextAnim.animIndex} 无法播放")
                 return
             }
         }

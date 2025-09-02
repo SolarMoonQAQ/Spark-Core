@@ -4,12 +4,10 @@ import cn.solarmoon.spark_core.config.SparkConfig;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister;
-import cn.solarmoon.spark_core.registry.client.SparkKeyMappings;
-import cn.solarmoon.spark_core.registry.client.SparkModelRegister;
-import cn.solarmoon.spark_core.registry.client.SparkShaders;
+import cn.solarmoon.spark_core.registry.client.*;
 import cn.solarmoon.spark_core.registry.common.*;
 import cn.solarmoon.spark_core.resource.common.MultiModResourceRegistry;
+import cn.solarmoon.spark_core.resource2.SparkPackResourceLoader;
 import cn.solarmoon.spark_core.web.logging.SparkLogger;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -34,6 +32,7 @@ public class SparkCore {
     public SparkCore(IEventBus modEventBus, ModContainer modContainer) {
         // 首先注册SparkCore自身到多mod资源系统
         MultiModResourceRegistry.INSTANCE.registerModResources(MOD_ID, SparkCore.class);
+        SparkPackResourceLoader.copyResourceModulesToRun(SparkCore.class);
 
         REGISTER.register(modEventBus);
         MC_REGISTER.register(modEventBus);
@@ -43,6 +42,7 @@ public class SparkCore {
             SparkModelRegister.register(modEventBus);
             SparkKeyMappings.register();
             SparkShaders.register(modEventBus);
+            SparkParticleProviderRegister.register(modEventBus);
             // 注册配置屏幕工厂
             modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
@@ -60,6 +60,8 @@ public class SparkCore {
         SyncerTypes.register();
         SparkDataGenerator.register(modEventBus);
         SparkCapabilities.register(modEventBus);
+        SparkParticles.register();
+        SparkPackModuleRegister.register();
         SparkConfig.register(modContainer);
         SparkStateMachineRegister.register();
         PhysicsHelperKt.initBullet();

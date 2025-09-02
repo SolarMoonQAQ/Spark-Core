@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.resource.handler
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
@@ -10,16 +9,13 @@ import cn.solarmoon.spark_core.registry.virtual.HotReloadRegistry
 import cn.solarmoon.spark_core.resource.autoregistry.AutoRegisterHandler
 import cn.solarmoon.spark_core.resource.autoregistry.HandlerDiscoveryService
 import cn.solarmoon.spark_core.resource.common.*
-import cn.solarmoon.spark_core.resource.graph.ResourceGraphManager
 import cn.solarmoon.spark_core.resource.graph.ResourceNode
 import cn.solarmoon.spark_core.util.MultiModuleResourceExtractionUtil
 import cn.solarmoon.spark_core.util.MultiModuleResourceExtractionUtil.normalizeResourceName
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
-import net.minecraft.core.RegistrationInfo
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.ResourceLocation
-import net.neoforged.fml.loading.FMLPaths
 import net.neoforged.neoforge.network.PacketDistributor
 import kotlin.io.path.readText
 
@@ -162,7 +158,7 @@ class AnimationHandler(
                     "minecraft",
                     "$entityPath/$normalizedAnimName"
                 )
-                AnimIndex.ORIGINS.remove(shortcutPath)
+                //AnimIndex.ORIGINS.remove(shortcutPath)
                 SparkCore.LOGGER.debug("移除动画快捷映射: $shortcutPath")
             }
         }
@@ -174,14 +170,14 @@ class AnimationHandler(
                 // 为动画集中的每个动画创建 TypedAnimation 并注册
                 animationSet.animations.forEach { (animName, _) ->
                     val normalizedAnimName = normalizeResourceName(animName)
-                    val animIndex = AnimIndex(location, normalizedAnimName, useShortcutConversion = false)
-                    val typedAnimation = TypedAnimation(animIndex) {}
+                    //val animIndex = AnimIndex(location, normalizedAnimName, useShortcutConversion = false)
+                    //val typedAnimation = TypedAnimation(animIndex) {}
 
                     val pathParts = location.path.split("/")
                     if (pathParts.size >= 3) {
                         val entityPath = pathParts[2]
                         val shortcutPath = ResourceLocation.fromNamespaceAndPath("minecraft", "$entityPath/$normalizedAnimName")
-                        AnimIndex.ORIGINS[shortcutPath] = location
+                        //AnimIndex.ORIGINS[shortcutPath] = location
                         SparkCore.LOGGER.debug("添加动画快捷映射: $shortcutPath -> $location")
                     }
 
@@ -192,7 +188,7 @@ class AnimationHandler(
                     }
                     val animResourceLocation = ResourceLocation.fromNamespaceAndPath(location.namespace, flattenedPath)
                     val resourceKey = ResourceKey.create(typedAnimationRegistry.key(), animResourceLocation)
-                    typedAnimationRegistry.register(resourceKey, typedAnimation, RegistrationInfo.BUILT_IN)
+                    //typedAnimationRegistry.register(resourceKey, typedAnimation, RegistrationInfo.BUILT_IN)
                     SparkCore.LOGGER.debug("动画已注册到注册表: $animResourceLocation (来自动画集: $location, 原始名称: $animName)")
                 }
             } catch (e: Exception) {

@@ -1,14 +1,11 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.util.PPhase
-import net.minecraft.resources.ResourceLocation
 import org.joml.Vector2d
 import kotlin.reflect.KClass
 
@@ -18,36 +15,17 @@ class AnimInstance private constructor(
 ) {
 
     companion object {
-        // 见鬼了,排查了两个小时也没找到为啥animPath会变成modelPath
         @JvmStatic
         fun create(holder: IAnimatable<*>, name: String, provider: AnimInstance.() -> Unit = {}): AnimInstance {
-            var animPath = holder.modelIndex.animPath
-            SparkCore.LOGGER.warn("AnimInstance.create - 获取到的animPath: $animPath")
-            SparkCore.LOGGER.warn("AnimInstance.create - modelPath: ${holder.modelIndex.modelPath}")
-
-            // 临时修复：如果animPath包含models，自动转换为animations
-            if (animPath.path.contains("models")) {
-                SparkCore.LOGGER.error("发现BUG: animPath包含models而不是animations! 自动修复中...")
-                animPath = SparkResourcePathBuilder.buildAnimationPathFromModel(animPath)
-                SparkCore.LOGGER.warn("修复后的animPath: $animPath")
-
-                // 同时修复ModelIndex中的animPath，避免下次还有问题
-                holder.modelIndex.animPath = animPath
-                SparkCore.LOGGER.warn("已更新ModelIndex.animPath为: $animPath")
-            }
-
-            return create(holder, AnimIndex(animPath, name, useShortcutConversion = false), provider)
+            return create(holder, AnimIndex(holder.modelIndex.modelPath, name), provider)
         }
 
         @JvmStatic
         fun create(holder: IAnimatable<*>, index: AnimIndex, provider: AnimInstance.() -> Unit = {}) =
             AnimInstance(holder, index).apply { provider.invoke(this) }
     }
-    private val nameComponents = animIndex.toString().split("/")
-    // OAnimationSet的index为 animIndex-animName
-    val animName = nameComponents.last()
-    val setIndex = ResourceLocation.parse(nameComponents.dropLast(1).joinToString("/"))
-    val origin = OAnimationSet.get(setIndex).getValidAnimation(animName)
+
+    val origin = OAnimationSet.getOrEmpty(animIndex.modelPath).getValidAnimation(animIndex.name)
     val flags = setOf<String>()
     var time = 0.0
     var speed = 1.0

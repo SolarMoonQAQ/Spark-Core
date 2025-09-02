@@ -3,13 +3,9 @@ package cn.solarmoon.spark_core.animation.anim.play
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.model.origin.OModel
-import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
-import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.ik.origin.OIKConstraint
-import cn.solarmoon.spark_core.registry.common.SparkAttachments
-import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder.buildAnimationPathFromModel
+import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.resource.graph.ResourceGraphManager
-import cn.solarmoon.spark_core.resource.graph.DependencyValidationResult
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.core.registries.BuiltInRegistries
@@ -19,49 +15,33 @@ import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.item.Item
-import net.neoforged.neoforge.common.NeoForge
-import java.util.* // 需要导入 Optional
+import java.util.*
 
 /**
  * 保存了客户端渲染完整动画和模型所需的必要数据
  *
  * 路径格式已更新为新resource系统格式：
  * - 模型路径：modId:moduleid/models/xxx
- * - 动画路径：modId:moduleid/animations/player/.../xxx
  * - 贴图路径：modId:moduleid/textures/entity/xxx
  */
 class ModelIndex (
     modelPath: ResourceLocation,
-    animPath: ResourceLocation,
     textureLocation: ResourceLocation,
     ikPath: ResourceLocation? // 添加 IK 路径字段，可为空
 ) {
     // 保留旧构造函数以兼容，将 ikPath 设为 null
     constructor(registryKey: ResourceLocation, textureLocation: ResourceLocation) : this(
         registryKey,
-        buildAnimationPathFromModel(registryKey).also {
-            SparkCore.LOGGER.warn("ModelIndex两参数构造函数 - modelPath: $registryKey")
-            SparkCore.LOGGER.warn("ModelIndex两参数构造函数 - 生成的animPath: $it")
-        },
         textureLocation,
         getDefaultIkPath(registryKey) // 尝试推断 IK 路径
     )
 
-    // 新增构造函数，允许不指定 IK
-    constructor(
-        modelPath: ResourceLocation,
-        animPath: ResourceLocation,
-        textureLocation: ResourceLocation
-    ) : this(modelPath, animPath, textureLocation, getDefaultIkPath(modelPath)) // 直接使用传入的animPath，不再转换
-
-
     var modelPath = modelPath
-    var animPath = animPath
     var textureLocation = textureLocation
     var ikPath = ikPath // 新增 ikPath 属性
 
-    val model get() = OModel.get(modelPath)
-    val animationSet get() = OAnimationSet.get(animPath)
+    val model get() = OModel.getOrEmpty(modelPath)
+    val animationSet get() = OAnimationSet.getOrEmpty(modelPath)
 
     /**
      * 获取与此模型索引关联的IK约束集合
@@ -115,10 +95,9 @@ class ModelIndex (
     fun hasValidDependencies(): Boolean {
         // 使用ResourceGraphManager进行快速硬依赖检查
         val modelValid = !ResourceGraphManager.hasHardDependencyFailures(modelPath)
-        val animValid = !ResourceGraphManager.hasHardDependencyFailures(animPath)
         val ikValid = ikPath?.let { !ResourceGraphManager.hasHardDependencyFailures(it) } ?: true
 
-        return modelValid && animValid && ikValid
+        return modelValid && ikValid
     }
     
     /**
@@ -155,7 +134,6 @@ class ModelIndex (
     override fun equals(other: Any?): Boolean {
         if (other !is ModelIndex) return false
         return other.modelPath == modelPath &&
-                other.animPath == animPath &&
                 other.textureLocation == textureLocation &&
                 other.ikPath == ikPath // 比较 ikPath
     }
@@ -163,7 +141,6 @@ class ModelIndex (
     override fun hashCode(): Int {
         var result = 1
         result = 31 * result + modelPath.hashCode()
-        result = 31 * result + animPath.hashCode()
         result = 31 * result + textureLocation.hashCode()
         result = 31 * result + (ikPath?.hashCode() ?: 0) // 计算 ikPath 的哈希码
         return result
@@ -177,29 +154,26 @@ class ModelIndex (
         @JvmStatic
         val STREAM_CODEC: StreamCodec<in RegistryFriendlyByteBuf, ModelIndex> = StreamCodec.composite(
             ResourceLocation.STREAM_CODEC, ModelIndex::modelPath,
-            ResourceLocation.STREAM_CODEC, ModelIndex::animPath,
             ResourceLocation.STREAM_CODEC, ModelIndex::textureLocation,
             ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC), { Optional.ofNullable(it.ikPath) }
-        ) { model, anim, tex, ikPathOpt -> ModelIndex(model, anim, tex, ikPathOpt.orElse(null)) }
+        ) { model, tex, ikPathOpt -> ModelIndex(model, tex, ikPathOpt.orElse(null)) }
 
         @JvmStatic
         val CODEC: Codec<ModelIndex> = RecordCodecBuilder.create { instance ->
             instance.group(
                 ResourceLocation.CODEC.fieldOf("model_path").forGetter(ModelIndex::modelPath),
-                ResourceLocation.CODEC.fieldOf("anim_path").forGetter(ModelIndex::animPath),
                 ResourceLocation.CODEC.fieldOf("texture").forGetter(ModelIndex::textureLocation),
                 ResourceLocation.CODEC.optionalFieldOf("ik_path").forGetter { mi -> Optional.ofNullable(mi.ikPath) } // 使用 optionalFieldOf 读取 ik_path
-            ).apply(instance) { model, anim, tex, ikOpt ->
-                ModelIndex(model, anim, tex, ikOpt.orElse(null)) // 如果字段不存在，则 ikPath 为 null
+            ).apply(instance) { model, tex, ikOpt ->
+                ModelIndex(model, tex, ikOpt.orElse(null)) // 如果字段不存在，则 ikPath 为 null
             }
         }
 
 
         @JvmStatic
         val EMPTY get() = ModelIndex(
-            SparkResourcePathBuilder.buildModelPath("minecraft", "minecraft", "empty"),
-            SparkResourcePathBuilder.buildAnimationPath("minecraft", "minecraft", "empty", "empty"),
-            SparkResourcePathBuilder.buildTexturePath("minecraft", "minecraft", "empty"),
+            ResourceLocation.fromNamespaceAndPath("minecraft", "empty"),
+            ResourceLocation.fromNamespaceAndPath("minecraft", "empty"),
             EMPTY_IK_PATH // 使用空 IK 路径
         )
 
@@ -230,24 +204,20 @@ class ModelIndex (
 
         @JvmStatic
         fun of(type: EntityType<*>): ModelIndex {
-            // 使用SparkResourcePathBuilder自动推断ModId并生成路径
-            val modelPath = SparkResourcePathBuilder.buildModelPathFromEntityAuto(type)
-            // 动画路径指向animations目录，具体动画集通过AnimInstance中的name拆解
-            val animPath = SparkResourcePathBuilder.buildAnimationPathFromEntityAuto(type)
-            val texture = SparkResourcePathBuilder.buildTexturePathFromEntityAuto(type)
+            val id = BuiltInRegistries.ENTITY_TYPE.getKey(type)
+            val modelPath = id
+            val texture = id
             val ikPath = getDefaultIkPath(modelPath) // 使用新的模型路径获取IK路径
-            return ModelIndex(modelPath, animPath, texture, ikPath)
+            return ModelIndex(modelPath, texture, ikPath)
         }
 
         @JvmStatic
         fun of(item: Item): ModelIndex {
-            // 使用SparkResourcePathBuilder自动推断ModId并生成路径
-            val modelPath = SparkResourcePathBuilder.buildModelPathFromItemAuto(item)
-            // 动画路径指向animations目录，具体动画集通过AnimInstance中的name拆解
-            val animPath = SparkResourcePathBuilder.buildAnimationPathFromItemAuto(item)
-            val texture = SparkResourcePathBuilder.buildTexturePathFromItemAuto(item)
+            val id = BuiltInRegistries.ITEM.getKey(item)
+            val modelPath = id
+            val texture = id
             val ikPath = getDefaultIkPath(modelPath) // 使用新的模型路径获取IK路径
-            return ModelIndex(modelPath, animPath, texture, ikPath)
+            return ModelIndex(modelPath, texture, ikPath)
         }
     }
 }

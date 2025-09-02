@@ -1,9 +1,8 @@
 package cn.solarmoon.spark_core.ik.sync
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.data.SerializeHelper
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-
+import cn.solarmoon.spark_core.util.SerializeHelper
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec

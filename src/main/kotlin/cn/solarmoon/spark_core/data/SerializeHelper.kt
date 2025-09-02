@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3
 import org.joml.Quaternionf
 import org.joml.Vector2i
 import org.joml.Vector3f
+import java.awt.Color
 
 /**
  * 补充一些解码方法
@@ -84,6 +85,36 @@ object SerializeHelper {
             buffer.writeFloat(value.y)
             buffer.writeFloat(value.z)
             buffer.writeFloat(value.w)
+        }
+    }
+
+    @JvmStatic
+    val COLOR_CODEC: Codec<Color> = Codec.FLOAT.listOf().comapFlatMap(
+        { list ->
+            Util.fixedSize(list, 4).map { floats ->
+                Color(floats[0], floats[1], floats[2], floats[3])
+            }
+        },
+        { color ->
+            listOf(color.red / 255f, color.green / 255f, color.blue / 255f, color.alpha / 255f)
+        }
+    )
+
+    @JvmStatic
+    val COLOR_STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, Color> {
+        override fun decode(buffer: FriendlyByteBuf): Color {
+            val r = buffer.readFloat()
+            val g = buffer.readFloat()
+            val b = buffer.readFloat()
+            val a = buffer.readFloat()
+            return Color(r, g, b, a)
+        }
+
+        override fun encode(buffer: FriendlyByteBuf, value: Color) {
+            buffer.writeFloat(value.red / 255f)
+            buffer.writeFloat(value.green / 255f)
+            buffer.writeFloat(value.blue / 255f)
+            buffer.writeFloat(value.alpha / 255f)
         }
     }
 

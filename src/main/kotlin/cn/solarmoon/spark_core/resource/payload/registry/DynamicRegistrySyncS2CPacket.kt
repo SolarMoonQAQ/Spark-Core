@@ -4,10 +4,10 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.model.origin.OModel
+import cn.solarmoon.spark_core.animation.texture.OTexture
+import cn.solarmoon.spark_core.js.origin.OJSScript
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.registry.dynamic.DynamicIdManager
-import cn.solarmoon.spark_core.js.origin.OJSScript
-import cn.solarmoon.spark_core.animation.texture.OTexture
 import io.netty.buffer.Unpooled
 import net.minecraft.core.Registry
 import net.minecraft.network.FriendlyByteBuf
@@ -68,7 +68,7 @@ data class DynamicRegistrySyncS2CPacket(
 
         fun createForTypedAnimationAdd(modId: String, id: ResourceLocation, animation: TypedAnimation, assignedId: Int): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
-            buf.writeResourceLocation(animation.index.index)
+            buf.writeResourceLocation(animation.index.modelPath)
             buf.writeUtf(animation.index.name)
 
             val bytes = ByteArray(buf.readableBytes())
@@ -247,7 +247,7 @@ data class DynamicRegistrySyncS2CPacket(
                     val animName = buf.readUtf()
                     buf.release()
 
-                    val animIndex = AnimIndex(indexLocation, animName, useShortcutConversion = false)
+                    val animIndex = AnimIndex(indexLocation, animName)
                     val animation = TypedAnimation(animIndex) {}
 
                     // 使用不触发回调的注册方式，避免客户端触发服务端回调

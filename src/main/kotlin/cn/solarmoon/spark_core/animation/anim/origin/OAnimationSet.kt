@@ -1,9 +1,7 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.client.Minecraft
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
@@ -29,7 +27,7 @@ data class OAnimationSet(
          * 如果res是玩家，自动返回玩家的动画集合
          */
         @JvmStatic
-        fun get(res: ResourceLocation): OAnimationSet {
+        fun getOrEmpty(res: ResourceLocation): OAnimationSet {
             return ORIGINS[res] ?: EMPTY
         }
 

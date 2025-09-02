@@ -35,15 +35,13 @@ data class TypedAnimationDataSyncPayload(
             val STREAM_CODEC: StreamCodec<FriendlyByteBuf, TypedAnimationData> = StreamCodec.composite(
                 StreamCodec.of<FriendlyByteBuf, AnimIndex>(
                     { buf, animIndex ->
-                        buf.writeResourceLocation(animIndex.index)
+                        buf.writeResourceLocation(animIndex.modelPath)
                         buf.writeUtf(animIndex.name)
-                        buf.writeBoolean(animIndex.useShortcutConversion)
                     },
                     { buf ->
                         val index = buf.readResourceLocation()
                         val name = buf.readUtf()
-                        val useShortcut = buf.readBoolean()
-                        AnimIndex(index, name, useShortcut)
+                        AnimIndex(index, name)
                     }
                 ),
                 TypedAnimationData::animIndex,

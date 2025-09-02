@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
 import cn.solarmoon.spark_core.animation.model.origin.OUVUnion.FaceUV
-import cn.solarmoon.spark_core.data.SerializeHelper
+import cn.solarmoon.spark_core.util.SerializeHelper
 import com.mojang.datafixers.util.Either
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder

@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.BonePose
 import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
-import cn.solarmoon.spark_core.data.SerializeHelper
+import cn.solarmoon.spark_core.util.SerializeHelper
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs

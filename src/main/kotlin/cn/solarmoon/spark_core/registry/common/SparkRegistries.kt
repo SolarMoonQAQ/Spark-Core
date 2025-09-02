@@ -11,6 +11,7 @@ import cn.solarmoon.spark_core.registry.virtual.VirtualRegistry
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
+import com.mojang.serialization.MapCodec
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
@@ -164,8 +165,11 @@ object SparkRegistries {
         .id("syncer_type")
         .build { it.sync(true).create() }
 
+    @JvmStatic
+    val SYNC_DATA_CODEC = SparkCore.REGISTER.registry<MapCodec<out SyncData>>()
+        .id("sync_data_codec")
+        .build { it.sync(true).create() }
 
-    @Suppress("UNCHECKED_CAST")
     @JvmStatic
     val SYNC_DATA_STREAM_CODEC = SparkCore.REGISTER.registry<StreamCodec<RegistryFriendlyByteBuf, out SyncData>>()
         .id("sync_data_stream_codec")

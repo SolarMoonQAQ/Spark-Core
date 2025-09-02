@@ -52,7 +52,7 @@ class SpaceWarpRenderer : VisualEffectRenderer() {
         if (warps.isEmpty) return
         warps.forEach {
             // 固定立方体中心在世界原点 (0, 0, 0)，边长 2
-            val buffer = bufferSource.getBuffer(RenderTypeUtil.pureEffect(it.getProgress(partialTicks), it.getStrength(partialTicks)))
+            val buffer = bufferSource.getBuffer(RenderTypeUtil.pureEffect(0f, it.getStrength(partialTicks)))
             val rPos = it.pos.subtract(camPos).toVector3f()
             val cx = rPos.x
             val cy = rPos.y

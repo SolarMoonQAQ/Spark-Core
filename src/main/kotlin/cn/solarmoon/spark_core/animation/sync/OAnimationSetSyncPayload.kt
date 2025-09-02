@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
@@ -50,13 +49,13 @@ data class OAnimationSetSyncPayload(
                     if (pathParts.size >= 3) {
                         val entityPath = pathParts[2]
                         // 移除所有相关的快捷映射
-                        val toRemove = AnimIndex.ORIGINS.keys.filter { shortcut ->
-                            shortcut.namespace == "minecraft" && shortcut.path.startsWith("$entityPath/")
-                        }
-                        toRemove.forEach { shortcut ->
-                            AnimIndex.ORIGINS.remove(shortcut)
-                        }
-                        SparkCore.LOGGER.debug("Removed {} AnimIndex shortcuts for entity: {}", toRemove.size, entityPath)
+//                        val toRemove = AnimIndex.ORIGINS.keys.filter { shortcut ->
+//                            shortcut.namespace == "minecraft" && shortcut.path.startsWith("$entityPath/")
+//                        }
+//                        toRemove.forEach { shortcut ->
+//                            AnimIndex.ORIGINS.remove(shortcut)
+//                        }
+                        //SparkCore.LOGGER.debug("Removed {} AnimIndex shortcuts for entity: {}", toRemove.size, entityPath)
                     }
                 } else {
                     // 否则更新或添加动画集
@@ -72,7 +71,7 @@ data class OAnimationSetSyncPayload(
                                 "minecraft",
                                 "$entityPath/$animName"
                             )
-                            AnimIndex.ORIGINS[shortcutPath] = payload.rootLocation
+                            //AnimIndex.ORIGINS[shortcutPath] = payload.rootLocation
                         }
                         SparkCore.LOGGER.debug("Updated {} AnimIndex shortcuts for entity: {}", payload.animationSet.animations.size, entityPath)
                     }

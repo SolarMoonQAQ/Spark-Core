@@ -12,10 +12,10 @@ import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.animation.sync.OAnimationSetSyncPayload
 import cn.solarmoon.spark_core.animation.sync.TypedAnim2PlayPayload
 import cn.solarmoon.spark_core.animation.sync.TypedAnimPlayPayload
-import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSendingTask
-import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSyncPayload
 import cn.solarmoon.spark_core.animation.sync.TypedAnimationDataSendingTask
 import cn.solarmoon.spark_core.animation.sync.TypedAnimationDataSyncPayload
+import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSendingTask
+import cn.solarmoon.spark_core.animation.texture.sync.TextureDataSyncPayload
 import cn.solarmoon.spark_core.entity.EntityMovingPayload
 import cn.solarmoon.spark_core.ik.sync.IKComponentSyncPayload
 import cn.solarmoon.spark_core.ik.sync.IKDataPayload
@@ -35,6 +35,9 @@ import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
 import cn.solarmoon.spark_core.resource.sync.DepsChangedS2CPacket
 import cn.solarmoon.spark_core.resource.sync.UpdateDepsC2SPacket
+import cn.solarmoon.spark_core.resource2.sync.SparkPackagePayload
+import cn.solarmoon.spark_core.resource2.sync.SparkPackageReloadPayload
+import cn.solarmoon.spark_core.resource2.sync.SparkPackageSendingTask
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -115,6 +118,11 @@ object SparkPayloadRegister {
         val entity = event.registrar("entity")
         entity.playBidirectional(EntityMovingPayload.TYPE, EntityMovingPayload.STREAM_CODEC, EntityMovingPayload::handleInBothSide)
 
+        val pack = event.registrar("package")
+        pack.configurationToClient(SparkPackagePayload.TYPE, SparkPackagePayload.STREAM_CODEC, SparkPackagePayload::handleInClient)
+        pack.configurationToServer(SparkPackageSendingTask.Return.TYPE, SparkPackageSendingTask.Return.STREAM_CODEC, SparkPackageSendingTask.Return::onAct)
+        pack.playToClient(SparkPackageReloadPayload.TYPE, SparkPackageReloadPayload.STREAM_CODEC, SparkPackageReloadPayload::handleInClient)
+
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {
@@ -125,6 +133,7 @@ object SparkPayloadRegister {
         event.register(TextureDataSendingTask())
         event.register(TypedAnimationDataSendingTask())
         event.register(JSScriptDataSendingTask())
+        event.register(SparkPackageSendingTask())
     }
 
     @JvmStatic

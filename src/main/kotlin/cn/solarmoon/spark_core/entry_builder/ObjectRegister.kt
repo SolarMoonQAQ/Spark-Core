@@ -2,13 +2,12 @@ package cn.solarmoon.spark_core.entry_builder
 
 import cn.solarmoon.spark_core.entry_builder.client.KeyMappingBuilder
 import cn.solarmoon.spark_core.entry_builder.client.LayerBuilder
-import cn.solarmoon.spark_core.entry_builder.common.IKComponentTypeBuilder // Add import for the new builder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.entry_builder.common.fluid.FluidBuilder
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.util.RegisterUtil
 import net.minecraft.core.RegistrySetBuilder
-import net.minecraft.core.particles.ParticleType
+import net.minecraft.core.particles.ParticleOptions
 import net.minecraft.core.registries.Registries
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.item.Item
@@ -106,7 +105,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     fun creativeTab() = CreativeTabBuilder(creativeTabDeferredRegister)
     fun damageType() = DamageTypeBuilder(modId)
     fun effect() = EffectBuilder(effectDeferredRegister)
-    fun <P: ParticleType<*>> particle() = ParticleBuilder<P>(particleDeferredRegister)
+    fun <P: ParticleOptions> particle() = ParticleBuilder<P>(particleDeferredRegister)
     fun <R: Recipe<*>> recipe() = RecipeBuilder<R>(modId, recipeSerializerDeferredRegister, recipeDeferredRegister)
     fun sound() = SoundBuilder(modId, soundDeferredRegister)
     fun <D> entityData() = EntityDataBuilder<D>(entityDataDeferredRegister)

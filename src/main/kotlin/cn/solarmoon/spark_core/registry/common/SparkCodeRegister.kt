@@ -10,6 +10,7 @@ object SparkCodeRegister {
 
     private fun reg(event: RegisterEvent) {
         event.register(SparkRegistries.SYNC_DATA_STREAM_CODEC.key(), id("int")) { IntSyncData.STREAM_CODEC }
+        event.register(SparkRegistries.SYNC_DATA_CODEC.key(), id("int")) { IntSyncData.CODEC }
     }
 
     private fun id(id: String) = ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, id)

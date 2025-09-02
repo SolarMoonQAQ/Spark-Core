@@ -1,12 +1,11 @@
 package cn.solarmoon.spark_core.state_machine.presets
 
+import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.entity.isAboveGround
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.registry.common.SparkStateMachineRegister
-import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.util.Mth
@@ -109,26 +108,24 @@ class PlayerBaseAnimStateMachine(
         onStateEntry { s, t ->
             val stateName = s.name ?: return@onStateEntry
             val animName = "state.$stateName"
-//            SparkCore.LOGGER.info("payload:${s.payload}")
             s.playRelativeAnim(animName)
         }
     }
 
     private fun IState.playRelativeAnim(animName: String) {
         player.isBlocking
-        val data = payload
-        if (data !is AnimPlayDataProvider) return
-//        SparkCore.LOGGER.info(animName)
-        val animationPath = SparkResourcePathBuilder.buildAnimationPath("spark_core", "spark_core", "player", animName)
-        SparkRegistries.TYPED_ANIMATION.get(animationPath)?.let {
-            val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, it, this, data))
-            if (event.isCanceled) return@let
-            val anim = event.newAnim ?: event.originAnim
-            val data = event.data
+        val provider = payload
+        if (provider !is AnimPlayDataProvider) return
 
-            anim.play(player, data.layerId, data.data(lastState))
-            anim.playToServer(player, data.layerId, data.data(lastState))
-        }
+        val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, AnimInstance.create(player, animName), this, provider))
+        if (event.isCanceled) return
+        val anim = event.newAnim ?: event.originAnim
+        val data = event.data
+        val layer = data.layerId
+        val layerData = data.data(lastState)
+
+        player.animController.getLayer(layer).setAnimation(anim, layerData)
+        player.animController.playAnimToServer(anim.animIndex, layer, layerData)
     }
 
     private suspend fun IState.setupMovementStates(player: LocalPlayer) {

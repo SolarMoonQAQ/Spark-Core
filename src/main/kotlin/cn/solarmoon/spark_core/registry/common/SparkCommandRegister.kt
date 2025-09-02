@@ -16,6 +16,7 @@ object SparkCommandRegister {
                 .then(GetTagCommand().create(event.buildContext))
                 .then(IKDebugCommand().create(event.buildContext))
                 .then(GetWandCommand().create(event.buildContext))
+                .then(ReloadPackageCommand().create(event.buildContext))
         )
 
     }

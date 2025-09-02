@@ -1,11 +1,14 @@
 package cn.solarmoon.spark_core.js.extension
 
+import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.particle.AnimatableShadowParticle
 import net.minecraft.core.BlockPos
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.sounds.SoundEvent
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
+import java.awt.Color
 
 interface JSLevel {
 
@@ -25,6 +28,11 @@ interface JSLevel {
 
     fun playSound(pos: BlockPos, sound: String, source: String, volume: Float, pitch: Float) {
         level.playSound(null, pos, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()), volume, pitch)
+    }
+
+    fun addParticle(animatable: IAnimatable<*>) {
+        val pos = animatable.getWorldPosition()
+        level.addParticle(AnimatableShadowParticle.Option(animatable, Color.DARK_GRAY, 15), pos.x, pos.y, pos.z, 0.0, 0.0, 0.0)
     }
 
 }

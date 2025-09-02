@@ -16,7 +16,6 @@ data class OModel(
     val locators: LinkedHashMap<String, OLocator> = LinkedHashMap()
 ) {
 
-
     init {
         bones.values.forEach {
             it.rootModel = this
@@ -34,7 +33,7 @@ data class OModel(
 
     companion object {
         @JvmStatic
-        fun get(id: ResourceLocation) = ORIGINS[id] ?: EMPTY
+        fun getOrEmpty(id: ResourceLocation) = ORIGINS[id] ?: EMPTY
 
         /**
          * 地图加载后读取的原始模型数据，最好不要修改

@@ -12,6 +12,7 @@ import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
 import cn.solarmoon.spark_core.physics.presets.PresetBodyApplier
 import cn.solarmoon.spark_core.preinput.PreInputApplier
+import cn.solarmoon.spark_core.resource2.SparkPackLoaderApplier
 import cn.solarmoon.spark_core.skill.SkillApplier
 import cn.solarmoon.spark_core.state_machine.StateMachineApplier
 import cn.solarmoon.spark_core.state_machine.presets.CommonAnimApplier
@@ -38,6 +39,7 @@ object SparkCommonEventRegister {
         add(CameraAdjuster)
         add(EntityPatchApplier)
         add(StateMachineApplier)
+        add(SparkPackLoaderApplier)
     }
 
     private fun add(event: Any) {
