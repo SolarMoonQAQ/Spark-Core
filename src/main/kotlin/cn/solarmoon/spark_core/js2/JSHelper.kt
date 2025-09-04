@@ -14,6 +14,6 @@ fun Value.toVec3() = Vec3(getArrayElement(0).asDouble(), getArrayElement(1).asDo
 
 fun Value.toVec2() = Vec2(getArrayElement(0).asFloat(), getArrayElement(1).asFloat())
 
-fun Vec3.toValue() = SparkJSLoader.context.asValue(arrayOf(x, y, z))
+fun Vec3.toValue() = SparkJSLoader.get().context.asValue(arrayOf(x, y, z))
 
-fun Vec2.toValue() = SparkJSLoader.context.asValue(arrayOf(x, y))
+fun Vec2.toValue() = SparkJSLoader.get().context.asValue(arrayOf(x, y))

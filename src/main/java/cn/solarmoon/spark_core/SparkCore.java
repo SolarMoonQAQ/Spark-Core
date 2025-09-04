@@ -2,11 +2,13 @@ package cn.solarmoon.spark_core;
 
 import cn.solarmoon.spark_core.config.SparkConfig;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
+import cn.solarmoon.spark_core.lua.LuaHelperKt;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.registry.client.*;
 import cn.solarmoon.spark_core.registry.common.*;
 import cn.solarmoon.spark_core.resource.common.MultiModResourceRegistry;
+import cn.solarmoon.spark_core.resource2.NativeLoader;
 import cn.solarmoon.spark_core.resource2.SparkPackResourceLoader;
 import cn.solarmoon.spark_core.web.logging.SparkLogger;
 import net.neoforged.bus.api.IEventBus;
@@ -32,7 +34,9 @@ public class SparkCore {
     public SparkCore(IEventBus modEventBus, ModContainer modContainer) {
         // 首先注册SparkCore自身到多mod资源系统
         MultiModResourceRegistry.INSTANCE.registerModResources(MOD_ID, SparkCore.class);
-        SparkPackResourceLoader.copyResourceModulesToRun(SparkCore.class);
+        SparkPackResourceLoader.copyResourceModulesToRun(MOD_ID);
+        NativeLoader.load("bullet", PhysicsHelperKt.selectLib());
+        NativeLoader.load("lua", LuaHelperKt.selectLib());
 
         REGISTER.register(modEventBus);
         MC_REGISTER.register(modEventBus);
@@ -64,7 +68,6 @@ public class SparkCore {
         SparkPackModuleRegister.register();
         SparkConfig.register(modContainer);
         SparkStateMachineRegister.register();
-        PhysicsHelperKt.initBullet();
         SparkResourceRegister.register(modEventBus);
     }
 

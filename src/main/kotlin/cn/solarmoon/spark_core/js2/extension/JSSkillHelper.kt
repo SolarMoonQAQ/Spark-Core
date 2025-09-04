@@ -65,7 +65,7 @@ object JSSkillHelper {
                 functions.forEach { it.invoke(this) }
             }
         }.apply {
-            fromJS = true
+            fromScript = true
         }
 
         fun buildBy(type: SkillType<*>) = skillType(id, conditions.toMutableList().apply { addAll(type.conditions) }, { type.provider() }) {
@@ -76,7 +76,7 @@ object JSSkillHelper {
                 functions.forEach { it.invoke(this) }
             }
         }.apply {
-            fromJS = true
+            fromScript = true
         }
     }
 

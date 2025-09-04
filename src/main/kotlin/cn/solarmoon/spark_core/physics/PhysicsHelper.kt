@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.physics
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.collision.PhysicsEvent
+import cn.solarmoon.spark_core.resource2.SparkPackLoader.MODULE_NAME
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Matrix3f
@@ -10,55 +11,23 @@ import com.jme3.system.JmeSystem
 import com.jme3.system.NativeLibraryLoader
 import com.jme3.system.Platform.Os.*
 import net.minecraft.world.phys.Vec3
+import net.neoforged.fml.ModList
 import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
 import net.neoforged.fml.loading.FMLPaths
 import java.io.File
 import java.nio.file.Files
 
-
-fun initBullet() {
+fun selectLib(): String {
     val platform = JmeSystem.getPlatform()
-    val libName = when(platform.os) {
+    val libName = when (platform.os) {
         Windows -> "bulletjme.dll"
         Linux -> "libbulletjme.so"
         MacOS -> "libbulletjme.dylib"
         Android -> "libbulletjme.so"
-        else -> throw ModLoadingException(ModLoadingIssue.error("error" + SparkCore.MOD_ID + "init_bullet"))
+        else -> throw ModLoadingException(ModLoadingIssue.error("Bullet 物理库不支持该系统平台: ${platform.os}"))
     }
-
-    val gameDir = FMLPaths.GAMEDIR.get().toFile()
-
-    val targetDir = File(gameDir, "sparkcore")
-
-    if (!targetDir.exists()) { targetDir.mkdirs() }
-
-//    val destFile = File(targetDir,  "${platform}DebugSpMt_$libName")
-    val destFile = File(targetDir,  "${platform}ReleaseSpMt_$libName")
-
-    val resourceStream = SparkCore::class.java.getResourceAsStream("/natives/$libName")
-        ?: throw ModLoadingException(ModLoadingIssue.error("未找到物理库核心文件: $libName"))
-
-    resourceStream.use { input ->
-        val sourceBytes = resourceStream.readBytes()
-
-        val needUpdate = when {
-            !destFile.exists() -> true
-            else -> {
-                val destBytes = Files.readAllBytes(destFile.toPath())
-                !sourceBytes.contentEquals(destBytes)
-            }
-        }
-
-        if (needUpdate) {
-            Files.write(destFile.toPath(), sourceBytes)
-            SparkCore.LOGGER.info("已更新物理库核心版本")
-        } else {
-            SparkCore.LOGGER.info("物理库已是最新版本")
-        }
-    }
-
-    NativeLibraryLoader.loadLibbulletjme(true, File(gameDir, "sparkcore"), "Release", "SpMt")
+    return libName
 }
 
 fun Vec3.toBVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())

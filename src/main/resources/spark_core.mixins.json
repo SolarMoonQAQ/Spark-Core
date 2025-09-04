@@ -17,6 +17,7 @@
     "extension.EntityMixin",
     "extension.LivingEntityMixin",
     "extension.LookControlMixin",
+    "extension.MappedRegistryMixin",
     "js.AnimInstanceMixin",
     "js.AttackSystemMixin",
     "js.EntityMixin",
@@ -28,8 +29,7 @@
     "js.SkillMixin",
     "phys.EntityMixin",
     "phys.LevelMixin",
-    "state_machine.EntityMixin",
-    "extension.MappedRegistryMixin"
+    "state_machine.EntityMixin"
   ],
   "client": [
     "animation.CapeLayerMixin",

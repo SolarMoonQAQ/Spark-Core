@@ -1,11 +1,14 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.js2.SparkJSLoader
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
+import net.minecraft.client.Minecraft
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
+import net.neoforged.neoforge.server.ServerLifecycleHooks
 import kotlin.reflect.KClass
 
 open class Skill {
@@ -81,7 +84,7 @@ open class Skill {
 
     fun triggerEvent(event: SkillEvent): Boolean {
         var result = false
-        eventHandlers[event::class]?.forEach { it(event); result = true }
+        eventHandlers[event::class]?.forEach { if (level.isClientSide == SparkJSLoader.get().isClientSide) it(event); result = true }
         return result
     }
 

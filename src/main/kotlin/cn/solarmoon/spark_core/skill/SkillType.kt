@@ -26,7 +26,7 @@ class SkillType<S: Skill>(
     internal val provider: () -> S,
 ) {
 
-    var fromJS = false
+    var fromScript = false
         internal set
 
     /**

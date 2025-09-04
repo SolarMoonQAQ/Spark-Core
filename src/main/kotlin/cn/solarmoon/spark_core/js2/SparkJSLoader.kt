@@ -6,18 +6,29 @@ import cn.solarmoon.spark_core.js2.modules.JSModule
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.common.NeoForge
 import org.graalvm.polyglot.Context
+import org.graalvm.polyglot.Engine
 import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.Source
+import org.graalvm.polyglot.Value
 import java.nio.charset.StandardCharsets
+import kotlin.concurrent.getOrSet
 
-object SparkJSLoader {
+class SparkJSLoader {
 
-    val LOGGER = SparkCore.logger("JS脚本")
+    companion object {
+        val LOGGER = SparkCore.logger("JS脚本")
+
+        private val loader = ThreadLocal<SparkJSLoader>()
+
+        fun get() = loader.getOrSet { SparkJSLoader() }
+    }
 
     lateinit var context: Context
         private set
 
     val bindings get() = context.getBindings("js")
+
+    val isClientSide = Thread.currentThread().name.contains("Render")
 
     private val inModules = mutableMapOf<String, JSModule>()
     private val inScripts = mutableMapOf<ResourceLocation, JavaScript>()
@@ -35,6 +46,8 @@ object SparkJSLoader {
 
     fun createContext() = Context.newBuilder("js")
         .allowHostAccess(HostAccess.ALL) // 在 JS 中访问 Java 对象
+        .allowExperimentalOptions(true)
+        .option("engine.WarnInterpreterOnly", "false")
         .build()
 
     fun load(script: JavaScript) {

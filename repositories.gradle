@@ -93,8 +93,10 @@ dependencies {
     implementation files("compileOnly/mcef-neoforge-2.1.6-1.21.1.jar")
     implementation files("compileOnly/CustomNPCs-Unofficial-NeoForge-1.21.1.20241226.jar")
 
-    files(fileTree(dir: 'libs', includes: ['*.jar']))
-    additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
+    jarJar(implementation "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.24")
+
+    jarJar(implementation fileTree(dir: 'extlibs', includes: ['*.jar']))
+    additionalRuntimeClasspath fileTree(dir: 'extlibs', includes: ['*.jar'])
 }
 
 repositories {

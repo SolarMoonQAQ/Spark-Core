@@ -4,7 +4,6 @@ plugins {
     id 'idea'
     id 'net.neoforged.moddev' version '2.0.107'
     id 'org.jetbrains.kotlin.jvm' version '2.0.21'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.21'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -130,3 +129,11 @@ kotlin {
 tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
+
+tasks.register('generateLuaDocs', JavaExec) {
+    group = "build"
+    description = "解析源码并生成 Lua 注释文件"
+    mainClass = 'cn.solarmoon.spark_core.LuaDocsGenerator'
+    classpath = sourceSets.main.runtimeClasspath
+}
+

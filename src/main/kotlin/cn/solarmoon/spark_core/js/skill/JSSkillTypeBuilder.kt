@@ -73,7 +73,7 @@ class JSSkillTypeBuilder(val js: SparkJS) {
             functions.forEach { it.invoke(this) }
         }
     }.apply {
-        fromJS = true
+        fromScript = true
         // 设置脚本来源信息
         scriptSource = currentFileName?.let { fileName ->
             ScriptSource("skill", fileName)
@@ -88,7 +88,7 @@ class JSSkillTypeBuilder(val js: SparkJS) {
             functions.forEach { it.invoke(this) }
         }
     }.apply {
-        fromJS = true
+        fromScript = true
         // 设置脚本来源信息
         scriptSource = currentFileName?.let { fileName ->
             ScriptSource("skill", fileName)

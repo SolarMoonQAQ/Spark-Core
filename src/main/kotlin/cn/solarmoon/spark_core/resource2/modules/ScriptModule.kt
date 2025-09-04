@@ -12,7 +12,7 @@ class ScriptModule: SparkPackModule {
     override val id: String = "scripts"
 
     override fun onStart() {
-        SparkJSLoader.initialize()
+        SparkJSLoader.get().initialize()
     }
 
     override fun read(
@@ -22,15 +22,15 @@ class ScriptModule: SparkPackModule {
         pack: SparkPackage
     ) {
         val jsModuleId = pathSegments.getOrNull(0) ?: DefaultJSModule.ID
-        if (!SparkJSLoader.modules.contains(jsModuleId)) throw IllegalArgumentException("未找到脚本模块: $jsModuleId，请保证脚本放在存在的模块文件中，比如 scripts/skill/test.js 代表skill模块，如若该脚本不依赖任何模块，可以放入default文件夹或直接留在script根目录")
+        if (!SparkJSLoader.get().modules.contains(jsModuleId)) throw IllegalArgumentException("未找到脚本模块: $jsModuleId，请保证脚本放在存在的模块文件中，比如 scripts/skill/test.js 代表skill模块，如若该脚本不依赖任何模块，可以放入default文件夹或直接留在script根目录")
         val js = JavaScript(ResourceLocation.fromNamespaceAndPath(jsModuleId, fileName.removeSuffix(".js")), content)
-        SparkJSLoader.load(js)
+        SparkJSLoader.get().load(js)
     }
 
     override fun onFinish() {
-        val grouped = SparkJSLoader.scripts.keys.groupBy { it.namespace }
+        val grouped = SparkJSLoader.get().scripts.keys.groupBy { it.namespace }
         val logMsg = buildString {
-            append("\n📰成功加载 ${grouped.size} 个脚本模块，共 ${SparkJSLoader.scripts.size} 个脚本📰\n")
+            append("\n📰成功加载 ${grouped.size} 个脚本模块，共 ${SparkJSLoader.get().scripts.size} 个脚本📰\n")
             grouped.forEach { (namespace, ids) ->
                 append("✅$namespace: [")
                 append(ids.joinToString(", ") { it.toString() })

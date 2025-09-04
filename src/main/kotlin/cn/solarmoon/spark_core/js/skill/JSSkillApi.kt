@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.js.skill
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.JSComponent
-import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.js.call
 import cn.solarmoon.spark_core.skill.SkillManager
 import net.minecraft.resources.ResourceLocation
@@ -70,7 +69,7 @@ object JSSkillApi: JSApi, JSComponent() {
      */
     fun unloadScript(fileName: String) {
         val toRemove = SkillManager.filter {
-            it.value.fromJS &&
+            it.value.fromScript &&
             it.value.scriptSource?.apiId == id &&
             it.value.scriptSource?.fileName == fileName
         }.toList()
@@ -88,7 +87,7 @@ object JSSkillApi: JSApi, JSComponent() {
     override fun onReload() {
         // 清除所有由此API创建的JS技能
         val r = SkillManager.filter {
-            it.value.fromJS &&
+            it.value.fromScript &&
             it.value.scriptSource?.apiId == id
         }.toList()
         r.forEach {

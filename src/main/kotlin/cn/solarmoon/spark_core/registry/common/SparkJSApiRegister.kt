@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.event.SparkJSComponentRegisterEvent
 import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
+import cn.solarmoon.spark_core.event.SparkLuaRegisterEvent
 import cn.solarmoon.spark_core.js.JSApi
 import cn.solarmoon.spark_core.js.extension.*
 import cn.solarmoon.spark_core.js.extension.JSResourcePath
@@ -11,11 +12,24 @@ import cn.solarmoon.spark_core.js2.extension.JSLogger
 import cn.solarmoon.spark_core.js2.extension.JSSkillHelper
 import cn.solarmoon.spark_core.js2.modules.DefaultJSModule
 import cn.solarmoon.spark_core.js2.modules.SkillJSModule
+import cn.solarmoon.spark_core.lua.extensions.LuaSkillGlobal
+import cn.solarmoon.spark_core.lua.extensions.LuaSkillConditionGlobal
+import cn.solarmoon.spark_core.lua.modules.SkillLuaModule
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.neoforge.common.NeoForge
 
 object SparkJSApiRegister {
+
+    private fun reg2(event: SparkLuaRegisterEvent) {
+        event.registerModule(SkillLuaModule())
+
+        val state = event.state
+        state.pushJavaObject(LuaSkillGlobal)
+        state.setGlobal("Skill")
+        state.pushJavaObject(LuaSkillConditionGlobal)
+        state.setGlobal("SkillCondition")
+    }
 
     private fun r(event: FMLCommonSetupEvent) {
         JSApi.register()
@@ -51,6 +65,7 @@ object SparkJSApiRegister {
         //bus.addListener(::reg)
         NeoForge.EVENT_BUS.addListener(::regCom)
         NeoForge.EVENT_BUS.addListener(::reg)
+        NeoForge.EVENT_BUS.addListener(::reg2)
     }
 
 }
