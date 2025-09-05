@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的简单Wiki</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+        }
+        nav {
+            width: 200px;
+            background: #f4f4f4;
+            padding: 15px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        nav h2 {
+            font-size: 18px;
+            margin-top: 0;
+        }
+        nav a {
+            display: block;
+            padding: 5px 0;
+            color: #333;
+            text-decoration: none;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        main {
+            flex: 1;
+            padding: 20px;
+        }
+        h1, h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+    </style>
+    <!-- 引入 marked.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<!-- 左侧目录 -->
+<nav>
+    <h2>目录</h2>
+    <a href="#" data-file="Home.md">简介</a>
+    <a href="#" data-file="install.md">安装</a>
+    <a href="#" data-file="usage.md">使用方法</a>
+</nav>
+
+<!-- 右侧正文 -->
+<main id="content">
+    <h1>我的简单Wiki</h1>
+    <p>请选择左侧目录加载内容。</p>
+</main>
+
+<script>
+    const contentEl = document.getElementById('content');
+
+    // 点击目录加载对应 md 文件
+    document.querySelectorAll('nav a').forEach(link => {
+        link.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const file = link.getAttribute('data-file');
+            try {
+                const res = await fetch(file);
+                if (!res.ok) throw new Error('加载失败');
+                const mdText = await res.text();
+                // 用 marked 渲染 Markdown
+                contentEl.innerHTML = marked.parse(mdText);
+            } catch (err) {
+                contentEl.innerHTML = `<p style="color:red;">无法加载 ${file}</p>`;
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
