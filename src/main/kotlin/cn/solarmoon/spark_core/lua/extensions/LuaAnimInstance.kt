@@ -1,45 +1,47 @@
-package cn.solarmoon.spark_core.js2.extension
+package cn.solarmoon.spark_core.lua.extensions
 
 import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.js2.toArray
-import cn.solarmoon.spark_core.js2.toVec2
-import cn.solarmoon.spark_core.util.toVector2d
-import org.graalvm.polyglot.Value
+import cn.solarmoon.spark_core.js.toVector2d
+import cn.solarmoon.spark_core.lua.doc.LuaClass
+import cn.solarmoon.spark_core.lua.execute
+import li.cil.repack.com.naef.jnlua.LuaValueProxy
+import org.mozilla.javascript.NativeArray
 
-interface JSAnimation {
+@LuaClass("AnimInstance")
+interface LuaAnimInstance {
 
     val anim get() = this as AnimInstance
 
     fun getProgress() = anim.getProgress(1f)
 
-    fun onSwitchIn(consumer: Value) {
+    fun onSwitchIn(consumer: LuaValueProxy) {
         anim.onEvent<AnimEvent.SwitchIn> {
             val p = it.previous
             consumer.execute(p)
         }
     }
 
-    fun onSwitchOut(consumer: Value) {
+    fun onSwitchOut(consumer: LuaValueProxy) {
         anim.onEvent<AnimEvent.SwitchOut> {
             val n = it.originNextAnim
             consumer.execute(n)
         }
     }
 
-    fun onEnd(consumer: Value) {
+    fun onEnd(consumer: LuaValueProxy) {
         anim.onEvent<AnimEvent.End> {
             consumer.execute()
         }
     }
 
-    fun onCompleted(consumer: Value) {
+    fun onCompleted(consumer: LuaValueProxy) {
         anim.onEvent<AnimEvent.Completed> {
             consumer.execute()
         }
     }
 
-    fun onStart(consumer: Value) {
+    fun onStart(consumer: LuaValueProxy) {
         anim.onEvent<AnimEvent.SwitchIn> {
             consumer.execute(it.previous)
         }
@@ -53,7 +55,7 @@ interface JSAnimation {
 
     fun registerKeyframeRangeStart(id: String, start: Double) = anim.registerKeyframeRange(id, start, anim.maxLength)
 
-    fun registerKeyframeRanges(id: String, ranges: Value, provider: Value) = anim.registerKeyframeRanges(id, *ranges.toArray { it.toVec2().toVector2d() }) {
+    fun registerKeyframeRanges(id: String, ranges: NativeArray, provider: LuaValueProxy) = anim.registerKeyframeRanges(id, *ranges.map { (it as NativeArray).toVector2d() }.toTypedArray()) {
         provider.execute(this, it)
     }
 

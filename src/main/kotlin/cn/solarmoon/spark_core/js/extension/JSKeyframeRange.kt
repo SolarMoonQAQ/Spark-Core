@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.js2.extension
+package cn.solarmoon.spark_core.js.extension
 
 import cn.solarmoon.spark_core.animation.anim.play.KeyframeRange
 import org.graalvm.polyglot.Value

@@ -1,12 +1,12 @@
-package cn.solarmoon.spark_core.js2.extension
+package cn.solarmoon.spark_core.js.extension
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.camera.setCameraLock
 import cn.solarmoon.spark_core.entity.addRelativeMovement
 import cn.solarmoon.spark_core.entity.getRelativeVector
 import cn.solarmoon.spark_core.js.toNativeArray
-import cn.solarmoon.spark_core.js2.toValue
-import cn.solarmoon.spark_core.js2.toVec2
-import cn.solarmoon.spark_core.js2.toVec3
+import cn.solarmoon.spark_core.js.toVec2
+import cn.solarmoon.spark_core.js.toVec3
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.core.registries.BuiltInRegistries
@@ -17,7 +17,7 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec2
-import org.graalvm.polyglot.Value
+import org.mozilla.javascript.NativeArray
 import kotlin.math.PI
 import kotlin.math.atan2
 
@@ -44,11 +44,11 @@ interface JSEntity {
         }
     }
 
-    fun move(move: Value, orientationByInput: Boolean) {
-        move(move, orientationByInput, Vec2(0f, 1f).toValue())
+    fun move(move: NativeArray, orientationByInput: Boolean) {
+        move(move, orientationByInput, Vec2(0f, 1f).toNativeArray())
     }
 
-    fun move(move: Value, orientationByInput: Boolean, default: Value) {
+    fun move(move: NativeArray, orientationByInput: Boolean, default: NativeArray) {
         val entity = entity
         val move = move.toVec3()
         if (entity is Player && orientationByInput && entity.isLocalPlayer) {
@@ -65,11 +65,11 @@ interface JSEntity {
         }
     }
 
-    fun addMove(move: Value, orientationByInput: Boolean) {
-        addMove(move, orientationByInput, Vec2(0f, 1f).toValue())
+    fun addMove(move: NativeArray, orientationByInput: Boolean) {
+        addMove(move, orientationByInput, Vec2(0f, 1f).toNativeArray())
     }
 
-    fun addMove(move: Value, orientationByInput: Boolean, default: Value) {
+    fun addMove(move: NativeArray, orientationByInput: Boolean, default: NativeArray) {
         val move = move.toVec3()
         val entity = entity
         if (entity is Player && orientationByInput && entity.isLocalPlayer) {
@@ -86,7 +86,7 @@ interface JSEntity {
         }
     }
 
-    fun addRelativeMovement(relative: Value, movement: Value) = entity.addRelativeMovement(relative.toVec3(), movement.toVec3())
+    fun addRelativeMovement(relative: NativeArray, movement: NativeArray) = entity.addRelativeMovement(relative.toVec3(), movement.toVec3())
 
     fun hurt(damageSource: DamageSource, amount: Float) {
         entity.hurt(damageSource, amount)
@@ -129,4 +129,7 @@ interface JSEntity {
         }
     }
 
+    fun log(message: String) {
+        SparkCore.LOGGER.info("发送消息: {}", message)
+    }
 }
