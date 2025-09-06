@@ -32,7 +32,7 @@ const loadMarkdown = async (path) => {
   try {
     // 如果部署在 GitHub Pages 仓库子路径，需要加上仓库名
     const base = import.meta.env.BASE_URL  // Vite 会自动替换成正确的路径
-    const res = await fetch(`${base}component/zh_cn/${fileName}`)
+    const res = await fetch(`${base}component/zh_cn/${fileName}?raw`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const text = await res.text()
     renderedMarkdown.value = md.render(text)
