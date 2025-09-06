@@ -27,8 +27,8 @@ const loadMarkdown = async (path) => {
   const fileName = routeToFileMap[path]
 
   try {
-    const raw = await import(`../docs/assets/markdown/zh_cn/${fileName}?raw`)
-    renderedMarkdown.value = md.render(raw.default)
+    const rawModule = await import(/* @vite-ignore */ new URL(`../assets/markdown/zh_cn/${fileName}`, import.meta.url).href + '?raw')
+    renderedMarkdown.value = md.render(rawModule.default)
   } catch (err) {
     renderedMarkdown.value = `<h2>加载失败：${fileName}</h2><p>${err}</p>`
   }
