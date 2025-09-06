@@ -14,12 +14,12 @@ const md = new MarkdownIt({ html: true, linkify: true, typographer: true })
 
 // 路由路径与 Markdown 文件名映射
 const routeToFileMap = {
-  '': 'SparkCore.md',
-  'lua': '/lua/Lua.md',
-  'lua/use': '/lua/Use.md',
-  'lua/method': '/lua/LuaMethods.md',
-  'lua/module': '/lua/Module.md',
-  'lua/docs': '/lua/DocGenerate.md'
+  '/': 'SparkCore.md',
+  '/lua': 'lua/Lua.md',
+  '/lua/use': 'lua/Use.md',
+  '/lua/method': 'lua/LuaMethods.md',
+  '/lua/module': 'lua/Module.md',
+  '/lua/docs': 'lua/DocGenerate.md'
 }
 
 // 加载 Markdown 文件
