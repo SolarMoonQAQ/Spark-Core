@@ -1,12 +1,7 @@
 <!-- MarkdownPage.vue -->
 <template>
-  <transition name="page-flip" mode="out-in">
-    <div class="page-container" key="$route.fullPath">
-      <div class="markdown-body" v-html="renderedMarkdown" />
-    </div>
-  </transition>
+  <div class="markdown-body" v-html="renderedMarkdown" />
 </template>
-
 
 <script setup>
 import { ref, watch } from 'vue'
@@ -30,14 +25,10 @@ const routeToFileMap = {
 // 加载 Markdown 文件
 const loadMarkdown = async (path) => {
   const fileName = routeToFileMap[path]
-  if (!fileName) {
-    renderedMarkdown.value = '<h2>未找到对应文档</h2>'
-    return
-  }
 
   try {
-    const raw = await import(`@/markdown/zh_cn/${fileName}?raw`)
-    renderedMarkdown.value = md.render(raw.default || raw)
+    const raw = await import(`@/assets/markdown/zh_cn/${fileName}?raw`)
+    renderedMarkdown.value = md.render(raw.default)
   } catch (err) {
     renderedMarkdown.value = `<h2>加载失败：${fileName}</h2><p>${err}</p>`
   }
@@ -68,45 +59,4 @@ watch(() => route.path, (newPath) => {
   display: block;
   margin: 1rem auto;
 }
-
-.page-flip-enter-active,
-.page-flip-leave-active {
-  transform-origin: bottom right;
-  animation: flipFromBottomRight 0.8s ease-in-out forwards;
-}
-
-.page-flip-leave-active {
-  animation: flipToBottomRight 0.8s ease-in-out forwards;
-}
-
-@keyframes flipFromBottomRight {
-  0% {
-    transform: rotateY(90deg) rotateX(10deg);
-    opacity: 0;
-    filter: brightness(0.8) drop-shadow(0 5px 15px rgba(0,0,0,0.3));
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 90% 100%, 100% 90%, 0 90%);
-  }
-  100% {
-    transform: rotateY(0deg) rotateX(0deg);
-    opacity: 1;
-    filter: brightness(1) drop-shadow(0 0 0 rgba(0,0,0,0));
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  }
-}
-
-@keyframes flipToBottomRight {
-  0% {
-    transform: rotateY(0deg) rotateX(0deg);
-    opacity: 1;
-    filter: brightness(1);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  }
-  100% {
-    transform: rotateY(-90deg) rotateX(10deg);
-    opacity: 0;
-    filter: brightness(0.8) drop-shadow(0 5px 15px rgba(0,0,0,0.3));
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 90% 100%, 100% 90%, 0 90%);
-  }
-}
-
 </style>
