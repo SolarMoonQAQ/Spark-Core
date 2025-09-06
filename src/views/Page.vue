@@ -3,10 +3,8 @@
     <transition name="page-flip" mode="out-in">
       <router-view :key="$route.fullPath" />
     </transition>
-
   </div>
 </template>
-
 
 <script setup>
 import { onMounted } from 'vue'
@@ -14,6 +12,20 @@ import { useRouter } from 'vue-router'
 import f1 from "@/assets/sounds/flip1.mp3"
 import f2 from "@/assets/sounds/flip2.mp3"
 import f3 from "@/assets/sounds/flip3.mp3"
+import { ref } from 'vue'
+
+const isFlipping = ref(false)
+
+onMounted(() => {
+  router.beforeEach((to, from, next) => {
+    isFlipping.value = true
+    setTimeout(() => {
+      isFlipping.value = false
+    }, 800) // 动画时长
+    next()
+  })
+})
+
 
 const router = useRouter()
 
@@ -53,28 +65,4 @@ onMounted(() => {
   -webkit-backdrop-filter: blur(12px);
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.05);
 }
-
-.page-flip-enter-active,
-.page-flip-leave-active {
-  transition: transform 0.6s ease, opacity 0.6s ease;
-  transform-style: preserve-3d;
-}
-.page-flip-enter-from {
-  transform: rotateY(90deg);
-  opacity: 0;
-}
-.page-flip-enter-to {
-  transform: rotateY(0deg);
-  opacity: 1;
-}
-.page-flip-leave-from {
-  transform: rotateY(0deg);
-  opacity: 1;
-}
-.page-flip-leave-to {
-  transform: rotateY(-90deg);
-  opacity: 0;
-}
-
-
 </style>
