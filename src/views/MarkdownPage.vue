@@ -1,4 +1,3 @@
-<!-- MarkdownPage.vue -->
 <template>
   <div class="markdown-body" v-html="renderedMarkdown" />
 </template>
@@ -8,29 +7,35 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MarkdownIt from 'markdown-it'
 
+// 直接静态导入所有 Markdown 文件
+import SparkCore from '../assets/markdown/zh_cn/SparkCore.md?raw'
+import Lua from '../assets/markdown/zh_cn/lua/Lua.md?raw'
+import LuaUse from '../assets/markdown/zh_cn/lua/Use.md?raw'
+import LuaMethods from '../assets/markdown/zh_cn/lua/LuaMethods.md?raw'
+import LuaModule from '../assets/markdown/zh_cn/lua/Module.md?raw'
+import LuaDocs from '../assets/markdown/zh_cn/lua/DocGenerate.md?raw'
+
 const route = useRoute()
 const renderedMarkdown = ref('')
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true })
 
-// 路由路径与 Markdown 文件名映射
-const routeToFileMap = {
-  '/': 'SparkCore.md',
-  '/lua': 'lua/Lua.md',
-  '/lua/use': 'lua/Use.md',
-  '/lua/method': 'lua/LuaMethods.md',
-  '/lua/module': 'lua/Module.md',
-  '/lua/docs': 'lua/DocGenerate.md'
+// 路由路径与已导入内容的映射
+const routeToContentMap = {
+  '/': SparkCore,
+  '/lua': Lua,
+  '/lua/use': LuaUse,
+  '/lua/method': LuaMethods,
+  '/lua/module': LuaModule,
+  '/lua/docs': LuaDocs
 }
 
-// 加载 Markdown 文件
-const loadMarkdown = async (path) => {
-  const fileName = routeToFileMap[path]
-
-  try {
-    const rawModule = await import(/* @vite-ignore */ new URL(`../assets/markdown/zh_cn/${fileName}`, import.meta.url).href + '?raw')
-    renderedMarkdown.value = md.render(rawModule.default)
-  } catch (err) {
-    renderedMarkdown.value = `<h2>加载失败：${fileName}</h2><p>${err}</p>`
+// 加载 Markdown（静态映射）
+const loadMarkdown = (path) => {
+  const content = routeToContentMap[path]
+  if (content) {
+    renderedMarkdown.value = md.render(content)
+  } else {
+    renderedMarkdown.value = `<h2>未找到对应文档</h2>`
   }
 }
 
