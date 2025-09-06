@@ -1,8 +1,12 @@
 <template>
   <div class="main-content">
-    <router-view />
+    <transition name="page-flip" mode="out-in">
+      <router-view :key="$route.fullPath" />
+    </transition>
+
   </div>
 </template>
+
 
 <script setup>
 import { onMounted } from 'vue'
@@ -49,4 +53,28 @@ onMounted(() => {
   -webkit-backdrop-filter: blur(12px);
   box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.05);
 }
+
+.page-flip-enter-active,
+.page-flip-leave-active {
+  transition: transform 0.6s ease, opacity 0.6s ease;
+  transform-style: preserve-3d;
+}
+.page-flip-enter-from {
+  transform: rotateY(90deg);
+  opacity: 0;
+}
+.page-flip-enter-to {
+  transform: rotateY(0deg);
+  opacity: 1;
+}
+.page-flip-leave-from {
+  transform: rotateY(0deg);
+  opacity: 1;
+}
+.page-flip-leave-to {
+  transform: rotateY(-90deg);
+  opacity: 0;
+}
+
+
 </style>

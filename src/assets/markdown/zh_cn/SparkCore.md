@@ -1,5 +1,5 @@
 <div style="text-align: center;">
-  <img src="/.img/streamer.png" width="1448" />
+  <img src="../../textures/streamer.png" width="1448" />
 </div>
 
 
@@ -7,10 +7,10 @@
 
 <div style="text-align: center;">
 
-[![加入QQ群](../.img/qq.svg)](https://qm.qq.com/q/1RLcr4ehB2)
-[![Discord](../.img/discord.svg)](https://discord.gg/w3N3HvQhr2)
-[![WIKI](../.img/wiki.svg)](https://github.com/SolarMoonQAQ/Spark-Core/wiki)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lujunjiehhh/Spark-Core-HotReload)
+[![加入QQ群](../../textures/qq.svg)](https://qm.qq.com/q/1RLcr4ehB2)
+[![Discord](../../textures/discord.svg)](https://discord.gg/w3N3HvQhr2)
+[![WIKI](../../textures/wiki.svg)](https://github.com/SolarMoonQAQ/Spark-Core/wiki)
+[![Ask DeepWiki](../../textures/deepwiki.svg)](https://deepwiki.com/lujunjiehhh/Spark-Core-HotReload)
 
 </div>
 

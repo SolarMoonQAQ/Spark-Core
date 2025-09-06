@@ -1,5 +1,6 @@
+<!-- MarkdownPage.vue -->
 <template>
-  <div class="markdown-body" v-html="renderedMarkdown"></div>
+  <div class="markdown-body" v-html="renderedMarkdown" />
 </template>
 
 <script setup>
@@ -11,17 +12,17 @@ const route = useRoute()
 const renderedMarkdown = ref('')
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true })
 
-// 路由路径与 Markdown 文件名映射（去掉开头的 /，方便拼接）
+// 路由路径与 Markdown 文件名映射
 const routeToFileMap = {
   '/': 'SparkCore.md',
-  '/lua': 'lua/Lua.md',
-  '/lua/use': 'lua/Use.md',
-  '/lua/method': 'lua/LuaMethods.md',
-  '/lua/module': 'lua/Module.md',
-  '/lua/docs': 'lua/DocGenerate.md'
+  '/lua': '/lua/Lua.md',
+  '/lua/use': '/lua/Use.md',
+  '/lua/method': '/lua/LuaMethods.md',
+  '/lua/module': '/lua/Module.md',
+  '/lua/docs': '/lua/DocGenerate.md'
 }
 
-// 加载 Markdown 文件（从 public 目录）
+// 加载 Markdown 文件
 const loadMarkdown = async (path) => {
   const fileName = routeToFileMap[path]
   if (!fileName) {
@@ -30,12 +31,8 @@ const loadMarkdown = async (path) => {
   }
 
   try {
-    // 如果部署在 GitHub Pages 仓库子路径，需要加上仓库名
-    const base = import.meta.env.BASE_URL  // Vite 会自动替换成正确的路径
-    const res = await fetch(`${base}component/zh_cn/${fileName}?raw`)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const text = await res.text()
-    renderedMarkdown.value = md.render(text)
+    const raw = await import(`@/markdown/zh_cn/${fileName}?raw`)
+    renderedMarkdown.value = md.render(raw.default || raw)
   } catch (err) {
     renderedMarkdown.value = `<h2>加载失败：${fileName}</h2><p>${err}</p>`
   }
@@ -49,3 +46,21 @@ watch(() => route.path, (newPath) => {
   loadMarkdown(newPath)
 })
 </script>
+
+<style scoped>
+.markdown-body {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+}
+</style>
