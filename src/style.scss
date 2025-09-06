@@ -1,0 +1,20 @@
+$sidebarWidth: 300px;
+
+$sidebar-color: #5A1F1B;
+
+@mixin xuan-paper-side(
+  $rightExtend: 10px,
+  $levelOffset: -20px,
+  $baseColor1: #fdfcf7,
+  $baseColor2: #f8f5e9
+) {
+  background:
+          radial-gradient(rgba(0,0,0,0.5) 1px, transparent 1px),
+          linear-gradient(135deg, $baseColor1 0%, $baseColor2 50%, $baseColor1 100%);
+  background-size: auto, 3px 3px;
+  width: calc(100% + $rightExtend);
+  margin: 0 0 0 $levelOffset;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.15);
+}
