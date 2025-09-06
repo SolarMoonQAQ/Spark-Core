@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.mixin.js;
 
-import cn.solarmoon.spark_core.js2.extension.JSEntity;
+import cn.solarmoon.spark_core.js.extension.JSEntity;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 

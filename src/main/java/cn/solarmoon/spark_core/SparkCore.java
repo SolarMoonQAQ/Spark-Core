@@ -34,7 +34,7 @@ public class SparkCore {
     public SparkCore(IEventBus modEventBus, ModContainer modContainer) {
         // 首先注册SparkCore自身到多mod资源系统
         MultiModResourceRegistry.INSTANCE.registerModResources(MOD_ID, SparkCore.class);
-        SparkPackResourceLoader.copyResourceModulesToRun(MOD_ID);
+        SparkPackResourceLoader.loadAllModules();
         NativeLoader.load("bullet", PhysicsHelperKt.selectLib());
         NativeLoader.load("lua", LuaHelperKt.selectLib());
 
@@ -50,7 +50,7 @@ public class SparkCore {
             // 注册配置屏幕工厂
             modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
-        SparkJSApiRegister.register(modEventBus);
+        SparkLuaScriptRegister.register(modEventBus);
         SparkRegistries.register();
         SparkVisualEffects.register();
         SparkAttachments.register();

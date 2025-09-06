@@ -7,7 +7,7 @@ import li.cil.repack.com.naef.jnlua.LuaState
 import li.cil.repack.com.naef.jnlua.LuaValueProxy
 import net.minecraft.world.entity.Entity
 
-@LuaGlobal
+@LuaGlobal("SkillCondition")
 object LuaSkillConditionGlobal {
 
     fun create(name: String, reason: String, condition: LuaValueProxy): SkillStartCondition {

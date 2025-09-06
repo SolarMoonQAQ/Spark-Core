@@ -33,7 +33,7 @@ package com.jme3.bullet.collision;
 
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
-import cn.solarmoon.spark_core.physics.collision.PhysicsEvent;
+import cn.solarmoon.spark_core.physics.collision.PhysicsObjectEvent;
 import cn.solarmoon.spark_core.physics.collision.PhysicsEventListener;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -77,13 +77,13 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
     private final Map<Class<?>, List<PhysicsEventListener<?>>> eventListeners = new HashMap<>();
 
     // Java端注册方法
-    public <T extends PhysicsEvent> void addEventListener(Class<T> eventType, PhysicsEventListener<? super T> listener) {
+    public <T extends PhysicsObjectEvent> void addEventListener(Class<T> eventType, PhysicsEventListener<? super T> listener) {
         eventListeners.computeIfAbsent(eventType, k -> new ArrayList<>())
                 .add(listener);
     }
 
     // 触发事件方法
-    public <T extends PhysicsEvent> void triggerEvent(T event) {
+    public <T extends PhysicsObjectEvent> void triggerEvent(T event) {
         Class<?> eventType = event.getClass();
         List<PhysicsEventListener<?>> listeners = eventListeners.get(eventType);
 
@@ -1093,8 +1093,8 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject {
      */
     public void setCollideWithGroups(int collisionGroups) {
         if (this.collideWithGroups != 0 && collisionGroups == 0)
-            triggerEvent(PhysicsEvent.OnCollisionInactive.INSTANCE);
-        if (this.collideWithGroups == 0 && collisionGroups != 0) triggerEvent(PhysicsEvent.OnCollisionActive.INSTANCE);
+            triggerEvent(PhysicsObjectEvent.OnCollisionInactive.INSTANCE);
+        if (this.collideWithGroups == 0 && collisionGroups != 0) triggerEvent(PhysicsObjectEvent.OnCollisionActive.INSTANCE);
         long objectId = nativeId();
         this.collideWithGroups = collisionGroups;
         setCollideWithGroups(objectId, collideWithGroups);

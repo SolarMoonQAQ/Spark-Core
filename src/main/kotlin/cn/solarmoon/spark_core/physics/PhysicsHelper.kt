@@ -1,22 +1,14 @@
 package cn.solarmoon.spark_core.physics
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.physics.collision.PhysicsEvent
-import cn.solarmoon.spark_core.resource2.SparkPackLoader.MODULE_NAME
+import cn.solarmoon.spark_core.physics.collision.PhysicsObjectEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Matrix3f
 import com.jme3.math.Vector3f
 import com.jme3.system.JmeSystem
-import com.jme3.system.NativeLibraryLoader
 import com.jme3.system.Platform.Os.*
 import net.minecraft.world.phys.Vec3
-import net.neoforged.fml.ModList
 import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
-import net.neoforged.fml.loading.FMLPaths
-import java.io.File
-import java.nio.file.Files
 
 fun selectLib(): String {
     val platform = JmeSystem.getPlatform()
@@ -42,6 +34,6 @@ fun org.joml.Matrix3f.toBMatrix3f() = Matrix3f(
 
 inline fun <reified T> PhysicsCollisionObject.getOwner() = owner as? T
 
-inline fun <reified T: PhysicsEvent> PhysicsCollisionObject.onEvent(crossinline handler: PhysicsCollisionObject.(T) -> Unit) {
+inline fun <reified T: PhysicsObjectEvent> PhysicsCollisionObject.onEvent(crossinline handler: PhysicsCollisionObject.(T) -> Unit) {
     addEventListener(T::class.java) { handler(this, it) }
 }

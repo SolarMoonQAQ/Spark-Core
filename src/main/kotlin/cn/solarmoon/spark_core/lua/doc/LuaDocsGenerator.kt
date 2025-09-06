@@ -24,7 +24,7 @@ object LuaDocsGenerator {
     @JvmStatic
     fun eval() {
         val sourceDir = Paths.get("src/main/kotlin").toFile() // 扫描整个项目源码
-        val outputDir = Paths.get("src/main/resources/spark_modules/docs").toFile()
+        val outputDir = Paths.get("src/main/resources/spark_modules/.docs").toFile()
         outputDir.mkdirs()
 
         val disposable = Disposer.newDisposable()
@@ -54,24 +54,28 @@ object LuaDocsGenerator {
 
     private fun processKtFile(ktFile: KtFile, outputDir: File) {
         ktFile.declarations.filterIsInstance<KtClassOrObject>().forEach { clazz ->
-            val hasLuaClass = clazz.annotationEntries.any { it.shortName?.asString() == "LuaClass" }
-            val hasLuaGlobal = clazz.annotationEntries.any { it.shortName?.asString() == "LuaGlobal" }
+            val luaClassAnn = clazz.annotationEntries.firstOrNull { it.shortName?.asString() == "LuaClass" }
+            val luaGlobalAnn = clazz.annotationEntries.firstOrNull { it.shortName?.asString() == "LuaGlobal" }
 
-            if (!hasLuaClass && !hasLuaGlobal) return@forEach
+            if (luaClassAnn == null && luaGlobalAnn == null) return@forEach
 
-            val originalName = clazz.name ?: return@forEach
+            // 从注解参数里取 name 值
+            val nameFromAnnotation = (luaClassAnn ?: luaGlobalAnn)
+                ?.valueArguments
+                ?.firstOrNull { it.getArgumentName()?.asName?.asString() == "name" }
+                ?.getArgumentExpression()
+                ?.text
+                ?.trim('"')
 
-            // 文件名：去掉 Lua 前缀，但保留 Global 后缀
-            val fileName = originalName.removePrefix("Lua")
+            // 如果注解没写 name，就用类名作为默认值
+            val luaName = nameFromAnnotation ?: clazz.name ?: return@forEach
 
-            // Lua 内部类名：去掉 Lua 前缀和 Global 后缀
-            val className = originalName
-                .removePrefix("Lua")
-                .removeSuffix("Global")
+            val fileName = luaName
+            val className = luaName
 
             val output = StringBuilder()
 
-            if (hasLuaClass) {
+            if (luaClassAnn != null) {
                 output.appendLine("---@class $className")
                 clazz.docComment?.getDefaultSection()?.getContent()?.trim()?.let {
                     if (it.isNotEmpty()) output.appendLine("---$it")
@@ -81,20 +85,22 @@ object LuaDocsGenerator {
                 output.appendLine()
 
                 clazz.declarations.filterIsInstance<KtNamedFunction>().forEach { func ->
-                    appendFunctionDoc(output, func, "$className:${func.name}")
+                    val luaFuncName = func.name?.let {
+                        if (it.startsWith("lua_")) it.removePrefix("lua_") else it
+                    } ?: return@forEach
+
+                    appendFunctionDoc(output, func, "$className:$luaFuncName")
                 }
 
-            } else if (hasLuaGlobal) {
+            } else if (luaGlobalAnn != null) {
                 clazz.declarations.filterIsInstance<KtNamedFunction>().forEach { func ->
                     appendFunctionDoc(output, func, "$className.${func.name}")
                 }
             }
 
-            // 文件名用 fileName，避免覆盖
             File(outputDir, "$fileName.lua").writeText(output.toString())
         }
     }
-
 
 
     // 公共方法：生成函数的参数、返回值、说明

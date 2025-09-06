@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.lua.modules
 
-import cn.solarmoon.spark_core.js2.JavaScript
 import cn.solarmoon.spark_core.lua.LuaScript
 
 class DefaultLuaModule: LuaModule {

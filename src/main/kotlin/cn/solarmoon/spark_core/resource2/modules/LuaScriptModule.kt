@@ -1,9 +1,9 @@
 package cn.solarmoon.spark_core.resource2.modules
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.js2.modules.DefaultJSModule
 import cn.solarmoon.spark_core.lua.LuaScript
 import cn.solarmoon.spark_core.lua.SparkLua
+import cn.solarmoon.spark_core.lua.modules.DefaultLuaModule
 import cn.solarmoon.spark_core.resource2.graph.SparkPackage
 import net.minecraft.resources.ResourceLocation
 
@@ -22,7 +22,7 @@ class LuaScriptModule: SparkPackModule {
         pack: SparkPackage
     ) {
         if (pathSegments.lastOrNull() == "mention") return // 注释文件
-        val luaModuleId = pathSegments.getOrNull(0) ?: DefaultJSModule.ID
+        val luaModuleId = pathSegments.getOrNull(0) ?: DefaultLuaModule.ID
         if (!SparkLua.modules.contains(luaModuleId)) throw IllegalArgumentException("未找到脚本模块: $luaModuleId，请保证脚本放在存在的模块文件中，比如 scripts/skill/test.lua 代表skill模块，如若该脚本不依赖任何模块，可以放入default文件夹或直接留在lua_scripts根目录")
         val lua = LuaScript(ResourceLocation.fromNamespaceAndPath(luaModuleId, fileName.removeSuffix(".lua")), content)
         SparkLua.load(lua)

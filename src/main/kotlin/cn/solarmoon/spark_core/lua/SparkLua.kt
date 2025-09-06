@@ -1,10 +1,7 @@
 package cn.solarmoon.spark_core.lua
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
 import cn.solarmoon.spark_core.event.SparkLuaRegisterEvent
-import cn.solarmoon.spark_core.js2.JavaScript
-import cn.solarmoon.spark_core.js2.modules.JSModule
 import cn.solarmoon.spark_core.lua.modules.LuaModule
 import li.cil.repack.com.naef.jnlua.LuaState
 import li.cil.repack.com.naef.jnlua.LuaStateFiveFour

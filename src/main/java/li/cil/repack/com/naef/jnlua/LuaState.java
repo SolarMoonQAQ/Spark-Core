@@ -300,6 +300,7 @@ public class LuaState {
 
 		// Create a finalize guardian
 		finalizeGuardian = new Object() {
+			@SuppressWarnings("deprecation")
 			@Override
 			public void finalize() {
 				synchronized (LuaState.this) {
@@ -1136,6 +1137,7 @@ public class LuaState {
 	 * @return whether the values are equal
 	 * @deprecated instead use {@link #compare(int, int, RelOperator)}
 	 */
+	@SuppressWarnings("deprecation")
 	public synchronized boolean equal(int index1, int index2) {
 		return compare(index1, index2, RelOperator.EQ);
 	}
@@ -1149,6 +1151,7 @@ public class LuaState {
 	 * @return the length
 	 * @deprecated instead use {@link #rawLen(int)}
 	 */
+	@SuppressWarnings("deprecation")
 	public synchronized int length(int index) {
 		return rawLen(index);
 	}
@@ -1165,6 +1168,7 @@ public class LuaState {
 	 *         the second index
 	 * @deprecated instead use {@link #compare(int, int, RelOperator)}
 	 */
+	@SuppressWarnings("deprecation")
 	public synchronized boolean lessThan(int index1, int index2)
 			throws LuaMemoryAllocationException, LuaRuntimeException {
 		return compare(index1, index2, RelOperator.LT);
@@ -3111,7 +3115,7 @@ public class LuaState {
 				finalizeGuardian = new Object() {
 					@Override
 					public void finalize() {
-						synchronized (LuaDebug.this) {
+						synchronized (this) {
 							lua_debugfree();
 						}
 					}

@@ -1,9 +1,7 @@
 package cn.solarmoon.spark_core.lua
 
-import li.cil.repack.com.naef.jnlua.JavaFunction
 import li.cil.repack.com.naef.jnlua.LuaState
-import li.cil.repack.com.naef.jnlua.LuaStateFiveFour
-import li.cil.repack.com.naef.jnlua.LuaType
+import li.cil.repack.com.naef.jnlua.LuaValueProxy
 
 fun selectLib(): String {
     val luaVersion = 54
@@ -34,18 +32,40 @@ fun selectLib(): String {
     return "libjnlua$luaVersion-$osPart-$archPart.$ext"
 }
 
-inline fun <reified T> LuaState.checkTable(index: Int): List<T> {
-    checkType(index, LuaType.TABLE)
-    val list = mutableListOf<T>()
-    val len = rawLen(index)
-    for (i in 1..len) {
-        rawGet(index, i)
-        val cond = checkJavaObject(-1, T::class.java)
-        list.add(cond)
-        pop(1)
-    }
-    return list
+fun LuaValueProxy.execute(vararg args: Any?) {
+    pushValue()
+    args.forEach { luaState.pushJavaObject(it) }
+    luaState.call(args.size, 0)
 }
+
+fun LuaValueProxy.callField(name: String, vararg args: Any?) {
+    val state = this.luaState
+    pushValue()
+    state.getField(-1, name)
+    if (state.isFunction(-1)) {
+        args.forEach { state.pushJavaObject(it) }
+        state.call(args.size, 0)
+    }
+    state.pop(2)
+}
+
+fun LuaState.setGlobal(name: String, value: Any?) {
+    pushJavaObject(value)
+    setGlobal(name)
+}
+
+//inline fun <reified T> LuaState.checkTable(index: Int): List<T> {
+//    checkType(index, LuaType.TABLE)
+//    val list = mutableListOf<T>()
+//    val len = rawLen(index)
+//    for (i in 1..len) {
+//        rawGet(index, i)
+//        val cond = checkJavaObject(-1, T::class.java)
+//        list.add(cond)
+//        pop(1)
+//    }
+//    return list
+//}
 
 ///**
 // * 快捷调用 Lua 全局函数

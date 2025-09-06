@@ -1,12 +1,13 @@
 package cn.solarmoon.spark_core.lua.extensions
 
 import cn.solarmoon.spark_core.lua.doc.LuaClass
+import cn.solarmoon.spark_core.lua.execute
 import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillEvent
 import li.cil.repack.com.naef.jnlua.LuaValueProxy
 import net.minecraft.world.entity.Entity
 
-@LuaClass
+@LuaClass("Skill")
 interface LuaSkill {
 
     val skill get() = this as Skill
@@ -21,66 +22,50 @@ interface LuaSkill {
         skill.targetPool.removeTarget(entity, true)
     }
 
-    /**
-     * 展开233！！！
-     * 哇哦
-     * @param consumer 这是对的
-     */
+    fun initConfig(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.ConfigInit> {
+        consumer.execute()
+    }
+
+    fun init(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.Init> {
+        consumer.execute()
+    }
+
     fun onActive(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.Active> {
-        consumer.pushValue()
-        consumer.luaState.call(0, 0)
+        consumer.execute()
     }
 
     fun onActiveStart(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.ActiveStart> {
-        consumer.pushValue()
-        consumer.luaState.call(0, 0)
+        consumer.execute()
     }
 
     fun onEnd(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.End> {
-        consumer.pushValue()
-        consumer.luaState.call(0, 0)
+        consumer.execute()
     }
 
     fun onLocalInputUpdate(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.LocalInputUpdate> {
-        consumer.pushValue()
-        consumer.luaState.pushJavaObject(it.event)
-        consumer.luaState.call(1, 0)
+        consumer.execute(it.event)
     }
 
     fun onTargetHurt(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.TargetHurt> {
-        consumer.pushValue()
-        consumer.luaState.pushJavaObject(it.event)
-        consumer.luaState.call(1, 0)
+        consumer.execute(it.event)
     }
 
     fun onTargetActualHurtPre(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.TargetActualHurt.Pre> {
-        consumer.pushValue()
-        consumer.luaState.pushJavaObject(it.event)
-        consumer.luaState.call(1, 0)
+        consumer.execute(it.event)
     }
 
     fun onTargetActualHurtPost(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.TargetActualHurt.Post> {
-        consumer.pushValue()
-        consumer.luaState.pushJavaObject(it.event)
-        consumer.luaState.call(1, 0)
+        consumer.execute(it.event)
     }
 
     fun onHurt(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.Hurt> {
-        consumer.pushValue()
-        consumer.luaState.pushJavaObject(it.event)
-        consumer.luaState.call(1, 0)
+        consumer.execute(it.event)
     }
 
     fun onTargetKnockBack(consumer: LuaValueProxy) = skill.onEvent<SkillEvent.TargetKnockBack> {
-        consumer.pushValue()
-        consumer.luaState.pushJavaObject(it.event)
-        consumer.luaState.call(1, 0)
+        consumer.execute(it.event)
     }
 
-    /**
-     * 哈哈
-     * @return 来了
-     */
     fun getLocation() = skill.type.registryKey
 
 }

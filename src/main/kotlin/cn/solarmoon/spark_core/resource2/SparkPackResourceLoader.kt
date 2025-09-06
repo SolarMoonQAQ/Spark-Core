@@ -1,49 +1,62 @@
 package cn.solarmoon.spark_core.resource2
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.resource2.SparkPackLoader.MODULE_NAME
 import net.neoforged.fml.ModList
 import net.neoforged.fml.loading.FMLPaths
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.use
 
 object SparkPackResourceLoader {
 
-    val registry = mutableMapOf<String, Boolean>()
+    val LOGGER = SparkCore.logger("拓展包读取器")
 
-    @Deprecated("请使用 copyResourceModulesToRun(modId: String)")
-    @JvmStatic
-    fun copyResourceModulesToRun(classn: Class<*>) {
-        copyResourceModulesToRun("spirit_of_fight")
-    }
+    val registry = mutableListOf<String>()
 
     /**
      * 在当前模组的资源文件中查找核心的同名拓展文件夹，在游戏启动时将其打包为包复制到实际拓展文件夹中
      */
     @JvmStatic
-    fun copyResourceModulesToRun(modId: String) {
-        registry[modId] = true
-        val runModulesDir = FMLPaths.GAMEDIR.get().resolve(MODULE_NAME)
+    fun loadAllModules() {
+        ModList.get().mods.forEach {
+            loadModule(it.modId)
+        }
+    }
+
+    fun loadModule(modId: String) {
+        registry.add(modId)
+        val runModulesDir = FMLPaths.GAMEDIR.get().resolve(SparkPackLoader.MODULE_NAME)
         Files.createDirectories(runModulesDir)
         val modFileInfo = ModList.get().getModFileById(modId)
-        val sourceDir = modFileInfo.file.findResource("$MODULE_NAME/")
+        val sourceDir = modFileInfo.file.findResource("${SparkPackLoader.MODULE_NAME}/")
 
         try {
             Files.list(sourceDir).use { modules ->
                 modules.filter { Files.isDirectory(it) }.forEach { moduleDir ->
-                    val zipPath = runModulesDir.resolve("${moduleDir.fileName}.zip")
-                    zipModule(moduleDir, zipPath)
+                    // 检查 meta.json 是否存在
+                    val metaFile = moduleDir.resolve(SparkPackLoader.META_NAME)
+                    if (Files.exists(metaFile) && Files.isRegularFile(metaFile)) {
+                        val zipPath = runModulesDir.resolve("${moduleDir.fileName}.zip")
+                        zipModule(moduleDir, zipPath)
+                        LOGGER.info("已打包 Mod $modId 的资源拓展到核心拓展文件夹")
+                    }
+
+                    // 复制 .docs 文件夹
+                    val docsDir = sourceDir.resolve(".docs")
+                    if (Files.exists(docsDir) && Files.isDirectory(docsDir)) {
+                        val targetDocsDir = runModulesDir.resolve(".docs").resolve(modId)
+                        copyDirectory(docsDir, targetDocsDir)
+                        LOGGER.info("已复制 Mod $modId 的 .docs 文件夹到 $targetDocsDir")
+                    }
                 }
             }
         } catch (e: Exception) {
-            SparkCore.LOGGER.error("无法复制 Mod $modId 的资源拓展到核心拓展文件夹: $e")
+            LOGGER.error("无法打包 Mod $modId 的资源拓展到核心拓展文件夹: $e")
             return
         }
-
-        SparkCore.LOGGER.info("已复制 Mod $modId 的资源拓展到核心拓展文件夹")
     }
 
     /**
@@ -51,7 +64,19 @@ object SparkPackResourceLoader {
      */
     fun reload() {
         registry.forEach {
-            if (it.value) copyResourceModulesToRun(it.key)
+            loadModule(it)
+        }
+    }
+
+    private fun copyDirectory(source: Path, target: Path) {
+        Files.walk(source).forEach { path ->
+            val targetPath = target.resolve(source.relativize(path).toString())
+            if (Files.isDirectory(path)) {
+                Files.createDirectories(targetPath)
+            } else {
+                Files.createDirectories(targetPath.parent)
+                Files.copy(path, targetPath, StandardCopyOption.REPLACE_EXISTING)
+            }
         }
     }
 
@@ -64,7 +89,6 @@ object SparkPackResourceLoader {
                 zos.closeEntry()
             }
         }
-        SparkCore.LOGGER.info("已打包模块 ${sourceDir.fileName} 到 $zipPath")
     }
 
 }

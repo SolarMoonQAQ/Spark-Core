@@ -30,7 +30,6 @@ class SparkCollisionCallback @JvmOverloads constructor(
     }
 
     override fun preAttack(
-        isFirst: Boolean,
         attacker: Entity,
         target: Entity,
         aBody: PhysicsCollisionObject,
@@ -39,7 +38,6 @@ class SparkCollisionCallback @JvmOverloads constructor(
         bPoint: ManifoldPoint,
         manifoldId: Long
     ) {
-        if (!isFirst) return
         if (owner.level().isClientSide) return
         
         attacker.level().submitImmediateTask(PPhase.POST) {

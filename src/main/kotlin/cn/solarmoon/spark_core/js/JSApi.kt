@@ -8,7 +8,7 @@ import net.neoforged.fml.ModLoader
 interface JSApi {
 
     companion object {
-        lateinit var ALL: Map<String, JSApi>
+        var ALL: Map<String, JSApi> = mapOf()
             private set
 
         var clientApiCache = mapOf<String, Map<String, String>>()

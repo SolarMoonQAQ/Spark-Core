@@ -18,3 +18,8 @@ node_modules/
 # OS specific
 .DS_Store!/plan/
 /.lingma/
+run
+run-client
+run-server
+build
+plan
