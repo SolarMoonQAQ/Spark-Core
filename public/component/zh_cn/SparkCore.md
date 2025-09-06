@@ -1,5 +1,5 @@
 <div style="text-align: center;">
-  <img src="../.img/streamer.png" width="1448" />
+  <img src="/.img/streamer.png" width="1448" />
 </div>
 
 

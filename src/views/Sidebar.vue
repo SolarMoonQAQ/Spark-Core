@@ -38,14 +38,6 @@ const menus = reactive([
       { label: '模块', to: '/lua/module' },
       { label: '注释文档生成', to: '/lua/docs' },
     ]
-  },
-  {
-    label: '联系',
-    open: false,
-    children: [
-      { label: '邮箱', to: '/contact/email' },
-      { label: '电话', to: '/contact/phone' }
-    ]
   }
 ])
 </script>
