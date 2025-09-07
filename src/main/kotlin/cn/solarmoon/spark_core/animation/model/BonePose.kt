@@ -4,9 +4,11 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.util.rotLerp
+import cn.solarmoon.spark_core.util.toQuaternionf
 import net.minecraft.world.phys.Vec3
 import net.neoforged.neoforge.common.NeoForge
 import org.joml.Matrix4f
+import org.joml.Quaternionf
 import org.joml.Vector3f
 
 class BonePose(
@@ -45,8 +47,10 @@ class BonePose(
     
     fun getLocalTransformMatrix(partialTicks: Number = 1.0) = Matrix4f().apply {
         val bone = model.origin.getBone(name) ?: return@apply
+        val boneBaseRot = bone.rotation.toVector3f().toQuaternionf() ?: Quaternionf()
         translate(bone.pivot.toVector3f())
         translate(getLocalPosition(partialTicks).toVector3f())
+        rotate(boneBaseRot)
         rotateZYX(getLocalRotation(partialTicks).toVector3f())
         scale(getLocalScale(partialTicks).toVector3f())
         translate(bone.pivot.toVector3f().negate())
