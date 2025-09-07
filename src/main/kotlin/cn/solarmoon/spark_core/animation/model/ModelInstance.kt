@@ -14,7 +14,7 @@ class ModelInstance(
 
     val bonePoses = BonePoseGroup(this)
 
-    var textureLocation: ResourceLocation = ResourceLocation.fromNamespaceAndPath("minecraft", "empty")
+    var textureLocation: ResourceLocation = ResourceLocation.withDefaultNamespace("missingno")
 
     fun getBonePose(name: String) = bonePoses[name]!! // 理论上骨骼组创建时已经根据当前origin获取了所有骨骼，所以不存在不存在的骨骼
 

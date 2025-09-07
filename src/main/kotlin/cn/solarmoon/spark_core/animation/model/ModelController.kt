@@ -24,7 +24,7 @@ class ModelController(
 
     val model get() = currentModel
 
-    val textureLocation get() = model?.textureLocation ?: ResourceLocation.fromNamespaceAndPath("minecraft", "empty")
+    val textureLocation get() = model?.textureLocation ?: ResourceLocation.withDefaultNamespace("missingno")
 
     fun setModel(index: ModelIndex?) {
         val m = index?.let { ModelInstance(animatable, it) }
@@ -37,7 +37,7 @@ class ModelController(
     }
 
     fun setTextureLocation(location: ResourceLocation?) {
-        model?.textureLocation = location ?: ResourceLocation.fromNamespaceAndPath("minecraft", "empty")
+        model?.textureLocation = location ?: ResourceLocation.withDefaultNamespace("missingno")
     }
 
 }
