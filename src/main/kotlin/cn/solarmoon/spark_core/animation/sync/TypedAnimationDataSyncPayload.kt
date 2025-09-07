@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.sync
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.registry.dynamic.DynamicIdManager
 import net.minecraft.network.FriendlyByteBuf
@@ -35,13 +36,13 @@ data class TypedAnimationDataSyncPayload(
             val STREAM_CODEC: StreamCodec<FriendlyByteBuf, TypedAnimationData> = StreamCodec.composite(
                 StreamCodec.of<FriendlyByteBuf, AnimIndex>(
                     { buf, animIndex ->
-                        buf.writeResourceLocation(animIndex.modelPath)
+                        buf.writeResourceLocation(animIndex.modelIndex.location)
                         buf.writeUtf(animIndex.name)
                     },
                     { buf ->
                         val index = buf.readResourceLocation()
                         val name = buf.readUtf()
-                        AnimIndex(index, name)
+                        AnimIndex(ModelIndex(index), name)
                     }
                 ),
                 TypedAnimationData::animIndex,

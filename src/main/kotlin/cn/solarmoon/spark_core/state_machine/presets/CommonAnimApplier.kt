@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
-import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
+import cn.solarmoon.spark_core.event.ModelChangeEvent
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.initWithAnimatedBone
@@ -20,7 +20,7 @@ object CommonAnimApplier {
 
     // 服务端模型更换自动绑定碰撞箱测试
     @SubscribeEvent
-    private fun onModelIndexChange(event: ModelIndexChangeEvent) {
+    private fun onModelIndexChange(event: ModelChangeEvent) {
         val entityHost = event.animatable as? IEntityAnimatable<*> ?: return
         if(entityHost.animLevel is ClientLevel) return
 
@@ -29,7 +29,7 @@ object CommonAnimApplier {
             return
         }
 
-        entityHost.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach { bone ->
+        entityHost.modelController.originModel.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach { bone ->
             val body = PhysicsRigidBody(bone.name, entityHost as PhysicsHost, CompoundCollisionShape())
             entityHost.bindBody(body, entityHost.physicsLevel, true) {
                 (this.collisionShape as CompoundCollisionShape).initWithAnimatedBone(bone)
@@ -47,7 +47,7 @@ object CommonAnimApplier {
             }
         }
         PacketDistributor.sendToAllPlayers(
-            ModelIndexSyncPayload(entityHost.syncerType, entityHost.syncData, event.newModelIndex)
+            ModelIndexSyncPayload(entityHost.syncerType, entityHost.syncData, event.newModel?.index)
         )
     }
 }

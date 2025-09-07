@@ -33,7 +33,7 @@ data class OModel(
 
     companion object {
         @JvmStatic
-        fun getOrEmpty(id: ResourceLocation) = ORIGINS[id] ?: EMPTY
+        fun getOrEmpty(id: ResourceLocation?) = ORIGINS[id] ?: EMPTY
 
         /**
          * 地图加载后读取的原始模型数据，最好不要修改

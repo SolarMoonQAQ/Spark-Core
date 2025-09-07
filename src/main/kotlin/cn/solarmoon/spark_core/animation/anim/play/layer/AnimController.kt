@@ -2,8 +2,13 @@ package cn.solarmoon.spark_core.animation.anim.play.layer
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.sync.AnimPlayPayload
 import cn.solarmoon.spark_core.animation.sync.AnimStopPayload
+import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage
+import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage
+import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage
+import cn.solarmoon.spark_core.molang.core.storage.VariableStorage
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
@@ -13,6 +18,8 @@ class AnimController(
     val animatable: IAnimatable<*>
 ) {
 
+    val originAnimations get() = OAnimationSet.getOrEmpty(animatable.modelController.model?.index?.location)
+
     val animLayers = mutableMapOf<ResourceLocation, AnimationLayer>()
 
     val blendSpace = BlendSpace(animLayers)
@@ -21,6 +28,21 @@ class AnimController(
         private set
     var overallSpeed: Double = 1.0
         private set
+
+    /**
+     * 临时变量存储，用于存储动画结束后自动销毁的临时变量，格式:t.name或temp.name
+     */
+    val tempStorage: ITempVariableStorage = VariableStorage()
+
+    /**
+     * 作用域变量存储，用于存储动画过程中的变量，格式:v.name或variable.name
+     */
+    val scopedStorage: IScopedVariableStorage = VariableStorage()
+
+    /**
+     * 外置变量存储，用于存储外部传入的变量，格式:c.name……吗？尚不明确
+     */
+    val foreignStorage: IForeignVariableStorage = VariableStorage()
 
     init {
         addLayer(AnimationLayer(DefaultLayer.BASE_LAYER, 0))
@@ -81,9 +103,11 @@ class AnimController(
     fun physTick() {
         animLayers.forEach { (_, layer) -> layer.physicsTick(overallSpeed) }
 
-        animatable.model.bones.forEach { (boneName, bonePose) ->
-            val bone = animatable.getBonePose(boneName)
-            bone.updateInternal(blendSpace.blendBone(boneName, animatable))
+        animatable.modelController.model?.let { model ->
+            model.origin.bones.forEach { (boneName, bone) ->
+                val bonePose = model.getBonePoseOrCreateEmpty(boneName)
+                bonePose.updateInternal(blendSpace.blendBone(boneName, animatable))
+            }
         }
 
         if (speedChangeTime > 0) speedChangeTime--
@@ -91,8 +115,10 @@ class AnimController(
     }
 
     fun tick() {
-        animatable.model.bones.forEach {
-            animatable.getBonePose(it.key).setChanged()
+        animatable.modelController.model?.let { model ->
+            model.origin.bones.forEach {
+                model.getBonePoseOrCreateEmpty(it.key).setChanged()
+            }
         }
 
         animLayers.forEach { (_, layer) -> layer.tick() }

@@ -1,18 +1,12 @@
 package cn.solarmoon.spark_core.animation
 
 import au.edu.federation.caliko.FabrikChain3D
-import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController
-import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage
-import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage
-import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage
-import cn.solarmoon.spark_core.molang.core.storage.VariableStorage
+import cn.solarmoon.spark_core.animation.model.ModelController
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.EntityType
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
@@ -27,17 +21,9 @@ open class ItemAnimatable(
     var yRot = 0f
     var oYRot = 0f
 
-    override var modelIndex: ModelIndex = ModelIndex.of(EntityType.PLAYER)
-        set(value) {
-            field = value
-            bones = BonePoseGroup(this)//重设模型时更新骨骼组
-        }
-    override val tempStorage: ITempVariableStorage = VariableStorage()
-    override val scopedStorage: IScopedVariableStorage = VariableStorage()
-    override val foreignStorage: IForeignVariableStorage = VariableStorage()
     override val animatable = itemStack
     override val animController: AnimController = AnimController(this)
-    override var bones: BonePoseGroup = BonePoseGroup(this)
+    override val modelController: ModelController = ModelController(this)
     override val ikTargetPositions: MutableMap<String, Vec3> = mutableMapOf()
     override val ikChains: MutableMap<String, FabrikChain3D> = mutableMapOf()
 
@@ -59,14 +45,6 @@ open class ItemAnimatable(
 
     override fun getRootYRot(partialTick: Float): Float {
         return Mth.lerp(oYRot, yRot, partialTick)
-    }
-
-    override fun equals(other: Any?): Boolean {
-        return (other as? ItemAnimatable)?.modelIndex == modelIndex
-    }
-
-    override fun hashCode(): Int {
-        return modelIndex.hashCode()
     }
 
     override val syncerType: SyncerType

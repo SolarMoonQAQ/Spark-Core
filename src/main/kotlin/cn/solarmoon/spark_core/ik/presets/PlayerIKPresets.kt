@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.ik.presets
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.event.ModelIndexChangeEvent
+import cn.solarmoon.spark_core.event.ModelChangeEvent
 import cn.solarmoon.spark_core.ik.caliko.IKApplier
 import cn.solarmoon.spark_core.ik.caliko.IKResolver
 import cn.solarmoon.spark_core.ik.component.TypedIKComponent
@@ -34,7 +34,7 @@ object PlayerIKPresets {
      * 当实体的ModelIndex变化时，更新IK约束
      */
     @SubscribeEvent
-    private fun onModelIndexChange(event: ModelIndexChangeEvent) {
+    private fun onModelIndexChange(event: ModelChangeEvent) {
         val animatable = event.animatable
         if (animatable is IEntityAnimatable<*>) {
             // 清除旧的IK组件
@@ -67,7 +67,7 @@ object PlayerIKPresets {
      */
     private fun applyIKConstraintsFromModelIndex(animatable: IEntityAnimatable<*>) {
         // 获取ModelIndex中的IK约束
-        val ikConstraints = animatable.ikConstraints
+        val ikConstraints = animatable.modelController.model?.index?.ikConstraints ?: emptyList()
         if (ikConstraints.isEmpty()) {
             // 如果没有IK约束，直接返回
             return

@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.animation.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.physics.host.PhysicsHost
 import cn.solarmoon.spark_core.physics.presets.callback.SparkCollisionCallback
 import cn.solarmoon.spark_core.physics.presets.initWithAnimatedBone
@@ -27,7 +27,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext
 data class ModelIndexSyncPayload(
     val syncerType: SyncerType,
     val syncData: SyncData,
-    val modelIndex: ModelIndex
+    val modelIndex: ModelIndex?
 ) : CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload> = TYPE
@@ -51,9 +51,9 @@ data class ModelIndexSyncPayload(
             context.enqueueWork {
                 val level = context.player().level() ?: return@enqueueWork
                 val host = payload.syncerType.getSyncer(level, payload.syncData) as? IEntityAnimatable<*> ?: return@enqueueWork
-                host.modelIndex = payload.modelIndex
+                host.modelController.setModel(payload.modelIndex)
 
-                host.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach { bone ->
+                host.modelController.model?.origin?.bones?.values?.filterNot { it.name in listOf("rightItem", "leftItem") }?.forEach { bone ->
                     val body = PhysicsRigidBody(bone.name, host as PhysicsHost, CompoundCollisionShape())
 
                     val entity = host as? Entity ?: run {

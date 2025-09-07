@@ -27,6 +27,7 @@
     "js.PhysicsCollisionObjectMixin",
     "js.PreInputMixin",
     "js.SkillMixin",
+    "js.Vec3Mixin",
     "phys.EntityMixin",
     "phys.LevelMixin",
     "state_machine.EntityMixin"

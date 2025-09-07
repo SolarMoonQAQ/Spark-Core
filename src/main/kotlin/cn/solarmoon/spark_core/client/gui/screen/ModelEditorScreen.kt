@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.animation.anim.play.layer.getMainLayer
 import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OCube
@@ -311,14 +311,14 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             return
         }
 
-        // --- 2. (Optional) Set Initial Model on Player ---
-        // This might be desired so the editor starts with the correct model shown
-        try {
-            animatable.modelIndex = ModelIndex(modelLocation, textureLocation)
-        } catch (e: Exception) {
-            minecraft.gui.chat.addMessage(Component.literal("Error: Failed to set initial ModelIndex on player: ${e.message}"))
-            // Don't necessarily close, maybe it's recoverable or just visual glitch
-        }
+//        // --- 2. (Optional) Set Initial Model on Player ---
+//        // This might be desired so the editor starts with the correct model shown
+//        try {
+//            animatable.modelIndex = ModelIndex(modelLocation, textureLocation)
+//        } catch (e: Exception) {
+//            minecraft.gui.chat.addMessage(Component.literal("Error: Failed to set initial ModelIndex on player: ${e.message}"))
+//            // Don't necessarily close, maybe it's recoverable or just visual glitch
+//        }
 
 
         // --- 3. Load OModel (for TreeView) ---
@@ -736,9 +736,9 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         val animatable = player as? IAnimatable<*>
         if (animatable != null) {
             try {
-                // Set the model index on the player entity
-                animatable.modelIndex = ModelIndex(newModelLocation, newTextureLocation)
-                RpcClient.loadModel(newModelLocation.toString())
+//                // Set the model index on the player entity
+//                animatable.modelIndex = ModelIndex(newModelLocation, newTextureLocation)
+//                RpcClient.loadModel(newModelLocation.toString())
             } catch (e: Exception) {
                 minecraft.gui.chat.addMessage(Component.literal("Error setting model index on player: ${e.message}"))
             }
@@ -1020,7 +1020,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                     selectedBone?.name
                 }
 
-                val pivotWorldPos = animatable.getWorldBonePivot(gizmoTargetBoneName ?: "")
+                val pivotWorldPos = animatable.modelController.model?.getBonePose(gizmoTargetBoneName ?: "")?.getWorldBonePivot() ?: return false
 
                 // 计算坐标轴端点
                 val axisLengthWorld = 0.4f
@@ -1239,7 +1239,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
 
                 if (animatable != null && endEffectorBone != null) {
                     // 更新末端执行器的实际位置
-                    persistentEndEffectorPosition = animatable.getWorldBonePivot(endEffectorBone!!.name)
+                    persistentEndEffectorPosition = animatable.modelController.model?.getBonePose(endEffectorBone!!.name)?.getWorldBonePivot() ?: Vector3f()
 
                     SparkCore.LOGGER.debug(
                         "更新IK目标坐标轴 - 新目标位置: {}, 末端位置: {}",
@@ -1265,7 +1265,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                     persistentIKTargetPosition = Vector3f(axisWorldCoordinates).add(axisDebugOffset)
 
                     // 保存末端执行器的实际位置
-                    persistentEndEffectorPosition = animatable.getWorldBonePivot(endEffectorBone!!.name)
+                    persistentEndEffectorPosition = animatable.modelController.model?.getBonePose(endEffectorBone!!.name)?.getWorldBonePivot() ?: Vector3f()
 
                     SparkCore.LOGGER.debug(
                         "保存IK持久化显示 - 目标位置: {}, 末端位置: {}",
@@ -1410,7 +1410,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         // --- Calculate Gizmo Position (Always based on the primary selected bone's pivot) ---
         val gizmoTargetBoneName =
             selectedBone?.name ?: selectedBoneName // Use selectedBone directly if available, else inferred name
-        val pivotWorldPos = animatable.getWorldBonePivot(gizmoTargetBoneName ?: "") // Gizmo needs a bone pivot
+        val pivotWorldPos = animatable.modelController.model?.getBonePose(gizmoTargetBoneName ?: "")?.getWorldBonePivot() ?: Vector3f()
 
         // --- Calculate Highlight Box Vertices (Recursively if a bone is selected) --- M
         val allCubeHighlightVerticesWorld: MutableList<List<Vector3f>> = mutableListOf()
@@ -1438,7 +1438,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
             // 正常模式下的高亮显示
             if (selectedCube != null && selectedBoneName != null) {
                 // Case 1: A specific Cube is selected (No recursion needed)
-                val parentBoneMatrix = animatable.getWorldBoneMatrix(selectedBoneName, partialTick)
+                val parentBoneMatrix = animatable.modelController.model?.getBonePose(selectedBoneName)?.getWorldBoneMatrix(partialTick) ?: return
                 val cubeLocalMatrix = Matrix4f()
                     .translate(selectedCube!!.pivot.toVector3f())
                     .rotateZYX(selectedCube!!.rotation.toVector3f())
@@ -1536,7 +1536,7 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
                 // 确定坐标轴的位置
                 val gizmoPos = if (ikModeEnabled && endEffectorBone != null) {
                     // 在IK模式下，使用末端执行器骨骼的位置
-                    animatable.getWorldBonePivot(endEffectorBone!!.name)
+                    animatable.modelController.model?.getBonePose(endEffectorBone!!.name)?.getWorldBonePivot() ?: Vector3f()
                 } else {
                     // 在正常模式下，使用选中骨骼的位置
                     pivotWorldPos
@@ -1764,29 +1764,29 @@ class ModelEditorScreen(private val modelLocation: ResourceLocation, private val
         partialTick: Float
     ): List<List<Vector3f>> {
         val results = mutableListOf<List<Vector3f>>()
-        val boneWorldMatrix = animatable.getWorldBoneMatrix(bone.name, partialTick) // Stop if bone matrix fails
-
-        // 1. 从当前骨骼收集cube
-        bone.cubes.forEach { cube ->
-            val cubeLocalMatrix = Matrix4f()
-                .translate(cube.pivot.toVector3f())
-                .rotateZYX(cube.rotation.toVector3f())
-                .translate(cube.pivot.toVector3f().negate())
-                .translate(cube.originPos.toVector3f())
-            val cubeWorldMatrix = Matrix4f(boneWorldMatrix).mul(cubeLocalMatrix)
-            val s = cube.size.toVector3f()
-            val vertices = listOf(
-                Vector3f(0f, 0f, 0f), Vector3f(s.x, 0f, 0f), Vector3f(s.x, 0f, s.z), Vector3f(0f, 0f, s.z),
-                Vector3f(0f, s.y, 0f), Vector3f(s.x, s.y, 0f), Vector3f(s.x, s.y, s.z), Vector3f(0f, s.y, s.z)
-            ).map { cubeWorldMatrix.transformPosition(it, Vector3f()) }
-            results.add(vertices)
-        }
-
-        // 2. Recursively collect from child bones
-        val childBones = model?.bones?.values?.filter { it.parentName == bone.name } ?: emptyList()
-        childBones.forEach { childBone ->
-            results.addAll(collectDescendantCubeVertices(childBone, animatable, partialTick))
-        }
+//        val boneWorldMatrix = animatable.getWorldBoneMatrix(bone.name, partialTick) // Stop if bone matrix fails
+//
+//        // 1. 从当前骨骼收集cube
+//        bone.cubes.forEach { cube ->
+//            val cubeLocalMatrix = Matrix4f()
+//                .translate(cube.pivot.toVector3f())
+//                .rotateZYX(cube.rotation.toVector3f())
+//                .translate(cube.pivot.toVector3f().negate())
+//                .translate(cube.originPos.toVector3f())
+//            val cubeWorldMatrix = Matrix4f(boneWorldMatrix).mul(cubeLocalMatrix)
+//            val s = cube.size.toVector3f()
+//            val vertices = listOf(
+//                Vector3f(0f, 0f, 0f), Vector3f(s.x, 0f, 0f), Vector3f(s.x, 0f, s.z), Vector3f(0f, 0f, s.z),
+//                Vector3f(0f, s.y, 0f), Vector3f(s.x, s.y, 0f), Vector3f(s.x, s.y, s.z), Vector3f(0f, s.y, s.z)
+//            ).map { cubeWorldMatrix.transformPosition(it, Vector3f()) }
+//            results.add(vertices)
+//        }
+//
+//        // 2. Recursively collect from child bones
+//        val childBones = model?.bones?.values?.filter { it.parentName == bone.name } ?: emptyList()
+//        childBones.forEach { childBone ->
+//            results.addAll(collectDescendantCubeVertices(childBone, animatable, partialTick))
+//        }
 
         return results
     }

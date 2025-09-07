@@ -37,18 +37,22 @@ public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends Ent
     private void render(LivingEntity livingEntity, ItemStack itemStack, ItemDisplayContext displayContext, HumanoidArm arm, PoseStack poseStack, MultiBufferSource buffer, int packedLight, CallbackInfo ci) {
         if (livingEntity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.shouldSwitchToAnim(animatable) && !PlayerAnimatorCompat.INSTANCE.isAnimActive(livingEntity)) {
             var boneName = arm.getSerializedName() + "Item";
-            if (!itemStack.isEmpty() && animatable.getModelIndex().getModel().hasBone(boneName)) {
+            if (!itemStack.isEmpty() && animatable.getModelController().getOriginModel().hasBone(boneName)) {
                 var partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
                 var p = new PoseStack();
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
                 p.translate(-cam.x, -cam.y, -cam.z);
-                var ma = animatable.getWorldBoneMatrix(boneName, partialTicks);
-                var pivot = animatable.getModelIndex().getModel().getBone(boneName).getPivot();
-                p.mulPose(ma);
-                p.translate(pivot.x, pivot.y - 1/16f, pivot.z - 1.75/16f);
-                p.mulPose(Axis.XP.rotationDegrees(-90.0F));
-                this.itemInHandRenderer.renderItem(livingEntity, itemStack, displayContext, arm == HumanoidArm.LEFT, p, buffer, packedLight);
-                ci.cancel();
+                var model = animatable.getModelController().getModel();
+                if (model != null) {
+                    var pose = model.getBonePose(boneName);
+                    var ma = pose.getWorldBoneMatrix(partialTicks);
+                    var pivot = animatable.getModelController().getOriginModel().getBone(boneName).getPivot();
+                    p.mulPose(ma);
+                    p.translate(pivot.x, pivot.y - 1/16f, pivot.z - 1.75/16f);
+                    p.mulPose(Axis.XP.rotationDegrees(-90.0F));
+                    this.itemInHandRenderer.renderItem(livingEntity, itemStack, displayContext, arm == HumanoidArm.LEFT, p, buffer, packedLight);
+                    ci.cancel();
+                }
             }
         }
     }

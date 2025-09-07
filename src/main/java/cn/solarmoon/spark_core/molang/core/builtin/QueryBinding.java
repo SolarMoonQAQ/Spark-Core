@@ -52,8 +52,8 @@ public class QueryBinding extends ContextBinding {
         entityVar("yaw_speed", ctx -> getYawSpeed(ctx.getAnimatable(), ctx));
         entityVar("cardinal_facing_2d", ctx -> ctx.getAnimatable().getDirection().get3DDataValue());
         entityVar("distance_from_camera", ctx -> Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().distanceTo(ctx.getAnimatable().position()));
-        entityVar("eye_target_x_rotation", ctx -> ctx.getAnimatable().getViewXRot(ctx.getPartialTicks()));
-        entityVar("eye_target_y_rotation", ctx -> ctx.getAnimatable().getViewYRot(ctx.getPartialTicks()));
+        entityVar("eye_target_x_rotation", ctx -> ctx.getAnimatable().getViewXRot(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false)));
+        entityVar("eye_target_y_rotation", ctx -> ctx.getAnimatable().getViewYRot(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false)));
         entityVar("ground_speed", ctx -> getGroundSpeed(ctx.getAnimatable(), ctx));
         entityVar("modified_distance_moved", ctx -> ctx.getAnimatable().walkDist);
         entityVar("vertical_speed", ctx -> getVerticalSpeed(ctx.getAnimatable(), ctx));
@@ -70,8 +70,8 @@ public class QueryBinding extends ContextBinding {
         entityVar("is_sprinting", ctx -> ctx.getAnimatable().isSprinting());
         entityVar("is_swimming", ctx -> ctx.getAnimatable().isSwimming());
 
-        livingEntityVar("body_x_rotation", ctx -> Mth.lerp(ctx.getPartialTicks(), ctx.getAnimatable().xRotO, ctx.getAnimatable().getXRot()));
-        livingEntityVar("body_y_rotation", ctx -> Mth.wrapDegrees(Mth.lerp(ctx.getPartialTicks(), ctx.getAnimatable().yBodyRotO, ctx.getAnimatable().yBodyRot)));
+        livingEntityVar("body_x_rotation", ctx -> Mth.lerp(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false), ctx.getAnimatable().xRotO, ctx.getAnimatable().getXRot()));
+        livingEntityVar("body_y_rotation", ctx -> Mth.wrapDegrees(Mth.lerp(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false), ctx.getAnimatable().yBodyRotO, ctx.getAnimatable().yBodyRot)));
         livingEntityVar("health", ctx -> ctx.getAnimatable().getHealth());
         livingEntityVar("max_health", ctx -> ctx.getAnimatable().getMaxHealth());
         livingEntityVar("hurt_time", ctx -> ctx.getAnimatable().hurtTime);
@@ -118,13 +118,13 @@ public class QueryBinding extends ContextBinding {
     }
 
     private static float getYawSpeed(Entity entity, IAnimatable<Entity> ctx) {
-        float partialTicks = ctx.getPartialTicks();
+        float partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         if (partialTicks == 0) partialTicks = 0.5f;// 防止除零错误，但会导致这一帧数值不正确
         return 20 * (entity.getYRot() - entity.yRotO) / partialTicks;
     }
 
     private static float getGroundSpeed(Entity entity, IAnimatable<Entity> ctx) {
-        float partialTicks = ctx.getPartialTicks();
+        float partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         if (partialTicks == 0) {
             Vec3 motion = entity.getDeltaMovement().scale(20f);
             return Mth.sqrt((float) (motion.x * motion.x + motion.z * motion.z));
@@ -136,7 +136,7 @@ public class QueryBinding extends ContextBinding {
     }
 
     private static float getVerticalSpeed(Entity entity, IAnimatable<Entity> ctx) {
-        float partialTicks = ctx.getPartialTicks();
+        float partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         if (partialTicks == 0) {
             Vec3 motion = entity.getDeltaMovement();
             return (float) motion.y * 20f;

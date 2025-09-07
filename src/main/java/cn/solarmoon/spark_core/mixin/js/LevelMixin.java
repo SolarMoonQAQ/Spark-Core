@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.js.ClientSparkJS;
 import cn.solarmoon.spark_core.js.ISparkJSHolder;
 import cn.solarmoon.spark_core.js.ServerSparkJS;
 import cn.solarmoon.spark_core.js.SparkJS;
-import cn.solarmoon.spark_core.js.extension.JSLevel;
+import cn.solarmoon.spark_core.lua.extensions.LuaLevel;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.function.Supplier;
 
 @Mixin(Level.class)
-public abstract class LevelMixin implements ISparkJSHolder, JSLevel  {
+public abstract class LevelMixin implements ISparkJSHolder, LuaLevel {
 
     private SparkJS jsEngine;
 

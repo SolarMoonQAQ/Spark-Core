@@ -1,0 +1,12 @@
+---@class AnimInstance
+---@field getProgress fun(self:AnimInstance) 
+---@field onSwitchIn fun(self:AnimInstance, consumer:LuaValueProxy) 
+---@field onSwitchOut fun(self:AnimInstance, consumer:LuaValueProxy) 
+---@field onEnd fun(self:AnimInstance, consumer:LuaValueProxy) 
+---@field onCompleted fun(self:AnimInstance, consumer:LuaValueProxy) 
+---@field onStart fun(self:AnimInstance, consumer:LuaValueProxy) 
+---@field setShouldTurnBody fun(self:AnimInstance, bool:boolean) 
+---@field registerKeyframeRangeEnd fun(self:AnimInstance, id:string, end:number) 
+---@field registerKeyframeRangeStart fun(self:AnimInstance, id:string, start:number) 
+---@field registerKeyframeRanges fun(self:AnimInstance, id:string, ranges:NativeArray, provider:LuaValueProxy) 
+

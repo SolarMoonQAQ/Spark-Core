@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation
  */
 abstract class RenderLayer<T, A: IAnimatable<T>>() {
 
-    abstract fun getTextureLocation(sth: A): ResourceLocation
+    abstract fun getTextureLocation(sth: A): ResourceLocation?
 
     abstract fun getRenderType(sth: A): RenderType
 

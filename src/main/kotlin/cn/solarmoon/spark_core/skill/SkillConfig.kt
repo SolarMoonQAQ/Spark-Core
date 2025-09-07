@@ -1,5 +1,9 @@
 package cn.solarmoon.spark_core.skill
 
+import com.jme3.bullet.collision.PhysicsCollisionObject
+import li.cil.repack.com.naef.jnlua.DefaultConverter
+import li.cil.repack.com.naef.jnlua.LuaValueProxy
+
 interface SkillConfig {
 
     val storage: LinkedHashMap<String, Any>
@@ -14,27 +18,32 @@ interface SkillConfig {
 
 }
 
-inline fun <reified T: Any> SkillConfig.read(key: String, defaultValue: T): T {
-    var value = storage.get(key)
-    if (defaultValue is Number && defaultValue !is Double) throw IllegalArgumentException("由于js的数字类型限制为double，因此配置参数[$key] 的类型不能为 ${defaultValue::class.simpleName}，请用double类型填写然后转为想要的类型。")
+inline fun <reified T : Any> SkillConfig.read(key: String, defaultValue: T): T {
+    var value = storage[key]
     if (defaultValue is Double && value is Int) value = value.toDouble()
     return when (value) {
         null -> defaultValue
         is T -> value
-        else -> throw IllegalArgumentException("技能配置参数[$key] 的类型必须为 ${T::class.simpleName}")
+        else -> throw IllegalArgumentException(
+            "技能配置参数[$key] 的类型必须为 ${T::class}，实际为：${value::class}"
+        )
     }
 }
 
-inline fun <reified T: Any> SkillConfig.readNonNull(key: String): T {
+inline fun <reified T : Any> SkillConfig.readNonNull(key: String): T {
     val value = storage[key]
     if (value == null) throw IllegalArgumentException("技能配置参数[$key] 不能为空")
-    if (value !is T) throw IllegalArgumentException("技能配置参数[$key] 的类型必须为 ${T::class.simpleName}")
+    if (value !is T) throw IllegalArgumentException(
+        "技能配置参数[$key] 的类型必须为 ${T::class}，实际为：${value::class}"
+    )
     return value
 }
 
-inline fun <reified T: Any> SkillConfig.readNullable(key: String): T? {
+inline fun <reified T : Any> SkillConfig.readNullable(key: String): T? {
     val value = storage[key]
     if (value == null) return null
-    if (value !is T) throw IllegalArgumentException("技能配置参数[$key] 的类型必须为 ${T::class.simpleName}")
+    if (value !is T) throw IllegalArgumentException(
+        "技能配置参数[$key] 的类型必须为 ${T::class}，实际为：${value::class}"
+    )
     return value
 }

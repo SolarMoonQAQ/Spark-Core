@@ -68,10 +68,11 @@ class IKComponent(
     private fun initializeDefaultTarget() {
         try {
             // 获取末端执行器骨骼
-            val endBone = host.model.getBone(endBoneName)
+            val model = host.modelController.model
+            val endBone = model?.origin?.getBone(endBoneName)
             if (endBone != null) {
                 // 获取末端执行器在本地空间中的位置（考虑动画变换后的位置）
-                val localPos = host.getSpaceBonePivot(endBoneName)
+                val localPos = model.getBonePose(endBoneName).getSpaceBonePivot()
 
                 // 设置为默认目标位置
                 this.desiredTargetPosition.set(localPos.x, localPos.y, localPos.z)

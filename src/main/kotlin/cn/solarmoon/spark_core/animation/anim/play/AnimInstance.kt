@@ -18,7 +18,7 @@ class AnimInstance private constructor(
     companion object {
         @JvmStatic
         fun create(holder: IAnimatable<*>, name: String, provider: AnimInstance.() -> Unit = {}): AnimInstance? {
-            return create(holder, AnimIndex(holder.modelIndex.modelPath, name), provider)
+            return create(holder, AnimIndex(holder.modelController.model?.index!!, name), provider)
         }
 
         @JvmStatic
@@ -31,7 +31,7 @@ class AnimInstance private constructor(
             }
     }
 
-    val origin = OAnimationSet.getOrEmpty(animIndex.modelPath).getValidAnimation(animIndex.name)
+    val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex.location).getValidAnimation(animIndex.name)
     val flags = setOf<String>()
     var time = 0.0
     var speed = 1.0

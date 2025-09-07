@@ -30,7 +30,7 @@ class AnimationDataSendingTask : ICustomConfigurationTask {
             registry.entrySet().forEach { entry ->
                 val registryKey = entry.key
                 val typedAnimation = entry.value
-                val animationSetLocation = typedAnimation.index.modelPath
+                val animationSetLocation = typedAnimation.index.modelIndex.location
 
                 // 从 TypedAnimation 提取对应的 OAnimationSet
                 val animationSet = convertTypedAnimationToOAnimationSet(typedAnimation)
@@ -62,7 +62,7 @@ class AnimationDataSendingTask : ICustomConfigurationTask {
      * 通过 TypedAnimation 的 index.index (ResourceLocation) 从静态 ORIGINS 获取 OAnimationSet
      */
     private fun convertTypedAnimationToOAnimationSet(typedAnimation: cn.solarmoon.spark_core.animation.anim.play.TypedAnimation): OAnimationSet {
-        val animationSetLocation = typedAnimation.index.modelPath
+        val animationSetLocation = typedAnimation.index.modelIndex.location
         return OAnimationSet.ORIGINS[animationSetLocation] ?: OAnimationSet.EMPTY
     }
 

@@ -22,12 +22,12 @@ object SparkPackResourceLoader {
     @JvmStatic
     fun loadAllModules() {
         ModList.get().mods.forEach {
+            registry.add(it.modId)
             loadModule(it.modId)
         }
     }
 
     fun loadModule(modId: String) {
-        registry.add(modId)
         val runModulesDir = FMLPaths.GAMEDIR.get().resolve(SparkPackLoader.MODULE_NAME)
         Files.createDirectories(runModulesDir)
         val modFileInfo = ModList.get().getModFileById(modId)

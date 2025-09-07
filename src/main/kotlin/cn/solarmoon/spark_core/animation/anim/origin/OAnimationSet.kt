@@ -27,7 +27,8 @@ data class OAnimationSet(
          * 如果res是玩家，自动返回玩家的动画集合
          */
         @JvmStatic
-        fun getOrEmpty(res: ResourceLocation): OAnimationSet {
+        fun getOrEmpty(res: ResourceLocation?): OAnimationSet {
+            if (res == null) return EMPTY
             return ORIGINS[res] ?: EMPTY
         }
 

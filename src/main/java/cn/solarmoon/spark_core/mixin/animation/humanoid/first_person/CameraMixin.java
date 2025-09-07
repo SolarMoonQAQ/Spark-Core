@@ -45,11 +45,14 @@ public abstract class CameraMixin {
 
     @Inject(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V", shift = At.Shift.AFTER))
     private void setup(BlockGetter level, Entity entity, boolean detached, boolean thirdPersonReverse, float partialTick, CallbackInfo ci) {
-        if (entity instanceof IEntityAnimatable<?> animatable && animatable.getModel().hasBone("head")) {
+        if (entity instanceof IEntityAnimatable<?> animatable && animatable.getModelController().getOriginModel().hasBone("head")) {
             var event = NeoForge.EVENT_BUS.post(new CameraFollowHeadEvent(entity, camera, RealCameraCompat.INSTANCE.isActive() || FirstPersonModelCompat.INSTANCE.isActive()));
             if (event.isEnabled()) {
-                var pos = animatable.getWorldBonePivot("head", Vec3.ZERO, partialTick);
-                var pos2 = animatable.getWorldBonePivot("head", new Vec3(0.0, Mth.lerp(partialTick, this.eyeHeightOld, this.eyeHeight) - (pos.y - Mth.lerp(partialTick, entity.yo, entity.getY())), 0.0), partialTick);
+                var model = animatable.getModelController().getModel();
+                if (model == null) return;
+                var pose = model.getBonePose("head");
+                var pos = pose.getWorldBonePivot(Vec3.ZERO, partialTick);
+                var pos2 = pose.getWorldBonePivot(new Vec3(0.0, Mth.lerp(partialTick, this.eyeHeightOld, this.eyeHeight) - (pos.y - Mth.lerp(partialTick, entity.yo, entity.getY())), 0.0), partialTick);
                 setPosition(pos.x, pos2.y, pos.z);
             }
         }

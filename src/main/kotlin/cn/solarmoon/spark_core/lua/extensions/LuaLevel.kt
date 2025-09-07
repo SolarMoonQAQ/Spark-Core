@@ -1,6 +1,7 @@
-package cn.solarmoon.spark_core.js.extension
+package cn.solarmoon.spark_core.lua.extensions
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.lua.doc.LuaClass
 import cn.solarmoon.spark_core.particle.AnimatableShadowParticle
 import net.minecraft.core.BlockPos
 import net.minecraft.resources.ResourceLocation
@@ -10,7 +11,8 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 import java.awt.Color
 
-interface JSLevel {
+@LuaClass("Level")
+interface LuaLevel {
 
     val level get() = this as Level
 

@@ -25,7 +25,7 @@ public class DieRollInteger extends ContextFunction<Object> {
             range -= min;
         }
         int total = 0;
-        Random rnd = context.entity().getRandomSeed();
+        Random rnd = new Random();
         while (i-- > 0) {
             total += min + rnd.nextInt(range);
         }

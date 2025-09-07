@@ -42,7 +42,7 @@ interface IGeoRenderer<T, S: IAnimatable<T>> {
     }
 
     fun getGeoTextureLocation(animatable: S): ResourceLocation {
-        return animatable.modelIndex.textureLocation
+        return animatable.modelController.textureLocation
     }
 
 }

@@ -3,12 +3,15 @@ package cn.solarmoon.spark_core.physics
 import cn.solarmoon.spark_core.physics.collision.PhysicsObjectEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.math.Matrix3f
+import com.jme3.math.Quaternion
+import com.jme3.math.Transform
 import com.jme3.math.Vector3f
 import com.jme3.system.JmeSystem
 import com.jme3.system.Platform.Os.*
 import net.minecraft.world.phys.Vec3
 import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
+import org.joml.Matrix4f
 
 fun selectLib(): String {
     val platform = JmeSystem.getPlatform()

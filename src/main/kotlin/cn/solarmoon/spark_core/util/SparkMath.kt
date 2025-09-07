@@ -100,6 +100,8 @@ operator fun Vec3.plus(v: Vec3) = add(v)
 
 operator fun Vec3.minus(v: Vec3) = subtract(v)
 
+fun DoubleArray.toVec3() = Vec3(get(0), get(1), get(2))
+
 fun Vector3f.rotLerp(target: Vector3f, progress: Double): Vector3f {
     return rotLerp(target, progress, this)
 }

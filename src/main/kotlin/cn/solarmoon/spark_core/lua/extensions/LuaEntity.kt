@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.js.extension
+package cn.solarmoon.spark_core.lua.extensions
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.camera.setCameraLock
@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.entity.getRelativeVector
 import cn.solarmoon.spark_core.js.toNativeArray
 import cn.solarmoon.spark_core.js.toVec2
 import cn.solarmoon.spark_core.js.toVec3
+import cn.solarmoon.spark_core.lua.doc.LuaClass
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.core.registries.BuiltInRegistries
@@ -17,11 +18,13 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec2
+import net.minecraft.world.phys.Vec3
 import org.mozilla.javascript.NativeArray
 import kotlin.math.PI
 import kotlin.math.atan2
 
-interface JSEntity {
+@LuaClass("Entity")
+interface LuaEntity {
 
     val entity get() = this as Entity
 
@@ -44,18 +47,17 @@ interface JSEntity {
         }
     }
 
-    fun move(move: NativeArray, orientationByInput: Boolean) {
-        move(move, orientationByInput, Vec2(0f, 1f).toNativeArray())
+    fun move(move: Vec3, orientationByInput: Boolean) {
+        move(move, orientationByInput, Vec2(0f, 1f))
     }
 
-    fun move(move: NativeArray, orientationByInput: Boolean, default: NativeArray) {
+    fun move(move: Vec3, orientationByInput: Boolean, default: Vec2) {
         val entity = entity
-        val move = move.toVec3()
         if (entity is Player && orientationByInput && entity.isLocalPlayer) {
             val input = (entity as LocalPlayer).savedInput
             var moveVector = input.moveVector
             if (moveVector.length() == 0f) {
-                moveVector = default.toVec2()
+                moveVector = default
             }
             val angle = atan2(moveVector.y, -moveVector.x) - PI.toFloat() / 2
             val move = move.yRot(angle)
@@ -65,18 +67,17 @@ interface JSEntity {
         }
     }
 
-    fun addMove(move: NativeArray, orientationByInput: Boolean) {
-        addMove(move, orientationByInput, Vec2(0f, 1f).toNativeArray())
+    fun addMove(move: Vec3, orientationByInput: Boolean) {
+        addMove(move, orientationByInput, Vec2(0f, 1f))
     }
 
-    fun addMove(move: NativeArray, orientationByInput: Boolean, default: NativeArray) {
-        val move = move.toVec3()
+    fun addMove(move: Vec3, orientationByInput: Boolean, default: Vec2) {
         val entity = entity
         if (entity is Player && orientationByInput && entity.isLocalPlayer) {
             val input = (entity as LocalPlayer).savedInput
             var moveVector = input.moveVector
             if (moveVector.length() == 0f) {
-                moveVector = default.toVec2()
+                moveVector = default
             }
             val angle = atan2(moveVector.y, -moveVector.x) - PI.toFloat() / 2
             val move = move.yRot(angle)
@@ -85,8 +86,6 @@ interface JSEntity {
             entity.addDeltaMovement(entity.getRelativeVector(move))
         }
     }
-
-    fun addRelativeMovement(relative: NativeArray, movement: NativeArray) = entity.addRelativeMovement(relative.toVec3(), movement.toVec3())
 
     fun hurt(damageSource: DamageSource, amount: Float) {
         entity.hurt(damageSource, amount)
@@ -132,4 +131,5 @@ interface JSEntity {
     fun log(message: String) {
         SparkCore.LOGGER.info("发送消息: {}", message)
     }
+
 }

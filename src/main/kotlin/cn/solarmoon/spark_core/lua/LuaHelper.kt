@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.lua
 
 import li.cil.repack.com.naef.jnlua.LuaState
+import li.cil.repack.com.naef.jnlua.LuaType
 import li.cil.repack.com.naef.jnlua.LuaValueProxy
 
 fun selectLib(): String {
@@ -54,18 +55,18 @@ fun LuaState.setGlobal(name: String, value: Any?) {
     setGlobal(name)
 }
 
-//inline fun <reified T> LuaState.checkTable(index: Int): List<T> {
-//    checkType(index, LuaType.TABLE)
-//    val list = mutableListOf<T>()
-//    val len = rawLen(index)
-//    for (i in 1..len) {
-//        rawGet(index, i)
-//        val cond = checkJavaObject(-1, T::class.java)
-//        list.add(cond)
-//        pop(1)
-//    }
-//    return list
-//}
+inline fun <reified T> LuaState.checkTable(index: Int): List<T> {
+    checkType(index, LuaType.TABLE)
+    val list = mutableListOf<T>()
+    val len = rawLen(index)
+    for (i in 1..len) {
+        rawGet(index, i)
+        val cond = checkJavaObject(-1, T::class.java)
+        list.add(cond)
+        pop(1)
+    }
+    return list
+}
 
 ///**
 // * 快捷调用 Lua 全局函数

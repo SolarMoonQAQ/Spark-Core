@@ -15,13 +15,13 @@ object BoneModifier {
 
     @SubscribeEvent
     private fun head(event: BoneUpdateEvent) {
-        val player = event.animatable
+        val player = event.model.animatable
         if (player !is IEntityAnimatable<*> || player !is LivingEntity) return
-        val old = event.oldData
+        val old = event.oldTransform
         if (event.bonePose.name == "head") {
-            event.newData = KeyAnimData(
+            event.newTransform = KeyAnimData(
                 old.position,
-                event.newData.rotation.add(Vec3(-player.xRot.toDouble(), (-player.yHeadRot + player.yBodyRot).toDouble(), 0.0).toRadians()),
+                event.originNewTransform.rotation.add(Vec3(-player.xRot.toDouble(), (-player.yHeadRot + player.yBodyRot).toDouble(), 0.0).toRadians()),
                 old.scale
             )
         }
@@ -43,18 +43,18 @@ object BoneModifier {
 
     @SubscribeEvent
     private fun sleep(event: BoneUpdateEvent) {
-        val animatable = event.animatable
+        val animatable = event.model.animatable
         if (event.bonePose.name == "root" && animatable is LivingEntity) {
             val bedDirection = animatable.bedOrientation
             if (bedDirection != null && animatable.isSleeping) {
-                val old = event.newData
+                val old = event.originNewTransform
 
                 val bedRotation = sleepDirectionToRotation(bedDirection).toRadians()
 
                 val f3 = animatable.getEyeHeight(Pose.STANDING) - 1.2
                 val offset = Vec3(f3 * bedDirection.stepX, 0.0, f3 * bedDirection.stepZ).yRot(animatable.yBodyRot.toRadians())
 
-                event.newData = KeyAnimData(
+                event.newTransform = KeyAnimData(
                     Vec3(
                         old.position.x + offset.x,
                         old.position.y,

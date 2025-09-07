@@ -26,13 +26,13 @@ public class TempVariableBinding implements ObjectBinding {
         @Override
         @SuppressWarnings("unchecked")
         public Object evaluate(final @NotNull ExecutionContext<?> context) {
-            return ((IAnimatable<Object>) context.entity()).getTempStorage().getTemp(address);
+            return ((IAnimatable<Object>) context.entity()).getAnimController().getTempStorage().getTemp(address);
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public void assign(@NotNull ExecutionContext<?> context, Object value) {
-            ((IAnimatable<Object>) context.entity()).getTempStorage().setTemp(address, value);
+            ((IAnimatable<Object>) context.entity()).getAnimController().getTempStorage().setTemp(address, value);
         }
     }
 }

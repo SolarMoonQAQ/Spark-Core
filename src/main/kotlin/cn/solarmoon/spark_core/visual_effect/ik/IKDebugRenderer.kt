@@ -47,74 +47,74 @@ class IKDebugRenderer : VisualEffectRenderer() {
     ) {
         if (!isEnabled) return
 
-        val player = Minecraft.getInstance().player ?: return
-        if (player !is IEntityAnimatable<*>) return // Ensure player implements IEntityAnimatable
-
-        val ikManager = player.ikManager // Should be implemented now
-        val physicsWorld = player.physicsLevel.world // Get client physics world
-
-        val buffer = bufferSource.getBuffer(RenderType.lines()) // Use line renderer
-
-        // Important: Translate poseStack so world coordinates become relative to camera
-        poseStack.pushPose()
-        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z)
-        val matrix = poseStack.last().pose() // Get the final matrix for drawing
-
-        for (component in ikManager.activeComponents) {
-            if (!component.value.stickToGround) continue // Only visualize components trying to stick
-
-            // --- Re-calculate desired target on client ---
-            // We need the *animated* position on the client.
-            // Assuming IAnimatable provides this via getWorldBonePivot
-            val desiredTargetWorldJME: Vector3f = try {
-                player.getWorldBonePivot(component.value.type.endBoneName, Vec3.ZERO, tickDelta)
-            } catch (e: Exception) {
-                SparkCore.LOGGER.warn("IKDebug: Failed to get world bone pivot for ${component.value.type.endBoneName}", e)
-                continue // Skip if we can't get the animated position
-            }.toBVector3f()
-
-            // --- Perform client-side raycast for visualization ---
-            val rayStart = desiredTargetWorldJME.addLocal(component.value.groundCheckOffset)
-            val rayEnd = rayStart.subtract(0f, component.value.groundCheckDistance, 0f)
-            val results = ArrayList<PhysicsRayTestResult>()
-            physicsWorld.rayTest(rayStart, rayEnd, results) // Use the available rayTest
-
-            var closestHit: PhysicsRayTestResult? = null
-            var minHitFraction = Float.MAX_VALUE
-            var clientActualTargetPos = desiredTargetWorldJME // Default to desired if no hit
-            var clientIsGrounded = false
-
-            for (result in results) {
-                val collisionObject = result.collisionObject
-                // Use the same filtering as in IKComponent
-                if (collisionObject != null && collisionObject.isStatic && collisionObject.collisionGroup == 1) {
-                    if (result.hitFraction < minHitFraction) {
-                        minHitFraction = result.hitFraction
-                        closestHit = result
-                    }
-                }
-            }
-
-            if (closestHit != null) {
-                // Calculate hit point manually
-                val hitDir = rayEnd.subtract(rayStart)
-                clientActualTargetPos = rayStart.add(hitDir.mult(closestHit.hitFraction))
-                clientIsGrounded = true
-            }
-
-            // --- Draw Visualizations ---
-            // 1. Draw the Ray
-            drawLine(matrix, buffer, rayStart, rayEnd, COLOR_RAY)
-
-            // 2. Draw the Desired Target Point (Blue Box)
-            drawWireBox(matrix, buffer, desiredTargetWorldJME, TARGET_BOX_SIZE, COLOR_DESIRED)
-
-            // 3. Draw the Actual Target Point (Green/Red Box)
-            val actualColor = if (clientIsGrounded) COLOR_ACTUAL_GROUNDED else COLOR_ACTUAL_AIR
-            drawWireBox(matrix, buffer, clientActualTargetPos, TARGET_BOX_SIZE, actualColor)
-        }
-
-        poseStack.popPose() // Restore pose stack
+//        val player = Minecraft.getInstance().player ?: return
+//        if (player !is IEntityAnimatable<*>) return // Ensure player implements IEntityAnimatable
+//
+//        val ikManager = player.ikManager // Should be implemented now
+//        val physicsWorld = player.physicsLevel.world // Get client physics world
+//
+//        val buffer = bufferSource.getBuffer(RenderType.lines()) // Use line renderer
+//
+//        // Important: Translate poseStack so world coordinates become relative to camera
+//        poseStack.pushPose()
+//        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z)
+//        val matrix = poseStack.last().pose() // Get the final matrix for drawing
+//
+//        for (component in ikManager.activeComponents) {
+//            if (!component.value.stickToGround) continue // Only visualize components trying to stick
+//
+//            // --- Re-calculate desired target on client ---
+//            // We need the *animated* position on the client.
+//            // Assuming IAnimatable provides this via getWorldBonePivot
+//            val desiredTargetWorldJME: Vector3f = try {
+//                player.getWorldBonePivot(component.value.type.endBoneName, Vec3.ZERO, tickDelta)
+//            } catch (e: Exception) {
+//                SparkCore.LOGGER.warn("IKDebug: Failed to get world bone pivot for ${component.value.type.endBoneName}", e)
+//                continue // Skip if we can't get the animated position
+//            }.toBVector3f()
+//
+//            // --- Perform client-side raycast for visualization ---
+//            val rayStart = desiredTargetWorldJME.addLocal(component.value.groundCheckOffset)
+//            val rayEnd = rayStart.subtract(0f, component.value.groundCheckDistance, 0f)
+//            val results = ArrayList<PhysicsRayTestResult>()
+//            physicsWorld.rayTest(rayStart, rayEnd, results) // Use the available rayTest
+//
+//            var closestHit: PhysicsRayTestResult? = null
+//            var minHitFraction = Float.MAX_VALUE
+//            var clientActualTargetPos = desiredTargetWorldJME // Default to desired if no hit
+//            var clientIsGrounded = false
+//
+//            for (result in results) {
+//                val collisionObject = result.collisionObject
+//                // Use the same filtering as in IKComponent
+//                if (collisionObject != null && collisionObject.isStatic && collisionObject.collisionGroup == 1) {
+//                    if (result.hitFraction < minHitFraction) {
+//                        minHitFraction = result.hitFraction
+//                        closestHit = result
+//                    }
+//                }
+//            }
+//
+//            if (closestHit != null) {
+//                // Calculate hit point manually
+//                val hitDir = rayEnd.subtract(rayStart)
+//                clientActualTargetPos = rayStart.add(hitDir.mult(closestHit.hitFraction))
+//                clientIsGrounded = true
+//            }
+//
+//            // --- Draw Visualizations ---
+//            // 1. Draw the Ray
+//            drawLine(matrix, buffer, rayStart, rayEnd, COLOR_RAY)
+//
+//            // 2. Draw the Desired Target Point (Blue Box)
+//            drawWireBox(matrix, buffer, desiredTargetWorldJME, TARGET_BOX_SIZE, COLOR_DESIRED)
+//
+//            // 3. Draw the Actual Target Point (Green/Red Box)
+//            val actualColor = if (clientIsGrounded) COLOR_ACTUAL_GROUNDED else COLOR_ACTUAL_AIR
+//            drawWireBox(matrix, buffer, clientActualTargetPos, TARGET_BOX_SIZE, actualColor)
+//        }
+//
+//        poseStack.popPose() // Restore pose stack
     }
 
     // --- Embedded Drawing Logic ---

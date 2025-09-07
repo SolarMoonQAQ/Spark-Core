@@ -25,13 +25,13 @@ public class ScopedVariableBinding implements ObjectBinding {
         @Override
         @SuppressWarnings("unchecked")
         public Object evaluate(final @NotNull ExecutionContext<?> context) {
-            return ((IAnimatable<Object>) context.entity()).getScopedStorage().getScoped(name);
+            return ((IAnimatable<Object>) context.entity()).getAnimController().getScopedStorage().getScoped(name);
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public void assign(@NotNull ExecutionContext<?> context, Object value) {
-            ((IAnimatable<Object>) context.entity()).getScopedStorage().setScoped(name, value);
+            ((IAnimatable<Object>) context.entity()).getAnimController().getScopedStorage().setScoped(name, value);
         }
     }
 }

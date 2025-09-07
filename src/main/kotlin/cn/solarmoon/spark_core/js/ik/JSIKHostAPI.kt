@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.ik.sync.IKSyncTargetPayload
 import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
-import cn.solarmoon.spark_core.js.extension.JSEntity
+import cn.solarmoon.spark_core.lua.extensions.LuaEntity
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec3
@@ -17,18 +17,18 @@ import net.neoforged.neoforge.network.PacketDistributor
  * 此类可能附加到 JSEntity 上，如果实体是 IEntityAnimatable 的实例。
  * 注意：此类中的方法在 JS 调用时运行在客户端。若需执行服务器端操作，请使用数据包。
  */
-class JSIKHostAPI(private val jsEntity: JSEntity) { // 假设通过 JSEntity 包装器访问
+class JSIKHostAPI(private val luaEntity: LuaEntity) { // 假设通过 JSEntity 包装器访问
 
     // 安全获取宿主并进行类型转换的辅助方法
     private fun getHost(): IEntityAnimatable<*>? {
-        val entity = jsEntity.entity
+        val entity = luaEntity.entity
         return entity as IEntityAnimatable<*>
     }
 
     // 安全获取宿主作为 Entity 的辅助方法
     private fun getHostEntity(): Entity? {
         // 确保 JSEntity 内的实体引用是有效的
-        return jsEntity.entity as Entity?
+        return luaEntity.entity as Entity?
     }
 
     /**

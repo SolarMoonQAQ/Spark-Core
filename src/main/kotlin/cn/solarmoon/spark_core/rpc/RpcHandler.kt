@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.rpc
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
@@ -43,9 +43,9 @@ object RpcHandler : RpcService {
             val entityName = modelName.substringAfter(":")
             val textureLocation = ResourceLocation.fromNamespaceAndPath("spark_core", "textures/entity/${entityName}.png")
 
-            // 在服务器端更新模型信息
-            val modelIndex = ModelIndex(modelPath, textureLocation)
-            animatable.modelIndex = modelIndex
+//            // 在服务器端更新模型信息
+//            val modelIndex = ModelIndex(modelPath, textureLocation)
+//            animatable.modelIndex = modelIndex
 
             //TODO: 同步到所有客户端
             SparkCore.LOGGER.info("服务器端更换实体 $entityId 的模型为 $modelName 成功")

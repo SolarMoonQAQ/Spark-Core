@@ -34,7 +34,7 @@ object VanillaModelHelper {
 
     @JvmStatic
     fun setPivot(animatable: IAnimatable<*>, boneName: String, model: ModelPart) {
-        animatable.model.getBone(boneName)?.pivot?.toVector3f()?.let {
+        animatable.modelController.model?.origin?.getBone(boneName)?.pivot?.toVector3f()?.let {
             (model as ITransformModelPart).pivot.set(it)
         }
     }
@@ -47,10 +47,10 @@ object VanillaModelHelper {
     @JvmStatic
     fun applyTransform(animatable: IAnimatable<*>, boneName: String, part: ModelPart, partialTicks: Float) {
         if (part !is ITransformModelPart) return
-        val bone = animatable.getBonePose(boneName)
-        val pos = bone.getPosition(partialTicks).toVector3f().mul(16f).apply { x = -x; y = -y }
-        val rot = bone.getRotation(partialTicks).toVector3f().apply { x = -x; y = -y }
-        val scale = bone.getScale(partialTicks).toVector3f()
+        val bone = animatable.modelController.model?.getBonePose(boneName) ?: return
+        val pos = bone.getLocalPosition(partialTicks).toVector3f().mul(16f).apply { x = -x; y = -y }
+        val rot = bone.getLocalRotation(partialTicks).toVector3f().apply { x = -x; y = -y }
+        val scale = bone.getLocalScale(partialTicks).toVector3f()
         part.offsetPos(pos)
         part.setRotation(rot.x, rot.y, rot.z)
         part.xScale = scale.x; part.yScale = scale.y; part.zScale = scale.z

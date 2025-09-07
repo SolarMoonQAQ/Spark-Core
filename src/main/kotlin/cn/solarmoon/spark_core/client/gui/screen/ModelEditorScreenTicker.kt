@@ -63,11 +63,11 @@ object ModelEditorScreenTicker {
     // Make these private as they are helper methods for this object
     private fun getPlayerModelLocation(player: LocalPlayer): ResourceLocation? {
         val animatable = player as? IAnimatable<*>
-        return animatable?.modelIndex?.modelPath // Use modelPath from ModelIndex
+        return animatable?.modelController?.model?.index?.location // Use modelPath from ModelIndex
     }
     private fun getPlayerTextureLocation(player: LocalPlayer): ResourceLocation? {
          val animatable = player as? IAnimatable<*>
-         return animatable?.modelIndex?.textureLocation // Use textureLocation from ModelIndex
+         return animatable?.modelController?.textureLocation // Use textureLocation from ModelIndex
     }
 
 }

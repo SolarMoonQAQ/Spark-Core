@@ -2,13 +2,13 @@ package cn.solarmoon.spark_core.mixin.animation.animatable;
 
 import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup;
+import cn.solarmoon.spark_core.animation.model.BonePoseGroup;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
+import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.ik.component.IKManager;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -27,12 +27,9 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
 
     @Shadow public abstract boolean isLocalPlayer();
 
-    private final ITempVariableStorage tempStorage = new VariableStorage();
-    private final IScopedVariableStorage scopedStorage = new VariableStorage();
-    private final IForeignVariableStorage foreignStorage = new VariableStorage();
     private Player player = (Player) (Object) this;
     private final AnimController animController = new AnimController(player);
-    private final BonePoseGroup boneGroup = new BonePoseGroup(player);
+    private final ModelController modelController = new ModelController(player);
     // --- IEntityAnimatable Implementation ---private final MutableMap<String, Vec3> ikChains = ConcurrentMap();
     private final IKManager ikManager = new IKManager(this);
     // Use Map interface type, ConcurrentHashMap for potential thread safety (though likely accessed main-thread only)
@@ -55,27 +52,8 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     }
 
     @Override
-    public @NotNull BonePoseGroup getBones() {
-        return boneGroup;
-    }
-
     @NotNull
-    @Override
-    public ITempVariableStorage getTempStorage() {
-        return tempStorage;
-    }
-
-    @NotNull
-    @Override
-    public IScopedVariableStorage getScopedStorage() {
-        return scopedStorage;
-    }
-
-    @NotNull
-    @Override
-    public IForeignVariableStorage getForeignStorage() {
-        return foreignStorage;
-    }
+    public ModelController getModelController() {return modelController;}
 
     @Override
     public @Nullable Level getAnimLevel() {

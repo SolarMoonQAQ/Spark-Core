@@ -26,7 +26,7 @@ public class ForeignVariableBinding implements ObjectBinding {
         @Override
         @SuppressWarnings("unchecked")
         public Object evaluate(final @NotNull ExecutionContext<?> context) {
-            IForeignVariableStorage storage = ((IAnimatable<Object>) context.entity()).getForeignStorage();
+            IForeignVariableStorage storage = ((IAnimatable<Object>) context.entity()).getAnimController().getForeignStorage();
             return storage.getPublic(name);
         }
     }

@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.getMainLayer
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.lua.doc.LuaClass
 import net.minecraft.resources.ResourceLocation
 
@@ -22,7 +23,7 @@ interface LuaAnimatable {
     }
 
     fun createAnimation(index: String, name: String): AnimInstance {
-        return AnimInstance.create(lua_animatable, AnimIndex(ResourceLocation.parse(index), name))!!
+        return AnimInstance.create(lua_animatable, AnimIndex(ModelIndex(ResourceLocation.parse(index)), name))!!
     }
 
     fun createAnimation(name: String): AnimInstance {

@@ -26,7 +26,7 @@ object PresetBodyApplier {
         val level = event.level
         if (entity is BlockAttachedEntity) return //这种东西就不要来占用cpu了！
         if (entity is Player) {
-            entity.model.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach { bone ->
+            entity.modelController.originModel.bones.values.filterNot { it.name in listOf("rightItem", "leftItem") }.forEach { bone ->
                 val body = PhysicsRigidBody(bone.name, entity, CompoundCollisionShape())
 
                 entity.bindBody(body, level.physicsLevel, true) {

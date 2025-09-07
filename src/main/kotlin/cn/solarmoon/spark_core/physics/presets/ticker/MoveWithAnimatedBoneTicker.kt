@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.presets.ticker
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.model.BonePose
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.util.PPhase
@@ -10,6 +11,7 @@ import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Transform
 import com.jme3.math.Vector3f
+import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 import org.joml.Quaternionf
@@ -30,10 +32,11 @@ open class MoveWithAnimatedBoneTicker(
                 val previousPos = lastPos
                 lastPos.set(currentPos)
                 try {
+                    val model = animatable.modelController.model ?: return@submitImmediateTask
                     body.setPhysicsTransform(Transform(
-                        animatable.getWorldBonePivot(boneName, offset.toVec3()).toBVector3f(),
-                        animatable.getWorldBoneMatrix(boneName).getUnnormalizedRotation(Quaternionf()).toBQuaternion(),
-                        animatable.getBonePose(boneName).getScale().toVector3f().toBVector3f()
+                        model.getBonePose(boneName).getWorldBonePivot(offset.toVec3()).toBVector3f(),
+                        model.getBonePose(boneName).getWorldBoneMatrix().getUnnormalizedRotation(Quaternionf()).toBQuaternion(),
+                        model.getBonePose(boneName).getLocalScale().toVector3f().toBVector3f()
                     ))
                 } catch (e: Exception) {
                     println(e)

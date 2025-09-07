@@ -16,17 +16,10 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent
 object AnimApplier {
 
     @SubscribeEvent
-    private fun playerRespawn(event: PlayerEvent.Clone) {
-        if (event.isWasDeath) {
-            event.entity.setData(SparkAttachments.MODEL_INDEX, event.original.getData(SparkAttachments.MODEL_INDEX))
-        }
-    }
-
-    @SubscribeEvent
     private fun playerJoin(event: EntityJoinLevelEvent) {
         val entity = event.entity
         if (entity is Player && entity.isLocalPlayer && entity is LocalPlayer) {
-            entity.modelIndex.textureLocation = entity.skin.texture
+            entity.modelController.setTextureLocation(entity.skin.texture)
         }
     }
 
@@ -63,7 +56,7 @@ object AnimApplier {
 
     @SubscribeEvent
     private fun onBoneUpdate(event: BoneUpdateEvent) {
-        val animatable = event.animatable
+        val animatable = event.model.animatable
         animatable.onBoneUpdate(event)
     }
 

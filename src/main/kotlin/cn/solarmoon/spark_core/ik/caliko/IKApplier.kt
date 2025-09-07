@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.ik.caliko
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.model.BonePose
 import cn.solarmoon.spark_core.util.toVec3
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -26,8 +27,8 @@ object IKApplier {
             SparkCore.LOGGER.warn("IKApplier: Chain '$chainName' not found for ${animatable.animatable}")
             return
         }
-        val model = animatable.model
-        val bones = animatable.bones // Get BoneGroup from IAnimatable
+        val model = animatable.modelController.model ?: return
+        val bones = model.bonePoses // Get BoneGroup from IAnimatable
 
         // 注意：由于我们现在在本地空间中工作，不需要考虑实体的世界旋转
         // 所有骨骼的旋转都是相对于其父骨骼的本地旋转
@@ -38,7 +39,7 @@ object IKApplier {
             val fbBone = calikoBones[i]
             val boneName = fbBone.name ?: continue // Caliko 0.9.3 FabrikBone3D 有 getName()
             val sBone = bones[boneName] ?: continue // Spark Core Bone
-            val oBone = model.getBone(boneName) ?: continue // Spark Core OBone (原始定义)
+            val oBone = model.origin.getBone(boneName) ?: continue // Spark Core OBone (原始定义)
 
             // 1. 计算骨骼新的本地方向
             val startLoc = fbBone.startLocation // Caliko 0.9.3 有 getStartLocation()
@@ -65,7 +66,7 @@ object IKApplier {
             // 6. 将差值旋转转换为欧拉角 (弧度)
             val keyDataRotation = deltaQuat.getEulerAnglesZYX(Vector3f())
             // 7. 更新 Spark Core Bone 的 KeyAnimData
-            val currentKeyData = sBone.data
+            val currentKeyData = sBone.getLocalTransform()
             // 只更新旋转，保持位置和缩放不变 (IK 主要影响旋转)
             val newKeyData = currentKeyData.copy(rotation = keyDataRotation.toVec3())
             sBone.updateInternal(newKeyData) // 使用内部更新方法

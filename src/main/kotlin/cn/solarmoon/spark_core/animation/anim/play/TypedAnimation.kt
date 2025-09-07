@@ -25,14 +25,14 @@ class TypedAnimation(
 ) {
 
     val id get() = SparkRegistries.TYPED_ANIMATION.getId(this)
-    val registryKey get() = SparkRegistries.TYPED_ANIMATION.getKey(this) ?: throw NullPointerException("类型动画 $index 尚未注册，请在注册后调用此方法。")
+    val registryKey get() = SparkRegistries.TYPED_ANIMATION.getKey(this) ?: throw NullPointerException("类型动画 ${this@TypedAnimation.index} 尚未注册，请在注册后调用此方法。")
 
     fun exist(animatable: IAnimatable<*>? = null) =
-        if (animatable == null) OAnimationSet.getOrEmpty(index.modelPath).getAnimation(index.name) != null
-        else animatable.animations.hasAnimation(index.name)
+        if (animatable == null) OAnimationSet.getOrEmpty(this@TypedAnimation.index.modelIndex.location).getAnimation(this@TypedAnimation.index.name) != null
+        else animatable.animController.originAnimations.hasAnimation(this@TypedAnimation.index.name)
 
     fun create(animatable: IAnimatable<*>): AnimInstance {
-        return AnimInstance.create(animatable, index) {
+        return AnimInstance.create(animatable, this@TypedAnimation.index) {
             provider.invoke(this)
         }!!
     }

@@ -1,11 +1,15 @@
-package cn.solarmoon.spark_core.js.extension
+package cn.solarmoon.spark_core.lua.extensions
 
 import cn.solarmoon.spark_core.js.call
+import cn.solarmoon.spark_core.lua.doc.LuaClass
+import cn.solarmoon.spark_core.lua.execute
 import cn.solarmoon.spark_core.preinput.PreInput
+import li.cil.repack.com.naef.jnlua.LuaValueProxy
 import net.minecraft.world.entity.Entity
 import org.mozilla.javascript.Function
 
-interface JSPreInput {
+@LuaClass("PreInput")
+interface LuaPreInput {
 
     val preInput get() = this as PreInput
 
@@ -13,11 +17,11 @@ interface JSPreInput {
         preInput.execute()
     }
 
-    fun execute(consumer: Function) {
+    fun execute(consumer: LuaValueProxy) {
         val holder = preInput.holder
         if (holder is Entity) {
             preInput.execute {
-                consumer.call(holder.level().jsEngine)
+                consumer.execute()
             }
         }
     }
@@ -29,11 +33,11 @@ interface JSPreInput {
         }
     }
 
-    fun executeIfPresent(vararg id: String, consumer: Function) {
+    fun executeIfPresent(vararg id: String, consumer: LuaValueProxy) {
         val holder = preInput.holder
         if (holder is Entity) {
             preInput.executeIfPresent(*id) {
-                consumer.call(holder.level().jsEngine)
+                consumer.execute()
             }
         }
     }
@@ -45,11 +49,11 @@ interface JSPreInput {
         }
     }
 
-    fun executeExcept(vararg id: String, consumer: Function) {
+    fun executeExcept(vararg id: String, consumer: LuaValueProxy) {
         val holder = preInput.holder
         if (holder is Entity) {
             preInput.executeExcept(*id) {
-                consumer.call(holder.level().jsEngine)
+                consumer.execute()
             }
         }
     }

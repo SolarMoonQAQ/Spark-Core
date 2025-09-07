@@ -21,6 +21,6 @@ public class Random extends ContextFunction<Object> {
         } else {
             range -= min;
         }
-        return min + context.entity().getRandomSeed().nextDouble() * range;
+        return min + new java.util.Random().nextDouble() * range;
     }
 }

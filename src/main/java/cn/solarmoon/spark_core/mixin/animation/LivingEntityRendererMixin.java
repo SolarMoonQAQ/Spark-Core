@@ -21,8 +21,11 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
     @Inject(method = "setupRotations", at = @At("RETURN"))
     private void offset(T entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
         if (entity instanceof IEntityAnimatable<?> animatable && VanillaModelHelper.isHumanoidModel(entity)) {
-            if (animatable.getModel().hasBone("body")) {
-                poseStack.mulPose(animatable.getSpaceBoneMatrix("body", partialTick));
+            if (animatable.getModelController().getOriginModel().hasBone("body")) {
+                var model = animatable.getModelController().getModel();
+                if (model != null) {
+                    poseStack.mulPose(model.getBonePose("body").getSpaceBoneMatrix(partialTick));
+                }
             }
         }
     }

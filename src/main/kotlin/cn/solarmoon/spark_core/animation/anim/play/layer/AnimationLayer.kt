@@ -114,9 +114,10 @@ class AnimationLayer(
         return (boneSpaces[boneName]?.currentWeight ?: 0.0) * data.weight
     }
 
-    fun getBonePose(boneName: String, animatable: IAnimatable<*>): KeyAnimData {
+    fun getBoneTransform(boneName: String, animatable: IAnimatable<*>): KeyAnimData {
         val values = animSpaces.values
         val totalWeight = values.filter { boneName in it.anim.origin.bones }.sumOf { it.currentWeight }
+        val boneBaseRot = animatable.modelController.originModel.getBone(boneName)?.rotation?.toVector3f()?.toQuaternionf() ?: Quaternionf()
 
         // 如果总权重为0，则返回默认姿势（简化计算）
         if (totalWeight <= 0.0) {
@@ -124,7 +125,7 @@ class AnimationLayer(
         }
 
         val pos = Vector3f()
-        val rot = Quaternionf(); var accumulatedWeight = 0f
+        val rot = boneBaseRot; var accumulatedWeight = 0f
         val scale = Vector3f(1f)
         values.forEach {
             val boneData = it.anim.origin.getBoneAnimation(boneName) ?: return@forEach
@@ -191,7 +192,7 @@ class AnimationLayer(
      * @return 当前模型缺少的播放[anim]所需的骨骼的集合，为空则不缺少，即该动画可播放
      */
     fun testAnimValidity(anim: AnimInstance): Set<String> {
-        return anim.origin.bones.keys - anim.holder.model.bones.keys
+        return anim.origin.bones.keys - anim.holder.modelController.originModel.bones.keys
     }
 
 }

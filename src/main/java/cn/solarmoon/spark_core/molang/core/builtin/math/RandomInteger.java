@@ -4,6 +4,8 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.core.function.ContextFunction;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExecutionContext;
 
+import java.util.Random;
+
 public class RandomInteger extends ContextFunction<Object> {
     @Override
     public boolean validateArgumentSize(int size) {
@@ -21,6 +23,6 @@ public class RandomInteger extends ContextFunction<Object> {
         } else {
             range -= min;
         }
-        return min + context.entity().getRandomSeed().nextInt(range);
+        return min + new Random().nextInt(range);
     }
 }

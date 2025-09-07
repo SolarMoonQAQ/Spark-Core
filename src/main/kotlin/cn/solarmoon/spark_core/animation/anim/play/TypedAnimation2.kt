@@ -30,8 +30,8 @@ class TypedAnimation2(
     }
 
     fun exist(animatable: IAnimatable<*>? = null) =
-        if (animatable == null) OAnimationSet.getOrEmpty(index.modelPath).getAnimation(index.name) != null
-        else animatable.animations.hasAnimation(index.name)
+        if (animatable == null) OAnimationSet.getOrEmpty(index.modelIndex.location).getAnimation(index.name) != null
+        else animatable.animController.originAnimations.hasAnimation(index.name)
 
     fun create(animatable: IAnimatable<*>): AnimInstance {
         return AnimInstance.create(animatable, index) {

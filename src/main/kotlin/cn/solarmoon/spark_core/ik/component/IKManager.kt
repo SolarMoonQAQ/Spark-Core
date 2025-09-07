@@ -28,7 +28,7 @@ class IKManager(private val host: IEntityAnimatable<*>) {
             return true
         }
 
-        val model = host.model
+        val model = host.modelController.originModel
 
         val chain = type.buildChain(host, model) ?: run {
             SparkCore.LOGGER.error("IKManager: 构建组件'${type.id}'的链失败，位于${host.animatable}.")

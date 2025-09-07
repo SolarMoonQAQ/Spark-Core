@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.animation
 
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.registry.common.SparkDataComponents
 import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.item.ItemStack
@@ -60,7 +60,7 @@ interface ICustomModelItem {
         else HashMap()
         val modelIndex = getModelIndex(itemStack, level, context)
         val animatable = ItemAnimatable(itemStack, level)
-        animatable.modelIndex = modelIndex
+        animatable.modelController.setModel(modelIndex)
         customModels[context] = animatable
         itemStack.set(SparkDataComponents.CUSTOM_ITEM_MODEL, customModels)
         return animatable

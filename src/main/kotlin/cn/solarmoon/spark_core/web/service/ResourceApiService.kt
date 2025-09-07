@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.web.service
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
 import cn.solarmoon.spark_core.web.dto.*
@@ -95,7 +95,7 @@ object ResourceApiService {
 
             // 在服务器端更新模型信息
             val modelIndex = ModelIndex(modelPath, textureLocation)
-            animatable.modelIndex = modelIndex
+            animatable.modelController.setModel(modelIndex)
             // TODO: 模型校验
             SparkCore.LOGGER.info("服务器端更换实体 $entityId 的模型为 $modelName 成功")
             return true

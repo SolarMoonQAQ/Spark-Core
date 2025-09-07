@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation
 open class GlowingTextureLayer<T, S: IAnimatable<T>>: RenderLayer<T, S>() {
 
     override fun getTextureLocation(sth: S): ResourceLocation {
-        val id = sth.modelIndex.textureLocation
+        val id = sth.modelController.textureLocation
         val path = id.path
 
         // 解析路径以使用SparkResourcePathBuilder

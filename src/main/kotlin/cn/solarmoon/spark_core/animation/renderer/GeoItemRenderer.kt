@@ -29,26 +29,29 @@ open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstanc
     ) {
         if (stack.item is ICustomModelItem && Minecraft.getInstance().level!= null) {
             val level = Minecraft.getInstance().level!!
+            val partialTicks = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(false)
             val customModelItem = stack.item as ICustomModelItem
             val itemAnimatable: ItemAnimatable =
                 customModelItem.getRenderInstance(stack, level, displayContext)
                     ?: return
             poseStack.pushPose()
             if (displayContext == ItemDisplayContext.GUI) poseStack.mulPose(Quaternionf().rotateY(Math.PI.toFloat()))
-            itemAnimatable.model.render(
-                itemAnimatable.bones,
-                poseStack.last().pose()
-                    .translate(customModelItem.getRenderOffset(stack, level, displayContext))
-                    .rotateZYX(customModelItem.getRenderRotation(stack, level, displayContext))
-                    .scale(customModelItem.getRenderScale(stack, level, displayContext)),
-                poseStack.last().normal(),
-                buffer.getBuffer(RenderType.entityTranslucent(itemAnimatable.modelIndex.textureLocation)),
-                Brightness.FULL_BRIGHT.pack(),
-                packedOverlay,
-                customModelItem.getColor(stack, level, displayContext).getRGB(),
-                itemAnimatable.partialTicks,
-                true
-            )
+            itemAnimatable.modelController.model?.let { model ->
+                model.origin.render(
+                    model.bonePoses,
+                    poseStack.last().pose()
+                        .translate(customModelItem.getRenderOffset(stack, level, displayContext))
+                        .rotateZYX(customModelItem.getRenderRotation(stack, level, displayContext))
+                        .scale(customModelItem.getRenderScale(stack, level, displayContext)),
+                    poseStack.last().normal(),
+                    buffer.getBuffer(RenderType.entityTranslucent(model.textureLocation)),
+                    Brightness.FULL_BRIGHT.pack(),
+                    packedOverlay,
+                    customModelItem.getColor(stack, level, displayContext).rgb,
+                    partialTicks,
+                    true
+                )
+            }
             poseStack.popPose()
         }
     }

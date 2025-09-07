@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.animation.renderer
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup
+import cn.solarmoon.spark_core.animation.model.BonePoseGroup
 import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import com.mojang.blaze3d.vertex.VertexConsumer
@@ -70,5 +70,7 @@ fun IAnimatable<*>.render(
     val worldPos = getWorldPosition(partialTick)
     worldMatrix.translate(worldPos.toVector3f())
     worldMatrix.rotateY(getRootYRot(partialTick))
-    model.render(bones, worldMatrix, normal, buffer, packedLight, packedOverlay, color, partialTick)
+    this.modelController.model?.let {
+        it.origin.render(it.bonePoses, worldMatrix, normal, buffer, packedLight, packedOverlay, color, partialTick)
+    }
 }

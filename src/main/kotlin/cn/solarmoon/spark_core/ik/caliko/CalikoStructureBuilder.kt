@@ -34,9 +34,9 @@ object CalikoStructureBuilder {
         bonePathNames: List<String>,
     ):  LinkedHashMap<String, Vector3f> {
         val localPivots =  LinkedHashMap<String, Vector3f>()
-        val boneGroup = owner.model.bones.filter { it.key in bonePathNames }.values
+        val boneGroup = owner.modelController.originModel.bones.filter { it.key in bonePathNames }.values
         boneGroup.forEach {
-            localPivots[it.name] = owner.getSpaceBonePivot(it.name)
+            localPivots[it.name] = owner.modelController.model?.getBonePose(it.name)?.getSpaceBonePivot() ?: Vector3f()
         }
         return localPivots
     }

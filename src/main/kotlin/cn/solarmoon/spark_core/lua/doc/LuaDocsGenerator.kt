@@ -60,17 +60,14 @@ object LuaDocsGenerator {
             if (luaClassAnn == null && luaGlobalAnn == null) return@forEach
 
             // 从注解参数里取 name 值
-            val nameFromAnnotation = (luaClassAnn ?: luaGlobalAnn)
+            val luaName = (luaClassAnn ?: luaGlobalAnn)
                 ?.valueArguments
-                ?.firstOrNull { it.getArgumentName()?.asName?.asString() == "name" }
+                ?.firstOrNull()
                 ?.getArgumentExpression()
                 ?.text
                 ?.trim('"')
 
-            // 如果注解没写 name，就用类名作为默认值
-            val luaName = nameFromAnnotation ?: clazz.name ?: return@forEach
-
-            val fileName = luaName
+            val fileName = "$luaName${if (luaGlobalAnn != null) "Global" else ""}"
             val className = luaName
 
             val output = StringBuilder()
@@ -80,21 +77,44 @@ object LuaDocsGenerator {
                 clazz.docComment?.getDefaultSection()?.getContent()?.trim()?.let {
                     if (it.isNotEmpty()) output.appendLine("---$it")
                 }
-                output.appendLine("local $className = {}")
-                output.appendLine("$className.__index = $className")
-                output.appendLine()
 
                 clazz.declarations.filterIsInstance<KtNamedFunction>().forEach { func ->
                     val luaFuncName = func.name?.let {
                         if (it.startsWith("lua_")) it.removePrefix("lua_") else it
                     } ?: return@forEach
 
-                    appendFunctionDoc(output, func, "$className:$luaFuncName")
+                    // 方法参数列表（带类型）
+                    val params = func.valueParameters.joinToString(", ") { p ->
+                        "${p.name}:${javaTypeToLua(p.typeReference?.text ?: "any")}"
+                    }
+
+                    // 返回值类型
+                    val returnType = javaTypeToLua(func.typeReference?.text ?: "void")
+                    val returnPart = if (returnType != "void") ":$returnType" else ""
+
+                    // 方法描述（忽略 @param 标签）
+                    val desc = func.docComment
+                        ?.getDefaultSection()
+                        ?.getContent()
+                        ?.trim()
+                        ?.replace("\n", " ")
+                        ?: ""
+
+                    // 拼接 @field 行
+                    if (params.isEmpty()) {
+                        output.appendLine("---@field $luaFuncName fun(self:$className)$returnPart $desc")
+                    } else {
+                        output.appendLine("---@field $luaFuncName fun(self:$className, $params)$returnPart $desc")
+                    }
                 }
 
-            } else if (luaGlobalAnn != null) {
+                output.appendLine() // 类注释结束
+            }
+            else if (luaGlobalAnn != null) {
                 clazz.declarations.filterIsInstance<KtNamedFunction>().forEach { func ->
-                    appendFunctionDoc(output, func, "$className.${func.name}")
+                    val isInstanceMethod = !func.hasModifier(org.jetbrains.kotlin.lexer.KtTokens.COMPANION_KEYWORD)
+                    val separator = if (isInstanceMethod) ":" else "."
+                    appendFunctionDoc(output, func, "$className$separator${func.name}")
                 }
             }
 

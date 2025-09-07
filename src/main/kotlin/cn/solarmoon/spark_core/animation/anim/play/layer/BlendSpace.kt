@@ -28,20 +28,20 @@ class BlendSpace(
 //            // 跳过不包含当前骨骼姿势层（即该动画中没有提及该骨骼），防止未出现的骨骼以默认0值覆盖了上层动画
 //            if (layer.animation != null && layer.animation!!.origin.getBoneAnimation(boneName) == null) return@forEach
             if (!layer.isPlaying) return@forEach
-            val bonePose = layer.getBonePose(boneName, animatable)
+            val boneTransform = layer.getBoneTransform(boneName, animatable)
             val weight = layer.getBoneWeight(boneName)
             if (weight == 0.0) return@forEach
             when(layer.data.blendMode) {
                 BlendMode.OVERRIDE -> {
-                    pos.lerp(bonePose.position.toVector3f(), weight.toFloat())
-                    rot.slerp(Quaterniond().rotateZYX(bonePose.rotation.z, bonePose.rotation.y, bonePose.rotation.x), weight)
-                    scale.lerp(bonePose.scale.toVector3f(), weight.toFloat())
+                    pos.lerp(boneTransform.position.toVector3f(), weight.toFloat())
+                    rot.slerp(Quaterniond().rotateZYX(boneTransform.rotation.z, boneTransform.rotation.y, boneTransform.rotation.x), weight)
+                    scale.lerp(boneTransform.scale.toVector3f(), weight.toFloat())
                 }
                 BlendMode.ADDITIVE -> {
-                    pos.add(bonePose.position.toVector3f())
-                    rot.mul(Quaterniond().rotateZYX(bonePose.rotation.z, bonePose.rotation.y, bonePose.rotation.x))
+                    pos.add(boneTransform.position.toVector3f())
+                    rot.mul(Quaterniond().rotateZYX(boneTransform.rotation.z, boneTransform.rotation.y, boneTransform.rotation.x))
                     // 最终缩放 = 下层缩放 × [1 + 权重 × (Additive缩放 - 1)]
-                    scale.mul((Vec3(1.0, 1.0, 1.0) + (bonePose.scale - Vec3(1.0, 1.0, 1.0)).multiply(Vec3(weight, weight, weight))).toVector3f())
+                    scale.mul((Vec3(1.0, 1.0, 1.0) + (boneTransform.scale - Vec3(1.0, 1.0, 1.0)).multiply(Vec3(weight, weight, weight))).toVector3f())
                 }
             }
         }

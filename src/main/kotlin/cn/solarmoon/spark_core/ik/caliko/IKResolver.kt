@@ -55,7 +55,7 @@ object IKResolver {
             if (componentType != null) {
                 // 检查组件类型中是否直接指定了极向目标
                 if (componentType.poleTargetBoneName != null && componentType.poleAngleDegrees != null) {
-                    val poleTargetBone = animatable.model.getBone(componentType.poleTargetBoneName)
+                    val poleTargetBone = animatable.modelController.model?.origin?.getBone(componentType.poleTargetBoneName)
                     if (poleTargetBone != null) {
                         poleTarget = poleTargetBone.pivot.toCalikoVec3f()
                         poleAngle = componentType.poleAngleDegrees
@@ -68,7 +68,7 @@ object IKResolver {
                     if (ikConstraint != cn.solarmoon.spark_core.ik.origin.OIKConstraint.EMPTY) {
                         // 如果约束中指定了极向目标骨骼，尝试获取其世界坐标
                         if (ikConstraint.poleTargetBone != null && ikConstraint.poleTargetObject != null) {
-                            val poleTargetBone = animatable.model.getBone(ikConstraint.poleTargetBone)
+                            val poleTargetBone = animatable.modelController.model?.origin?.getBone(ikConstraint.poleTargetBone)
                             if (poleTargetBone != null) {
                                 // 使用本地空间中的骨骼位置作为极向目标
                                 poleTarget = poleTargetBone.pivot.toCalikoVec3f()

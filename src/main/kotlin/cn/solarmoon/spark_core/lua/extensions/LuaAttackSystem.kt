@@ -12,4 +12,6 @@ interface LuaAttackSystem {
 
     fun isEmpty() = self.attackedEntities.isEmpty()
 
+    fun lua_reset() = self.reset()
+
 }

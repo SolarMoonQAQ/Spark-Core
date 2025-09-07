@@ -32,8 +32,8 @@ class Shadow(
 
     var tick = 0
     var isRemoved = false
-    var textureLocation = animatable.modelIndex.textureLocation
-    val boneCache = animatable.bones.copy()
+    var textureLocation = animatable.modelController.textureLocation
+    val boneCache = animatable.modelController.model?.bonePoses?.copy()
 
     fun getProgress(partialTicks: Float = 0f): Float = ((tick.toFloat() + partialTicks) / maxLifeTime).coerceIn(0f, 1f)
 
@@ -49,7 +49,7 @@ class Shadow(
         val light = LevelRenderer.getLightColor(level, BlockPos(pos.toVec3i()).above())
         val overlay = OverlayTexture.NO_OVERLAY
         val color = ColorUtil.getColorAndSetAlpha(color.rgb, 1 - getProgress(partialTicks))
-        animatable.model.render(boneCache, posMa, normal, buffer, light, overlay, color, partialTicks)
+        boneCache?.let { animatable.modelController.model?.origin?.render(it, posMa, normal, buffer, light, overlay, color, partialTicks) }
     }
 
 }

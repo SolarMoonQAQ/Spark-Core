@@ -34,7 +34,7 @@ class AnimatableShadowParticle(
 ): Particle(level, x, y, z) {
 
     val yRot = animatable.getRootYRot()
-    val boneCache = animatable.bones.copy()
+    val boneCache = animatable.modelController.model?.bonePoses?.copy()
 
     fun getProgress(partialTicks: Float = 1f): Float {
         return ((age + partialTicks) / lifetime).coerceIn(0f, 1f)
@@ -56,11 +56,12 @@ class AnimatableShadowParticle(
         val overlay = OverlayTexture.NO_OVERLAY
         setAlpha(1 - getProgress(partialTicks))
         val color = Color(rCol, gCol, bCol, alpha).rgb
-        animatable.model.render(boneCache, posMa, Matrix3f(), buffer, light, overlay, color, partialTicks)
+        if (boneCache == null) return
+        animatable.modelController.originModel.render(boneCache, posMa, Matrix3f(), buffer, light, overlay, color, partialTicks)
     }
 
     override fun getRenderType(): ParticleRenderType {
-        return SparkParticleRenderType.entityLike(animatable.modelIndex.textureLocation)
+        return SparkParticleRenderType.entityLike(animatable.modelController.textureLocation)
     }
 
     class Option private constructor(
