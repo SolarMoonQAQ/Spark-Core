@@ -11,11 +11,13 @@ import net.neoforged.neoforge.common.NeoForge
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = [Dist.CLIENT])
 object SparkPackModuleRegister {
 
+    val recipe = RecipeModule()
     val lang = LangModule()
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(ModelModule())
         event.register(AnimationModule())
         event.register(LuaScriptModule())
+        event.register(recipe)
         event.register(lang)
         event.register(TextureModule())
     }
