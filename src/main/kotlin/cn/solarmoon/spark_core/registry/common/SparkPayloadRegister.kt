@@ -43,6 +43,7 @@ import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
 import cn.solarmoon.spark_core.skill.payload.SkillRejectPayload
 import cn.solarmoon.spark_core.skill.payload.SkillSyncPayload
+import cn.solarmoon.spark_core.sound.payload.SpreadingSoundPayload
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakePayload
 import cn.solarmoon.spark_core.visual_effect.shadow.ShadowPayload
 import cn.solarmoon.spark_core.visual_effect.space_warp.SpaceWarpPayload
@@ -109,7 +110,7 @@ object SparkPayloadRegister {
         physics.playToClient(PhysicsCollisionObjectSyncPayload.TYPE, PhysicsCollisionObjectSyncPayload.STREAM_CODEC, PhysicsCollisionObjectSyncPayload::handleInClient)
         physics.playToClient(AttackSystemSyncPayload.TYPE, AttackSystemSyncPayload.STREAM_CODEC, AttackSystemSyncPayload::handleInClient)
         physics.playToClient(AddCollisionCallbackPayload.TYPE, AddCollisionCallbackPayload.STREAM_CODEC, AddCollisionCallbackPayload::handleInClient)
-
+        physics.playToClient(SpreadingSoundPayload.TYPE, SpreadingSoundPayload.STREAM_CODEC, SpreadingSoundPayload::handler)
         val resource = event.registrar("resource")
         resource.playToClient(DynamicRegistrySyncS2CPacket.TYPE, DynamicRegistrySyncS2CPacket.STREAM_CODEC, DynamicRegistrySyncS2CPacket::handleInClient)
         resource.playToClient(UpdateDepsC2SPacket.TYPE, UpdateDepsC2SPacket.STREAM_CODEC, UpdateDepsC2SPacket::handleInServer)
