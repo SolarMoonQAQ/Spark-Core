@@ -20,7 +20,8 @@ object SparkKeyMappings {
     @JvmStatic
     val OPEN_MODEL_EDITOR = SparkCore.REGISTER.keyMapping()
         .id("open_model_editor")
-        .bound(GLFW.GLFW_KEY_K) // Example key: K
+        .bound(GLFW.GLFW_KEY_K)
+        .modifier(KeyModifier.CONTROL) // Ctrl + K
         .category(CATEGORY)
         .conflictContext(KeyConflictContext.IN_GAME) // Only active in game
         .build()
@@ -49,7 +50,8 @@ object SparkKeyMappings {
     @JvmStatic
     val OPEN_JS_SCRIPT_BROWSER = SparkCore.REGISTER.keyMapping()
         .id("open_js_script_browser")
-        .bound(GLFW.GLFW_KEY_J) // Example key: J
+        .bound(GLFW.GLFW_KEY_J)
+        .modifier(KeyModifier.CONTROL) // Ctrl + J
         .category("key.categories.spark_core.script_browser")
         .conflictContext(KeyConflictContext.IN_GAME) // Only active in game
         .build()
