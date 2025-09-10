@@ -19,7 +19,7 @@ class LangModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
     private val totalTable: MutableMap<String, MutableMap<String, String>> = HashMap()
     private val totalComponentTable: MutableMap<String, MutableMap<String, Component>> = HashMap()
 
-    override fun onStart() {
+    override fun onStart(isClientSide: Boolean) {
         if (FMLEnvironment.dist.isClient) {
             count = 0
             SparkCore.LOGGER.info("开始注入外部包翻译文本…")
@@ -30,7 +30,8 @@ class LangModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
-        pack: SparkPackage
+        pack: SparkPackage,
+        isClientSide: Boolean
     ) {
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".json")) {
             val lang = fileName.substringBeforeLast(".")
@@ -58,16 +59,14 @@ class LangModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         }
     }
 
-    override fun onFinish() {
+    override fun onFinish(isClientSide: Boolean) {
         if (FMLEnvironment.dist.isClient) {
             SparkCore.LOGGER.info("从外部包注入了{}种，共{}条翻译文本", count, totalTable.values.sumOf { it.size })
             processAndAddTranslations()
         }
     }
 
-    override fun prepare(resourceManager: ResourceManager, profiler: ProfilerFiller) {
-        return
-    }
+    override fun prepare(resourceManager: ResourceManager, profiler: ProfilerFiller) {}
 
     override fun apply(void: Unit, resourceManager: ResourceManager, profiler: ProfilerFiller) {
         processAndAddTranslations()

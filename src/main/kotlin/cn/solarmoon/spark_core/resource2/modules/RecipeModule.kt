@@ -45,7 +45,7 @@ class RecipeModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         }
     }
 
-    override fun onStart() {
+    override fun onStart(isClientSide: Boolean) {
         count = 0
         recipes.clear()
         SparkCore.LOGGER.info("开始注入外部包配方…")
@@ -55,7 +55,8 @@ class RecipeModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
-        pack: SparkPackage
+        pack: SparkPackage,
+        isClientSide: Boolean
     ) {
         if (fileName.endsWith(".json")) {
             val nameSpace: String = if (pathSegments.size > 1) {
@@ -70,7 +71,7 @@ class RecipeModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         }
     }
 
-    override fun onFinish() {
+    override fun onFinish(isClientSide: Boolean) {
         SparkCore.LOGGER.info("从外部包注入了{}个配方", count)
         if (serverResources != null && recipes.isNotEmpty()) {
             val recipeManager = serverResources!!.recipeManager

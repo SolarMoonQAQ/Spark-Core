@@ -12,7 +12,7 @@ class TextureModule : SparkPackModule {
 
     override val id: String = "textures"
     var count = 0
-    override fun onStart() {
+    override fun onStart(isClientSide: Boolean) {
         if (FMLEnvironment.dist.isClient) {
             count = 0
             SparkCore.LOGGER.info("开始注册外部包贴图资源…")
@@ -23,7 +23,8 @@ class TextureModule : SparkPackModule {
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
-        pack: SparkPackage
+        pack: SparkPackage,
+        isClientSide: Boolean
     ) {
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".png")) {
             val nameSpace: String = if (pathSegments.size > 1) {
@@ -46,7 +47,7 @@ class TextureModule : SparkPackModule {
     }
 
 
-    override fun onFinish() {
+    override fun onFinish(isClientSide: Boolean) {
         if (FMLEnvironment.dist.isClient) {
             SparkCore.LOGGER.info("从外部包注册了{}张贴图资源", count)
         }
