@@ -23,8 +23,8 @@ object SparkClientLifecycle {
             registryClearSuccessCount++
             SparkRegistries.DYNAMIC_TEXTURES.clearDynamic()
             registryClearSuccessCount++
-            SparkRegistries.JS_SCRIPTS.clearDynamic()
-            registryClearSuccessCount++
+//            SparkRegistries.JS_SCRIPTS.clearDynamic()
+//            registryClearSuccessCount++
             SparkRegistries.IK_COMPONENT_TYPE.clearDynamic()
             registryClearSuccessCount++
         } catch (e: Exception) {
@@ -66,8 +66,8 @@ object SparkClientLifecycle {
                 idClearSuccessCount++
                 DynamicIdManager.clearRegistry(SparkRegistries.DYNAMIC_TEXTURES.key().location().toString())
                 idClearSuccessCount++
-                DynamicIdManager.clearRegistry(SparkRegistries.JS_SCRIPTS.key().location().toString())
-                idClearSuccessCount++
+//                DynamicIdManager.clearRegistry(SparkRegistries.JS_SCRIPTS.key().location().toString())
+//                idClearSuccessCount++
                 DynamicIdManager.clearRegistry(SparkRegistries.IK_COMPONENT_TYPE.key().location().toString())
                 idClearSuccessCount++
                 SparkCore.LOGGER.info("降级方案成功：清理了 {} 个注册表的ID映射", idClearSuccessCount)

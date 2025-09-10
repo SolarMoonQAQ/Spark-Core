@@ -46,14 +46,14 @@ fun Route.configureLegacyResourceRoutes() {
                     resources["textures"] = textures
                 }
 
-                // 获取JS脚本资源
-                SparkRegistries.JS_SCRIPTS.let { registry ->
-                    val scripts = mutableListOf<String>()
-                    registry.keySet().forEach { location ->
-                        scripts.add(location.toString())
-                    }
-                    resources["scripts"] = scripts
-                }
+//                // 获取JS脚本资源
+//                SparkRegistries.JS_SCRIPTS.let { registry ->
+//                    val scripts = mutableListOf<String>()
+//                    registry.keySet().forEach { location ->
+//                        scripts.add(location.toString())
+//                    }
+//                    resources["scripts"] = scripts
+//                }
 
                 // 获取IK组件资源
                 SparkRegistries.IK_COMPONENT_TYPE.let { registry ->
@@ -107,14 +107,14 @@ fun Route.configureLegacyResourceRoutes() {
                     )
                 }
 
-                SparkRegistries.JS_SCRIPTS.let { registry ->
-                    registryStatus["js_scripts"] = mapOf(
-                        "total_entries" to registry.size(),
-                        "registry_key" to registry.key().location().toString(),
-                        "value_type" to "OJSScript",
-                        "is_empty" to registry.isEmpty()
-                    )
-                }
+//                SparkRegistries.JS_SCRIPTS.let { registry ->
+//                    registryStatus["js_scripts"] = mapOf(
+//                        "total_entries" to registry.size(),
+//                        "registry_key" to registry.key().location().toString(),
+//                        "value_type" to "OJSScript",
+//                        "is_empty" to registry.isEmpty()
+//                    )
+//                }
 
                 SparkRegistries.IK_COMPONENT_TYPE.let { registry ->
                     registryStatus["ik_component_type"] = mapOf(

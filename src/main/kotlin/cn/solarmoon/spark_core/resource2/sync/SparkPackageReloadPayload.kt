@@ -21,11 +21,11 @@ data class SparkPackageReloadPayload(
         @JvmStatic
         fun handleInClient(payload: SparkPackageReloadPayload, context: IPayloadContext) {
             context.enqueueWork {
-                SparkPackLoader.graph.originNodes.clear()
+                SparkPackLoader.reset()
                 SparkPackLoader.graph.originNodes.putAll(payload.graph.originNodes)
                 context.player().sendSystemMessage(Component.translatable("command.${SparkCore.MOD_ID}.package.reload.success.client", payload.graph.originNodes.size))
                 SparkCore.LOGGER.info("已从服务器接收 {} 个拓展包", payload.graph.originNodes.size)
-                SparkPackLoader.readPackageContent()
+                SparkPackLoader.readPackageContent(true)
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))
                 return@exceptionally null

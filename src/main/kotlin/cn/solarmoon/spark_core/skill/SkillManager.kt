@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.SparkCore
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.entity.Entity
 import java.util.Collections
 import java.util.LinkedHashMap
 

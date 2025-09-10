@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.animation.texture.OTexture
 import cn.solarmoon.spark_core.ik.component.TypedIKComponent
-import cn.solarmoon.spark_core.js.origin.OJSScript
 import cn.solarmoon.spark_core.registry.dynamic.DynamicIdManager
 import cn.solarmoon.spark_core.registry.virtual.VirtualRegistry
 import cn.solarmoon.spark_core.resource.payload.registry.DynamicRegistrySyncS2CPacket
@@ -115,39 +114,6 @@ object SparkRegistries {
                     server.execute {
                         try {
                             DynamicRegistrySyncS2CPacket.syncTextureRemovalToClients(key.location().namespace, key.location())
-                        } catch (_: Exception) {}
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    @JvmStatic
-    val JS_SCRIPTS = VirtualRegistry<OJSScript>(
-        ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "js_scripts"),
-    ).apply {
-        this.onDynamicRegister = { key, value ->
-            try {
-                val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
-                if (server != null) {
-                    server.execute {
-                        try {
-                            val registryName = this.key().location().toString()
-                            val assignedId = DynamicIdManager.getId(registryName, key.location()) ?: -1
-                            val packet = DynamicRegistrySyncS2CPacket.createForJSScriptAdd(key.location().namespace, key.location(), value, assignedId)
-                            net.neoforged.neoforge.network.PacketDistributor.sendToAllPlayers(packet)
-                        } catch (_: Exception) {}
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-        this.onDynamicUnregister = { key, _ ->
-            try {
-                val server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer()
-                if (server != null) {
-                    server.execute {
-                        try {
-                            DynamicRegistrySyncS2CPacket.syncJSScriptRemovalToClients(key.location().namespace, key.location())
                         } catch (_: Exception) {}
                     }
                 }

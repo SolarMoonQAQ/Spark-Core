@@ -22,7 +22,7 @@ data class ScriptSource(
 class SkillType<S: Skill>(
     val registryKey: ResourceLocation,
     val isIndependent: Boolean = true,
-    val conditions: List<SkillStartCondition> = listOf(),
+    val conditions: List<SkillCondition> = listOf(),
     internal val provider: () -> S,
 ) {
 

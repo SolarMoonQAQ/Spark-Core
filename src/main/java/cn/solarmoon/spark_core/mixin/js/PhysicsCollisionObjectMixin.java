@@ -1,16 +1,11 @@
 package cn.solarmoon.spark_core.mixin.js;
 
-import cn.solarmoon.spark_core.lua.extensions.LuaPhysicsCollisionObject;
+import cn.solarmoon.spark_core.js.extensions.JSPhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
-import org.mozilla.javascript.Scriptable;
 import org.spongepowered.asm.mixin.Mixin;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 @Mixin(PhysicsCollisionObject.class)
-public class PhysicsCollisionObjectMixin implements LuaPhysicsCollisionObject {
+public class PhysicsCollisionObjectMixin implements JSPhysicsCollisionObject {
 
     
 

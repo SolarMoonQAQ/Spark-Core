@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core;
 
 import cn.solarmoon.spark_core.config.SparkConfig;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
-import cn.solarmoon.spark_core.lua.LuaHelperKt;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.registry.client.*;
@@ -36,7 +35,6 @@ public class SparkCore {
         MultiModResourceRegistry.INSTANCE.registerModResources(MOD_ID, SparkCore.class);
         SparkPackResourceLoader.loadAllModules();
         NativeLoader.load("bullet", PhysicsHelperKt.selectLib());
-        NativeLoader.load("lua", LuaHelperKt.selectLib());
 
         REGISTER.register(modEventBus);
         MC_REGISTER.register(modEventBus);
@@ -50,11 +48,11 @@ public class SparkCore {
             // 注册配置屏幕工厂
             modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
-        SparkLuaScriptRegister.register(modEventBus);
+        SparkJSScriptRegister.register(modEventBus);
         SparkRegistries.register();
         SparkVisualEffects.register();
         SparkAttachments.register();
-        SparkCommonEventRegister.register();
+        SparkCommonEventRegister.register(modEventBus);
         SparkPayloadRegister.register(modEventBus);
         SparkTypedAnimations.register();
         SparkDataComponents.register();
@@ -65,7 +63,7 @@ public class SparkCore {
         SparkDataGenerator.register(modEventBus);
         SparkCapabilities.register(modEventBus);
         SparkParticles.register();
-        SparkPackModuleRegister.register();
+        SparkPackModuleRegister.register(modEventBus);
         SparkConfig.register(modContainer);
         SparkStateMachineRegister.register();
         SparkResourceRegister.register(modEventBus);

@@ -1,19 +1,19 @@
 package cn.solarmoon.spark_core.skill
 
-import com.jme3.bullet.collision.PhysicsCollisionObject
-import li.cil.repack.com.naef.jnlua.DefaultConverter
-import li.cil.repack.com.naef.jnlua.LuaValueProxy
-
 interface SkillConfig {
 
     val storage: LinkedHashMap<String, Any>
 
     fun init(skill: Skill) {
-        skill.triggerEvent(SkillEvent.ConfigInit)
+        skill.triggerEvent(SkillEvent.ConfigInit(this))
     }
 
     fun set(id: String, value: Any) {
         storage[id] = value
+    }
+
+    fun set(pair: Map<String, Any>) {
+        storage.putAll(pair)
     }
 
 }

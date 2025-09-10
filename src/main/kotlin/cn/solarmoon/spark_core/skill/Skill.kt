@@ -10,6 +10,10 @@ import kotlin.reflect.KClass
 
 open class Skill {
 
+    companion object {
+        val LOGGER = SparkCore.logger("技能系统")
+    }
+
     var id: Int = 0
         internal set
     lateinit var type: SkillType<*>
@@ -19,49 +23,26 @@ open class Skill {
     lateinit var level: Level
         private set
 
-    val config = DefaultSkillConfig()
+    open val config: SkillConfig = DefaultSkillConfig()
     val targetPool = SkillTargetPool()
 
-    var transitionGuard: (SkillPhase) -> Boolean = { true }
+    var transitionGuard: (SkillState) -> Boolean = { true }
 
-    var phase = SkillPhase.IDLE
-        private set(value) {
-            if (value == field) return
-            field = value
-            when(value) {
-                SkillPhase.WINDUP -> {
-                    if (!triggerEvent(SkillEvent.WindupStart)) transitionTo(SkillPhase.ACTIVE)
-                }
-                SkillPhase.ACTIVE -> {
-                    triggerEvent(SkillEvent.ActiveStart)
-                }
-                SkillPhase.RECOVERY -> {
-                    if (!triggerEvent(SkillEvent.RecoveryStart)) transitionTo(SkillPhase.END)
-                }
-                SkillPhase.END -> {
-                    if (id < 0) holder.predictedSkills.remove(id)
-                    else holder.allSkills.remove(id)
-                    targetPool.clear()
-                    triggerEvent(SkillEvent.End)
-                }
-                else -> {}
-            }
-        }
+    lateinit var currentState: SkillState
+        private set
 
-    var tickCount = 0
-        private set
-    var windupTickCount = 0
-        private set
-    var activeTickCount = 0
-        private set
-    var recoveryTickCount = 0
-        private set
-    var wrongTickCount = 0
-        private set
+    var initialState = SkillState.PREPARE
+    var endState = SkillState.END
+    open val states = linkedMapOf<String, SkillState>()
 
     val eventHandlers = mutableMapOf<KClass<out SkillEvent>, MutableList<Skill.(SkillEvent) -> Unit>>()
 
-    val isActivated get() = phase !in arrayOf(SkillPhase.IDLE, SkillPhase.END)
+    var isActivated = false
+        private set
+
+    fun addState(state: SkillState) {
+        states[state.name] = state
+    }
 
     fun init(id: Int, type: SkillType<*>, holder: SkillHost, level: Level) = apply {
         this.id = id
@@ -85,54 +66,59 @@ open class Skill {
         return result
     }
 
-    fun transitionTo(phase: SkillPhase): Boolean {
-        return if (this.phase != phase && transitionGuard(phase)) {
-            this.phase = phase
-            true
-        } else false
+    fun transitionTo(stateName: String): Boolean {
+        val nextState = states[stateName] ?: error("技能 ${type.registryKey} 的内部状态 $stateName 未找到！")
+        return transitionTo(nextState)
+    }
+
+    fun transitionTo(nextState: SkillState): Boolean {
+        // 不允许重复进入同一个状态
+        if (::currentState.isInitialized && currentState == nextState) return false
+        // 检查状态转换条件
+        if (!transitionGuard(nextState)) return false
+
+        var first = false
+        if (::currentState.isInitialized) {
+            currentState.onExit(this)
+            triggerEvent(SkillEvent.State.Exit(currentState))
+        } else {
+            isActivated = true
+            first = true
+        }
+
+        currentState = nextState
+        currentState.tickCount = 0
+        currentState.times++
+        currentState.onEnter(this)
+        if (first) triggerEvent(SkillEvent.Start)
+        triggerEvent(SkillEvent.State.Enter(nextState))
+
+        if (currentState == endState) cleanup()
+        return true
     }
 
     fun activate() {
-        if (type.isIndependent) {
-            // 结束所有相同类型的技能，保证独立性质的技能同一时间只能存在一个
-            holder.allSkills.values.filter { it.type.registryKey == type.registryKey && it.id != id }.forEach { it.end() }
-        }
-
-        when(phase) {
-            SkillPhase.IDLE -> {
-                if (transitionGuard(SkillPhase.WINDUP)) {
-                    transitionTo(SkillPhase.WINDUP)
-                }
+        try {
+            if (type.isIndependent) {
+                // 结束所有相同类型的技能，保证独立性质的技能同一时间只能存在一个
+                holder.allSkills.values.filter { it.type.registryKey == type.registryKey && it.id != id }.forEach { it.end() }
             }
-            else -> {
-                SparkCore.LOGGER.warn("技能 $id - ${type.registryKey} 已经触发，请创建新的技能实例并考虑手动结束当前技能以触发新的技能。")
-            }
+            transitionTo(initialState)
+        } catch (e: Exception) {
+            LOGGER.error("技能 ${type.registryKey} 启动时发生故障: ", e)
+            end()
         }
     }
 
     fun update() {
-        tickCount++
-        when(phase) {
-            SkillPhase.WINDUP -> {
-                windupTickCount++
-                triggerEvent(SkillEvent.Windup)
-            }
-            SkillPhase.ACTIVE -> {
-                activeTickCount++
-                triggerEvent(SkillEvent.Active)
-            }
-            SkillPhase.RECOVERY -> {
-                recoveryTickCount++
-                triggerEvent(SkillEvent.Recovery)
-            }
-            else -> {
-                wrongTickCount++
-                if (wrongTickCount > 1) throw IllegalStateException("技能 $id - ${type.registryKey} 在错误的阶段更新")
-            }
+        if (::currentState.isInitialized) {
+            currentState.onUpdate(this)
+            currentState.tickCount++
+            triggerEvent(SkillEvent.State.Update(currentState))
         }
     }
 
-    fun end() = transitionTo(SkillPhase.END)
+    fun end() = transitionTo(endState)
 
     fun endOnClient() {
         PacketDistributor.sendToServer(SkillPayload(this, CompoundTag().apply { putBoolean("endS", true) }))
@@ -140,6 +126,14 @@ open class Skill {
 
     fun endOnServer() {
         if (end()) PacketDistributor.sendToAllPlayers(SkillPayload(this, CompoundTag().apply { putBoolean("endC", true) }))
+    }
+
+    private fun cleanup() {
+        triggerEvent(SkillEvent.End)
+        isActivated = false
+        if (id < 0) holder.predictedSkills.remove(id)
+        else holder.allSkills.remove(id)
+        targetPool.clear()
     }
 
     internal fun sync(data: CompoundTag, context: IPayloadContext) {

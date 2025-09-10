@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.animation.anim.play
 
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
-import cn.solarmoon.spark_core.js.SparkJS
+import cn.solarmoon.spark_core.util.PPhase
 import kotlin.reflect.KClass
 
 class KeyframeRange(
@@ -9,8 +9,6 @@ class KeyframeRange(
     val start: Double,
     val end: Double
 ) {
-
-    internal lateinit var jsEngine: SparkJS
 
     var hasEntered = false
         private set

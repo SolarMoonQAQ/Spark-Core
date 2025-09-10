@@ -12,7 +12,6 @@ object SparkCommandRegister {
         event.dispatcher.register(
             Commands.literal("spark")
                 .then(PlaySkillCommand().create(event.buildContext))
-                .then(ReloadSkillCommand().create(event.buildContext))
                 .then(GetTagCommand().create(event.buildContext))
                 .then(IKDebugCommand().create(event.buildContext))
                 .then(GetWandCommand().create(event.buildContext))

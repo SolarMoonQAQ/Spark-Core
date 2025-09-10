@@ -31,9 +31,6 @@ dependencies {
     jarJar(implementation("io.github.nsk90:kstatemachine-jvm:0.33.0"))
     additionalRuntimeClasspath "io.github.nsk90:kstatemachine-jvm:0.33.0"
     // js
-    jarJar(implementation("org.mozilla:rhino:1.8.0"))
-    additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
-
     jarJar(implementation("cn.solarmoon:spark-core-graaljs-neoforge:${minecraft_version}-${graaljs_version}"))
     additionalRuntimeClasspath("cn.solarmoon:spark-core-graaljs-neoforge:${minecraft_version}-${graaljs_version}")
 

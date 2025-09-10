@@ -33,12 +33,14 @@ object PhysicsLevelApplier {
     @SubscribeEvent
     private fun mcLevelTask(event: LevelTickEvent.Pre) {
         val level = event.level
+        level.processTasks(PPhase.ALL)
         level.processTasks(PPhase.PRE)
     }
 
     @SubscribeEvent
     private fun mcLevelTask(event: LevelTickEvent.Post) {
         val level = event.level
+        level.processTasks(PPhase.ALL)
         level.processTasks(PPhase.POST)
     }
 

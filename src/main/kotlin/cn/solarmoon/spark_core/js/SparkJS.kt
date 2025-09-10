@@ -1,173 +1,94 @@
 package cn.solarmoon.spark_core.js
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.event.SparkJSComponentRegisterEvent
-import cn.solarmoon.spark_core.js.origin.OJSScript
-import cn.solarmoon.spark_core.js.skill.JSSkillApi
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import net.neoforged.fml.util.LoaderException
+import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
+import cn.solarmoon.spark_core.js.modules.JSModule
+import cn.solarmoon.spark_core.util.PPhase
+import cn.solarmoon.spark_core.util.TaskSubmitOffice
+import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.common.NeoForge
-import org.mozilla.javascript.Context
-import org.mozilla.javascript.Scriptable
+import org.graalvm.polyglot.Context
+import org.graalvm.polyglot.HostAccess
+import org.graalvm.polyglot.Source
+import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ConcurrentLinkedQueue
 
-abstract class SparkJS {
+class SparkJS: TaskSubmitOffice {
 
     companion object {
-        // 使用ThreadLocal管理Context，避免线程冲突同时提高性能
-        private val threadLocalContext = ThreadLocal<Context>()
+        val LOGGER = SparkCore.logger("js脚本")
 
-        // 全局共享的scope
-        private val globalScope: Scriptable by lazy {
-            getOrCreateContext().initStandardObjects()
-        }
+        private var serverInstance = SparkJS()
+        private var clientInstance = SparkJS()
 
-        /**
-         * 获取或创建当前线程的Context
-         * ThreadLocal确保隔离
-         */
-        private fun getOrCreateContext(): Context {
-            var context = threadLocalContext.get()
-            if (context == null) {
-                context = Context.enter()
-                threadLocalContext.set(context)
-            }
-            return context
-        }
-
-        /**
-         * 清理当前线程的Context（在线程结束时调用）
-         */
-        fun cleanupThreadContext() {
-            threadLocalContext.get()?.let {
-                Context.exit()
-                threadLocalContext.remove()
-            }
-        }
+        fun get(isClientSide: Boolean) = if (isClientSide) clientInstance else serverInstance
     }
 
-    val scope: Scriptable get() = globalScope
+    private var v8Runtime: Context? = null
+    private val inModules = mutableMapOf<String, JSModule>()
+    private val inScripts = mutableMapOf<ResourceLocation, JavaScript>()
+    private lateinit var boundThread: Thread
+    override val taskMap: ConcurrentHashMap<PPhase, ConcurrentHashMap<String, () -> Unit>> = ConcurrentHashMap()
+    override val immediateQueue: ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>> = ConcurrentHashMap()
 
-    fun register() {
-        NeoForge.EVENT_BUS.post(SparkJSComponentRegisterEvent(this))
+    val scripts get() = inScripts.toMap()
+    val modules get() = inModules.toMap()
+    val runtime get() = v8Runtime ?: throw NullPointerException("JS 尚未初始化")
+    val isOnBoundThread get() = Thread.currentThread() == boundThread
+    var isInitialized = false
+        private set
+
+    fun initialize() {
+        isInitialized = false
+        boundThread = Thread.currentThread()
+
+        // 关闭旧实例
+        v8Runtime?.close()
+
+        // 创建新的 V8 Runtime
+        v8Runtime = createContext()
+
+        // 注册模块到 JS 全局
+        NeoForge.EVENT_BUS.post(SparkJSRegisterEvent(inModules, runtime))
+        inModules.values.forEach { it.onInitialize(runtime) }
+        LOGGER.info("初始化完成")
+        isInitialized = true
     }
 
-    fun <T> withContext(block: (Context) -> T): T {
-        val context = getOrCreateContext()
-        return block(context)
-    }
+    fun createContext() = Context.newBuilder("js")
+        .allowHostAccess(HostAccess.ALL) // 在 JS 中访问 Java 对象
+        .build()
 
-    fun eval(script: String, contextName: String = "") {
-        withContext { context ->
-            runCatching {
-                context.evaluateString(scope, script, contextName, 1, null)
-            }.getOrElse { throw LoaderException("Js脚本加载失败: $contextName", it) }
-        }
-    }
-
-    fun validateApi(api: String) {
-        if (!JSApi.ALL.containsKey(api)) throw NullPointerException("JS API $api 尚未注册！")
-    }
-
-    fun validateApi(api: JSApi) = validateApi(api.id)
-
-    /**
-     * 从动态注册表加载并执行所有脚本
-     */
-    open fun loadAllFromRegistry() {
+    fun load(script: JavaScript) {
         try {
-            val scripts = SparkRegistries.JS_SCRIPTS.getDynamicEntries()
-            SparkCore.LOGGER.info("开始从注册表加载 ${scripts.size} 个JS脚本")
-            
-            // 按 API 分组脚本
-            val scriptsByApi = scripts.values.groupBy { it.apiId }
-            SparkCore.LOGGER.debug("脚本加载顺序验证 (线程: {}):", Thread.currentThread().name)
-            scripts.forEach { (key, script) ->
-                SparkCore.LOGGER.debug("  - 脚本: {} (API: {})", key, script.apiId)
-            }
-            
-            scriptsByApi.forEach { (apiId, apiScripts) ->
-                try {
-                    validateApi(apiId)
-                    val api = JSApi.ALL[apiId]!!
-                    
-                    // 执行该 API 的所有脚本
-                    apiScripts.forEach { script ->
-                        executeScript(script)
-                    }
-                    
-                    // 调用 API 的 onLoad 钩子
-                    api.onLoad()
-                    SparkCore.LOGGER.info("成功加载API模块: $apiId (${apiScripts.size} 个脚本)")
-                    
-                } catch (e: Exception) {
-                    SparkCore.LOGGER.error("加载API模块失败: $apiId", e)
-                }
-            }
-            
-            SparkCore.LOGGER.info("JS脚本加载完成")
+            val src = Source.newBuilder("js", script.stringContent, script.index.toString())
+                .encoding(StandardCharsets.UTF_8)
+                .build()
+            val value = v8Runtime!!.eval(src)
+//            script.value = value
+            inScripts[script.index] = script
+            inModules[script.index.namespace]?.onLoaded(script)
         } catch (e: Exception) {
-            SparkCore.LOGGER.error("从注册表加载脚本时发生错误", e)
+            LOGGER.error("加载脚本失败: ${script.index}", e)
         }
     }
 
-    /**
-     * 重新加载单个脚本
-     */
-    open fun reloadScript(script: OJSScript) {
-        try {
-            validateApi(script.apiId)
-            executeScript(script)
-            
-            val api = JSApi.ALL[script.apiId]!!
-            api.onLoad()
-            
-            SparkCore.LOGGER.info("重新加载脚本: API=${script.apiId}, 文件=${script.fileName}")
-        } catch (e: Exception) {
-            SparkCore.LOGGER.error("重新加载脚本失败: API=${script.apiId}, 文件=${script.fileName}", e)
-        }
+    fun tickPre() {
+        if (!isInitialized || !isOnBoundThread) return
+        processTasks(PPhase.ALL)
+        processTasks(PPhase.PRE)
     }
 
-    /**
-     * 卸载脚本（移除其产生的副作用）
-     */
-    open fun unloadScript(apiId: String, fileName: String) {
-        try {
-            validateApi(apiId)
-            val api = JSApi.ALL[apiId]!!
-
-            // 对于JSSkillApi，使用精确卸载
-            if (api is JSSkillApi) {
-                api.unloadScript(fileName)
-            } else {
-                // 其他API仍使用全局重载
-                api.onReload()
-            }
-
-            SparkCore.LOGGER.info("卸载脚本: API=$apiId, 文件=$fileName")
-        } catch (e: Exception) {
-            SparkCore.LOGGER.error("卸载脚本失败: API=$apiId, 文件=$fileName", e)
-        }
+    fun tickPost() {
+        if (!isInitialized || !isOnBoundThread) return
+        processTasks(PPhase.ALL)
+        processTasks(PPhase.POST)
     }
 
-    /**
-     * 执行单个脚本，子类可以重写以实现线程安全
-     * 公共方法，可以从外部调用
-     */
-    open fun executeScript(script: OJSScript) {
-        // 设置当前文件名到对应的API
-        val api = JSApi.ALL[script.apiId]
-        if (api is JSSkillApi) {
-            api.currentFileName = script.fileName
-        }
-
-        try {
-            eval(script.content, "${script.apiId} - ${script.fileName}")
-        } finally {
-            // 清除当前文件名
-            if (api is JSSkillApi) {
-                api.currentFileName = null
-            }
-        }
+    fun getScript(index: ResourceLocation): JavaScript? {
+        return inScripts[index]
     }
 
 }

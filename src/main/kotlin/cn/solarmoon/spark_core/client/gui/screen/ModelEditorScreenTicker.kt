@@ -27,7 +27,7 @@ object ModelEditorScreenTicker {
         // 检查JS脚本浏览器按键
         if (SparkKeyMappings.OPEN_JS_SCRIPT_BROWSER.get().consumeClick()) {
             if (minecraft.screen == null) {
-                minecraft.setScreen(JSScriptBrowserScreen())
+//                minecraft.setScreen(JSScriptBrowserScreen())
                 SparkCore.LOGGER.info("打开JS脚本浏览器")
             }
         }

@@ -10,6 +10,12 @@ class AttackSystem {
     private var collisionBoxId: String? = null
     private var autoResetEnabled: Boolean = false
     private var cbName: String = ""
+
+    var resetTimes = 0
+        private set
+
+    val isFirstAttack get() = resetTimes == 0 && attackedEntities.isEmpty()
+
     /**
      * 初始化此 AttackSystem 的上下文，用于后续的同步操作。
      * @param entity 与此 AttackSystem 关联的实体。
@@ -189,6 +195,7 @@ class AttackSystem {
      * 重置攻击系统状态，清除已攻击实体列表，并重置tick计数器。
      */
     fun reset() {
+        resetTimes++
         val changed = _attackedEntities.isNotEmpty()
         _attackedEntities.clear()
         if (ignoreInvulnerableTime) ticksSinceLastReset = 0 // 重置tick计数器

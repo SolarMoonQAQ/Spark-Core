@@ -6,7 +6,6 @@ import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.animation.texture.OTexture
-import cn.solarmoon.spark_core.js.origin.OJSScript
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.registry.dynamic.DynamicIdManager
 import io.netty.buffer.Unpooled
@@ -104,23 +103,23 @@ data class DynamicRegistrySyncS2CPacket(
             )
         }
 
-        fun createForJSScriptAdd(modId: String, id: ResourceLocation, script: OJSScript, assignedId: Int): DynamicRegistrySyncS2CPacket {
-            val buf = FriendlyByteBuf(Unpooled.buffer())
-            OJSScript.STREAM_CODEC.encode(buf, script)
-
-            val bytes = ByteArray(buf.readableBytes())
-            buf.getBytes(0, bytes)
-            buf.release()
-
-            return DynamicRegistrySyncS2CPacket(
-                modId,
-                SparkRegistries.JS_SCRIPTS.key(),
-                id,
-                OperationType.ADD,
-                bytes,
-                assignedId
-            )
-        }
+//        fun createForJSScriptAdd(modId: String, id: ResourceLocation, script: OJSScript, assignedId: Int): DynamicRegistrySyncS2CPacket {
+//            val buf = FriendlyByteBuf(Unpooled.buffer())
+//            OJSScript.STREAM_CODEC.encode(buf, script)
+//
+//            val bytes = ByteArray(buf.readableBytes())
+//            buf.getBytes(0, bytes)
+//            buf.release()
+//
+//            return DynamicRegistrySyncS2CPacket(
+//                modId,
+//                SparkRegistries.JS_SCRIPTS.key(),
+//                id,
+//                OperationType.ADD,
+//                bytes,
+//                assignedId
+//            )
+//        }
 
         fun createForTextureAdd(modId: String, id: ResourceLocation, texture: OTexture, assignedId: Int): DynamicRegistrySyncS2CPacket {
             val buf = FriendlyByteBuf(Unpooled.buffer())
@@ -164,17 +163,17 @@ data class DynamicRegistrySyncS2CPacket(
             SparkCore.LOGGER.info("Sent dynamic OModel REMOVAL sync packet for $id to all clients")
         }
 
-        fun syncJSScriptRemovalToClients(modId: String, id: ResourceLocation) {
-            val packet = DynamicRegistrySyncS2CPacket(
-                modId,
-                SparkRegistries.JS_SCRIPTS.key(),
-                id,
-                OperationType.REMOVE,
-                ByteArray(0)
-            )
-            PacketDistributor.sendToAllPlayers(packet)
-            SparkCore.LOGGER.info("Sent dynamic OJSScript REMOVAL sync packet for $id to all clients")
-        }
+//        fun syncJSScriptRemovalToClients(modId: String, id: ResourceLocation) {
+//            val packet = DynamicRegistrySyncS2CPacket(
+//                modId,
+//                SparkRegistries.JS_SCRIPTS.key(),
+//                id,
+//                OperationType.REMOVE,
+//                ByteArray(0)
+//            )
+//            PacketDistributor.sendToAllPlayers(packet)
+//            SparkCore.LOGGER.info("Sent dynamic OJSScript REMOVAL sync packet for $id to all clients")
+//        }
 
         fun syncTextureRemovalToClients(modId: String, id: ResourceLocation) {
             val packet = DynamicRegistrySyncS2CPacket(
@@ -198,9 +197,9 @@ data class DynamicRegistrySyncS2CPacket(
                         SparkRegistries.MODELS.key() -> {
                             handleModelSync(packet)
                         }
-                        SparkRegistries.JS_SCRIPTS.key() -> {
-                            handleJSScriptSync(packet)
-                        }
+//                        SparkRegistries.JS_SCRIPTS.key() -> {
+//                            handleJSScriptSync(packet)
+//                        }
                         SparkRegistries.DYNAMIC_TEXTURES.key() -> {
                             handleTextureSync(packet)
                         }
@@ -323,42 +322,42 @@ data class DynamicRegistrySyncS2CPacket(
             }
         }
 
-        private fun handleJSScriptSync(packet: DynamicRegistrySyncS2CPacket) {
-            val dynamicRegistry = SparkRegistries.JS_SCRIPTS
-
-            when (packet.operationType) {
-                OperationType.ADD -> {
-                    // 检查是否已存在，避免重复注册导致循环发包
-                    if (dynamicRegistry.containsKey(packet.entryId)) {
-                        SparkCore.LOGGER.debug("OJSScript {} already exists, skipping ADD sync", packet.entryId)
-                        return
-                    }
-
-                    // 同步服务端分配的ID到客户端
-                    if (packet.assignedId != -1) {
-                        val registryName = packet.registryKey.location().toString()
-                        DynamicIdManager.applySyncedId(registryName, packet.entryId, packet.assignedId)
-                        SparkCore.LOGGER.debug("Synced ID for OJSScript {}: {}", packet.entryId, packet.assignedId)
-                    }
-
-                    val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
-                    val script = OJSScript.STREAM_CODEC.decode(buf)
-                    buf.release()
-
-                    // 使用不触发回调的注册方式，避免客户端触发服务端回调
-                    dynamicRegistry.registerDynamic(packet.entryId, script, packet.modId, replace = false)
-                    SparkCore.LOGGER.info("Dynamically registered OJSScript ${packet.entryId} from server with ID ${packet.assignedId}")
-                }
-                OperationType.REMOVE -> {
-                    if (!dynamicRegistry.containsKey(packet.entryId)) {
-                        SparkCore.LOGGER.debug("OJSScript {} does not exist, skipping REMOVE sync", packet.entryId)
-                        return
-                    }
-                    dynamicRegistry.unregisterDynamic(packet.entryId)
-                    SparkCore.LOGGER.info("Dynamically unregistered OJSScript ${packet.entryId} from server")
-                }
-            }
-        }
+//        private fun handleJSScriptSync(packet: DynamicRegistrySyncS2CPacket) {
+//            val dynamicRegistry = SparkRegistries.JS_SCRIPTS
+//
+//            when (packet.operationType) {
+//                OperationType.ADD -> {
+//                    // 检查是否已存在，避免重复注册导致循环发包
+//                    if (dynamicRegistry.containsKey(packet.entryId)) {
+//                        SparkCore.LOGGER.debug("OJSScript {} already exists, skipping ADD sync", packet.entryId)
+//                        return
+//                    }
+//
+//                    // 同步服务端分配的ID到客户端
+//                    if (packet.assignedId != -1) {
+//                        val registryName = packet.registryKey.location().toString()
+//                        DynamicIdManager.applySyncedId(registryName, packet.entryId, packet.assignedId)
+//                        SparkCore.LOGGER.debug("Synced ID for OJSScript {}: {}", packet.entryId, packet.assignedId)
+//                    }
+//
+//                    val buf = FriendlyByteBuf(Unpooled.wrappedBuffer(packet.entryData))
+////                    val script = OJSScript.STREAM_CODEC.decode(buf)
+////                    buf.release()
+////
+////                    // 使用不触发回调的注册方式，避免客户端触发服务端回调
+////                    dynamicRegistry.registerDynamic(packet.entryId, script, packet.modId, replace = false)
+////                    SparkCore.LOGGER.info("Dynamically registered OJSScript ${packet.entryId} from server with ID ${packet.assignedId}")
+//                }
+//                OperationType.REMOVE -> {
+//                    if (!dynamicRegistry.containsKey(packet.entryId)) {
+//                        SparkCore.LOGGER.debug("OJSScript {} does not exist, skipping REMOVE sync", packet.entryId)
+//                        return
+//                    }
+//                    dynamicRegistry.unregisterDynamic(packet.entryId)
+//                    SparkCore.LOGGER.info("Dynamically unregistered OJSScript ${packet.entryId} from server")
+//                }
+//            }
+//        }
 
         private fun handleTextureSync(packet: DynamicRegistrySyncS2CPacket) {
             val dynamicRegistry = SparkRegistries.DYNAMIC_TEXTURES

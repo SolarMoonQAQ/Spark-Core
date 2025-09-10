@@ -21,7 +21,7 @@ data class SparkPackagePayload(
         @JvmStatic
         fun handleInClient(payload: SparkPackagePayload, context: IPayloadContext) {
             context.enqueueWork {
-                SparkPackLoader.initialize()
+                SparkPackLoader.reset()
                 SparkPackLoader.graph.originNodes.putAll(payload.graph.originNodes)
                 SparkPackLoader.LOGGER.info(buildString {
                     appendLine()
@@ -30,7 +30,7 @@ data class SparkPackagePayload(
                     append(SparkPackLoader.graph.originNodes.keys.joinToString(", "))
                     append("]\n")
                 })
-                SparkPackLoader.readPackageContent()
+                SparkPackLoader.readPackageContent(true)
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))
                 return@exceptionally null

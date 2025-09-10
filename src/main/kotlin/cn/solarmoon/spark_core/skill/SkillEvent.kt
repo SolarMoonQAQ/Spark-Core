@@ -12,7 +12,7 @@ import net.neoforged.neoforge.event.entity.player.SweepAttackEvent
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 open class SkillEvent {
-    class Rejected(val condition: SkillStartCondition): SkillEvent()
+    class Rejected(val condition: SkillCondition): SkillEvent()
     class Hurt(val event: LivingIncomingDamageEvent): SkillEvent()
     class TargetHurt(val event: LivingIncomingDamageEvent): SkillEvent()
     abstract class ActualHurt: SkillEvent() {
@@ -32,18 +32,18 @@ open class SkillEvent {
     class Death(val event: LivingDeathEvent): SkillEvent()
     class TargetDeath(val event: LivingDeathEvent): SkillEvent()
     object Init: SkillEvent()
-    object WindupStart: SkillEvent()
-    object Windup: SkillEvent()
-    object ActiveStart: SkillEvent()
-    object Active: SkillEvent()
-    object RecoveryStart: SkillEvent()
-    object Recovery: SkillEvent()
+    object Start: SkillEvent()
+    abstract class State(val state: SkillState): SkillEvent() {
+        class Enter(state: SkillState): State(state)
+        class Update(state: SkillState): State(state)
+        class Exit(state: SkillState): State(state)
+    }
     object End: SkillEvent()
     object PhysicsTick: SkillEvent()
 
     /**
      * 执行在技能参数初始化之后，函数初始化之前，因此可以正常拿取技能的持有对象和level参数，但不可涉及技能具体逻辑，因为此方法节点尚在技能初始化中，如有需要请调用[Init]
      */
-    object ConfigInit: SkillEvent()
+    class ConfigInit(val config: SkillConfig): SkillEvent()
     class Sync(val data: CompoundTag, val context: IPayloadContext): SkillEvent()
 }

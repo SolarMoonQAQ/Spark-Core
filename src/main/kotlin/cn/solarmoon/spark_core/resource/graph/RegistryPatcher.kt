@@ -186,18 +186,7 @@ object RegistryPatcher {
      */
     private fun applyToScriptRegistry(originalResource: ResourceLocation, overrideResource: ResourceLocation): Boolean {
         return try {
-            val registry = SparkRegistries.JS_SCRIPTS ?: return false
-            val overrideScript = registry.get(overrideResource)
-            if (overrideScript != null) {
-                // 解析模块ID
-                val moduleId = ModuleIdUtils.extractModuleIdFromNamespace(originalResource) ?: originalResource.namespace
-                
-                registry.registerDynamic(originalResource, overrideScript, moduleId)
-                true
-            } else {
-                SparkCore.LOGGER.warn("覆盖脚本资源不存在: $overrideResource")
-                false
-            }
+            false
         } catch (e: Exception) {
             SparkCore.LOGGER.error("应用脚本覆盖失败", e)
             false
@@ -209,8 +198,8 @@ object RegistryPatcher {
      */
     private fun applyToIKRegistry(originalResource: ResourceLocation, overrideResource: ResourceLocation): Boolean {
         return try {
-            val registry = SparkRegistries.IK_COMPONENT_TYPE ?: return false
-            val overrideIK = registry.get(overrideResource)
+            val registry = SparkRegistries.IK_COMPONENT_TYPE
+            val overrideIK = registry[overrideResource]
             if (overrideIK != null) {
                 // 解析模块ID
                 val moduleId = ModuleIdUtils.extractModuleIdFromNamespace(originalResource) ?: originalResource.namespace

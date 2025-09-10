@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.resource2.graph.SparkPackGraph
 import cn.solarmoon.spark_core.resource2.modules.SparkPackModule
 import cn.solarmoon.spark_core.resource2.readable.ReadableDirectory
 import cn.solarmoon.spark_core.resource2.readable.ReadableZip
+import net.neoforged.fml.ModLoader
 import net.neoforged.fml.loading.FMLPaths
 import net.neoforged.neoforge.common.NeoForge
 import java.nio.file.Files
@@ -23,20 +24,19 @@ object SparkPackLoader {
     lateinit var modules: Map<String, SparkPackModule>
         private set
 
-    fun initialize() {
+    fun initialize(isClientSide: Boolean) {
         val readers = mutableMapOf<String, SparkPackModule>()
-        NeoForge.EVENT_BUS.post(SparkPackageReaderRegisterEvent(readers))
+        ModLoader.postEvent(SparkPackageReaderRegisterEvent(readers))
         modules = readers
-        graph.originNodes.clear()
+        modules.values.forEach { it.onInitialize(isClientSide) }
+        LOGGER.info("已注册 ${modules.size} 个拓展包模块: ${modules.keys}")
     }
 
     /**
      * 读取本地目录下的所有可用包，并将包数据存入资源图
      */
     fun readPackageGraph() {
-        // 注册/刷新所有将读模块
-        initialize()
-
+        reset()
         // 如果目录不存在，创建
         val sparkModulesDir = FMLPaths.GAMEDIR.get().resolve(MODULE_NAME)
         Files.createDirectories(sparkModulesDir)
@@ -58,7 +58,7 @@ object SparkPackLoader {
     /**
      * 读取当前资源图内的包的具体数据
      */
-    fun readPackageContent() {
+    fun readPackageContent(isClientSide: Boolean) {
         // 验证并排序资源图依赖
         val orderedPacks = try {
             graph.resolveLoadOrder()
@@ -68,7 +68,7 @@ object SparkPackLoader {
         }
 
         // 按顺序加载所有的资源的所有已注册模块
-        modules.forEach { it.value.onStart() }
+        modules.forEach { it.value.onStart(isClientSide) }
         orderedPacks.forEach { pack ->
             modules.forEach { (id, module) ->
                 val prefix = "$id/"
@@ -80,7 +80,7 @@ object SparkPackLoader {
                         val fileName = parts.last()
                         val pathSegments = if (parts.size > 1) parts.dropLast(1) else emptyList()
                         try {
-                            module.read(pathSegments, fileName, content, pack)
+                            module.read(pathSegments, fileName, content, pack, isClientSide)
                         } catch (e: Exception) {
                             LOGGER.error("包 ${pack.meta.id} 读取 ${module.id} 模块失败: $e")
                         }
@@ -88,7 +88,11 @@ object SparkPackLoader {
             }
             LOGGER.info("拓展包 ${pack.meta.id} 已加载完毕")
         }
-        modules.forEach { it.value.onFinish() }
+        modules.forEach { it.value.onFinish(isClientSide) }
+    }
+
+    fun reset() {
+        graph.originNodes.clear()
     }
 
 }

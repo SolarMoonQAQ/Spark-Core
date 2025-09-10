@@ -23,12 +23,6 @@ import cn.solarmoon.spark_core.ik.sync.IKDataSendingTask
 import cn.solarmoon.spark_core.ik.sync.IKSyncTargetPayload
 import cn.solarmoon.spark_core.ik.sync.RequestIKComponentChangePayload
 import cn.solarmoon.spark_core.ik.sync.RequestSetIKTargetPayload
-import cn.solarmoon.spark_core.js.sync.JSIncrementalSyncS2CPacket
-import cn.solarmoon.spark_core.js.sync.JSPayload
-import cn.solarmoon.spark_core.js.sync.JSScriptDataSendingTask
-import cn.solarmoon.spark_core.js.sync.JSScriptDataSyncPayload
-import cn.solarmoon.spark_core.js.sync.JSSendingTask
-import cn.solarmoon.spark_core.js.sync.JSTaskPayload
 import cn.solarmoon.spark_core.physics.sync.AddCollisionCallbackPayload
 import cn.solarmoon.spark_core.physics.sync.AttackSystemSyncPayload
 import cn.solarmoon.spark_core.physics.sync.PhysicsCollisionObjectSyncPayload
@@ -88,16 +82,6 @@ object SparkPayloadRegister {
         skill.playToClient(SkillSyncPayload.TYPE, SkillSyncPayload.STREAM_CODEC, SkillSyncPayload::handleInClient)
         skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)
 
-        val js = event.registrar("js")
-        js.playToClient(JSPayload.TYPE, JSPayload.STREAM_CODEC, JSPayload::handleInClient)
-        js.configurationToClient(JSTaskPayload.TYPE, JSTaskPayload.STREAM_CODEC, JSTaskPayload::handleInClient)
-        js.configurationToServer(JSSendingTask.Return.TYPE, JSSendingTask.Return.STREAM_CODEC, JSSendingTask.Return::onAct)
-        js.playToClient(JSIncrementalSyncS2CPacket.TYPE, JSIncrementalSyncS2CPacket.STREAM_CODEC, JSIncrementalSyncS2CPacket::handleInClient)
-
-        // JS脚本全量同步
-        js.configurationToClient(JSScriptDataSyncPayload.TYPE, JSScriptDataSyncPayload.STREAM_CODEC, JSScriptDataSyncPayload::handleInClient)
-        js.configurationToServer(JSScriptDataSendingTask.AckPayload.TYPE, JSScriptDataSendingTask.AckPayload.STREAM_CODEC, JSScriptDataSendingTask.AckPayload::handleOnServer)
-
         val ik = event.registrar("ik")
         ik.configurationToClient(IKDataPayload.TYPE, IKDataPayload.STREAM_CODEC, IKDataPayload::handleInClient)
         ik.configurationToServer(IKDataSendingTask.Return.TYPE, IKDataSendingTask.Return.STREAM_CODEC, IKDataSendingTask.Return::onAct)
@@ -128,12 +112,10 @@ object SparkPayloadRegister {
 
     private fun task(event: RegisterConfigurationTasksEvent) {
         event.register(ModelDataSendingTask())
-        event.register(JSSendingTask())
         event.register(IKDataSendingTask())
         event.register(AnimationDataSendingTask())
         event.register(TextureDataSendingTask())
         event.register(TypedAnimationDataSendingTask())
-        event.register(JSScriptDataSendingTask())
         event.register(SparkPackageSendingTask())
     }
 

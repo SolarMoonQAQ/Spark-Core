@@ -55,7 +55,7 @@ class ShapeRenderer : VisualEffectRenderer() {
          */
         val physLevel = level.physicsLevel as ClientPhysicsLevel
         physLevel.world.pcoList.forEach { body ->
-            if (body.collideWithGroups == 0 && body.collisionGroup!=PhysicsCollisionObject.COLLISION_GROUP_BLOCK) return@forEach
+            if (body.collideWithGroups == 0) return@forEach
             val shape = body.collisionShape
             val transform = if (body is PhysicsRigidBody && !body.isKinematic) {
                 body.lastTickTransform.lerp(body.tickTransform, partialTicks).toTransformMatrix().toMatrix4f()

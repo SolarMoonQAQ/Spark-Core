@@ -136,10 +136,14 @@ class AnimInstance private constructor(
      * @return KeyframeRange对象，可用于注册事件处理器
      */
     fun registerKeyframeRange(id: String, start: Double, end: Double): KeyframeRange {
-        val range = KeyframeRange(id, start, end).apply { jsEngine = holder.animLevel.jsEngine }
+        val range = KeyframeRange(id, start, end)
         keyframeRanges[id] = range
         return range
     }
+
+    fun registerKeyframeRangeEnd(id: String, end: Double) = registerKeyframeRange(id, 0.0, end)
+
+    fun registerKeyframeRangeStart(id: String, start: Double) = registerKeyframeRange(id, start, maxLength)
 
     fun registerKeyframeRanges(id: String, vararg range: Vector2d, provider: KeyframeRange.(Int) -> Unit = {}): List<KeyframeRange> {
         val kfs = mutableListOf<KeyframeRange>()

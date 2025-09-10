@@ -54,7 +54,7 @@ object HandlerDiscoveryService {
             AnimationHandler(SparkRegistries.TYPED_ANIMATION),
             ModelHandler(SparkRegistries.MODELS),
             TextureHandler(SparkRegistries.DYNAMIC_TEXTURES),
-            JavaScriptHandler(SparkRegistries.JS_SCRIPTS),
+//            JavaScriptHandler(SparkRegistries.JS_SCRIPTS),
             IKConstraintHandler(SparkRegistries.IK_COMPONENT_TYPE),
             MetaHandler()
         )

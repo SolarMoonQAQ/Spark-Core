@@ -219,6 +219,7 @@ abstract class PhysicsLevel(
             pco.tickers.forEach { it.prePhysicsTick(pco, this) }
         }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
+        processTasks(PPhase.ALL)
         processTasks(PPhase.PRE)
 
         entities.forEach {
@@ -232,6 +233,7 @@ abstract class PhysicsLevel(
             pco.tickCount++
         }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Post(this))
+        processTasks(PPhase.ALL)
         processTasks(PPhase.POST)
     }
 

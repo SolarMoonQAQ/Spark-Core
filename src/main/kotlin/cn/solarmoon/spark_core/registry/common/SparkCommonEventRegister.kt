@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.animation.vanilla.BoneModifier
 import cn.solarmoon.spark_core.camera.CameraAdjuster
 import cn.solarmoon.spark_core.entity.EntityPatchApplier
 import cn.solarmoon.spark_core.ik.presets.PlayerIKPresets
-import cn.solarmoon.spark_core.js.SparkJsApplier
+import cn.solarmoon.spark_core.js.SparkJSApplier
 import cn.solarmoon.spark_core.physics.collision.CollisionFuncApplier
 import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
@@ -17,13 +17,13 @@ import cn.solarmoon.spark_core.skill.SkillApplier
 import cn.solarmoon.spark_core.state_machine.StateMachineApplier
 import cn.solarmoon.spark_core.state_machine.presets.CommonAnimApplier
 import cn.solarmoon.spark_core.state_machine.presets.PlayerBaseAnimStateMachine
+import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.common.NeoForge
 
 object SparkCommonEventRegister {
 
     @JvmStatic
-    fun register() {
-        add(SparkJsApplier)
+    fun register(bus: IEventBus) {
         add(PhysicsLevelApplier)
         add(PhysicsHostApplier)
         add(PresetBodyApplier)
@@ -40,6 +40,9 @@ object SparkCommonEventRegister {
         add(EntityPatchApplier)
         add(StateMachineApplier)
         add(SparkPackLoaderApplier)
+        add(SparkJSApplier)
+
+        bus.addListener(SparkPackLoaderApplier::clientStart)
     }
 
     private fun add(event: Any) {

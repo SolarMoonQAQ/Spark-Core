@@ -56,9 +56,7 @@ class PlaySkillCommand: SkillCommand(2) {
         for (entity in targets) {
             val skill = SkillManager.get(skillId)!!.createSkill(entity, level, true)
             skill?.apply {
-                if (isActivated) {
-                    successCount++
-                }
+                successCount++
             }
         }
 

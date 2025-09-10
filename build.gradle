@@ -130,10 +130,11 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
-tasks.register('generateLuaDocs', JavaExec) {
+tasks.register("generateJSDocs", JavaExec) {
     group = "build"
-    description = "解析源码并生成 Lua 注释文件"
-    mainClass = 'cn.solarmoon.spark_core.LuaDocsGenerator'
+    description = "解析源码并生成 TS 声明文件"
+    mainClass = "cn.solarmoon.spark_core.js.doc.TSDocsGenerator"
     classpath = sourceSets.main.runtimeClasspath
 }
+
 
