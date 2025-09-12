@@ -14,7 +14,7 @@ import java.util.function.Consumer
 class SparkPackageSendingTask(): ICustomConfigurationTask {
 
     override fun run(sender: Consumer<CustomPacketPayload>) {
-        sender.accept(SparkPackagePayload(SparkPackLoader.graph))
+        sender.accept(SparkPackagePayload(SparkPackLoader.collectRemote()))
     }
 
     override fun type(): ConfigurationTask.Type {

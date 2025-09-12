@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.resource2.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.resource2.SparkPackLoader
-import cn.solarmoon.spark_core.resource2.graph.SparkPackGraph
+import cn.solarmoon.spark_core.resource2.graph.SparkPackage
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 data class SparkPackagePayload(
-    val graph: SparkPackGraph,
+    val packs: List<SparkPackage>,
 ) : CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -21,14 +21,14 @@ data class SparkPackagePayload(
         @JvmStatic
         fun handleInClient(payload: SparkPackagePayload, context: IPayloadContext) {
             context.enqueueWork {
-                SparkPackLoader.reset()
-                SparkPackLoader.graph.originNodes.putAll(payload.graph.originNodes)
+                SparkPackLoader.acceptRemote(payload.packs)
                 SparkPackLoader.LOGGER.info(buildString {
                     appendLine()
                     appendLine("💻已从服务器接收拓展包💻")
                     append("[")
-                    append(SparkPackLoader.graph.originNodes.keys.joinToString(", "))
-                    append("]\n")
+                    append(payload.packs.map { it.meta.id }.joinToString(", "))
+                    appendLine("]")
+                    append("包含模块: ${payload.packs.map { it.modules }.distinct().joinToString(", ")}")
                 })
                 SparkPackLoader.readPackageContent(true)
             }.exceptionally {
@@ -44,7 +44,7 @@ data class SparkPackagePayload(
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            SparkPackGraph.STREAM_CODEC, SparkPackagePayload::graph,
+            SparkPackage.LIST_STREAM_CODEC, SparkPackagePayload::packs,
             ::SparkPackagePayload
         )
     }

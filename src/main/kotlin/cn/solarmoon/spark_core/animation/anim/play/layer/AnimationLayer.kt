@@ -160,7 +160,7 @@ class AnimationLayer(
             // 避免重复触发：确保当前 layer 的 animation 还指向这个动画
             if (only.anim.isCancelled && only.transitionState != TransitionState.EXIT && animation == only.anim) {
                 // 触发整层退出（BoneSpace 会根据 mask 淡出；AnimSpace 不再做局部 end）
-                only.anim.holder.animLevel.submitImmediateTask(PPhase.POST) {
+                only.anim.holder.animLevel.submitImmediateTask {
                     stopAnimation(data.exitTransitionTime)
                 }
             }

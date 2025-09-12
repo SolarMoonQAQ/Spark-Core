@@ -115,7 +115,7 @@ class AnimInstance private constructor(
             Loop.ONCE -> {
                 if (time < maxLength) step(overallSpeed)
                 else if (!isCancelled) {
-                    holder.animLevel.submitImmediateTask(PPhase.POST) {
+                    holder.animLevel.submitImmediateTask {
                         isCancelled = true
                         triggerEvent(AnimEvent.Completed)
                     }

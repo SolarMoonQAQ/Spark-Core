@@ -24,7 +24,7 @@ class RotateAroundHostTicker: PhysicsCollisionObjectTicker {
         if (body is PhysicsRigidBody) {
             val owner = body.owner
             if (owner is Entity) {
-                level.submitImmediateTask(PPhase.PRE) {
+                level.submitImmediateTask {
                     body.setPhysicsLocation(owner.position().toBVector3f())
                     body.setPhysicsRotation(Matrix3f().rotateY(Mth.wrapDegrees(owner.yRot).toRadians()).toBMatrix3f())
 

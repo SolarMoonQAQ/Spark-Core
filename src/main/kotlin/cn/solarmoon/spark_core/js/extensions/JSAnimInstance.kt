@@ -43,7 +43,7 @@ interface JSAnimInstance {
 
     fun js_registerKeyframeRangeStart(id: String, start: Double): KeyframeRange = js_self.registerKeyframeRangeStart(id, start)
 
-    fun registerKeyframeRanges(id: String, range: List<List<Double>>, provider: (KeyframeRange, Int) -> Unit): List<KeyframeRange> =
+    fun registerKeyframeRanges(id: String, range: List<DoubleArray>, provider: (KeyframeRange, Int) -> Unit): List<KeyframeRange> =
         js_self.registerKeyframeRanges(id, *range.map { Vector2d(it[0], it[1]) }.toTypedArray()) { index ->
             provider(this, index)
         }

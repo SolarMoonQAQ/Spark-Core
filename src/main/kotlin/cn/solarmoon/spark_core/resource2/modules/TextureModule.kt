@@ -11,6 +11,9 @@ import net.neoforged.fml.loading.FMLEnvironment
 class TextureModule : SparkPackModule {
 
     override val id: String = "textures"
+    override val mode: ReadMode = ReadMode.LOCAL_ONLY
+
+
     var count = 0
     override fun onStart(isClientSide: Boolean) {
         if (FMLEnvironment.dist.isClient) {

@@ -26,9 +26,9 @@ class ReloadPackageCommand: PackageCommand(2) {
             true
         )
         SparkPackResourceLoader.reload()
-        SparkPackLoader.readPackageGraph()
+        SparkPackLoader.readPackageGraph(false)
         SparkPackLoader.readPackageContent(false)
-        PacketDistributor.sendToAllPlayers(SparkPackageReloadPayload(SparkPackLoader.graph))
+        PacketDistributor.sendToAllPlayers(SparkPackageReloadPayload(SparkPackLoader.collectRemote()))
         source.sendSuccess(
             { Component.translatable("command.${SparkCore.MOD_ID}.package.reload.success") },
             true

@@ -51,7 +51,10 @@ object AnimApplier {
     @SubscribeEvent
     private fun itemTick(event: ItemStackInventoryTickEvent) {
         val stack = event.stack
-        stack.getCapability(SparkCapabilities.ITEM_ANIMATABLE, event.entity.level())?.inventoryTick(event.entity)
+        stack.getCapability(SparkCapabilities.ITEM_ANIMATABLE, event.entity.level())?.apply {
+            inventoryTick(event.entity)
+            animController.tick()
+        }
     }
 
     @SubscribeEvent

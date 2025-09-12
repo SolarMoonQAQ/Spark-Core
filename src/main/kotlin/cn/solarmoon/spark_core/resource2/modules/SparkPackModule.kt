@@ -6,6 +6,8 @@ interface SparkPackModule {
 
     val id: String
 
+    val mode: ReadMode get() = ReadMode.SERVER_TO_CLIENT
+
     fun onInitialize(isClientSide: Boolean) {}
 
     /**

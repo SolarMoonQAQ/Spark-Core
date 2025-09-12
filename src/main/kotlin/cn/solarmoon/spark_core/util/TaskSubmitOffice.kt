@@ -12,7 +12,7 @@ interface TaskSubmitOffice {
         taskMap.getOrPut(phase) { ConcurrentHashMap() } [key] = task
     }
 
-    fun submitImmediateTask(phase: PPhase, task: () -> Unit) {
+    fun submitImmediateTask(phase: PPhase = PPhase.ALL, task: () -> Unit) {
         immediateQueue.getOrPut(phase) { ConcurrentLinkedDeque() }.add(task)
     }
 

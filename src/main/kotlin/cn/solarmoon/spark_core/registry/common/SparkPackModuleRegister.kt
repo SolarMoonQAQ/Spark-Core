@@ -16,6 +16,7 @@ object SparkPackModuleRegister {
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(ModelModule())
         event.register(AnimationModule())
+        event.register(JSScriptModule())
         event.register(recipe)
         event.register(lang)
         event.register(TextureModule())
@@ -29,7 +30,7 @@ object SparkPackModuleRegister {
 
     @JvmStatic
     fun register(bus: IEventBus) {
-        NeoForge.EVENT_BUS.addListener(::reg)
+        bus.addListener(::reg)
         bus.addListener(::regReloadListener)
     }
 

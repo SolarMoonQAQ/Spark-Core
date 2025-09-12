@@ -23,7 +23,7 @@ class MoveWithBoundingBoxTicker(private val shapeOverride: Boolean = false) : Ph
         if (body is PhysicsBody) {
             val entity = body.getOwner<Entity>() ?: return
             val physicsLevel: PhysicsLevel = entity.level().physicsLevel
-            physicsLevel.submitImmediateTask(PPhase.PRE) {
+            physicsLevel.submitImmediateTask {
                 val bb = entity.boundingBox
                 val pos = body.getPhysicsLocation(null)
                 var targetPos = bb.center.toBVector3f()

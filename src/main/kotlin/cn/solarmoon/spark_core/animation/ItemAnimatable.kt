@@ -36,7 +36,6 @@ open class ItemAnimatable(
         oPosition = owner.getPosition(0f)
         yRot = owner.getViewYRot(1f)
         oYRot = owner.getViewYRot(0f)
-        animController.tick()
     }
 
     override fun getWorldPosition(partialTick: Float): Vec3 {

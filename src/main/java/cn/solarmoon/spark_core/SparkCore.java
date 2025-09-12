@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core;
 
 import cn.solarmoon.spark_core.config.SparkConfig;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
+import cn.solarmoon.spark_core.js.SparkJS;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.registry.client.*;

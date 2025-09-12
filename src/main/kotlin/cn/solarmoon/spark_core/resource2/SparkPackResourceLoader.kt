@@ -37,7 +37,7 @@ object SparkPackResourceLoader {
             Files.list(sourceDir).use { modules ->
                 modules.filter { Files.isDirectory(it) }.forEach { moduleDir ->
                     // 检查 meta.json 是否存在
-                    val metaFile = moduleDir.resolve(SparkPackLoader.META_NAME)
+                    val metaFile = moduleDir.resolve(SparkPackLoader.META_PATH)
                     if (Files.exists(metaFile) && Files.isRegularFile(metaFile)) {
                         val zipPath = runModulesDir.resolve("${moduleDir.fileName}.zip")
                         zipModule(moduleDir, zipPath)

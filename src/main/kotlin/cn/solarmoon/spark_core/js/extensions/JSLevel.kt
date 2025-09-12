@@ -16,11 +16,11 @@ interface JSLevel {
 
     val level get() = this as Level
 
-    fun playSound(pos: List<Double>, sound: String, source: String) {
+    fun playSound(pos: DoubleArray, sound: String, source: String) {
         level.playSound(null, pos[0], pos[1], pos[2], SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()))
     }
 
-    fun playSound(pos: List<Double>, sound: String, source: String, volume: Double, pitch: Double) {
+    fun playSound(pos: DoubleArray, sound: String, source: String, volume: Double, pitch: Double) {
         level.playSound(null, pos[0], pos[1], pos[2], SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()), volume.toFloat(), pitch.toFloat())
     }
 

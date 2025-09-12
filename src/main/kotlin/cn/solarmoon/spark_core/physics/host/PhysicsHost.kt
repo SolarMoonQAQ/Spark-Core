@@ -26,7 +26,7 @@ interface PhysicsHost {
         apply: T.() -> Unit = {}
     ): T {
         physicsLevel.apply {
-            submitImmediateTask(PPhase.PRE) {
+            submitImmediateTask {
                 hostManager
                     .getOrPut(this@PhysicsHost) { ConcurrentHashMap() }
                     .compute(body.name) { _, existing ->
@@ -70,7 +70,7 @@ interface PhysicsHost {
      */
     fun removeBody(name: String) {
         physicsLevel.apply {
-            submitImmediateTask(PPhase.PRE) {
+            submitImmediateTask {
                 hostManager[this@PhysicsHost]?.remove(name)?.let {
                     world.removeCollisionObject(it)
                 }
@@ -79,7 +79,7 @@ interface PhysicsHost {
     }
 
     fun removeAllBodies() {
-        physicsLevel.submitImmediateTask(PPhase.PRE) {
+        physicsLevel.submitImmediateTask {
             physicsLevel.hostManager[this@PhysicsHost]?.let {
                 it.values.forEach { physicsLevel.world.removeCollisionObject(it) }
                 it.clear()

@@ -11,14 +11,17 @@ object SparkPackLoaderApplier {
     fun serverStart(event: ServerAboutToStartEvent) {
         SparkPackLoader.apply {
             initialize(false)
-            readPackageGraph()
+            readPackageGraph(false)
             readPackageContent(false)
         }
     }
 
     fun clientStart(event: FMLClientSetupEvent) {
         event.enqueueWork {
-            SparkPackLoader.initialize(true)
+            SparkPackLoader.apply {
+                initialize(true)
+                readPackageGraph(true)
+            }
         }
     }
 

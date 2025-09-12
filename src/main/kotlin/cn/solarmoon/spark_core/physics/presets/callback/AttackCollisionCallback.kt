@@ -22,7 +22,7 @@ interface AttackCollisionCallback: CollisionCallback {
     override fun onProcessed(o1: PhysicsCollisionObject, o2: PhysicsCollisionObject, o1Point: ManifoldPoint, o2Point: ManifoldPoint, manifoldId: Long) {
         val attacker = o1.owner as? Entity ?: return
         (o2.owner as? Entity)?.apply {
-            this.level().submitImmediateTask(PPhase.POST) {
+            this.level().submitImmediateTask {
                 attackSystem.customAttack(this) {
                     this@apply.hurtData.write(SparkHurtDatas.COLLISION, CollisionHurtData(o1, o2, o1Point, o2Point, manifoldId))
                     preAttack(attacker, this@apply, o1, o2, o1Point, o2Point, manifoldId)

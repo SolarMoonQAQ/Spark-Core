@@ -30,9 +30,9 @@ object EntityPhysicsManager {
         entityFrozenStates[entity] = frozen
         
         // 获取实体关联的所有物理体
-        val bodies = entity.getAllBodies() ?: return
+        val bodies = entity.getAllBodies()
         
-        entity.physicsLevel.submitImmediateTask(PPhase.PRE) {
+        entity.physicsLevel.submitImmediateTask {
             for (body in bodies) {
                 setBodyFrozen(body, frozen)
             }

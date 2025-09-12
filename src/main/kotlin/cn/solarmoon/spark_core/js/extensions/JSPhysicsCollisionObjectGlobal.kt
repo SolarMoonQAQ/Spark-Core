@@ -16,7 +16,7 @@ import java.util.UUID
 @JSGlobal("PhysicsCollisionObject")
 object JSPhysicsCollisionObjectGlobal {
 
-    fun createCollisionBoxBoundToBone(animatable: IAnimatable<*>, boneName: String, size: List<Double>, offset: List<Double>, init: ((PhysicsCollisionObject) -> Unit)?): PhysicsCollisionObject {
+    fun createCollisionBoxBoundToBone(animatable: IAnimatable<*>, boneName: String, size: DoubleArray, offset: DoubleArray, init: ((PhysicsCollisionObject) -> Unit)?): PhysicsCollisionObject {
         val animatable = animatable as? IEntityAnimatable<*> ?: throw IllegalArgumentException("动画体必须是实体类型！")
         val entity = animatable.animatable
         return entity.bindBody(

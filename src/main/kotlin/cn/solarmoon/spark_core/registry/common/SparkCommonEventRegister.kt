@@ -6,7 +6,6 @@ import cn.solarmoon.spark_core.animation.vanilla.BoneModifier
 import cn.solarmoon.spark_core.camera.CameraAdjuster
 import cn.solarmoon.spark_core.entity.EntityPatchApplier
 import cn.solarmoon.spark_core.ik.presets.PlayerIKPresets
-import cn.solarmoon.spark_core.js.SparkJSApplier
 import cn.solarmoon.spark_core.physics.collision.CollisionFuncApplier
 import cn.solarmoon.spark_core.physics.host.PhysicsHostApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
@@ -40,7 +39,6 @@ object SparkCommonEventRegister {
         add(EntityPatchApplier)
         add(StateMachineApplier)
         add(SparkPackLoaderApplier)
-        add(SparkJSApplier)
 
         bus.addListener(SparkPackLoaderApplier::clientStart)
     }

@@ -40,7 +40,7 @@ class SparkCollisionCallback @JvmOverloads constructor(
     ) {
         if (owner.level().isClientSide) return
         
-        attacker.level().submitImmediateTask(PPhase.POST) {
+        attacker.level().submitImmediateTask {
             // 发送 SparkCore 通用事件
             val event = CollisionProcessedEvent(aBody, bBody, aPoint, bPoint, manifoldId)
             NeoForge.EVENT_BUS.post(event)
@@ -58,7 +58,7 @@ class SparkCollisionCallback @JvmOverloads constructor(
     ): Boolean {
         if (attacker.level().isClientSide) return false
         
-        attacker.level().submitImmediateTask(PPhase.POST) {
+        attacker.level().submitImmediateTask {
             // 发送 SparkCore 通用事件
             val event = CollisionProcessedEvent(aBody, bBody, aPoint, bPoint, manifoldId)
             NeoForge.EVENT_BUS.post(event)
@@ -77,7 +77,7 @@ class SparkCollisionCallback @JvmOverloads constructor(
     ) {
         if (attacker.level().isClientSide) return
         
-        attacker.level().submitImmediateTask(PPhase.POST) {
+        attacker.level().submitImmediateTask {
             // 发送 SparkCore 通用事件
             val event = CollisionProcessedEvent(aBody, bBody, aPoint, bPoint, manifoldId)
             NeoForge.EVENT_BUS.post(event)

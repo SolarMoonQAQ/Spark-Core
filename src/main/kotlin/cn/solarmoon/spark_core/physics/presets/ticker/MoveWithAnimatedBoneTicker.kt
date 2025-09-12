@@ -27,7 +27,7 @@ open class MoveWithAnimatedBoneTicker(
         val entity = body.owner as? Entity ?: return
         val animatable = body.owner as? IAnimatable<*> ?: return
         if (body is PhysicsRigidBody) {
-            entity.level().physicsLevel.submitImmediateTask(PPhase.PRE) {
+            entity.level().physicsLevel.submitImmediateTask {
                 val currentPos = entity.position().toBVector3f()
                 val previousPos = lastPos
                 lastPos.set(currentPos)

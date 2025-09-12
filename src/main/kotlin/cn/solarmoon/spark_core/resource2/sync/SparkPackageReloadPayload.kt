@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.resource2.sync
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.resource2.SparkPackLoader
 import cn.solarmoon.spark_core.resource2.graph.SparkPackGraph
+import cn.solarmoon.spark_core.resource2.graph.SparkPackage
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
@@ -10,7 +11,7 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 data class SparkPackageReloadPayload(
-    val graph: SparkPackGraph,
+    val packs: List<SparkPackage>
 ) : CustomPacketPayload {
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
@@ -22,9 +23,10 @@ data class SparkPackageReloadPayload(
         fun handleInClient(payload: SparkPackageReloadPayload, context: IPayloadContext) {
             context.enqueueWork {
                 SparkPackLoader.reset()
-                SparkPackLoader.graph.originNodes.putAll(payload.graph.originNodes)
-                context.player().sendSystemMessage(Component.translatable("command.${SparkCore.MOD_ID}.package.reload.success.client", payload.graph.originNodes.size))
-                SparkCore.LOGGER.info("已从服务器接收 {} 个拓展包", payload.graph.originNodes.size)
+                SparkPackLoader.readPackageGraph(true)
+                SparkPackLoader.acceptRemote(payload.packs)
+                context.player().sendSystemMessage(Component.translatable("command.${SparkCore.MOD_ID}.package.reload.success.client", payload.packs.size))
+                SparkPackLoader.LOGGER.info("已从服务器重载 ${payload.packs.size} 个拓展包: ${payload.packs.map { it.meta.id }}")
                 SparkPackLoader.readPackageContent(true)
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))
@@ -37,7 +39,7 @@ data class SparkPackageReloadPayload(
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            SparkPackGraph.STREAM_CODEC, SparkPackageReloadPayload::graph,
+            SparkPackage.LIST_STREAM_CODEC, SparkPackageReloadPayload::packs,
             ::SparkPackageReloadPayload
         )
     }
