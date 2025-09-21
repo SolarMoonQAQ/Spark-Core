@@ -1,0 +1,11 @@
+:root {
+  --sidebar-color: #5a1f1b;
+}
+
+@font-face {
+  font-family: 'maobi';
+  src: url('@/assets/font/maobi.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
