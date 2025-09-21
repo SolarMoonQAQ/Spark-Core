@@ -17,4 +17,8 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  build: {
+    outDir: 'docs',      // 输出目录改成 docs
+    emptyOutDir: true    // 每次构建前清空 docs
+  }
 })
