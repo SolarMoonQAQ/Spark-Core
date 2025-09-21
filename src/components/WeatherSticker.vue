@@ -8,8 +8,9 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 // 固定白天，也可以根据时间判断 day/night
 const type = 'day'
 
-// 所有天气代码
+// 先过滤掉没有 SVG 的 code
 const codes = Object.keys(window.config.weathericonname[type])
+  .filter(code => !!window.config.weathericon[type]?.[code])
 
 // 当前索引
 const index = ref(0)
@@ -17,14 +18,14 @@ const index = ref(0)
 // 当前 SVG
 const svgCode = computed(() => {
   const code = codes[index.value]
-  return window.config.weathericon[type]?.[code] || ''
+  return window.config.weathericon[type][code]
 })
 
+// 定时器
 let timer
 onMounted(() => {
   timer = setInterval(() => {
-    // 顺序轮换
-    index.value = (index.value + 1) % codes.length
+    index.value = (index.value + 1) % codes.length // 顺序轮播
   }, 3000) // 每 3 秒切换一次
 })
 
