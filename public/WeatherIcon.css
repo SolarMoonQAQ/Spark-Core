@@ -1,0 +1,1625 @@
+
+      /**
+        * Created by newcookie on 2020/01/15.
+        * 天气图标动画css 
+        **/
+      /* 纯css */
+      .weathericon {
+        box-sizing: border-box;
+      }
+      .weathericon *,
+      .weathericon *:before,
+      .weathericon *:after {
+        box-sizing: inherit;
+      }
+      
+      .weathericon {
+        position: relative;
+        display: inline-block;
+        width: 66px;
+        height: 66px;
+        font-size: 14px;
+        transform: scale(0.5);
+      }
+      
+      /* svg + css */
+      svg.weathersvg {
+        width: 48px;
+        height: 48px;
+        margin: 0;
+        padding: 0;
+        fill: #fff;
+      }
+      .icon-center {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      
+      .translateX_50px {
+        -webkit-transform: translateX(50px);
+        transform: translateX(50px);
+      }
+      .translateX_70px {
+        -webkit-transform: translateX(70px);
+        transform: translateX(70px);
+      }
+      .translateX_-70px {
+        -webkit-transform: translateX(-70px);
+        transform: translateX(-70px);
+      }
+      .translateX_80px {
+        -webkit-transform: translateX(80px);
+        transform: translateX(80px);
+      }
+      .translateY_80px {
+        -webkit-transform: translateY(80px);
+        transform: translateY(80px);
+      }
+      .translateY_50px {
+        -webkit-transform: translateY(50px);
+        transform: translateY(50px);
+      }
+      
+      .translateX_50px-Y_80px {
+        -webkit-transform: translate(50px, 80px);
+        transform: translate(50px, 80px);
+      }
+      .translateX_70px-Y_50px {
+        -webkit-transform: translate(70px, 50px);
+        transform: translate(70px, 50px);
+      }
+      .translateX_70px-Y_70px {
+        -webkit-transform: translate(70px, 70px);
+        transform: translate(70px, 70px);
+      }
+      .translateX_0px-Y_50px {
+        -webkit-transform: translate(0px, 50px);
+        transform: translate(0px, 50px);
+      }
+      .translateX_0px-Y_150px {
+        -webkit-transform: translate(0px, 150px);
+        transform: translate(0px, 150px);
+      }
+      .translateX_0px-Y_-150px {
+        -webkit-transform: translate(0px, -150px);
+        transform: translate(0px, -150px);
+      }
+      .translateX_70px-Y_150px {
+        -webkit-transform: translate(70px, 150px);
+        transform: translate(70px, 150px);
+      }
+      .translateX_-70px-Y_50px {
+        -webkit-transform: translate(-70px, 50px);
+        transform: translate(-70px, 50px);
+      }
+      
+      .animation-delay-0_1 {
+        -webkit-animation-delay: 0.1s !important;
+        animation-delay: 0.1s !important;
+      }
+      .animation-delay-0_2 {
+        -webkit-animation-delay: 0.2s !important;
+        animation-delay: 0.2s !important;
+      }
+      .animation-delay-0_3 {
+        -webkit-animation-delay: 0.3s !important;
+        animation-delay: 0.3s !important;
+      }
+      .animation-delay-0_4 {
+        -webkit-animation-delay: 0.4s !important;
+        animation-delay: 0.4s !important;
+      }
+      .animation-delay-0_5 {
+        -webkit-animation-delay: 0.5s !important;
+        animation-delay: 0.5s !important;
+      }
+      .animation-delay-0_6 {
+        -webkit-animation-delay: 0.6s !important;
+        animation-delay: 0.6s !important;
+      }
+      .animation-delay-0_7 {
+        -webkit-animation-delay: 0.7s !important;
+        animation-delay: 0.7s !important;
+      }
+      .animation-delay-0_8 {
+        -webkit-animation-delay: 0.8s !important;
+        animation-delay: 0.8s !important;
+      }
+      .animation-delay-0_9 {
+        -webkit-animation-delay: 0.9s !important;
+        animation-delay: 0.9s !important;
+      }
+      .animation-delay-1 {
+        -webkit-animation-delay: 1s !important;
+        animation-delay: 1s !important;
+      }
+      .animation-delay-1_1 {
+        -webkit-animation-delay: 1.1s !important;
+        animation-delay: 1.1s !important;
+      }
+      .animation-delay-1_2 {
+        -webkit-animation-delay: 1.2s !important;
+        animation-delay: 1.2s !important;
+      }
+      .animation-delay-1_3 {
+        -webkit-animation-delay: 1.3s !important;
+        animation-delay: 1.3s !important;
+      }
+      .animation-delay-1_4 {
+        -webkit-animation-delay: 1.4s !important;
+        animation-delay: 1.4s !important;
+      }
+      .animation-delay-1_5 {
+        -webkit-animation-delay: 1.5s !important;
+        animation-delay: 1.5s !important;
+      }
+      .animation-delay-1_6 {
+        -webkit-animation-delay: 1.6s !important;
+        animation-delay: 1.6s !important;
+      }
+      .animation-delay-1_7 {
+        -webkit-animation-delay: 1.7s !important;
+        animation-delay: 1.7s !important;
+      }
+      .animation-delay-1_8 {
+        -webkit-animation-delay: 1.8s !important;
+        animation-delay: 1.8s !important;
+      }
+      .animation-delay-1_9 {
+        -webkit-animation-delay: 1.9s !important;
+        animation-delay: 1.9s !important;
+      }
+      .animation-delay-2 {
+        -webkit-animation-delay: 2s !important;
+        animation-delay: 2s !important;
+      }
+      
+      .animation-duration-0_1 {
+        -webkit-animation-duration: 0.1s !important;
+        animation-duration: 0.1s !important;
+      }
+      .animation-duration-0_2 {
+        -webkit-animation-duration: 0.2s !important;
+        animation-duration: 0.2s !important;
+      }
+      .animation-duration-0_3 {
+        -webkit-animation-duration: 0.3s !important;
+        animation-duration: 0.3s !important;
+      }
+      .animation-duration-0_4 {
+        -webkit-animation-duration: 0.4s !important;
+        animation-duration: 0.4s !important;
+      }
+      .animation-duration-0_5 {
+        -webkit-animation-duration: 0.5s !important;
+        animation-duration: 0.5s !important;
+      }
+      .animation-duration-0_6 {
+        -webkit-animation-duration: 0.6s !important;
+        animation-duration: 0.6s !important;
+      }
+      .animation-duration-0_7 {
+        -webkit-animation-duration: 0.7s !important;
+        animation-duration: 0.7s !important;
+      }
+      .animation-duration-0_8 {
+        -webkit-animation-duration: 0.8s !important;
+        animation-duration: 0.8s !important;
+      }
+      .animation-duration-0_9 {
+        -webkit-animation-duration: 0.9s !important;
+        animation-duration: 0.9s !important;
+      }
+      .animation-duration-1 {
+        -webkit-animation-duration: 1s !important;
+        animation-duration: 1s !important;
+      }
+      .animation-duration-1_1 {
+        -webkit-animation-duration: 1.1s !important;
+        animation-duration: 1.1s !important;
+      }
+      .animation-duration-1_2 {
+        -webkit-animation-duration: 1.2s !important;
+        animation-duration: 1.2s !important;
+      }
+      .animation-duration-1_3 {
+        -webkit-animation-duration: 1.3s !important;
+        animation-duration: 1.3s !important;
+      }
+      .animation-duration-1_4 {
+        -webkit-animation-duration: 1.4s !important;
+        animation-duration: 1.4s !important;
+      }
+      .animation-duration-1_5 {
+        -webkit-animation-duration: 1.5s !important;
+        animation-duration: 1.5s !important;
+      }
+      .animation-duration-1_6 {
+        -webkit-animation-duration: 1.6s !important;
+        animation-duration: 1.6s !important;
+      }
+      .animation-duration-1_7 {
+        -webkit-animation-duration: 1.7s !important;
+        animation-duration: 1.7s !important;
+      }
+      .animation-duration-1_8 {
+        -webkit-animation-duration: 1.8s !important;
+        animation-duration: 1.8s !important;
+      }
+      .animation-duration-1_9 {
+        -webkit-animation-duration: 1.9s !important;
+        animation-duration: 1.9s !important;
+      }
+      .animation-duration-2 {
+        -webkit-animation-duration: 2s !important;
+        animation-duration: 2s !important;
+      }
+      
+      /* Thunder Bolt Animation */
+      .thunder-cloud .bolt {
+        -webkit-animation: bolt-flash 2s infinite;
+        animation: bolt-flash 2s infinite;
+      }
+      
+      @-webkit-keyframes bolt-flash {
+        0% {
+          -webkit-transform: translateY(-25px) translateX(25px) scaleY(0.95);
+          transform: translateY(-25px) translateX(25px) scaleY(0.95);
+          opacity: 0;
+        }
+        5%,
+        25% {
+          opacity: 1;
+        }
+        15%,
+        20% {
+          opacity: 0;
+        }
+        50% {
+          -webkit-transform: translateY(8px) translateX(-10px);
+          transform: translateY(8px) translateX(-10px);
+          opacity: 1;
+        }
+        80% {
+          -webkit-transform: translateY(8px) translateX(-10px);
+          transform: translateY(8px) translateX(-10px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-25px) translateX(25px) scaleY(0.95);
+          transform: translateY(-25px) translateX(25px) scaleY(0.95);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes bolt-flash {
+        0% {
+          -webkit-transform: translateY(-25px) translateX(25px) scaleY(0.95);
+          transform: translateY(-25px) translateX(25px) scaleY(0.95);
+          opacity: 0;
+        }
+        5%,
+        25% {
+          opacity: 1;
+        }
+        15%,
+        20% {
+          opacity: 0;
+        }
+        50% {
+          -webkit-transform: translateY(8px) translateX(-10px);
+          transform: translateY(8px) translateX(-10px);
+          opacity: 1;
+        }
+        80% {
+          -webkit-transform: translateY(8px) translateX(-10px);
+          transform: translateY(8px) translateX(-10px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-25px) translateX(25px) scaleY(0.95);
+          transform: translateY(-25px) translateX(25px) scaleY(0.95);
+          opacity: 0;
+        }
+      }
+      
+      /* 07 小雨 08 中雨 09 大雨 10 暴雨 Raindrops Animation */
+      .rain-cloud .raindrop-one,
+      .rain-cloud .raindrop-two,
+      .rain-cloud .raindrop-three,
+      .rain-cloud .raindrop-four {
+        opacity: 0;
+        -webkit-animation-timing-function: cubic-bezier(1, 0, 1, 1);
+        animation-timing-function: cubic-bezier(1, 0, 1, 1);
+      }
+      
+      .rain-cloud .raindrop-one {
+        -webkit-animation: falling-drop-one 2s infinite;
+        animation: falling-drop-one 2s infinite;
+      }
+      
+      .rain-cloud .raindrop-two {
+        -webkit-animation: falling-drop-two 1.9s infinite;
+        animation: falling-drop-two 1.9s infinite;
+        -webkit-animation-delay: 0.8s;
+        animation-delay: 0.8s;
+      }
+      
+      .rain-cloud .raindrop-three {
+        -webkit-animation: falling-drop-three 1.8s infinite;
+        animation: falling-drop-three 1.8s infinite;
+        -webkit-animation-delay: 0.5s;
+        animation-delay: 0.5s;
+      }
+      
+      .rain-cloud .raindrop-four {
+        -webkit-animation: falling-drop-four 2.1s infinite;
+        animation: falling-drop-four 2.1s infinite;
+        -webkit-animation-delay: 0.2s;
+        animation-delay: 0.2s;
+      }
+      
+      @-webkit-keyframes falling-drop-one {
+        0% {
+          -webkit-transform: translateY(-35px);
+          transform: translateY(-35px);
+          opacity: 0;
+        }
+        10% {
+          -webkit-transform: translateY(-15px);
+          transform: translateY(-15px);
+          opacity: 1;
+        }
+        30% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(100px);
+          transform: translateY(100px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-35px);
+          transform: translateY(-35px);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes falling-drop-one {
+        0% {
+          -webkit-transform: translateY(-35px);
+          transform: translateY(-35px);
+          opacity: 0;
+        }
+        10% {
+          -webkit-transform: translateY(-15px);
+          transform: translateY(-15px);
+          opacity: 1;
+        }
+        30% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(100px);
+          transform: translateY(100px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-35px);
+          transform: translateY(-35px);
+          opacity: 0;
+        }
+      }
+      
+      @-webkit-keyframes falling-drop-two {
+        0% {
+          -webkit-transform: translateY(-105px);
+          transform: translateY(-105px);
+          opacity: 0;
+        }
+        10% {
+          -webkit-transform: translateY(-85px);
+          transform: translateY(-85px);
+          opacity: 1;
+        }
+        30% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(5px);
+          transform: translateY(5px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-105px);
+          transform: translateY(-105px);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes falling-drop-two {
+        0% {
+          -webkit-transform: translateY(-105px);
+          transform: translateY(-105px);
+          opacity: 0;
+        }
+        10% {
+          -webkit-transform: translateY(-85px);
+          transform: translateY(-85px);
+          opacity: 1;
+        }
+        30% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(5px);
+          transform: translateY(5px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-105px);
+          transform: translateY(-105px);
+          opacity: 0;
+        }
+      }
+      
+      @-webkit-keyframes falling-drop-three {
+        0% {
+          -webkit-transform: translateY(-105px);
+          transform: translateY(-105px);
+          opacity: 0;
+        }
+        10% {
+          -webkit-transform: translateY(-85px);
+          transform: translateY(-85px);
+          opacity: 1;
+        }
+        30% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(35px);
+          transform: translateY(35px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-105px);
+          transform: translateY(-105px);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes falling-drop-three {
+        0% {
+          -webkit-transform: translateY(-105px);
+          transform: translateY(-105px);
+          opacity: 0;
+        }
+        10% {
+          -webkit-transform: translateY(-85px);
+          transform: translateY(-85px);
+          opacity: 1;
+        }
+        30% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(35px);
+          transform: translateY(35px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-105px);
+          transform: translateY(-105px);
+          opacity: 0;
+        }
+      }
+      
+      @-webkit-keyframes falling-drop-four {
+        0% {
+          -webkit-transform: translateY(-35px);
+          transform: translateY(-35px);
+          opacity: 0;
+        }
+        10% {
+          -webkit-transform: translateY(-15px);
+          transform: translateY(-15px);
+          opacity: 1;
+        }
+        30% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(100px);
+          transform: translateY(100px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-35px);
+          transform: translateY(-35px);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes falling-drop-four {
+        0% {
+          -webkit-transform: translateY(-35px);
+          transform: translateY(-35px);
+          opacity: 0;
+        }
+        10% {
+          -webkit-transform: translateY(-15px);
+          transform: translateY(-15px);
+          opacity: 1;
+        }
+        30% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(100px);
+          transform: translateY(100px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-35px);
+          transform: translateY(-35px);
+          opacity: 0;
+        }
+      }
+      
+      /* Snowflake Animations */
+      .snow-cloud .snowflake-one,
+      .snow-cloud .snowflake-two,
+      .snow-cloud .snowflake-three {
+        opacity: 0;
+        -webkit-transform-origin: center center;
+        transform-origin: center center;
+        -webkit-animation-timing-function: ease-in;
+        animation-timing-function: ease-in;
+      }
+      
+      .snow-cloud .snowflake-one {
+        -webkit-animation: falling-snow-one 4s infinite;
+        animation: falling-snow-one 4s infinite;
+      }
+      
+      .snow-cloud .snowflake-two {
+        -webkit-animation: falling-snow-two 3.8s infinite;
+        animation: falling-snow-two 3.8s infinite;
+        -webkit-animation-delay: 2.5s;
+        animation-delay: 2.5s;
+      }
+      
+      .snow-cloud .snowflake-three {
+        -webkit-animation: falling-snow-three 3.9s infinite;
+        animation: falling-snow-three 3.9s infinite;
+        -webkit-animation-delay: 1.5s;
+        animation-delay: 1.5s;
+      }
+      
+      @-webkit-keyframes falling-snow-one {
+        0% {
+          -webkit-transform: translateY(-65px) rotate(0);
+          transform: translateY(-65px) rotate(0);
+          opacity: 0;
+        }
+        20% {
+          -webkit-transform: translateY(-10px) translateX(30px) rotate(-20deg);
+          transform: translateY(-10px) translateX(30px) rotate(-20deg);
+          opacity: 1;
+        }
+        40% {
+          -webkit-transform: translateY(45px) translateX(-30px) rotate(20deg);
+          transform: translateY(45px) translateX(-30px) rotate(20deg);
+        }
+        50% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(100px) translateX(30px) rotate(-20deg);
+          transform: translateY(100px) translateX(30px) rotate(-20deg);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-65px);
+          transform: translateY(-65px);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes falling-snow-one {
+        0% {
+          -webkit-transform: translateY(-65px) rotate(0);
+          transform: translateY(-65px) rotate(0);
+          opacity: 0;
+        }
+        20% {
+          -webkit-transform: translateY(-10px) translateX(30px) rotate(-20deg);
+          transform: translateY(-10px) translateX(30px) rotate(-20deg);
+          opacity: 1;
+        }
+        40% {
+          -webkit-transform: translateY(45px) translateX(-30px) rotate(20deg);
+          transform: translateY(45px) translateX(-30px) rotate(20deg);
+        }
+        50% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(100px) translateX(30px) rotate(-20deg);
+          transform: translateY(100px) translateX(30px) rotate(-20deg);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-65px);
+          transform: translateY(-65px);
+          opacity: 0;
+        }
+      }
+      
+      @-webkit-keyframes falling-snow-two {
+        0% {
+          -webkit-transform: translateY(-75px) rotate(0);
+          transform: translateY(-75px) rotate(0);
+          opacity: 0;
+        }
+        20% {
+          -webkit-transform: translateY(-45px) translateX(40px) rotate(-30deg);
+          transform: translateY(-45px) translateX(40px) rotate(-30deg);
+          opacity: 1;
+        }
+        40% {
+          -webkit-transform: translateY(5px) translateX(-40px) rotate(30deg);
+          transform: translateY(5px) translateX(-40px) rotate(30deg);
+        }
+        50% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(30px) translateX(20px) rotate(-30deg);
+          transform: translateY(30px) translateX(20px) rotate(-30deg);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-75px);
+          transform: translateY(-75px);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes falling-snow-two {
+        0% {
+          -webkit-transform: translateY(-75px) rotate(0);
+          transform: translateY(-75px) rotate(0);
+          opacity: 0;
+        }
+        20% {
+          -webkit-transform: translateY(-45px) translateX(40px) rotate(-30deg);
+          transform: translateY(-45px) translateX(40px) rotate(-30deg);
+          opacity: 1;
+        }
+        40% {
+          -webkit-transform: translateY(5px) translateX(-40px) rotate(30deg);
+          transform: translateY(5px) translateX(-40px) rotate(30deg);
+        }
+        50% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(30px) translateX(20px) rotate(-30deg);
+          transform: translateY(30px) translateX(20px) rotate(-30deg);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-75px);
+          transform: translateY(-75px);
+          opacity: 0;
+        }
+      }
+      
+      @-webkit-keyframes falling-snow-three {
+        0% {
+          -webkit-transform: translateY(-85px) rotate(0);
+          transform: translateY(-85px) rotate(0);
+          opacity: 0;
+        }
+        20% {
+          -webkit-transform: translateY(-10px) translateX(-20px) rotate(20deg);
+          transform: translateY(-10px) translateX(-20px) rotate(20deg);
+          opacity: 1;
+        }
+        40% {
+          -webkit-transform: translateY(25px) translateX(20px) rotate(-20deg);
+          transform: translateY(25px) translateX(20px) rotate(-20deg);
+        }
+        50% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(60px) translateX(-20px) rotate(20deg);
+          transform: translateY(60px) translateX(-20px) rotate(20deg);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-85px);
+          transform: translateY(-85px);
+          opacity: 0;
+        }
+      }
+      
+      @keyframes falling-snow-three {
+        0% {
+          -webkit-transform: translateY(-85px) rotate(0);
+          transform: translateY(-85px) rotate(0);
+          opacity: 0;
+        }
+        20% {
+          -webkit-transform: translateY(-10px) translateX(-20px) rotate(20deg);
+          transform: translateY(-10px) translateX(-20px) rotate(20deg);
+          opacity: 1;
+        }
+        40% {
+          -webkit-transform: translateY(25px) translateX(20px) rotate(-20deg);
+          transform: translateY(25px) translateX(20px) rotate(-20deg);
+        }
+        50% {
+          opacity: 1;
+        }
+        60% {
+          -webkit-transform: translateY(60px) translateX(-20px) rotate(20deg);
+          transform: translateY(60px) translateX(-20px) rotate(20deg);
+          opacity: 0;
+        }
+        100% {
+          -webkit-transform: translateY(-85px);
+          transform: translateY(-85px);
+          opacity: 0;
+        }
+      }
+      
+      @-webkit-keyframes weatherani-suncloudshine {
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      
+      @keyframes weatherani-suncloudshine {
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      
+      @-webkit-keyframes weatherani-suncloudshine {
+        0% {
+          opacity: 1;
+        }
+        30% {
+          opacity: 0;
+        }
+        70% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      
+      @keyframes weatherani-suncloudshine {
+        0% {
+          opacity: 1;
+        }
+        30% {
+          opacity: 0;
+        }
+        70% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      
+      /* 01 多云 Sunny Cloud Animations */
+      .sun-cloud .sunshine-wrap {
+        -webkit-animation: weatherani-sunshine 10s infinite linear;
+        animation: weatherani-sunshine 10s infinite linear;
+        -webkit-transform-origin: 210px 210px;
+        transform-origin: 210px 210px;
+      }
+      
+      .sun-cloud .sun-half {
+        /* -webkit-animation: sun-grow 4s infinite cubic-bezier(0.2, 0.85, 0.4, 1.5);
+          animation: sun-grow 4s infinite cubic-bezier(0.2, 0.85, 0.4, 1.5); */
+        -webkit-transform-origin: bottom center;
+        transform-origin: bottom center;
+      }
+      
+      .sun-cloud .ray-one {
+        /* -webkit-animation: ray-show-one 4s infinite linear;
+            animation: ray-show-one 4s infinite linear; */
+        -webkit-animation: weatherani-suncloudshine 10s infinite linear;
+        animation: weatherani-suncloudshine 10s infinite linear;
+        -webkit-animation-delay: 3s;
+        animation-delay: 3s;
+        -webkit-transform-origin: center right;
+        transform-origin: center right;
+      }
+      .sun-cloud .ray-two {
+        /* -webkit-animation: ray-show-two 4s infinite linear;
+            animation: ray-show-two 4s infinite linear; */
+        -webkit-animation: weatherani-suncloudshine 10s infinite linear;
+        animation: weatherani-suncloudshine 10s infinite linear;
+        -webkit-animation-delay: 0s;
+        animation-delay: 0s;
+        -webkit-transform-origin: bottom right;
+        transform-origin: bottom right;
+      }
+      .sun-cloud .ray-three {
+        /* -webkit-animation: ray-show-three 4s infinite linear;
+            animation: ray-show-three 4s infinite linear; */
+        -webkit-animation: weatherani-suncloudshine 10s infinite linear;
+        animation: weatherani-suncloudshine 10s infinite linear;
+        -webkit-animation-delay: -1s;
+        animation-delay: -1s;
+        -webkit-transform-origin: bottom center;
+        transform-origin: bottom center;
+      }
+      .sun-cloud .ray-four {
+        /* -webkit-animation: ray-show-four 4s infinite linear;
+            animation: ray-show-four 4s infinite linear; */
+        -webkit-animation: weatherani-suncloudshine 10s infinite linear;
+        animation: weatherani-suncloudshine 10s infinite linear;
+        -webkit-animation-delay: -2s;
+        animation-delay: -2s;
+        -webkit-transform-origin: bottom left;
+        transform-origin: bottom left;
+      }
+      .sun-cloud .ray-five {
+        /* -webkit-animation: ray-show-five 4s infinite linear;
+            animation: ray-show-five 4s infinite linear; */
+        -webkit-animation: weatherani-suncloudshine 10s infinite linear;
+        animation: weatherani-suncloudshine 10s infinite linear;
+        -webkit-animation-delay: -3s;
+        animation-delay: -3s;
+        -webkit-transform-origin: center left;
+        transform-origin: center left;
+      }
+      
+      /* 03 阵雨 shower Animation */
+      
+      .rain-shower .rainshower-wrap {
+        -webkit-transform: scale(0.8);
+        transform: scale(0.8);
+        -webkit-transform-origin: center top;
+        transform-origin: center top;
+      }
+      .rainshower-wrap {
+      }
+      
+      /* 13 阵雪 snow-shower Animation */
+      
+      .snow-shower .snowshower-wrap {
+        -webkit-transform: scale(0.8);
+        transform: scale(0.8);
+        -webkit-transform-origin: center top;
+        transform-origin: center top;
+      }
+      .snowshower-wrap {
+      }
+      
+      @-webkit-keyframes sun-grow {
+        0%,
+        90%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        15%,
+        80% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes sun-grow {
+        0%,
+        90%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        15%,
+        80% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes ray-show-one {
+        0%,
+        15%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        20%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes ray-show-one {
+        0%,
+        15%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        20%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes ray-show-two {
+        0%,
+        20%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        25%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes ray-show-two {
+        0%,
+        20%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        25%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes ray-show-three {
+        0%,
+        25%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        30%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes ray-show-three {
+        0%,
+        25%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        30%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes ray-show-four {
+        0%,
+        30%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        35%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes ray-show-four {
+        0%,
+        30%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        35%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes ray-show-five {
+        0%,
+        35%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        40%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes ray-show-five {
+        0%,
+        35%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        40%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes ray-show-six {
+        0%,
+        40%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        45%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes ray-show-six {
+        0%,
+        40%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        45%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes ray-show-seven {
+        0%,
+        45%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        50%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes ray-show-seven {
+        0%,
+        45%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        50%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes ray-show-eight {
+        0%,
+        50%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        55%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes ray-show-eight {
+        0%,
+        50%,
+        80%,
+        100% {
+          -webkit-transform: scale(0.5);
+          transform: scale(0.5);
+          opacity: 0;
+        }
+        55%,
+        70% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes weatherani-sunshine {
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      
+      @keyframes weatherani-sunshine {
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      
+      /* 00 晴 Sunshine Animation */
+      .sunshine .sunshine-wrap {
+        -webkit-animation: weatherani-sunshine 12s infinite linear;
+        animation: weatherani-sunshine 12s infinite linear;
+        -webkit-transform-origin: center center;
+        transform-origin: center center;
+      }
+      .sunshine .sun-full {
+        /* -webkit-animation: sun-grow 4s infinite cubic-bezier(0.2, 0.85, 0.4, 1.5);
+            animation: sun-grow 4s infinite cubic-bezier(0.2, 0.85, 0.4, 1.5); */
+        -webkit-transform-origin: center center;
+        transform-origin: center center;
+      }
+      
+      .sunshine .sun-ray-one {
+        /* -webkit-animation: ray-show-one 4s infinite ease-in;
+          animation: ray-show-one 4s infinite ease-in; */
+        -webkit-transform-origin: center right;
+        transform-origin: center right;
+      }
+      
+      .sunshine .sun-ray-two {
+        /* -webkit-animation: ray-show-two 4s infinite ease-in;
+          animation: ray-show-two 4s infinite ease-in; */
+        -webkit-transform-origin: bottom right;
+        transform-origin: bottom right;
+      }
+      
+      .sunshine .sun-ray-three {
+        /* -webkit-animation: ray-show-three 4s infinite ease-in;
+          animation: ray-show-three 4s infinite ease-in; */
+        -webkit-transform-origin: bottom center;
+        transform-origin: bottom center;
+      }
+      
+      .sunshine .sun-ray-four {
+        /* -webkit-animation: ray-show-four 4s infinite ease-in;
+          animation: ray-show-four 4s infinite ease-in; */
+        -webkit-transform-origin: bottom left;
+        transform-origin: bottom left;
+      }
+      
+      .sunshine .sun-ray-five {
+        /* -webkit-animation: ray-show-five 4s infinite ease-in;
+          animation: ray-show-five 4s infinite ease-in; */
+        -webkit-transform-origin: center left;
+        transform-origin: center left;
+      }
+      
+      .sunshine .sun-ray-six {
+        /* -webkit-animation: ray-show-six 4s infinite ease-in;
+          animation: ray-show-six 4s infinite ease-in; */
+        -webkit-transform-origin: top left;
+        transform-origin: top left;
+      }
+      
+      .sunshine .sun-ray-seven {
+        /* -webkit-animation: ray-show-seven 4s infinite ease-in;
+          animation: ray-show-seven 4s infinite ease-in; */
+        -webkit-transform-origin: top center;
+        transform-origin: top center;
+      }
+      
+      .sunshine .sun-ray-eight {
+        /* -webkit-animation: ray-show-eight 4s infinite ease-in;
+          animation: ray-show-eight 4s infinite ease-in; */
+        -webkit-transform-origin: top right;
+        transform-origin: top right;
+      }
+      
+      /* 18 雾 fog Animation */
+      
+      .fog .sunshine-wrap {
+        -webkit-animation: weatherani-sunshine 10s infinite linear;
+        animation: weatherani-sunshine 10s infinite linear;
+        /* -webkit-transform-origin: center center;
+        transform-origin: center center; */
+        -webkit-transform-origin: 50% 50%;
+        transform-origin: 50% 50%;
+      }
+      
+      /* 02 阴天 cloudy Animation */
+      
+      .cloudy .cloud-wrap {
+        -webkit-animation: cloud-bob 2s infinite cubic-bezier(0, 0, 0.5, 1.5);
+        animation: cloud-bob 2s infinite cubic-bezier(0, 0, 0.5, 1.5);
+      }
+      .cloudy .cloud {
+        /* -webkit-animation: cloud-push 4s infinite;
+          animation: cloud-push 4s infinite; */
+        -webkit-transform-origin: left center;
+        transform-origin: left center;
+        -webkit-transform: translateX(-60px);
+        transform: translateX(-60px);
+      }
+      .cloudy .overcast {
+        -webkit-transform-origin: right top;
+        transform-origin: right top;
+        -webkit-transform: scale(0.2) translateX(-60px);
+        transform: scale(0.2) translateX(-60px);
+        fill: #fff;
+        background: #fff;
+        opacity: 0.3;
+        -webkit-animation: cloud-movetoleft 4s infinite;
+        animation: cloud-movetoleft 4s infinite;
+      }
+      
+      @-webkit-keyframes cloud-bob {
+        0%,
+        100% {
+          -webkit-transform: translateY(10px);
+          transform: translateY(10px);
+        }
+        50% {
+          -webkit-transform: translateY(-10px);
+          transform: translateY(-10px);
+        }
+      }
+      
+      @keyframes cloud-bob {
+        0%,
+        100% {
+          -webkit-transform: translateY(10px);
+          transform: translateY(10px);
+        }
+        50% {
+          -webkit-transform: translateY(-10px);
+          transform: translateY(-10px);
+        }
+      }
+      
+      @-webkit-keyframes cloud-push {
+        0%,
+        80%,
+        100% {
+          -webkit-transform: translateX(-120px) scale(1.2);
+          transform: translateX(-120px) scale(1.2);
+        }
+        10%,
+        60% {
+          -webkit-transform: translateX(0) scale(1);
+          transform: translateX(0) scale(1);
+        }
+      }
+      
+      @keyframes cloud-push {
+        0%,
+        80%,
+        100% {
+          -webkit-transform: translateX(-120px) scale(1.2);
+          transform: translateX(-120px) scale(1.2);
+        }
+        10%,
+        60% {
+          -webkit-transform: translateX(0) scale(1);
+          transform: translateX(0) scale(1);
+        }
+      }
+      
+      @-webkit-keyframes cloud-movetoleft {
+        0% {
+          opacity: 0;
+        }
+        50% {
+          opacity: 0.3;
+        }
+        100% {
+          opacity: 0;
+          -webkit-transform: scale(0.2) translate(-400%, 0);
+          transform: scale(0.2) translate(-400%, 0);
+        }
+      }
+      
+      @keyframes cloud-movetoleft {
+        0% {
+          opacity: 0;
+        }
+        50% {
+          opacity: 0.3;
+        }
+        100% {
+          opacity: 0;
+          -webkit-transform: scale(0.2) translate(-400%, 0);
+          transform: scale(0.2) translate(-400%, 0);
+        }
+      }
+      
+      @-webkit-keyframes wind-slide-one {
+        0%,
+        70%,
+        100% {
+          -webkit-transform: scaleX(0);
+          transform: scaleX(0);
+          opacity: 0;
+        }
+        10%,
+        60% {
+          -webkit-transform: scaleX(1);
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes wind-slide-one {
+        0%,
+        70%,
+        100% {
+          -webkit-transform: scaleX(0);
+          transform: scaleX(0);
+          opacity: 0;
+        }
+        10%,
+        60% {
+          -webkit-transform: scaleX(1);
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes wind-slide-two {
+        0%,
+        70%,
+        100% {
+          -webkit-transform: scaleX(0);
+          transform: scaleX(0);
+          opacity: 0;
+        }
+        10%,
+        60% {
+          -webkit-transform: scaleX(1);
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes wind-slide-two {
+        0%,
+        70%,
+        100% {
+          -webkit-transform: scaleX(0);
+          transform: scaleX(0);
+          opacity: 0;
+        }
+        10%,
+        60% {
+          -webkit-transform: scaleX(1);
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+      
+      @-webkit-keyframes wind-slide-three {
+        0%,
+        70%,
+        100% {
+          -webkit-transform: scaleX(0);
+          transform: scaleX(0);
+          opacity: 0;
+        }
+        10%,
+        60% {
+          -webkit-transform: scaleX(1);
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes wind-slide-three {
+        0%,
+        70%,
+        100% {
+          -webkit-transform: scaleX(0);
+          transform: scaleX(0);
+          opacity: 0;
+        }
+        10%,
+        60% {
+          -webkit-transform: scaleX(1);
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+      
+      /* 夜晚 */
+      /* 00 晴 moon Animation */
+      /* 01 多云 moon Animation */
+      /* 03 阵雨 moon Animation */
+      /* 13 阵雪 moon Animation */
+      /* 18 雾 moon Animation */
+      .moon .moon-full,
+      .moon .moon-half,
+      .moon-cloud .moon-half {
+        -webkit-animation: weatherani-moonlight 3s infinite linear;
+        animation: weatherani-moonlight 3s infinite linear;
+        -webkit-transform-origin: center center;
+        transform-origin: center center;
+      }
+      
+      /* 01 多云 Moon Cloud Animations */
+      .moon-cloud .moon-wrap {
+        -webkit-animation: weatherani-moonlight 3s infinite linear;
+        animation: weatherani-moonlight 3s infinite linear;
+        -webkit-transform-origin: center center;
+        transform-origin: center center;
+      }
+      
+      @-webkit-keyframes weatherani-moon-glow1 {
+        0%,
+        100% {
+          box-shadow: 0px 0px 10px 7px rgba(255, 255, 255, 0.25);
+        }
+        50% {
+          box-shadow: 0px 0px 2px 0px rgba(255, 255, 255, 0.75);
+        }
+      }
+      @-keyframes weatherani-moon-glow1 {
+        0%,
+        100% {
+          box-shadow: 0px 0px 10px 7px rgba(255, 255, 255, 0.25);
+        }
+        50% {
+          box-shadow: 0px 0px 2px 0px rgba(255, 255, 255, 0.75);
+        }
+      }
+      
+      @-webkit-keyframes weatherani-moon-glow2 {
+        0%,
+        100% {
+          box-shadow: 0px 0px 10px 5px rgba(255, 255, 255, 0.25);
+        }
+        50% {
+          box-shadow: 0px 0px 2px 0px rgba(255, 255, 255, 0.75);
+        }
+      }
+      @-keyframes weatherani-moon-glow2 {
+        0%,
+        100% {
+          box-shadow: 0px 0px 10px 5px rgba(255, 255, 255, 0.25);
+        }
+        50% {
+          box-shadow: 0px 0px 2px 0px rgba(255, 255, 255, 0.75);
+        }
+      }
+      
+      @-webkit-keyframes weatherani-moonlight {
+        0% {
+          opacity: 1;
+        }
+        20% {
+          opacity: 0.75;
+        }
+        40% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.85;
+        }
+        60% {
+          opacity: 1;
+        }
+        70% {
+          opacity: 0.6;
+        }
+        80%,
+        100% {
+          opacity: 1;
+        }
+      }
+      
+      @keyframes weatherani-moonlight {
+        0% {
+          opacity: 1;
+        }
+        20% {
+          opacity: 0.75;
+        }
+        40% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.85;
+        }
+        60% {
+          opacity: 1;
+        }
+        70% {
+          opacity: 0.6;
+        }
+        80%,
+        100% {
+          opacity: 1;
+        }
+      }
+      

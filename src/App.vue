@@ -2,6 +2,8 @@
 import Header from "@/components/Header.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import MDPage from "@/components/MDPage.vue";
+import pot from '@/assets/texture/pot.png'
+import WeatherSticker from "@/components/WeatherSticker.vue";
 </script>
 
 <template>
@@ -19,7 +21,19 @@ import MDPage from "@/components/MDPage.vue";
             </v-sheet>
 
             <!-- 侧边菜单 -->
-            <Sidebar class="sidebar-body " />
+            <Sidebar class="sidebar-body" />
+
+            <v-container>
+              <v-card flat class="transparent-card">
+                <WeatherSticker />
+                <v-img
+                  aspect-ratio="1/1"
+                  cover
+                  :src="pot"
+                />
+              </v-card>
+            </v-container>
+
           </v-col>
 
           <v-col class="d-flex align-center justify-center mdpage">
@@ -92,10 +106,19 @@ import MDPage from "@/components/MDPage.vue";
   background-color: var(--sidebar-color);
 }
 
-.mdpage {
+.divider-2 {
+  margin: 0 auto; /* 水平居中 */
+  width: 70%;
+  box-shadow:
+    inset 0 2px rgba(0, 0, 0, 0.2),
+    inset 0 -2px rgba(255, 255, 255, 0.1);
+}
 
-
-
+.transparent-card {
+  border-radius: 0;
+  background-color: var(--sidebar-color);
+  box-shadow: none;
+  image-rendering: pixelated;       /* Chrome / Firefox / Edge */
 }
 
 </style>

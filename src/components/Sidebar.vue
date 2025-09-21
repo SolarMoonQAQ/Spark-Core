@@ -86,6 +86,7 @@ const cruds = [
 <style scoped lang="scss">
 
 .card {
+  border-radius: 0;
   width: 100%;
   user-select: none;
   overflow: initial;
