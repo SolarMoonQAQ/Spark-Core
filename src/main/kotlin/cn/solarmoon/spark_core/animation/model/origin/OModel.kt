@@ -42,7 +42,7 @@ data class OModel(
          * 地图加载后读取的原始模型数据，最好不要修改
          */
         @JvmStatic
-        val ORIGINS = linkedMapOf<ResourceLocation, OModel>()
+        var ORIGINS = linkedMapOf<ResourceLocation, OModel>()
 
         @JvmStatic
         val EMPTY get() = OModel(0, 0, linkedMapOf())

@@ -10,7 +10,7 @@ class ModelInstance(
     val index: ModelIndex
 ) {
 
-    val origin = OModel.getOrEmpty(index.location)
+    val origin get() = OModel.getOrEmpty(index.location)
 
     val pose = ModelPose(this)
 
