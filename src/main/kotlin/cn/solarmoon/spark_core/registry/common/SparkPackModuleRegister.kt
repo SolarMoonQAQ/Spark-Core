@@ -1,13 +1,9 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.event.SparkPackageReaderRegisterEvent
-import cn.solarmoon.spark_core.resource2.modules.*
-import net.neoforged.api.distmarker.Dist
+import cn.solarmoon.spark_core.pack.modules.*
 import net.neoforged.bus.api.IEventBus
-import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent
-import net.neoforged.neoforge.common.NeoForge
 
 object SparkPackModuleRegister {
 

@@ -10,7 +10,7 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent
 object SparkShaders {
 
     @JvmStatic
-    var DISTORT_SHADER: ShaderInstance? = null
+    lateinit var DISTORT_SHADER: ShaderInstance
         private set
 
     private fun onRegisterShaders(event: RegisterShadersEvent) {

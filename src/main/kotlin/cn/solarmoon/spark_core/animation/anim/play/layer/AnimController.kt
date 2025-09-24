@@ -105,7 +105,7 @@ class AnimController(
 
         animatable.modelController.model?.let { model ->
             model.origin.bones.forEach { (boneName, bone) ->
-                val bonePose = model.getBonePoseOrCreateEmpty(boneName)
+                val bonePose = model.pose.getBonePoseOrCreateEmpty(boneName)
                 bonePose.updateInternal(blendSpace.blendBone(boneName, animatable))
             }
         }
@@ -117,7 +117,7 @@ class AnimController(
     fun tick() {
         animatable.modelController.model?.let { model ->
             model.origin.bones.forEach {
-                model.getBonePoseOrCreateEmpty(it.key).setChanged()
+                model.pose.getBonePoseOrCreateEmpty(it.key).setChanged()
             }
         }
 

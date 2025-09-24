@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.entity.attack.HurtData;
 import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
 import cn.solarmoon.spark_core.preinput.IPreInputHolder;
 import cn.solarmoon.spark_core.preinput.PreInput;
-import cn.solarmoon.spark_core.registry.common.SyncerTypes;
+import cn.solarmoon.spark_core.registry.common.SparkSyncerTypes;
 import cn.solarmoon.spark_core.skill.Skill;
 import cn.solarmoon.spark_core.skill.SkillHost;
 import cn.solarmoon.spark_core.sync.IntSyncData;
@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
     @Override
     public @NotNull SyncerType getSyncerType() {
-        return SyncerTypes.getENTITY().get();
+        return SparkSyncerTypes.getENTITY().get();
     }
 
     @Override

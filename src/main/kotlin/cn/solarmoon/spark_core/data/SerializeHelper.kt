@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.data
 
 import com.mojang.serialization.Codec
+import io.netty.buffer.ByteBuf
 import net.minecraft.Util
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.RegistryFriendlyByteBuf
@@ -120,7 +121,7 @@ object SerializeHelper {
 
 }
 
-fun <T> RegistryFriendlyByteBuf.readNullable(codec: StreamCodec<FriendlyByteBuf, T>): T? {
+fun <B: ByteBuf, T> B.readNullable(codec: StreamCodec<B, T>): T? {
     return if (this.readBoolean()) {
         codec.decode(this)
     } else {
@@ -128,7 +129,7 @@ fun <T> RegistryFriendlyByteBuf.readNullable(codec: StreamCodec<FriendlyByteBuf,
     }
 }
 
-fun <T> RegistryFriendlyByteBuf.writeNullable(value: T?, codec: StreamCodec<FriendlyByteBuf, T>) {
+fun <B: ByteBuf, T> B.writeNullable(value: T?, codec: StreamCodec<B, T>) {
     if (value != null) {
         this.writeBoolean(true)
         codec.encode(this, value)

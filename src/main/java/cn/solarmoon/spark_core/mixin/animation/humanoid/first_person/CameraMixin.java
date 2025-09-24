@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.mixin.animation.humanoid.first_person;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.client.gui.screen.ModelEditorScreen;
 import cn.solarmoon.spark_core.compat.first_person_model.FirstPersonModelCompat;
 import cn.solarmoon.spark_core.compat.real_camera.RealCameraCompat;
 import cn.solarmoon.spark_core.event.CameraFollowHeadEvent;
@@ -50,30 +49,11 @@ public abstract class CameraMixin {
             if (event.isEnabled()) {
                 var model = animatable.getModelController().getModel();
                 if (model == null) return;
-                var pose = model.getBonePose("head");
+                var pose = model.getPose().getBonePose("head");
                 var pos = pose.getWorldBonePivot(Vec3.ZERO, partialTick);
                 var pos2 = pose.getWorldBonePivot(new Vec3(0.0, Mth.lerp(partialTick, this.eyeHeightOld, this.eyeHeight) - (pos.y - Mth.lerp(partialTick, entity.yo, entity.getY())), 0.0), partialTick);
                 setPosition(pos.x, pos2.y, pos.z);
             }
-        }
-    }
-
-    @Redirect(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;move(FFF)V"))
-    private void modifyCameraMove(Camera instance, float originalDist, float originalVert, float originalHoriz) {
-        Minecraft mc = Minecraft.getInstance();
-        Entity entity = camera.getEntity();
-
-        if (mc.screen instanceof ModelEditorScreen editorScreen) {
-            float editorDistance = editorScreen.getCameraDistance();
-            float editorPitch = editorScreen.getCameraPitch();
-            float editorYaw = editorScreen.getCameraYaw();
-
-            setRotation(editorYaw, editorPitch);
-
-            move(-getMaxZoom(editorDistance), 0F, 0F);
-
-        } else {
-            move(originalDist, originalVert, originalHoriz);
         }
     }
 

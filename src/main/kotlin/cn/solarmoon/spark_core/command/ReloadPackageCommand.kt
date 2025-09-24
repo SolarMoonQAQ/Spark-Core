@@ -1,9 +1,9 @@
 package cn.solarmoon.spark_core.command
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.resource2.SparkPackLoader
-import cn.solarmoon.spark_core.resource2.SparkPackResourceLoader
-import cn.solarmoon.spark_core.resource2.sync.SparkPackageReloadPayload
+import cn.solarmoon.spark_core.pack.SparkPackLoader
+import cn.solarmoon.spark_core.pack.SparkPackResourceLoader
+import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
 import com.mojang.brigadier.context.CommandContext
 import net.minecraft.commands.CommandBuildContext
 import net.minecraft.commands.CommandSourceStack

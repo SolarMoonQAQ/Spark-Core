@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.physics
 
-import cn.solarmoon.spark_core.physics.collision.PhysicsObjectEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.math.Matrix3f
 import com.jme3.math.Quaternion
@@ -35,8 +34,8 @@ fun org.joml.Matrix3f.toBMatrix3f() = Matrix3f(
     m20, m21, m22
 )
 
-inline fun <reified T> PhysicsCollisionObject.getOwner() = owner as? T
-
-inline fun <reified T: PhysicsObjectEvent> PhysicsCollisionObject.onEvent(crossinline handler: PhysicsCollisionObject.(T) -> Unit) {
-    addEventListener(T::class.java) { handler(this, it) }
-}
+fun Matrix3f.toMatrix3f() = org.joml.Matrix3f(
+    get(0, 0), get(0, 1), get(0, 2),
+    get(1, 0), get(1, 1), get(1, 2),
+    get(2, 0), get(2, 1), get(2, 2)
+)

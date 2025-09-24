@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.entity.attack
 
-import cn.solarmoon.spark_core.physics.collision.ManifoldPoint
+import cn.solarmoon.spark_core.physics.ManifoldPoint
 import com.jme3.bullet.collision.PhysicsCollisionObject
 
 /**

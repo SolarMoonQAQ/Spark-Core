@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.physics.visualizer
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh
+import cn.solarmoon.spark_core.physics.component.component
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CollisionShape
@@ -35,7 +36,7 @@ class BoxVisualizer: ShapeVisualizer {
                 val from = mesh.getWorldVertexPosition(edges[i], transform).sub(camPos.toVector3f(), Vector3f())
                 val to = mesh.getWorldVertexPosition(edges[i+1], transform).sub(camPos.toVector3f(), Vector3f())
                 val normal = to.sub(from, Vector3f()).normalize()
-                val color = if (body.isColliding) Color.RED.rgb else Color.WHITE.rgb
+                val color = if (body.component?.isColliding == true) Color.RED.rgb else Color.WHITE.rgb
                 buffer.addVertex(poseStack.last().pose(), from.x, from.y, from.z).setColor(color).setNormal(poseStack.last(), normal.x, normal.y, normal.z)
                 buffer.addVertex(poseStack.last().pose(), to.x, to.y, to.z).setColor(color).setNormal(poseStack.last(), normal.x, normal.y, normal.z)
             }

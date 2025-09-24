@@ -38,7 +38,7 @@ open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstanc
             if (displayContext == ItemDisplayContext.GUI) poseStack.mulPose(Quaternionf().rotateY(Math.PI.toFloat()))
             itemAnimatable.modelController.model?.let { model ->
                 model.origin.render(
-                    model.bonePoses,
+                    model.pose,
                     poseStack.last().pose()
                         .translate(customModelItem.getRenderOffset(stack, level, displayContext))
                         .rotateZYX(customModelItem.getRenderRotation(stack, level, displayContext))

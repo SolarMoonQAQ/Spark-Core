@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.event
 
-import cn.solarmoon.spark_core.resource2.modules.SparkPackModule
+import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import net.neoforged.bus.api.Event
 import net.neoforged.fml.event.IModBusEvent
 

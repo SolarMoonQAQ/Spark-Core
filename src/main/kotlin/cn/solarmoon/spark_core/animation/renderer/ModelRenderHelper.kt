@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.animation.renderer
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.model.BonePoseGroup
+import cn.solarmoon.spark_core.animation.model.ModelPose
 import cn.solarmoon.spark_core.animation.model.origin.OBone
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import com.mojang.blaze3d.vertex.VertexConsumer
@@ -12,7 +12,7 @@ object ModelRenderHelper {
 }
 
 fun OBone.render(
-    bones: BonePoseGroup,
+    bones: ModelPose,
     ma: Matrix4f,
     normal3f: Matrix3f,
     buffer: VertexConsumer,
@@ -29,7 +29,7 @@ fun OBone.render(
 }
 
 fun OModel.render(
-    iBones: BonePoseGroup,
+    iBones: ModelPose,
     matrix4f: Matrix4f,
     normal3f: Matrix3f,
     buffer: VertexConsumer,
@@ -45,7 +45,7 @@ fun OModel.render(
 }
 
 fun OModel.render(
-    iBones: BonePoseGroup,
+    iBones: ModelPose,
     matrix4f: Matrix4f,
     normal3f: Matrix3f,
     buffer: VertexConsumer,
@@ -71,6 +71,6 @@ fun IAnimatable<*>.render(
     worldMatrix.translate(worldPos.toVector3f())
     worldMatrix.rotateY(getRootYRot(partialTick))
     this.modelController.model?.let {
-        it.origin.render(it.bonePoses, worldMatrix, normal, buffer, packedLight, packedOverlay, color, partialTick)
+        it.origin.render(it.pose, worldMatrix, normal, buffer, packedLight, packedOverlay, color, partialTick)
     }
 }

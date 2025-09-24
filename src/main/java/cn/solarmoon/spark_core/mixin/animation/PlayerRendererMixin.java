@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.mixin.animation;
 
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import cn.solarmoon.spark_core.resource.common.SparkResourcePathBuilder;
 import cn.solarmoon.spark_core.animation.vanilla.VanillaModelHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.PlayerModel;
@@ -32,10 +31,9 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
         var animatable = entity;
         var model = animatable.getModelController().getModel();
         if (model == null) return;
-        var animData = model.getIndex();
-        var path = animData.getLocation();
+        var modelIndex = model.getIndex();
         // 使用SparkResourcePathBuilder检查是否是默认player模型路径
-        if (!SparkResourcePathBuilder.INSTANCE.isDefaultPlayerModel(path)) {
+        if (!modelIndex.isPlayer()) {
             var vb = buffer.getBuffer(RenderType.entityTranslucent(animatable.getModelController().getTextureLocation()));
             ModelRenderHelperKt.render(animatable, poseStack.last().normal(), vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks)), -1, partialTicks);
             ci.cancel();

@@ -3,10 +3,10 @@ package cn.solarmoon.spark_core.visual_effect.shape
 import cn.solarmoon.spark_core.util.lerp
 import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import cn.solarmoon.spark_core.physics.component.component
 import cn.solarmoon.spark_core.util.toMatrix4f
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
-import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.mojang.blaze3d.vertex.PoseStack
@@ -56,11 +56,12 @@ class ShapeRenderer : VisualEffectRenderer() {
         val physLevel = level.physicsLevel as ClientPhysicsLevel
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
+            val component = body.component ?: return@forEach
             val shape = body.collisionShape
             val transform = if (body is PhysicsRigidBody && !body.isKinematic) {
-                body.lastTickTransform.lerp(body.tickTransform, partialTicks).toTransformMatrix().toMatrix4f()
+                component.lastTransform.lerp(component.transform, partialTicks).toTransformMatrix().toMatrix4f()
             } else {
-                body.tickTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
+                component.lastTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
             }
             /**
              * 处理复合形状的子元素渲染

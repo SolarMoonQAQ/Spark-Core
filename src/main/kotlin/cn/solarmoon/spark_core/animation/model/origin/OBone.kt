@@ -1,9 +1,6 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
-import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.model.BonePose
-import cn.solarmoon.spark_core.animation.model.BonePoseGroup
-import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
+import cn.solarmoon.spark_core.animation.model.ModelPose
 import cn.solarmoon.spark_core.util.SerializeHelper
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -23,25 +20,23 @@ data class OBone(
     val cubes: List<OCube>
 ) {
 
-    /**
-     * 所属模型，会在读取模型数据时放入，因此不必担心为null
-     */
-    var rootModel: OModel? = null
+    lateinit var rootModel: OModel
 
     init {
         cubes.forEach { it.rootBone = this }
+        locators.forEach { it.value.bone = this }
     }
 
     /**
      * 获取当前骨骼组的父组，没有就返回null
      */
-    fun getParent(): OBone? = parentName?.let { rootModel!!.getBone(it) }
+    fun getParent(): OBone? = parentName?.let { rootModel.getBone(it) }
 
     /**
      * 应用当前以及所有父类的骨骼的变换到传入的矩阵中
      */
     fun applyTransformWithParents(
-        bones: BonePoseGroup,
+        pose: ModelPose,
         ma: Matrix4f,
         partialTick: Float = 1f
     ): Matrix4f {
@@ -53,7 +48,7 @@ data class OBone(
         }
 
         for (i in l.asReversed()) {
-            bones[i.name]?.let { pose ->
+            pose.getBonePose(i.name).let { pose ->
                 ma.mul(pose.getLocalTransformMatrix(partialTick))
             }
         }

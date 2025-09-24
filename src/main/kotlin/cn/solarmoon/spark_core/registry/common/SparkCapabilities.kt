@@ -13,6 +13,8 @@ import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.capabilities.ItemCapability
 
 object SparkCapabilities {
+    @JvmStatic
+    fun register() {}
 
     @JvmStatic
     val ITEM_ANIMATABLE = ItemCapability.create(
@@ -20,30 +22,5 @@ object SparkCapabilities {
         ItemAnimatable::class.java,
         Level::class.java
     )
-
-    @JvmStatic
-    val TEST = SparkCore.REGISTER.item<Test>()
-        .id("test")
-        .bound { Test() }
-        .build()
-
-    class Test: Item(Properties()), ICustomModelItem {
-        override fun getModelIndex(itemStack: ItemStack, level: Level, context: ItemDisplayContext): ModelIndex {
-            return if (context.firstPerson()) ModelIndex(
-                ResourceLocation.fromNamespaceAndPath("minecraft", "item/crowbar_first_person.geo"),
-                ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "textures/item/crowbar_first_person.png")
-            )
-            else ModelIndex(
-                ResourceLocation.fromNamespaceAndPath("minecraft", "item/crowbar.geo"),
-                ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "textures/item/crowbar.png")
-            )
-        }
-    }
-
-    @JvmStatic
-    fun register(bus: IEventBus) {
-//        bus.addListener(::applyToItem)
-//        bus.addListener(::regM)
-    }
 
 }

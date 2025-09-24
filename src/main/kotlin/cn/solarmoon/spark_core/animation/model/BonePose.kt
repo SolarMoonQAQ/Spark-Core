@@ -52,44 +52,40 @@ class BonePose(
         translate(bone.pivot.toVector3f().negate())
     }
 
-    /**
-     * 获取骨骼在模型空间的变换矩阵
-     */
     fun getSpaceBoneMatrix(partialTick: Number = 1f): Matrix4f {
         val ma = Matrix4f()
         val bone = model.origin.getBone(name)
-        bone?.applyTransformWithParents(model.bonePoses, ma, partialTick.toFloat())
+        bone?.applyTransformWithParents(model.pose, ma, partialTick.toFloat())
         return ma
     }
 
-    /**
-     * 获取骨骼的枢轴点在模型空间的坐标
-     * 注意：这里返回的是骨骼局部 pivot（加 offset）直接变换到模型空间的结果，
-     * 不要在这里提前做骨骼矩阵变换，否则会在世界坐标计算时重复。
-     */
-    fun getSpaceBonePivot(offset: Vec3 = Vec3.ZERO): Vector3f {
+    fun getSpaceBonePivotMatrix(partialTicks: Number = 1f): Matrix4f {
+        val ma = getSpaceBoneMatrix(partialTicks)
+        val bone = model.origin.getBone(name) ?: return ma
+        ma.translate(bone.pivot.toVector3f())
+        return ma
+    }
+
+    fun getSpaceBonePivot(offset: Vec3 = Vec3.ZERO, partialTick: Number = 1f): Vector3f {
         val bone = model.origin.getBone(name) ?: return Vector3f()
-        return bone.pivot.add(offset).toVector3f()
+        val spaceMatrix = getSpaceBoneMatrix(partialTick)
+        return spaceMatrix.transformPosition(bone.pivot.add(offset).toVector3f())
     }
 
     /**
      * 获取骨骼在世界位置的变换矩阵
-     * @param partialTick 主线程客户端的tick时间
      */
     fun getWorldBoneMatrix(partialTick: Number = 1f): Matrix4f {
-        val ma = model.animatable.getWorldPositionMatrix(partialTick.toFloat())
-        // 直接叠加骨骼的模型空间变换
+        val ma = model.pose.getWorldPositionMatrix(partialTick.toFloat())
         return ma.mul(getSpaceBoneMatrix(partialTick))
     }
 
-    /**
-     * 获取骨骼的枢轴点在世界位置上的坐标
-     * @param partialTick 主线程客户端的tick时间
-     */
-    fun getWorldBonePivot(offset: Vec3 = Vec3.ZERO, partialTick: Number = 1f): Vector3f {
-        val pivot = getSpaceBonePivot(offset) // 这里是骨骼局部 pivot
-        val ma = getWorldBoneMatrix(partialTick) // 世界矩阵（已包含骨骼变换）
-        return ma.transformPosition(pivot)
+    fun getWorldBonePivotMatrix(partialTicks: Number = 1f): Matrix4f {
+        return model.pose.getWorldPositionMatrix(partialTicks.toFloat()).mul(getSpaceBonePivotMatrix(partialTicks))
+    }
+
+    fun getWorldBonePivot(offset: Vec3 = Vec3.ZERO, partialTicks: Number = 1f): Vector3f {
+        return model.pose.getWorldPositionMatrix(partialTicks.toFloat()).transformPosition(getSpaceBonePivot(offset, partialTicks))
     }
 
     fun copy() = BonePose(model, name).apply {

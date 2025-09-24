@@ -13,8 +13,9 @@ data class OModel(
     val textureWidth: Int,
     val textureHeight: Int,
     val bones: LinkedHashMap<String, OBone>,
-    val locators: LinkedHashMap<String, OLocator> = LinkedHashMap()
 ) {
+
+    val locators: LinkedHashMap<String, OLocator> = LinkedHashMap()
 
     init {
         bones.values.forEach {
@@ -28,6 +29,8 @@ data class OModel(
      * @throws NullPointerException 找不到名称为[name]的骨骼
      */
     fun getBone(name: String) = bones[name]
+
+    fun getLocator(name: String) = locators[name]
 
     fun hasBone(name: String) = bones[name] != null
 

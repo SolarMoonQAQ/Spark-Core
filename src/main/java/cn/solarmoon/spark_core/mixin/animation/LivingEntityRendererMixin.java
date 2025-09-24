@@ -24,7 +24,7 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
             if (animatable.getModelController().getOriginModel().hasBone("body")) {
                 var model = animatable.getModelController().getModel();
                 if (model != null) {
-                    poseStack.mulPose(model.getBonePose("body").getSpaceBoneMatrix(partialTick));
+                    poseStack.mulPose(model.getPose().getBonePose("body").getSpaceBoneMatrix(partialTick));
                 }
             }
         }

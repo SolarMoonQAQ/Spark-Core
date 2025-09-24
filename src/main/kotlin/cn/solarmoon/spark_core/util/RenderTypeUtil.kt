@@ -37,7 +37,7 @@ object RenderTypeUtil {
         true,
         RenderType.CompositeState.builder()
             .setShaderState(RenderStateShard.ShaderStateShard {
-                SparkShaders.DISTORT_SHADER!!.apply {
+                SparkShaders.DISTORT_SHADER.apply {
                     RenderSystem.setShaderTexture(0, Minecraft.getInstance().mainRenderTarget.colorTextureId)
                     safeGetUniform("Time").set(time)
                     safeGetUniform("Strength").set(strength)

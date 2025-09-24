@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.js.extensions
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.js.doc.JSClass
 import cn.solarmoon.spark_core.particle.AnimatableShadowParticle
+import cn.solarmoon.spark_core.particle.SpaceWarpParticle
 import net.minecraft.core.BlockPos
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.sounds.SoundEvent
@@ -30,6 +31,10 @@ interface JSLevel {
 
     fun playSound(pos: BlockPos, sound: String, source: String, volume: Double, pitch: Double) {
         level.playSound(null, pos, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()), volume.toFloat(), pitch.toFloat())
+    }
+
+    fun summonSpaceWarp(pos: DoubleArray, min: Float, max: Float, strength: Float, lifeTime: Int) {
+        level.addParticle(SpaceWarpParticle.Option(min, max, strength, lifeTime), pos[0], pos[1], pos[2], 0.0, 0.0, 0.0)
     }
 
 //    fun addParticle(animatable: IAnimatable<*>) {

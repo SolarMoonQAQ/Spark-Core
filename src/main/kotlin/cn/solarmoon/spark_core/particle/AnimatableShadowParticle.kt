@@ -34,7 +34,7 @@ class AnimatableShadowParticle(
 ): Particle(level, x, y, z) {
 
     val yRot = animatable.getRootYRot()
-    val boneCache = animatable.modelController.model?.bonePoses?.copy()
+    val boneCache = animatable.modelController.model?.pose?.copy()
 
     fun getProgress(partialTicks: Float = 1f): Float {
         return ((age + partialTicks) / lifetime).coerceIn(0f, 1f)

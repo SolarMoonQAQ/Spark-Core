@@ -2,13 +2,8 @@ package cn.solarmoon.spark_core.mixin.animation.animatable;
 
 import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.model.BonePoseGroup;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
-import cn.solarmoon.spark_core.ik.component.IKManager;
-import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.monster.Vindicator;
@@ -23,10 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(Vindicator.class)
 public abstract class VindicatorMixin extends AbstractIllager implements IEntityAnimatable<Vindicator> {
-    // --- IEntityAnimatable Implementation ---
-    private final IKManager ikManager = new IKManager(this);
-    private final Map<String, Vec3> ikTargetPositions = new ConcurrentHashMap<>();
-    private final Map<String, FabrikChain3D> ikChains = new ConcurrentHashMap<>();
 
     private Vindicator vindicator = (Vindicator) (Object) this;
     private final AnimController animController = new AnimController(vindicator);
@@ -58,24 +49,4 @@ public abstract class VindicatorMixin extends AbstractIllager implements IEntity
         return level();
     }
 
-    // --- IEntityAnimatable Implementation ---
-    @NotNull
-    @Override
-    public IKManager getIkManager() {
-        return this.ikManager;
-    }
-
-    @NotNull
-    @Override
-    public Map<String, Vec3> getIkTargetPositions() {
-        // Return the map instance. The caller (IKManager) will modify it.
-        return this.ikTargetPositions;
-    }
-
-    @NotNull
-    @Override
-    public Map<String, FabrikChain3D> getIkChains() {
-        // Return the map instance. The caller (IKManager) will modify it.
-        return this.ikChains;
-    }
 }

@@ -22,10 +22,8 @@ open class ItemAnimatable(
     var oYRot = 0f
 
     override val animatable = itemStack
-    override val animController: AnimController = AnimController(this)
-    override val modelController: ModelController = ModelController(this)
-    override val ikTargetPositions: MutableMap<String, Vec3> = mutableMapOf()
-    override val ikChains: MutableMap<String, FabrikChain3D> = mutableMapOf()
+    override val animController = AnimController(this)
+    override val modelController = ModelController(this)
 
     open fun physicsTick() {
         animController.physTick()
@@ -38,12 +36,12 @@ open class ItemAnimatable(
         oYRot = owner.getViewYRot(0f)
     }
 
-    override fun getWorldPosition(partialTick: Float): Vec3 {
+    override fun getWorldPosition(partialTick: Number): Vec3 {
         return oPosition.lerp(position, partialTick.toDouble())
     }
 
-    override fun getRootYRot(partialTick: Float): Float {
-        return Mth.lerp(oYRot, yRot, partialTick)
+    override fun getRootYRot(partialTick: Number): Float {
+        return Mth.lerp(oYRot, yRot, partialTick.toFloat())
     }
 
     override val syncerType: SyncerType

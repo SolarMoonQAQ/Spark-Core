@@ -1,16 +1,12 @@
 package cn.solarmoon.spark_core;
 
-import cn.solarmoon.spark_core.config.SparkConfig;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
-import cn.solarmoon.spark_core.js.SparkJS;
 import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.registry.client.*;
 import cn.solarmoon.spark_core.registry.common.*;
-import cn.solarmoon.spark_core.resource.common.MultiModResourceRegistry;
-import cn.solarmoon.spark_core.resource2.NativeLoader;
-import cn.solarmoon.spark_core.resource2.SparkPackResourceLoader;
-import cn.solarmoon.spark_core.web.logging.SparkLogger;
+import cn.solarmoon.spark_core.pack.NativeLoader;
+import cn.solarmoon.spark_core.pack.SparkPackResourceLoader;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -26,14 +22,11 @@ public class SparkCore {
 
     public static final String MOD_ID = "spark_core";
     public static final Logger LOGGER = LoggerFactory.getLogger("星火核心");
-    public static final SparkLogger ENHANCED_LOGGER = new SparkLogger(LOGGER);
     public static final ObjectRegister REGISTER = new ObjectRegister(MOD_ID, true);
     public static final ObjectRegister MC_REGISTER = new ObjectRegister("minecraft", false);
     public static final MolangParser PARSER = new MolangParser(new HashMap<>(4));
 
     public SparkCore(IEventBus modEventBus, ModContainer modContainer) {
-        // 首先注册SparkCore自身到多mod资源系统
-        MultiModResourceRegistry.INSTANCE.registerModResources(MOD_ID, SparkCore.class);
         SparkPackResourceLoader.loadAllModules();
         NativeLoader.load("bullet", PhysicsHelperKt.selectLib());
 
@@ -60,14 +53,14 @@ public class SparkCore {
         SparkDataRegistryRegister.register(modEventBus);
         SparkCodeRegister.register(modEventBus);
         SparkCommandRegister.register();
-        SyncerTypes.register();
+        SparkSyncerTypes.register();
         SparkDataGenerator.register(modEventBus);
-        SparkCapabilities.register(modEventBus);
+        SparkCapabilities.register();
         SparkParticles.register();
         SparkPackModuleRegister.register(modEventBus);
-        SparkConfig.register(modContainer);
         SparkStateMachineRegister.register();
-        SparkResourceRegister.register(modEventBus);
+        SparkDiffSyncSchemas.register();
+        SparkCollisionObjectTypes.register();
     }
 
     public static Logger logger(String suffix) {

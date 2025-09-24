@@ -13,6 +13,8 @@ data class OLocator(
     val rotation: Vec3
 ) {
 
+    lateinit var bone: OBone
+
     companion object {
         @JvmStatic
         val CODEC: Codec<OLocator> = Codec.either(

@@ -1,10 +1,10 @@
 package cn.solarmoon.spark_core.mixin.phys;
 
-import cn.solarmoon.spark_core.physics.host.PhysicsHost;
+import cn.solarmoon.spark_core.physics.PhysicsHost;
+import cn.solarmoon.spark_core.physics.component.CollisionObjectComponent;
 import cn.solarmoon.spark_core.physics.level.*;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;
-import kotlin.Pair;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -20,6 +20,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Supplier;
@@ -29,6 +31,7 @@ public abstract class LevelMixin implements PhysicsHost, TaskSubmitOffice {
 
     private final Level level = (Level) (Object) this;
     private PhysicsLevel physicsLevel;
+    private final HashMap<String, CollisionObjectComponent<?>> collisionObjects = new HashMap<>();
     private final ConcurrentHashMap<PPhase, ConcurrentHashMap<String, Function0<Unit>>> tasks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<Function0<Unit>>> imtasks = new ConcurrentHashMap<>();
 
@@ -55,6 +58,11 @@ public abstract class LevelMixin implements PhysicsHost, TaskSubmitOffice {
     @NotNull
     public PhysicsLevel getPhysicsLevel() {
         return physicsLevel;
+    }
+
+    @Override
+    public @NotNull Map<@NotNull String, @NotNull CollisionObjectComponent<?>> getAllCollisionObjects() {
+        return collisionObjects;
     }
 
 }

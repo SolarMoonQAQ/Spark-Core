@@ -44,7 +44,7 @@ public abstract class ItemInHandLayerMixin<T extends LivingEntity, M extends Ent
                 p.translate(-cam.x, -cam.y, -cam.z);
                 var model = animatable.getModelController().getModel();
                 if (model != null) {
-                    var pose = model.getBonePose(boneName);
+                    var pose = model.getPose().getBonePose(boneName);
                     var ma = pose.getWorldBoneMatrix(partialTicks);
                     var pivot = animatable.getModelController().getOriginModel().getBone(boneName).getPivot();
                     p.mulPose(ma);

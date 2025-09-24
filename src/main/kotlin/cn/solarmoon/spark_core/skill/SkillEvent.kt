@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
+import cn.solarmoon.spark_core.util.InlineEvent
 import net.minecraft.nbt.CompoundTag
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent
@@ -11,7 +12,7 @@ import net.neoforged.neoforge.event.entity.player.CriticalHitEvent
 import net.neoforged.neoforge.event.entity.player.SweepAttackEvent
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
-open class SkillEvent {
+open class SkillEvent: InlineEvent {
     class Rejected(val condition: SkillCondition): SkillEvent()
     class Hurt(val event: LivingIncomingDamageEvent): SkillEvent()
     class TargetHurt(val event: LivingIncomingDamageEvent): SkillEvent()

@@ -18,3 +18,7 @@ fun <T> String.parseResOrTag(registryKey: ResourceKey<out Registry<T>>): ResOrTa
         Either.left(id)
     }
 }
+
+fun String.normalize(): String {
+    return replace(Regex("[^A-Za-z0-9._]"), "_")
+}

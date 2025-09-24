@@ -205,6 +205,12 @@ fun Matrix4f.toMatrix4f() = org.joml.Matrix4f(
     m03, m13, m23, m33
 )
 
+fun Matrix3f.copy() = Matrix3f(
+    m00, m10, m20,
+    m01, m11, m21,
+    m02, m12, m22
+)
+
 fun Quaternion.toQuaternionf() = Quaternionf(x, y, z, w)
 
 fun Quaternionf.toBQuaternion() = Quaternion(x, y, z, w)

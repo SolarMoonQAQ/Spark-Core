@@ -2,7 +2,10 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
-import cn.solarmoon.spark_core.physics.collision.ManifoldPoint
+import cn.solarmoon.spark_core.physics.ManifoldPoint
+import cn.solarmoon.spark_core.physics.component.CollisionObjectEvent
+import cn.solarmoon.spark_core.physics.component.component
+import cn.solarmoon.spark_core.util.triggerEvent
 import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSoftSpace
 import com.jme3.bullet.SolverMode
@@ -12,10 +15,10 @@ import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge
 
 //TODO:将计算线程数量改为通过配置文件设置
-class PhysicsWorld(val level: PhysicsLevel, numSolvers: Int = 1): PhysicsSoftSpace(
+class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
-    BroadphaseType.DBVT, CollisionConfiguration(8192,0), numSolvers
+    BroadphaseType.DBVT, CollisionConfiguration(8192,0)
 ) {
 
     init {
@@ -39,7 +42,11 @@ class PhysicsWorld(val level: PhysicsLevel, numSolvers: Int = 1): PhysicsSoftSpa
     override fun needsCollision(pcoA: PhysicsCollisionObject, pcoB: PhysicsCollisionObject): Boolean {
         if (pcoA.isStatic && pcoB.isStatic) return false
         var r = true
-        if ((pcoA.owner == pcoB.owner && !pcoA.collideWithOwner && !pcoB.collideWithOwner)) r = false
+        val ac = pcoA.component
+        val bc = pcoB.component
+        if (ac != null && bc != null) {
+            if ((ac.owner == bc.owner && ac.collideWithOwnerGroups and bc.collideWithOwnerGroups == 0)) r = false
+        }
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
@@ -53,21 +60,19 @@ class PhysicsWorld(val level: PhysicsLevel, numSolvers: Int = 1): PhysicsSoftSpa
     ) {
         val o1Point = ManifoldPoint(manifoldPointId, 0)
         val o2Point = ManifoldPoint(manifoldPointId, 1)
-        if (pcoA.isCollisionGroupContains(pcoB)) {
-            pcoA.isColliding = true
-            pcoA.collisionListeners.forEach { it.onProcessed(pcoA, pcoB, o1Point, o2Point, manifoldPointId) }
-        }
-        if (pcoB.isCollisionGroupContains(pcoA)) {
-            pcoB.isColliding = true
-            pcoB.collisionListeners.forEach { it.onProcessed(pcoB, pcoA, o2Point, o1Point, manifoldPointId) }
-        }
+
+        pcoA.component?.isColliding = true
+        pcoA.component?.triggerEvent(CollisionObjectEvent.Collide.Processed(pcoA, pcoB, o1Point, o2Point))
+
+        pcoB.component?.isColliding = true
+        pcoB.component?.triggerEvent(CollisionObjectEvent.Collide.Processed(pcoB, pcoA, o2Point, o1Point))
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(pcoA, pcoB, o1Point, o2Point, manifoldPointId))
     }
 
     override fun addCollisionObject(pco: PhysicsCollisionObject) {
-        pco.level = level
         super.addCollisionObject(pco)
+        pco.component?.triggerEvent(CollisionObjectEvent.AddToWorld())
     }
 
 }

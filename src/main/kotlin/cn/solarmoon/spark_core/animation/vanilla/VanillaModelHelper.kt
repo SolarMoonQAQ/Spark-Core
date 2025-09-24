@@ -47,7 +47,7 @@ object VanillaModelHelper {
     @JvmStatic
     fun applyTransform(animatable: IAnimatable<*>, boneName: String, part: ModelPart, partialTicks: Float) {
         if (part !is ITransformModelPart) return
-        val bone = animatable.modelController.model?.getBonePose(boneName) ?: return
+        val bone = animatable.modelController.model?.pose?.getBonePose(boneName) ?: return
         val pos = bone.getLocalPosition(partialTicks).toVector3f().mul(16f).apply { x = -x; y = -y }
         val rot = bone.getLocalRotation(partialTicks).toVector3f().apply { x = -x; y = -y }
         val scale = bone.getLocalScale(partialTicks).toVector3f()
