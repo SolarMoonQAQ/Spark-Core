@@ -109,7 +109,7 @@ abstract class AbstractRigidBodyComponent<B: PhysicsRigidBody>(
     fun attachToEntity(entity: Entity, offset: Vector3f = Vector3f()) {
         if (!authority.isInRightSide(level)) return
         detach()
-        sub = onEvent<CollisionObjectEvent.PhysicsTick.Pre> {
+        sub = onEvent<CollisionObjectEvent.Tick> {
             val ma = Matrix4f().translate(entity.boundingBox.center.add(offset.toVec3()).toVector3f()).rotateY(entity.yRot.toRadians())
             body.setPhysicsLocation(ma.transformPosition(Vector3f()).toBVector3f())
         }

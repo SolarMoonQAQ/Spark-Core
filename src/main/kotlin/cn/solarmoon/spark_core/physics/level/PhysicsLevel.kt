@@ -119,8 +119,8 @@ abstract class PhysicsLevel(
         }
         terrainBlocks.clear()//清空潜在碰撞地形块列表
         world.pcoList.forEach {
-            it.component?.tick()
             it.component?.triggerEvent(CollisionObjectEvent.Tick)
+            it.component?.tick()
         }
         BlockCollisionHelper.addOrUpdateTerrainBlocksToWorld(terrainBlocks, this)//添加地形块
         // 发送物理步进请求（异步）
