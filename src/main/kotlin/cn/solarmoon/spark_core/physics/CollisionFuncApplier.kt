@@ -15,7 +15,7 @@ object CollisionFuncApplier {
         if (event.entity !is BlockAttachedEntity) {
             val entity = event.entity
 
-            val body = SparkCollisionObjectTypes.RIGID_BODY.get().create("TEST", Authority.SERVER, event.level).apply {
+            val body = SparkCollisionObjectTypes.RIGID_BODY.get().create("TEST", Authority.BOTH, event.level).apply {
                 isGravityProtected = false
                 shapeType = SparkCollisionShapeTypes.TEST_BOX.get()
                 isKinematic = true
