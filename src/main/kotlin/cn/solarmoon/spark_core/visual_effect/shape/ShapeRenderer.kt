@@ -59,11 +59,7 @@ class ShapeRenderer : VisualEffectRenderer() {
             if (body.collideWithGroups == 0) return@forEach
             val component = body.component ?: return@forEach
             val shape = body.collisionShape
-            val transform = if (body is PhysicsRigidBody && !body.isKinematic) {
-                component.lastTransform.lerp(component.transform, partialTicks).toTransformMatrix().toMatrix4f()
-            } else {
-                component.lastTransform.lerp(body.getTransform(null), partialTicks).toTransformMatrix().toMatrix4f()
-            }
+            val transform = component.lastTransform.lerp(component.transform, partialTicks).toTransformMatrix().toMatrix4f()
             /**
              * 处理复合形状的子元素渲染
              * 对每个子元素应用独立变换矩阵并递归调用渲染

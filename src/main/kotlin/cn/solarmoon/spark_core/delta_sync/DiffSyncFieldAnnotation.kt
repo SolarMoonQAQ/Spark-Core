@@ -34,7 +34,7 @@ fun <D : Any> generateSchema(type: KClass<D>, id: ResourceLocation): DiffSyncSch
                     field.set(target, value)
                 } else if (prop as? KMutableProperty1<D, Any?> != null) {
                     prop.set(target, value)
-                    SparkCore.LOGGER.info("已同步 ${prop.name}: $value")
+//                    SparkCore.LOGGER.info("已同步 ${prop.name}: $value")
                 }
             },
             extract = { source -> prop.get(source) }

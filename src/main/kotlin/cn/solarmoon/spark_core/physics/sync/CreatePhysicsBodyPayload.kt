@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.physics.component.Authority
 import cn.solarmoon.spark_core.physics.component.CollisionObjectType
 import cn.solarmoon.spark_core.physics.component.addCollisionComponent
 import cn.solarmoon.spark_core.physics.component.shape.CollisionShapeType
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import net.minecraft.network.codec.ByteBufCodecs
@@ -34,9 +35,9 @@ class CreatePhysicsBodyPayload(
                     id = payload.id
                 }
                 level.addCollisionComponent(body)
-                level.physicsLevel.apply {
+                level.physicsLevel.submitImmediateTask {
                     if (body.body is PhysicsRigidBody) body.body.isKinematic = true // 服务端权威的刚体在客户端中只能为运动学（不在客户端主动运动，由服务端同步运动）
-                    world.addCollisionObject(body.body)
+                    level.physicsLevel.world.addCollisionObject(body.body)
                 }
             }
         }

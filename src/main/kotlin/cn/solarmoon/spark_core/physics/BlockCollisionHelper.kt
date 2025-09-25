@@ -138,7 +138,7 @@ object BlockCollisionHelper {
                             BlockCollisionUtil.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos)
                         // 如果块不是空气或可替换方块，记录方块的状态和坐标 Record the block state and coordinates
                         SparkCollisionObjectTypes.RIGID_BODY.get()
-                            .create(blockPos.toString(), Authority.CLIENT, physicsLevel.mcLevel).apply {
+                            .create(blockPos.toString(), Authority.BOTH, physicsLevel.mcLevel).apply {
                                 body.collisionShape = blockState.getBulletCollisionShape(physicsLevel)
                                 mass = 0f
                                 userIndex = 10

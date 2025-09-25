@@ -13,6 +13,11 @@ enum class Authority {
         override fun isInRightSide(level: Level): Boolean {
             return level.isClientSide
         }
+    },
+    BOTH {
+        override fun isInRightSide(level: Level): Boolean {
+            return true
+        }
     };
 
     abstract fun isInRightSide(level: Level): Boolean
