@@ -15,7 +15,7 @@ object SparkCollisionShapeTypes {
 
     val TEST_BOX = SparkCore.REGISTER.collisionShapeType<BoxCollisionShape>()
         .id("test_box")
-        .bound { BoxCollisionShape(Vector3f(2f, 2f, 2f)) }
+        .bound { BoxCollisionShape(Vector3f(0.5f, 0.5f, 0.5f)) }
         .build()
 
 }

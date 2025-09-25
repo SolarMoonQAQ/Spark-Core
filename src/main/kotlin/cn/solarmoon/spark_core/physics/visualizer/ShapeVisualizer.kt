@@ -8,14 +8,14 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
+import java.awt.Color
 
 interface ShapeVisualizer {
 
     fun render(
-        level: PhysicsLevel,
-        body: PhysicsCollisionObject,
         transform: Matrix4f,
         shape: CollisionShape,
+        color: Color,
         mc: Minecraft,
         camPos: Vec3,
         poseStack: PoseStack,

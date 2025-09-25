@@ -34,8 +34,8 @@ abstract class AbstractRigidBodyComponent<B: PhysicsRigidBody>(
     @DiffSyncField override var rotation by setterField(body.getPhysicsRotation(null).toQuaternionf()) { body.setPhysicsRotation(it.toBQuaternion()) }
     @DiffSyncField override var scale by setterField(body.getScale(null).toVector3f()) { body.setPhysicsScale(it.toBVector3f()) }
     var isKinematic: Boolean by setterField(body.isKinematic) { body.isKinematic = it }
-    @DiffSyncField var gravity by setterField(body.getGravity(null).toVector3f()) { body.setGravity(it.toBVector3f()) }
     @DiffSyncField var isGravityProtected by setterField(body.isGravityProtected) { body.setProtectGravity(it) }
+    @DiffSyncField var gravity by setterField(body.getGravity(null).toVector3f()) { body.setGravity(it.toBVector3f()) }
     @DiffSyncField var angularFactor by setterField(body.getAngularFactor(null).toVector3f()) { body.setAngularFactor(it.toBVector3f()) }
     @DiffSyncField var angularVelocity by setterField(body.getAngularVelocity(null).toVector3f()) { body.setAngularVelocity(it.toBVector3f()) }
     @DiffSyncField var angularDamping by setterField(body.angularDamping) { body.angularDamping = it }
@@ -53,8 +53,8 @@ abstract class AbstractRigidBodyComponent<B: PhysicsRigidBody>(
     override fun update() {
         super.update()
         isKinematic = body.isKinematic
-        gravity = body.getGravity(null).toVector3f()
         isGravityProtected = body.isGravityProtected
+        gravity = body.getGravity(null).toVector3f()
         angularFactor = body.getAngularFactor(null).toVector3f()
         angularVelocity = body.getAngularVelocity(null).toVector3f()
         angularDamping = body.angularDamping

@@ -14,6 +14,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
+import java.awt.Color
 
 class ShapeRenderer : VisualEffectRenderer() {
 
@@ -27,13 +28,13 @@ class ShapeRenderer : VisualEffectRenderer() {
 
     /**
      * 渲染物理碰撞形状的可视化效果
-     * 
+     *
      * @param mc Minecraft实例，用于获取游戏环境信息
      * @param camPos 摄像机位置向量，用于计算相对渲染位置
      * @param poseStack 姿态矩阵栈，用于管理3D变换状态
      * @param bufferSource 缓冲区源，用于获取渲染所需的顶点缓冲区
      * @param partialTicks 部分刻度值，用于平滑动画过渡
-     * 
+     *
      * 该方法通过以下步骤完成渲染：
      * 1. 检查当前维度和渲染设置有效性
      * 2. 遍历所有物理对象并筛选可渲染对象
@@ -72,11 +73,11 @@ class ShapeRenderer : VisualEffectRenderer() {
                     val visualizer = ShapeVisualizerRegistry.getVisualizer(it.shape) ?: return@forEach
                     val childTransform = it.copyTransform(null).toTransformMatrix().toMatrix4f()
                     val finalMatrix = transform.mul(childTransform, Matrix4f())
+                    val color = if (component.isColliding) Color.RED else Color.WHITE
                     visualizer.render(
-                        physLevel,
-                        body,
                         finalMatrix,
                         it.shape,
+                        color,
                         mc,
                         camPos,
                         poseStack,
@@ -90,7 +91,8 @@ class ShapeRenderer : VisualEffectRenderer() {
                  * 使用注册的可视化器执行最终绘制操作
                  */
                 val visualizer = ShapeVisualizerRegistry.getVisualizer(shape) ?: return@forEach
-                visualizer.render(physLevel, body, transform, shape, mc, camPos, poseStack, bufferSource, partialTicks)
+                val color = if (component.isColliding) Color.RED else Color.WHITE
+                visualizer.render(transform, shape, color, mc, camPos, poseStack, bufferSource, partialTicks)
             }
         }
     }

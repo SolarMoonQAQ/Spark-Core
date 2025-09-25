@@ -70,6 +70,9 @@ abstract class CollisionObjectComponent<B: PhysicsCollisionObject>(
     @DiffSyncField var isActive = body.isActive
     @DiffSyncField var isInWorld = body.isInWorld
     @DiffSyncField var isStatic = body.isStatic
+    @DiffSyncField var userIndex by setterField(body.userIndex()) { body.setUserIndex(it)}
+    @DiffSyncField var userIndex2 by setterField(body.userIndex2()) { body.setUserIndex2(it)}
+    @DiffSyncField var userIndex3 by setterField(body.userIndex3()) { body.setUserIndex3(it)}
     var lastTransform = body.getTransform(null)
     var transform = body.getTransform(null)
     var boundingBox = body.boundingBox(null)
@@ -115,6 +118,9 @@ abstract class CollisionObjectComponent<B: PhysicsCollisionObject>(
         isActive = body.isActive
         isInWorld = body.isInWorld
         isStatic = body.isStatic
+        userIndex = body.userIndex()
+        userIndex2 = body.userIndex2()
+        userIndex3 = body.userIndex3()
 
         boundingBox = body.boundingBox(null)
         lastTransform = transform
@@ -141,19 +147,21 @@ abstract class CollisionObjectComponent<B: PhysicsCollisionObject>(
                     isUpdating = false
                 }
             }
-
-            if (!body.isStatic && body.isActive) {
-                if ((body.collideWithGroups and CollisionGroups.TERRAIN != 0)) BlockCollisionHelper.addNearbyTerrainBlocksToWorld(body, physicsLevel)
-            } else if (body.collisionGroup == CollisionGroups.TERRAIN && body is PhysicsRigidBody) {
-                if (body.userIndex() < 0) {//移除过久未被访问的块记录及其刚体对象
-                    physicsLevel.world.remove(body)
-                    physicsLevel.terrainBlockBodies.remove(BlockPos(position.toVec3i()))
-                } else body.setUserIndex(body.userIndex() - 1) //销毁倒计时推进
-            }
         } else {
             isUpdating = true
             update()
             isUpdating = false
+        }
+
+        if (!body.isStatic && body.isActive) {
+            //收集非地形方块刚体周边的方块，用于创建地形碰撞
+            if ((body.collideWithGroups and CollisionGroups.TERRAIN != 0)) BlockCollisionHelper.gatherNearbyTerrainBlocksForWorld(body, physicsLevel)
+        } else if (body.collisionGroup == CollisionGroups.TERRAIN && body is PhysicsRigidBody) {
+            //衰减地形刚体寿命
+            if (userIndex < 0) {//移除过久未被访问的块记录及其刚体对象
+                physicsLevel.terrainBlockBodies.remove(BlockPos(position.floor().toVec3i()))
+                remove()
+            } else userIndex -= 1 //销毁倒计时推进
         }
     }
 

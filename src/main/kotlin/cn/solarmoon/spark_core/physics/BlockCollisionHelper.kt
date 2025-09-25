@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.physics
 
+import cn.solarmoon.spark_core.physics.component.Authority
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.level.ServerPhysicsLevel
+import cn.solarmoon.spark_core.registry.common.SparkCollisionObjectTypes
 import cn.solarmoon.spark_core.util.BlockCollisionUtil
 import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
@@ -24,6 +26,7 @@ import kotlin.math.floor
 
 object BlockCollisionHelper {
     private val SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
+
     //TODO:服务端不同维度仍需作出区分
     private val SERVER_SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = WeakHashMap()
     private val DEFAULT_SHAPE = BoxCollisionShape(0.5f)
@@ -76,11 +79,11 @@ object BlockCollisionHelper {
         }
     }
 
-    fun addNearbyTerrainBlocksToWorld(pco: PhysicsCollisionObject, physicsLevel: PhysicsLevel) {
+    fun gatherNearbyTerrainBlocksForWorld(pco: PhysicsCollisionObject, physicsLevel: PhysicsLevel) {
         val boundingBox = pco.boundingBox(null)
         val min = boundingBox.getMin(null)
         val max = boundingBox.getMax(null)
-        val blocks = HashSet<BlockPos>()
+        val blocks = physicsLevel.terrainBlocks
         if (pco is PhysicsRigidBody) {
             val v =
                 pco.getLinearVelocity(null)//对于移动物体，额外向速度方向延伸判定区 Extend the detection area in the direction of the velocity for the moving object
@@ -103,39 +106,27 @@ object BlockCollisionHelper {
                 }
             }
         }
-        addTerrainBlocksToWorld(blocks, physicsLevel)
     }
 
-    private fun addTerrainBlocksToWorld(blockPoses: Set<BlockPos>, physicsLevel: PhysicsLevel) {
+    fun addOrUpdateTerrainBlocksToWorld(blockPoses: Set<BlockPos>, physicsLevel: PhysicsLevel) {
         for (blockPos in blockPoses) {
             val chunkPos = ChunkPos(blockPos)
             if (physicsLevel.terrainChunks[chunkPos] != null) {
                 val blockState = physicsLevel.terrainChunks[chunkPos]!!.getBlockState(blockPos)
                 if (physicsLevel.terrainBlockBodies.containsKey(blockPos)) {//如果该位置的方块已经记录过，则检查方块类型后重置销毁倒计时 Reset the destruction count if the block has been recorded
-                    val blockBody = physicsLevel.terrainBlockBodies[blockPos]
+                    val block = physicsLevel.terrainBlockBodies[blockPos]
                     if (blockState.isAir || blockState.getCollisionShape(physicsLevel.mcLevel, blockPos).isEmpty
-                    ) {//如果该位置的方块已经是空气或可替换方块，则重置销毁倒计时
-                        physicsLevel.submitDeduplicatedTask(
-                            blockPos.toString(),
-                            PPhase.PRE
-                        ) { blockBody?.setUserIndex(0) }
-                    } else if (blockBody?.userIndex()!! > 0f) {//重置销毁倒计时 Reset the destruction count
+                    ) {//如果该位置的方块已经是空气或可替换方块，则销毁倒计时立刻归零
+                        block?.userIndex = 0
+                    } else if (block?.userIndex!! > 0) {//重置销毁倒计时 Reset the destruction count
                         //更新方块打滑属性(默认取决于方块类型，上方方块，和天气)
                         if (Math.random() > 0.95)
-                            blockBody.setUserIndex2(
-                                BlockCollisionUtil.getSlip(
-                                    physicsLevel.terrainChunks[chunkPos],
-                                    blockState,
-                                    blockPos
-                                )
+                            block.userIndex2 = BlockCollisionUtil.getSlip(
+                                physicsLevel.terrainChunks[chunkPos],
+                                blockState,
+                                blockPos
                             )
-                        physicsLevel.submitDeduplicatedTask(
-                            blockPos.toString(),
-                            PPhase.PRE
-                        ) {
-                            blockBody.setUserIndex(10)
-                            if (blockState != blockBody.userObject) blockBody.userObject = blockState
-                        }
+                        block.userIndex = 10
                     }
                 } else {//如果该位置的方块没有记录过，则获取块状态并创建刚体对象 Create a physics body for the block if it has not been recorded
                     if (!blockState.isAir && !blockState.getCollisionShape(
@@ -146,36 +137,36 @@ object BlockCollisionHelper {
                         val slip =
                             BlockCollisionUtil.getSlip(physicsLevel.terrainChunks[chunkPos], blockState, blockPos)
                         // 如果块不是空气或可替换方块，记录方块的状态和坐标 Record the block state and coordinates
-                        physicsLevel.submitDeduplicatedTask(blockPos.toString(), PPhase.PRE) {
-                            val blockBody =
-                                PhysicsRigidBody(
-                                    blockState.getBulletCollisionShape(physicsLevel),
-                                )
-                            blockBody.setUserIndex(10) //设定销毁倒计时(0.5秒，10主线程tick) Set the destruction count (0.5 seconds, 10 main thread ticks)
-                            blockBody.setPhysicsLocation(
-                                Vector3f(
+                        SparkCollisionObjectTypes.RIGID_BODY.get()
+                            .create(blockPos.toString(), Authority.CLIENT, physicsLevel.mcLevel).apply {
+                                body.collisionShape = blockState.getBulletCollisionShape(physicsLevel)
+                                mass = 0f
+                                userIndex = 10
+                                position = org.joml.Vector3f(
                                     blockPos.x.toFloat() + 0.5f,
                                     blockPos.y.toFloat() + 0.5f,
                                     blockPos.z.toFloat() + 0.5f
                                 )
-                            )
-                            blockBody.userObject = blockState
-                            blockBody.friction =
-                                BlockCollisionUtil.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
-                            blockBody.rollingFriction =
-                                BlockCollisionUtil.getBlockRollingFriction(physicsLevel.mcLevel, blockState, blockPos)
-                            blockBody.restitution = BlockCollisionUtil.getRestitution(
-                                physicsLevel.terrainChunks[chunkPos],
-                                blockState,
-                                blockPos
-                            )
-                            blockBody.setUserIndex2(slip)
-                            blockBody.collisionGroup = CollisionGroups.TERRAIN
-                            blockBody.collideWithGroups = CollisionGroups.NONE
-                            blockBody.contactStiffness = 1e20f
-                            physicsLevel.terrainBlockBodies[blockPos] = blockBody
-                            physicsLevel.world.add(blockBody)
-                        }
+                                friction =
+                                    BlockCollisionUtil.getBlockFriction(physicsLevel.mcLevel, blockState, blockPos)
+                                rollingFriction = BlockCollisionUtil.getBlockRollingFriction(
+                                    physicsLevel.mcLevel,
+                                    blockState,
+                                    blockPos
+                                )
+                                restitution = BlockCollisionUtil.getRestitution(
+                                    physicsLevel.terrainChunks[chunkPos],
+                                    blockState,
+                                    blockPos
+                                )
+                                userIndex2 = (slip)
+                                collisionGroup = CollisionGroups.TERRAIN
+                                collideWithGroups = CollisionGroups.NONE
+                                contactStiffness = 1e20f
+                                physicsLevel.terrainBlockBodies[blockPos] = this
+                                bindHost(level)
+                                addToLevel()
+                            }
                     }
                 }
             }
