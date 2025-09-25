@@ -24,7 +24,7 @@ class PhysicsComponentPayload(
         @JvmStatic
         fun handleInClient(payload: PhysicsComponentPayload, context: IPayloadContext) {
             context.enqueueWork {
-                context.player().level().allCollisionComponents.values.forEach {
+                context.player().level().getCollisionComponent(payload.id)?.let {
                     (it.diffSyncSchema as DiffSyncSchema<Any>).applyDiff(payload.delta, it)
                 }
             }

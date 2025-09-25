@@ -3,6 +3,8 @@ package cn.solarmoon.spark_core.entry_builder.common
 import cn.solarmoon.spark_core.physics.component.Authority
 import cn.solarmoon.spark_core.physics.component.CollisionObjectComponent
 import cn.solarmoon.spark_core.physics.component.CollisionObjectType
+import cn.solarmoon.spark_core.physics.component.CollisionObjectTypeProvider
+import cn.solarmoon.spark_core.physics.component.shape.CollisionShapeType
 import com.jme3.bullet.collision.shapes.CollisionShape
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.level.Level
@@ -12,11 +14,11 @@ import java.util.function.Supplier
 class CollisionObjectTypeBuilder<T: CollisionObjectComponent<*>>(private val registry: DeferredRegister<CollisionObjectType<*>>, private val modId: String) {
 
     private var id: String = ""
-    private lateinit var rulesSupplier: (String, Authority, CollisionShape, Level) -> T
+    private lateinit var rulesSupplier: CollisionObjectTypeProvider<T>
 
     fun id(id: String) = apply { this.id = id }
 
-    fun bound(provider: (String, Authority, CollisionShape, Level) -> T) = apply {
+    fun bound(provider: CollisionObjectTypeProvider<T>) = apply {
         this.rulesSupplier = provider
     }
 

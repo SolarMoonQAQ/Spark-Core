@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.entry_builder.common.fluid.FluidBuilder
 import cn.solarmoon.spark_core.physics.component.CollisionObjectComponent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.util.RegisterUtil
+import com.jme3.bullet.collision.shapes.CollisionShape
 import net.minecraft.core.RegistrySetBuilder
 import net.minecraft.core.particles.ParticleOptions
 import net.minecraft.core.registries.Registries
@@ -47,6 +48,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
     val deltaSyncRulesRegister = lazy { DeferredRegister.create(SparkRegistries.DIFF_SYNC_SCHEMA, modId) }
     val collisionObjectTypeRegister = lazy { DeferredRegister.create(SparkRegistries.COLLISION_OBJECT_TYPE, modId) }
+    val collisionShapeTypeRegister = lazy { DeferredRegister.create(SparkRegistries.COLLISION_SHAPE_TYPE, modId) }
     // 热重载域不再使用 DeferredRegister;这里只保留原版支持的注册表
     val syncerTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SYNCER_TYPE, modId) }
 
@@ -127,6 +129,13 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
             collisionObjectTypeRegister.value.register(modBus!!)
         }
         return CollisionObjectTypeBuilder(collisionObjectTypeRegister.value, modId)
+    }
+
+    fun <T: CollisionShape> collisionShapeType(): CollisionShapeTypeBuilder<T> {
+        if (!collisionShapeTypeRegister.isInitialized()) {
+            collisionShapeTypeRegister.value.register(modBus!!)
+        }
+        return CollisionShapeTypeBuilder(collisionShapeTypeRegister.value)
     }
 
     // Removed: typedAnimation() 在运行时使用 VirtualRegistry;不支持通过 DeferredRegister 进行静态注册

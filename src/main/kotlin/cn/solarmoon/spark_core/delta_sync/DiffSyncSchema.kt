@@ -52,7 +52,6 @@ class DiffSyncSchema<D: Any>(
             if ((diff.mask and field.maskBit) != 0L && diff.changes.containsKey(field.maskBit)) {
                 val value = diff.changes[field.maskBit]!!
                 (field.apply as (D, Any) -> Unit).invoke(target, value)
-                SparkCore.LOGGER.warn("已同步 ${field.maskBit}: $value")
             }
         }
     }

@@ -1,12 +1,16 @@
 package cn.solarmoon.spark_core.physics.component
 
+import cn.solarmoon.spark_core.delta_sync.DiffSnapshot
 import cn.solarmoon.spark_core.delta_sync.DiffSyncField
 import cn.solarmoon.spark_core.delta_sync.DiffSyncSchema
 import cn.solarmoon.spark_core.physics.CollisionGroups
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.BlockCollisionHelper
+import cn.solarmoon.spark_core.physics.component.shape.CollisionShapeType
+import cn.solarmoon.spark_core.physics.sync.CreatePhysicsBodyPayload
 import cn.solarmoon.spark_core.physics.sync.PhysicsComponentPayload
 import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.registry.common.SparkCollisionShapeTypes
 import cn.solarmoon.spark_core.util.InlineEventConsumer
 import cn.solarmoon.spark_core.util.InlineEventHandler
 import cn.solarmoon.spark_core.util.toQuaternionf
@@ -71,9 +75,19 @@ abstract class CollisionObjectComponent<B: PhysicsCollisionObject>(
     var boundingBox = body.boundingBox(null)
     var isColliding = false
     @DiffSyncField var collideWithOwnerGroups = CollisionGroups.NONE
+    @DiffSyncField var shapeType: CollisionShapeType<*> = SparkCollisionShapeTypes.DEFAULT_BOX.get()
+        set(value) {
+            field = value
+            physicsLevel.submitImmediateTask {
+                body.collisionShape = value.create(this)
+            }
+        }
 
-    val id get() = body.nativeId()
+    var id = if (authority == Authority.SERVER) body.nativeId() else -body.nativeId()
+        internal set
     val physicsLevel get() = level.physicsLevel
+
+    private var lastData: DiffSnapshot? = null
 
     /**
      * 在当前权威线程中更新物理线程计算结果
@@ -112,14 +126,13 @@ abstract class CollisionObjectComponent<B: PhysicsCollisionObject>(
             when (authority) {
                 // 服务器权威时，在服务端更新数据，然后同步差异数据
                 Authority.SERVER -> {
-                    (diffSyncSchema as DiffSyncSchema<CollisionObjectComponent<*>>).snapshotFrom(this).let { lastData ->
-                        isUpdating = true
-                        update()
-                        isUpdating = false
-                        diffSyncSchema.diffPacket(lastData, this).ifValid {
-                            PacketDistributor.sendToAllPlayers(PhysicsComponentPayload(id, this))
-                        }
+                    isUpdating = true
+                    update()
+                    isUpdating = false
+                    (diffSyncSchema as DiffSyncSchema<CollisionObjectComponent<*>>).diffPacket(lastData!!, this).ifValid {
+                        PacketDistributor.sendToAllPlayers(PhysicsComponentPayload(id, this))
                     }
+                    updateData()
                 }
                 // 客户端权威时，在客户端更新数据
                 Authority.CLIENT -> {
@@ -145,6 +158,10 @@ abstract class CollisionObjectComponent<B: PhysicsCollisionObject>(
     }
 
     open fun physicsTick() {}
+
+    fun updateData() {
+        lastData = (diffSyncSchema as DiffSyncSchema<CollisionObjectComponent<*>>).snapshotFrom(this)
+    }
 
     /**
      * 绑定到宿主，没有额外逻辑
@@ -173,12 +190,12 @@ abstract class CollisionObjectComponent<B: PhysicsCollisionObject>(
     }
 
     fun addToLevel() {
-        level.addCollisionComponent(this)
-        if (!body.isInWorld) {
+        if (!body.isInWorld && authority.isInRightSide(level)) {
+            level.addCollisionComponent(this)
+            if (authority == Authority.SERVER) {
+                PacketDistributor.sendToAllPlayers(CreatePhysicsBodyPayload(id, name, authority, type))
+            }
             physicsLevel.submitImmediateTask {
-                if (authority == Authority.SERVER && level.isClientSide) {
-                    if (body is PhysicsRigidBody) body.isKinematic = true // 服务端权威的刚体在客户端中只能为运动学（不在客户端主动运动，由服务端同步运动）
-                }
                 physicsLevel.world.addCollisionObject(body)
             }
         }

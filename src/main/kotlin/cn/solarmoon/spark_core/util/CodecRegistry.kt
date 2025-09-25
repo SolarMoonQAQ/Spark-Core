@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.util
 
+import cn.solarmoon.spark_core.physics.component.shape.CollisionShapeType
 import io.netty.buffer.ByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
@@ -20,6 +21,7 @@ object CodecRegistry {
         register(Boolean::class, ByteBufCodecs.BOOL)
         register(Vector3f::class, SerializeHelper.VECTOR3F_STREAM_CODEC)
         register(Quaternionf::class, SerializeHelper.QUATERNIONF_STREAM_CODEC)
+        register(CollisionShapeType::class, CollisionShapeType.STREAM_CODEC)
     }
 
     fun <T : Any> register(type: KClass<T>, codec: StreamCodec<*, T>) {
@@ -28,8 +30,7 @@ object CodecRegistry {
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> get(type: KClass<T>): StreamCodec<*, T> {
-        return map[type] as? StreamCodec<*, T>
-            ?: error("未注册类型 ${type.simpleName} 的 codec")
+        return map[type] as? StreamCodec<*, T> ?: error("未注册类型 ${type.simpleName} 的网络流编解码器")
     }
 
 }
