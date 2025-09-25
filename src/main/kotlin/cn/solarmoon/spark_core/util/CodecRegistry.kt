@@ -1,10 +1,8 @@
 package cn.solarmoon.spark_core.util
 
 import cn.solarmoon.spark_core.physics.component.shape.CollisionShapeType
-import io.netty.buffer.ByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
-import net.minecraft.world.phys.Vec3
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import kotlin.reflect.KClass
@@ -19,8 +17,8 @@ object CodecRegistry {
         register(Double::class, ByteBufCodecs.DOUBLE)
         register(String::class, ByteBufCodecs.STRING_UTF8)
         register(Boolean::class, ByteBufCodecs.BOOL)
-        register(Vector3f::class, SerializeHelper.VECTOR3F_STREAM_CODEC)
-        register(Quaternionf::class, SerializeHelper.QUATERNIONF_STREAM_CODEC)
+        register(Vector3f::class, SerializeHelper.VECTOR3F_COMPRESSED_STREAM_CODEC)
+        register(Quaternionf::class, SerializeHelper.QUATERNIONF_COMPRESSED_STREAM_CODEC)
         register(CollisionShapeType::class, CollisionShapeType.STREAM_CODEC)
     }
 

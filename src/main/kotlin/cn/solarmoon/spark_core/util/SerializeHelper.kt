@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.util
 
 import com.mojang.serialization.Codec
+import io.netty.buffer.ByteBuf
 import net.minecraft.Util
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.RegistryFriendlyByteBuf
@@ -12,6 +13,7 @@ import org.joml.Quaternionf
 import org.joml.Vector2i
 import org.joml.Vector3f
 import java.awt.Color
+import kotlin.math.sqrt
 
 /**
  * 补充一些解码方法
@@ -34,17 +36,24 @@ object SerializeHelper {
     )
 
     @JvmStatic
-    val VECTOR3F_STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, Vector3f> {
+    val VECTOR3F_COMPRESSED_STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, Vector3f> {
+        // 0.01m 精度
+        private val SCALE = 100.0f
+
         override fun decode(buffer: FriendlyByteBuf): Vector3f {
-            return Vector3f(buffer.readFloat(), buffer.readFloat(), buffer.readFloat())
+            val x = buffer.readShort().toFloat() / SCALE
+            val y = buffer.readShort().toFloat() / SCALE
+            val z = buffer.readShort().toFloat() / SCALE
+            return Vector3f(x, y, z)
         }
 
         override fun encode(buffer: FriendlyByteBuf, value: Vector3f) {
-            buffer.writeFloat(value.x)
-            buffer.writeFloat(value.y)
-            buffer.writeFloat(value.z)
+            buffer.writeShort((value.x * SCALE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()))
+            buffer.writeShort((value.y * SCALE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()))
+            buffer.writeShort((value.z * SCALE).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()))
         }
     }
+
 
     @JvmStatic
     val VEC3_STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, Vec3> {
@@ -75,18 +84,50 @@ object SerializeHelper {
     }
 
     @JvmStatic
-    val QUATERNIONF_STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, Quaternionf> {
+    val QUATERNIONF_COMPRESSED_STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, Quaternionf> {
+        val SCALE = 32767f
+
         override fun decode(buffer: FriendlyByteBuf): Quaternionf {
-            return Quaternionf(buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat())
+            val largestIndex = buffer.readUnsignedByte()
+            val signBit = buffer.readBoolean()
+
+            val comps = FloatArray(4)
+            for (i in 0..3) {
+                if (i.toShort() == largestIndex) continue
+                comps[i] = buffer.readShort() / SCALE
+            }
+
+            var sumSquares = 0f
+            for (i in 0..3) {
+                if (i.toShort() == largestIndex) continue
+                sumSquares += comps[i] * comps[i]
+            }
+
+            val missing = sqrt(1f - sumSquares).let { if (signBit) -it else it }
+            comps[largestIndex.toInt()] = missing
+
+            return Quaternionf(comps[0], comps[1], comps[2], comps[3]).normalize()
         }
 
         override fun encode(buffer: FriendlyByteBuf, value: Quaternionf) {
-            buffer.writeFloat(value.x)
-            buffer.writeFloat(value.y)
-            buffer.writeFloat(value.z)
-            buffer.writeFloat(value.w)
+            val q = Quaternionf(value).normalize()
+            val comps = floatArrayOf(q.x, q.y, q.z, q.w)
+
+            val largestIndex = comps.indices.maxByOrNull { kotlin.math.abs(comps[it]) } ?: 0
+            val signBit = comps[largestIndex] < 0f
+
+            buffer.writeByte(largestIndex)
+            buffer.writeBoolean(signBit)
+
+            for (i in comps.indices) {
+                if (i == largestIndex) continue
+                val quantized = (comps[i] * SCALE).toInt().coerceIn(-32767, 32767)
+                buffer.writeShort(quantized)
+            }
         }
     }
+
+
 
     @JvmStatic
     val COLOR_CODEC: Codec<Color> = Codec.FLOAT.listOf().comapFlatMap(
@@ -120,7 +161,7 @@ object SerializeHelper {
 
 }
 
-fun <T> RegistryFriendlyByteBuf.readNullable(codec: StreamCodec<FriendlyByteBuf, T>): T? {
+fun <B: ByteBuf, T> B.readNullable(codec: StreamCodec<B, T>): T? {
     return if (this.readBoolean()) {
         codec.decode(this)
     } else {
@@ -128,7 +169,7 @@ fun <T> RegistryFriendlyByteBuf.readNullable(codec: StreamCodec<FriendlyByteBuf,
     }
 }
 
-fun <T> RegistryFriendlyByteBuf.writeNullable(value: T?, codec: StreamCodec<FriendlyByteBuf, T>) {
+fun <B: ByteBuf, T> B.writeNullable(value: T?, codec: StreamCodec<B, T>) {
     if (value != null) {
         this.writeBoolean(true)
         codec.encode(this, value)

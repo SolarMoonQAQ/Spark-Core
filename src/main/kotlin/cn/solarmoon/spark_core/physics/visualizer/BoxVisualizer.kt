@@ -17,6 +17,8 @@ import java.awt.Color
 
 class BoxVisualizer: ShapeVisualizer {
 
+    val mesh = BoxShapeMesh()
+
     override fun render(
         transform: Matrix4f,
         shape: CollisionShape,
@@ -28,7 +30,7 @@ class BoxVisualizer: ShapeVisualizer {
         partialTicks: Float
     ) {
         if (shape is BoxCollisionShape) {
-            val mesh = BoxShapeMesh().update(shape)
+            val mesh = mesh.update(shape)
             val buffer = bufferSource.getBuffer(RenderType.lines())
             val edges = mesh.edgesOrder
             for (i in edges.indices step 2) {
