@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.command
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.skill.SkillHost
 import cn.solarmoon.spark_core.skill.SkillManager
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
@@ -54,7 +55,7 @@ class PlaySkillCommand: SkillCommand(2) {
         // 对每个目标执行技能
         var successCount = 0
         for (entity in targets) {
-            val skill = SkillManager.get(skillId)!!.createSkill(entity, level, true)
+            val skill = SkillManager.get(skillId)!!.createSkill(entity as SkillHost, level, true)
             skill?.apply {
                 successCount++
             }

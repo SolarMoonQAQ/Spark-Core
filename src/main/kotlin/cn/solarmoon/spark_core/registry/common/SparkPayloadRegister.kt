@@ -9,8 +9,6 @@ import cn.solarmoon.spark_core.entity.EntityMovingPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackagePayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageSendingTask
-import cn.solarmoon.spark_core.physics.sync.CreatePhysicsBodyPayload
-import cn.solarmoon.spark_core.physics.sync.PhysicsComponentPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
@@ -45,8 +43,6 @@ object SparkPayloadRegister {
 
         val physics = event.registrar("physics")
         physics.playToClient(SpreadingSoundPayload.TYPE, SpreadingSoundPayload.STREAM_CODEC, SpreadingSoundPayload::handler)
-        physics.playToClient(PhysicsComponentPayload.TYPE, PhysicsComponentPayload.STREAM_CODEC, PhysicsComponentPayload::handleInClient)
-        physics.playToClient(CreatePhysicsBodyPayload.TYPE, CreatePhysicsBodyPayload.STREAM_CODEC, CreatePhysicsBodyPayload::handleInClient)
 
         val entity = event.registrar("entity")
         entity.playBidirectional(EntityMovingPayload.TYPE, EntityMovingPayload.STREAM_CODEC, EntityMovingPayload::handleInBothSide)

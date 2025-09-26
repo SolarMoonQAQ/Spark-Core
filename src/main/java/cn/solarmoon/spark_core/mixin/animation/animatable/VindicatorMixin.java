@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.mixin.animation.animatable;
 
-import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;

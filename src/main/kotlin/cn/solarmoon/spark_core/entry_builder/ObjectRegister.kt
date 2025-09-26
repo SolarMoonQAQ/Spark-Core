@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.entry_builder.client.KeyMappingBuilder
 import cn.solarmoon.spark_core.entry_builder.client.LayerBuilder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.entry_builder.common.fluid.FluidBuilder
-import cn.solarmoon.spark_core.physics.component.CollisionObjectComponent
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.util.RegisterUtil
 import com.jme3.bullet.collision.shapes.CollisionShape
@@ -47,8 +46,6 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val dataComponentDeferredRegister = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, modId)
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
     val deltaSyncRulesRegister = lazy { DeferredRegister.create(SparkRegistries.DIFF_SYNC_SCHEMA, modId) }
-    val collisionObjectTypeRegister = lazy { DeferredRegister.create(SparkRegistries.COLLISION_OBJECT_TYPE, modId) }
-    val collisionShapeTypeRegister = lazy { DeferredRegister.create(SparkRegistries.COLLISION_SHAPE_TYPE, modId) }
     // 热重载域不再使用 DeferredRegister;这里只保留原版支持的注册表
     val syncerTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SYNCER_TYPE, modId) }
 
@@ -71,6 +68,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
         soundDeferredRegister.register(bus)
         dataComponentDeferredRegister.register(bus)
         entityDataDeferredRegister.register(bus)
+
         modBus!!.takeIf { gatherData }?.addListener(this::gather)
     }
 
@@ -113,7 +111,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     fun <P: ParticleOptions> particle() = ParticleBuilder<P>(particleDeferredRegister)
     fun <R: Recipe<*>> recipe() = RecipeBuilder<R>(modId, recipeSerializerDeferredRegister, recipeDeferredRegister)
     fun sound() = SoundBuilder(modId, soundDeferredRegister)
-    fun <D> entityData() = EntityDataBuilder<D>(entityDataDeferredRegister)
+    fun <D> entityDataSerializer() = EntityDataBuilder<D>(entityDataDeferredRegister)
     fun layer() = LayerBuilder(modId, modBus!!)
     fun keyMapping() = KeyMappingBuilder(modId, modBus!!)
 
@@ -122,20 +120,6 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
             it.value.register(modBus!!)
         }
         DeltaSyncRulesBuilder(it.value, modId, D::class)
-    }
-
-    fun <T: CollisionObjectComponent<*>> collisionObjectType(): CollisionObjectTypeBuilder<T> {
-        if (!collisionObjectTypeRegister.isInitialized()) {
-            collisionObjectTypeRegister.value.register(modBus!!)
-        }
-        return CollisionObjectTypeBuilder(collisionObjectTypeRegister.value, modId)
-    }
-
-    fun <T: CollisionShape> collisionShapeType(): CollisionShapeTypeBuilder<T> {
-        if (!collisionShapeTypeRegister.isInitialized()) {
-            collisionShapeTypeRegister.value.register(modBus!!)
-        }
-        return CollisionShapeTypeBuilder(collisionShapeTypeRegister.value)
     }
 
     // Removed: typedAnimation() 在运行时使用 VirtualRegistry;不支持通过 DeferredRegister 进行静态注册

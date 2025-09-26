@@ -1,13 +1,11 @@
 package cn.solarmoon.spark_core.animation
 
-import au.edu.federation.caliko.FabrikChain3D
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController
 import cn.solarmoon.spark_core.animation.model.ModelController
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.sync.Syncer
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
-import org.joml.Matrix4f
 
 /**
  * ### 动画体

@@ -59,9 +59,6 @@ public class SparkCore {
         SparkParticles.register();
         SparkPackModuleRegister.register(modEventBus);
         SparkStateMachineRegister.register();
-        SparkDiffSyncSchemas.register();
-        SparkCollisionObjectTypes.register();
-        SparkCollisionShapeTypes.register();
     }
 
     public static Logger logger(String suffix) {

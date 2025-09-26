@@ -3,11 +3,9 @@ package cn.solarmoon.spark_core.physics.level
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
-import cn.solarmoon.spark_core.physics.BlockCollisionHelper
 import cn.solarmoon.spark_core.physics.PhysicsHost
-import cn.solarmoon.spark_core.physics.component.CollisionObjectComponent
-import cn.solarmoon.spark_core.physics.component.CollisionObjectEvent
-import cn.solarmoon.spark_core.physics.component.component
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
+import cn.solarmoon.spark_core.physics.body.stateOf
 import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.TaskSubmitOffice
 import cn.solarmoon.spark_core.util.triggerEvent
@@ -69,8 +67,7 @@ abstract class PhysicsLevel(
 
     //地形碰撞相关
     val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
-    val terrainBlocks: HashSet<BlockPos> = HashSet()
-    val terrainBlockBodies: ConcurrentHashMap<BlockPos, CollisionObjectComponent<PhysicsRigidBody>> = ConcurrentHashMap(1024) //已存在的地形块
+    val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
     suspend fun CoroutineScope.run() {
         val fixedStep = 1f / TPS
         val repeat = TPS / 20
@@ -117,12 +114,12 @@ abstract class PhysicsLevel(
             }
             return
         }
-        terrainBlocks.clear()//清空潜在碰撞地形块列表
+
         world.pcoList.forEach {
-            it.component?.triggerEvent(CollisionObjectEvent.Tick)
-            it.component?.tick()
+            it.triggerEvent(PhysicsBodyEvent.Tick)
+            stateOf(it).update()
         }
-        BlockCollisionHelper.addOrUpdateTerrainBlocksToWorld(terrainBlocks, this)//添加地形块
+
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)
@@ -163,8 +160,8 @@ abstract class PhysicsLevel(
 
     override fun prePhysicsTick(space: PhysicsSpace, timeStep: Float) {
         world.pcoList.forEach { pco ->
-            pco.component?.isColliding = false
-            pco.component?.triggerEvent(CollisionObjectEvent.PhysicsTick.Pre())
+            pco.isColliding = false
+            pco.triggerEvent(PhysicsBodyEvent.PhysicsTick.Pre())
         }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Pre(this))
         processTasks(PPhase.ALL)
@@ -177,7 +174,7 @@ abstract class PhysicsLevel(
 
     override fun physicsTick(space: PhysicsSpace, timeStep: Float) {
         world.pcoList.forEach { pco ->
-            pco.component?.triggerEvent(CollisionObjectEvent.PhysicsTick.Post())
+            pco.triggerEvent(PhysicsBodyEvent.PhysicsTick.Post())
         }
         NeoForge.EVENT_BUS.post(PhysicsLevelTickEvent.Post(this))
         processTasks(PPhase.ALL)

@@ -1,14 +1,13 @@
 package cn.solarmoon.spark_core.visual_effect.shape
 
-import cn.solarmoon.spark_core.util.lerp
+import cn.solarmoon.spark_core.physics.body.stateOf
 import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.physics.component.component
-import cn.solarmoon.spark_core.util.toMatrix4f
 import cn.solarmoon.spark_core.physics.visualizer.ShapeVisualizerRegistry
+import cn.solarmoon.spark_core.util.lerp
+import cn.solarmoon.spark_core.util.toMatrix4f
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
-import com.jme3.bullet.objects.PhysicsRigidBody
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
@@ -57,9 +56,9 @@ class ShapeRenderer : VisualEffectRenderer() {
         val physLevel = level.physicsLevel as ClientPhysicsLevel
         physLevel.world.pcoList.forEach { body ->
             if (body.collideWithGroups == 0) return@forEach
-            val component = body.component ?: return@forEach
             val shape = body.collisionShape
-            val transform = component.lastTransform.lerp(component.transform, partialTicks).toTransformMatrix().toMatrix4f()
+            val state = stateOf(body)
+            val transform = state.lastTransform.lerp(state.transform, partialTicks).toTransformMatrix().toMatrix4f()
             /**
              * 处理复合形状的子元素渲染
              * 对每个子元素应用独立变换矩阵并递归调用渲染

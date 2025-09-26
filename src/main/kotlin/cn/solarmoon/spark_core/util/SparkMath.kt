@@ -92,26 +92,7 @@ fun Quaterniond.toEuler(): Vector3d {
     return angles
 }
 fun Quaternionf.toEuler(): Vector3f {
-    val angles = Vector3d()
-    val q = Quaterniond(this)
-    q.normalize()
-
-    // roll (x-axis rotation)
-    val sinr_cosp = 2 * (q.w * q.x + q.y * q.z)
-    val cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y)
-    angles.apply { x = atan2(sinr_cosp, cosr_cosp) }
-
-    // pitch (y-axis rotation)
-    val sinp = sqrt(1 + 2 * (q.w * q.y - q.x * q.z))
-    val cosp = sqrt(1 - 2 * (q.w * q.y - q.x * q.z))
-    angles.apply { y = 2 * atan2(sinp, cosp) - PI / 2 }
-
-    // yaw (z-axis rotation)
-    val siny_cosp = 2 * (q.w * q.z + q.x * q.y)
-    val cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
-    angles.apply { z = atan2(siny_cosp, cosy_cosp) }
-
-    return angles.toVector3f()
+    return Quaterniond(this).toEuler().toVector3f()
 }
 
 fun Vector3f.rotLerp(target: Vector3f, progress: Double, dist: Vector3f): Vector3f {

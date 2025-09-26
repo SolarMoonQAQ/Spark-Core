@@ -1,12 +1,9 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.js.SparkJS
 import cn.solarmoon.spark_core.sync.IntSyncData
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.bus.api.IEventBus
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.neoforge.registries.RegisterEvent
 
 object SparkCodeRegister {

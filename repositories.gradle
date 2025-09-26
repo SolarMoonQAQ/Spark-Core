@@ -7,14 +7,6 @@ dependencies {
     additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-serialization-core')
     additionalRuntimeClasspath ('org.jetbrains.kotlinx:kotlinx-serialization-json')
 
-    //物理
-    jarJar(implementation("com.github.stephengold:Libbulletjme-Windows64:22.0.3"))
-    additionalRuntimeClasspath('com.github.stephengold:Libbulletjme-Windows64:22.0.3')
-    jarJar(implementation("com.github.stephengold:Libbulletjme-Windows64:22.0.3:SpDebug"))
-    additionalRuntimeClasspath('com.github.stephengold:Libbulletjme-Windows64:22.0.3:SpDebug')
-    jarJar(implementation("io.github.electrostat-lab:snaploader:1.0.0-stable"))
-    additionalRuntimeClasspath('io.github.electrostat-lab:snaploader:1.0.0-stable')
-
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"

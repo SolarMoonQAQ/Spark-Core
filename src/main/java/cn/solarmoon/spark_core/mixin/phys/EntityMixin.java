@@ -1,10 +1,8 @@
 package cn.solarmoon.spark_core.mixin.phys;
 
 import cn.solarmoon.spark_core.physics.PhysicsHost;
-import cn.solarmoon.spark_core.physics.component.CollisionObjectComponent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.sync.SyncData;
-import cn.solarmoon.spark_core.sync.SyncerType;
+import com.jme3.bullet.collision.PhysicsCollisionObject;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +17,7 @@ public abstract class EntityMixin implements PhysicsHost {
 
     @Shadow private Level level;
 
-    private final HashMap<String, CollisionObjectComponent<?>> collisionObjects = new HashMap<>();
+    private final HashMap<String, PhysicsCollisionObject> collisionObjects = new HashMap<>();
 
     @Override
     public @NotNull PhysicsLevel getPhysicsLevel() {
@@ -27,7 +25,7 @@ public abstract class EntityMixin implements PhysicsHost {
     }
 
     @Override
-    public @NotNull Map<@NotNull String, @NotNull CollisionObjectComponent<?>> getAllCollisionObjects() {
+    public @NotNull Map<@NotNull String, PhysicsCollisionObject> getAllPhysicsBodies() {
         return collisionObjects;
     }
 

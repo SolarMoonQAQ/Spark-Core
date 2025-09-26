@@ -21,8 +21,4 @@ interface SkillHost: Syncer, IPreInputHolder {
 
     fun getSkill(id: Int) = allSkills[id]
 
-    fun asEntity(): Entity? = this as? Entity
-
-    fun asAnimatable(): IAnimatable<*>? = this as? IAnimatable<*>
-
 }

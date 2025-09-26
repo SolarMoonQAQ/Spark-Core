@@ -3,8 +3,8 @@ package cn.solarmoon.spark_core.physics.level
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
 import cn.solarmoon.spark_core.physics.ManifoldPoint
-import cn.solarmoon.spark_core.physics.component.CollisionObjectEvent
-import cn.solarmoon.spark_core.physics.component.component
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
+import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.util.triggerEvent
 import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSoftSpace
@@ -42,11 +42,7 @@ class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
     override fun needsCollision(pcoA: PhysicsCollisionObject, pcoB: PhysicsCollisionObject): Boolean {
         if (pcoA.isStatic && pcoB.isStatic) return false
         var r = true
-        val ac = pcoA.component
-        val bc = pcoB.component
-        if (ac != null && bc != null) {
-            if ((ac.owner == bc.owner && ac.collideWithOwnerGroups and bc.collideWithOwnerGroups == 0)) r = false
-        }
+        if ((pcoA.owner == pcoB.owner && pcoA.collideWithOwnerGroups and pcoB.collideWithOwnerGroups == 0)) r = false
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
@@ -61,18 +57,18 @@ class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
         val o1Point = ManifoldPoint(manifoldPointId, 0)
         val o2Point = ManifoldPoint(manifoldPointId, 1)
 
-        pcoA.component?.isColliding = true
-        pcoA.component?.triggerEvent(CollisionObjectEvent.Collide.Processed(pcoA, pcoB, o1Point, o2Point))
+        pcoA.isColliding = true
+        pcoA.triggerEvent(PhysicsBodyEvent.Collide.Processed(pcoA, pcoB, o1Point, o2Point))
 
-        pcoB.component?.isColliding = true
-        pcoB.component?.triggerEvent(CollisionObjectEvent.Collide.Processed(pcoB, pcoA, o2Point, o1Point))
+        pcoB.isColliding = true
+        pcoB.triggerEvent(PhysicsBodyEvent.Collide.Processed(pcoB, pcoA, o2Point, o1Point))
 
         NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(pcoA, pcoB, o1Point, o2Point, manifoldPointId))
     }
 
     override fun addCollisionObject(pco: PhysicsCollisionObject) {
         super.addCollisionObject(pco)
-        pco.component?.triggerEvent(CollisionObjectEvent.AddToWorld())
+        pco.triggerEvent(PhysicsBodyEvent.AddToWorld())
     }
 
 }

@@ -3,8 +3,6 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.delta_sync.DiffSyncSchema
-import cn.solarmoon.spark_core.physics.component.CollisionObjectType
-import cn.solarmoon.spark_core.physics.component.shape.CollisionShapeType
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.MapCodec
@@ -36,16 +34,6 @@ object SparkRegistries {
     @JvmStatic
     val DIFF_SYNC_SCHEMA = SparkCore.REGISTER.registry<DiffSyncSchema<*>>()
         .id("diff_schema")
-        .build { it.sync(true).create() }
-
-    @JvmStatic
-    val COLLISION_OBJECT_TYPE = SparkCore.REGISTER.registry<CollisionObjectType<*>>()
-        .id("collision_object_type")
-        .build { it.sync(true).create() }
-
-    @JvmStatic
-    val COLLISION_SHAPE_TYPE = SparkCore.REGISTER.registry<CollisionShapeType<*>>()
-        .id("collision_shape_type")
         .build { it.sync(true).create() }
 
     @JvmStatic

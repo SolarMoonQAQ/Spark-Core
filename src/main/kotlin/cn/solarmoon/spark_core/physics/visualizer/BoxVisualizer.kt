@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.physics.visualizer
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh
-import cn.solarmoon.spark_core.physics.component.component
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.collision.shapes.CollisionShape
@@ -20,9 +19,10 @@ class BoxVisualizer: ShapeVisualizer {
     val mesh = BoxShapeMesh()
 
     override fun render(
+        level: PhysicsLevel,
+        body: PhysicsCollisionObject,
         transform: Matrix4f,
         shape: CollisionShape,
-        color: Color,
         mc: Minecraft,
         camPos: Vec3,
         poseStack: PoseStack,
@@ -37,8 +37,9 @@ class BoxVisualizer: ShapeVisualizer {
                 val from = mesh.getWorldVertexPosition(edges[i], transform).sub(camPos.toVector3f(), Vector3f())
                 val to = mesh.getWorldVertexPosition(edges[i+1], transform).sub(camPos.toVector3f(), Vector3f())
                 val normal = to.sub(from, Vector3f()).normalize()
-                buffer.addVertex(poseStack.last().pose(), from.x, from.y, from.z).setColor(color.rgb).setNormal(poseStack.last(), normal.x, normal.y, normal.z)
-                buffer.addVertex(poseStack.last().pose(), to.x, to.y, to.z).setColor(color.rgb).setNormal(poseStack.last(), normal.x, normal.y, normal.z)
+                val color = if (body.isColliding) Color.RED.rgb else Color.WHITE.rgb
+                buffer.addVertex(poseStack.last().pose(), from.x, from.y, from.z).setColor(color).setNormal(poseStack.last(), normal.x, normal.y, normal.z)
+                buffer.addVertex(poseStack.last().pose(), to.x, to.y, to.z).setColor(color).setNormal(poseStack.last(), normal.x, normal.y, normal.z)
             }
         }
     }

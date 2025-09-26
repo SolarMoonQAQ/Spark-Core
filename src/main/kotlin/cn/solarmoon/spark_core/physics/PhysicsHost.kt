@@ -1,17 +1,18 @@
 package cn.solarmoon.spark_core.physics
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.physics.component.CollisionObjectComponent
 import cn.solarmoon.spark_core.sync.Syncer
+import com.jme3.bullet.collision.PhysicsCollisionObject
+import net.minecraft.world.level.Level
 
 interface PhysicsHost: Syncer {
 
     val physicsLevel: PhysicsLevel
 
-    val allCollisionObjects: MutableMap<String, CollisionObjectComponent<*>>
+    val allPhysicsBodies: MutableMap<String, PhysicsCollisionObject>
 
-    fun getPhysicsBody(name: String): CollisionObjectComponent<*>? {
-        return allCollisionObjects[name]
+    fun getPhysicsBody(name: String): PhysicsCollisionObject? {
+        return allPhysicsBodies[name]
     }
 
 }
