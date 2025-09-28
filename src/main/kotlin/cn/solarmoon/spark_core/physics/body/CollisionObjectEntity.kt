@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.body
 
+import cn.solarmoon.spark_core.physics.CollisionGroups
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.util.getQuaternionf
 import cn.solarmoon.spark_core.util.getVec3
@@ -140,6 +141,7 @@ abstract class CollisionObjectEntity(
 
     override fun onAddedToLevel() {
         super.onAddedToLevel()
+        body.owner = this
         level().addPhysicsBody(body)
     }
 
@@ -159,7 +161,7 @@ abstract class CollisionObjectEntity(
         builder.define(DATA_ROTATION, Quaternionf().identity())
         builder.define(DATA_SCALE, Vector3f(1f))
         builder.define(DATA_ANISOTROPIC_FRICTION, Vector3f(1f))
-        builder.define(DATA_COLLISION_GROUP, 0)
+        builder.define(DATA_COLLISION_GROUP, CollisionGroups.PHYSICS_BODY)
         builder.define(DATA_COLLISION_WITH_GROUPS, 0)
         builder.define(DATA_CCD_MOTION_THRESHOLD, 0f)
         builder.define(DATA_CCD_SWEEP_SPHERE_RADIUS, 0f)
@@ -181,7 +183,10 @@ abstract class CollisionObjectEntity(
         compound.ifContains("physics_rotation") { rotation = getQuaternionf(it) }
         compound.ifContains("physics_scale") { scale = getVec3(it) }
         compound.ifContains("physics_anisotropicFriction") { anisotropicFriction = getVec3(it) }
-        compound.ifContains("physics_collisionGroup") { collisionGroup = getInt(it) }
+        compound.ifContains("physics_collisionGroup") {
+            val g = getInt(it)
+            collisionGroup = if (g != 0 && Integer.bitCount(g) == 1) g else CollisionGroups.PHYSICS_BODY
+        }
         compound.ifContains("physics_collideWithGroups") { collideWithGroups = getInt(it) }
         compound.ifContains("physics_ccdMotionThreshold") { ccdMotionThreshold = getFloat(it) }
         compound.ifContains("physics_ccdSweptSphereRadius") { ccdSweptSphereRadius = getFloat(it) }

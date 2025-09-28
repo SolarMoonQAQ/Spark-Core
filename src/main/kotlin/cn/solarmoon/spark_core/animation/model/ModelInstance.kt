@@ -14,6 +14,6 @@ class ModelInstance(
 
     val pose = ModelPose(this)
 
-    var textureLocation: ResourceLocation = ResourceLocation.withDefaultNamespace("missing")
+    var textureLocation: ResourceLocation = ResourceLocation.withDefaultNamespace("missingno")
 
 }
