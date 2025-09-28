@@ -1,9 +1,9 @@
 package cn.solarmoon.spark_core.mixin.js;
 
-import cn.solarmoon.spark_core.entity.attack.AttackSystem;
+import cn.solarmoon.spark_core.entity.attack.CollisionAttackSystem;
 import cn.solarmoon.spark_core.js.extensions.JSAttackSystem;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(AttackSystem.class)
+@Mixin(CollisionAttackSystem.class)
 public class AttackSystemMixin implements JSAttackSystem {
 } 

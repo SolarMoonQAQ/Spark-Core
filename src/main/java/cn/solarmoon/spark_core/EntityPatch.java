@@ -74,4 +74,14 @@ public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPr
         return Map.of();
     }
 
+    @Override
+    default @NotNull SyncerType getSyncerType() {
+        return null;
+    }
+
+    @Override
+    default @NotNull SyncData getSyncData() {
+        return null;
+    }
+
 }

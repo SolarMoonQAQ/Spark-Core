@@ -13,7 +13,6 @@ data class CollisionHurtData(
     val damagedBody: PhysicsCollisionObject,
     val pointA: ManifoldPoint,
     val pointB: ManifoldPoint,
-    val manifoldId: Long
 ) {
 
 }
