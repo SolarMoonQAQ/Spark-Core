@@ -28,9 +28,7 @@
     "js.PreInputMixin",
     "js.SkillMixin",
     "js.Vec3Mixin",
-    "phys.EntityMixin",
-    "phys.LevelMixin",
-    "state_machine.EntityMixin"
+    "extension.LevelMixin"
   ],
   "client": [
     "animation.CapeLayerMixin",

@@ -7,9 +7,3 @@ interface IEntityPatch {
     var isMoving: Boolean
 
 }
-
-var Entity.isMoving
-    get() = (this as IEntityPatch).isMoving
-    set(value) {
-        (this as IEntityPatch).isMoving = value
-    }

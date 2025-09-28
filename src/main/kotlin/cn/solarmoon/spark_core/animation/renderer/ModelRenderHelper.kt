@@ -66,11 +66,8 @@ fun IAnimatable<*>.render(
     partialTick: Float
 ) {
     // 把坐标计算改在这里能解决omodel渲染卡顿的问题, 用接口中定义的却不行, 很奇怪
-    val worldMatrix = Matrix4f()
-    val worldPos = getWorldPosition(partialTick)
-    worldMatrix.translate(worldPos.toVector3f())
-    worldMatrix.rotateY(getRootYRot(partialTick))
     this.modelController.model?.let {
+        val worldMatrix = getWorldPositionMatrix(partialTick)
         it.origin.render(it.pose, worldMatrix, normal, buffer, packedLight, packedOverlay, color, partialTick)
     }
 }

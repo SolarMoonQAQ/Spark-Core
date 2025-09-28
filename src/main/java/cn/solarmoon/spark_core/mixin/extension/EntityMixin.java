@@ -1,29 +1,38 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
+import cn.solarmoon.spark_core.EntityPatch;
 import cn.solarmoon.spark_core.entity.IEntityPatch;
 import cn.solarmoon.spark_core.entity.attack.HurtData;
 import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.preinput.IPreInputHolder;
 import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.registry.common.SparkSyncerTypes;
 import cn.solarmoon.spark_core.skill.Skill;
 import cn.solarmoon.spark_core.skill.SkillHost;
+import cn.solarmoon.spark_core.state_machine.StateMachineHandler;
 import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.Syncer;
 import cn.solarmoon.spark_core.sync.SyncerType;
+import com.jme3.bullet.collision.PhysicsCollisionObject;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Mixin(Entity.class)
-public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, Syncer, IEntityPatch {
+public class EntityMixin implements EntityPatch {
 
     @Shadow private int id;
+    @Shadow private Level level;
     private Entity entity = (Entity) (Object) this;
     private final PreInput preInput = new PreInput(entity);
     private final HurtData data = new HurtData();
@@ -31,6 +40,23 @@ public class EntityMixin implements IPreInputHolder, HurtDataHolder, SkillHost, 
     private final ConcurrentHashMap<Integer, Skill> predictedSkills = new ConcurrentHashMap<>();
     private final AtomicInteger skillCount = new AtomicInteger();
     private boolean moving = false;
+    private final HashMap<String, PhysicsCollisionObject> collisionObjects = new HashMap<>();
+    private final HashMap<ResourceLocation, StateMachineHandler> stateMachineHandlers = new HashMap<>();
+
+    @Override
+    public @NotNull Map<@NotNull ResourceLocation, @NotNull StateMachineHandler> getStateMachineHandlers() {
+        return stateMachineHandlers;
+    }
+
+    @Override
+    public @NotNull PhysicsLevel getPhysicsLevel() {
+        return level.getPhysicsLevel();
+    }
+
+    @Override
+    public @NotNull Map<@NotNull String, PhysicsCollisionObject> getAllPhysicsBodies() {
+        return collisionObjects;
+    }
 
     @Override
     public @NotNull PreInput getPreInput() {

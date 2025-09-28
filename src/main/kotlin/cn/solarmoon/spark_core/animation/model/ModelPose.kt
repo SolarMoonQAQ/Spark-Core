@@ -23,11 +23,6 @@ class ModelPose(
 
     fun getBonePoseOrCreateEmpty(name: String) = bonePoses.getOrPut(name) { BonePose(model, name) }
 
-    fun getWorldPositionMatrix(partialTicks: Number = 1f): Matrix4f {
-        val animatable = model.animatable
-        return Matrix4f().translate(animatable.getWorldPosition(partialTicks).toVector3f()).rotateY(animatable.getRootYRot(partialTicks))
-    }
-
     fun getSpaceBoneLocatorMatrix(name: String, partialTicks: Number = 1.0): Matrix4f {
         val locator = model.origin.locators[name] ?: return Matrix4f()
         val spaceMatrix = getBonePose(locator.bone.name).getSpaceBoneMatrix(partialTicks)
@@ -42,11 +37,11 @@ class ModelPose(
     }
 
     fun getWorldBoneLocatorMatrix(name: String, partialTicks: Number = 1.0): Matrix4f {
-        return getWorldPositionMatrix(partialTicks.toFloat()).mul(getSpaceBoneLocatorMatrix(name, partialTicks))
+        return model.animatable.getWorldPositionMatrix(partialTicks.toFloat()).mul(getSpaceBoneLocatorMatrix(name, partialTicks))
     }
 
     fun getWorldLocator(name: String, offset: Vec3 = Vec3.ZERO, partialTicks: Number = 1.0): Vector3f {
-        return getWorldPositionMatrix(partialTicks.toFloat()).transformPosition(getSpaceLocator(name, offset, partialTicks))
+        return model.animatable.getWorldPositionMatrix(partialTicks.toFloat()).transformPosition(getSpaceLocator(name, offset, partialTicks))
     }
 
     fun copy(): ModelPose {

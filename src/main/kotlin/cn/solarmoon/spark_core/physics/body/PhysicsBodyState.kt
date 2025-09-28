@@ -7,8 +7,8 @@ class PhysicsBodyState(
     private val body: PhysicsCollisionObject
 ) {
 
-    var lastTransform = Transform()
-    var transform = Transform()
+    var lastTransform = body.getTransform(null)
+    var transform = body.getTransform(null)
 
     fun update() {
         lastTransform = transform

@@ -18,9 +18,13 @@ import org.joml.Vector2d
 import org.joml.Vector3d
 import org.joml.Vector3f
 import java.lang.Math
+import java.lang.Math.copySign
 import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.sqrt
+import kotlin.math.withSign
 
 fun Vec3.toRadians(): Vec3 {
     return Vec3(Math.toRadians(x), Math.toRadians(y), Math.toRadians(z))
@@ -66,31 +70,36 @@ fun Vec3.rotLerp(target: Vec3, progress: Double): Vec3 {
     return result.toEuler().toVec3()
 }
 
+fun Vec3.setX(x: Double) = Vec3(x, y, z)
+fun Vec3.setY(y: Double) = Vec3(x, y, z)
+fun Vec3.setZ(z: Double) = Vec3(x, y, z)
+
 /**
  * 在joml库的默认欧拉角转换中，出现了角度突变，推测是奇点位置未考虑导致的，因此此方法对pitch角的算法进行了修正，应当避免了joml库本身的问题
  */
 fun Quaterniond.toEuler(): Vector3d {
     val angles = Vector3d()
-    val q = Quaterniond(this)
-    q.normalize()
 
     // roll (x-axis rotation)
-    val sinr_cosp = 2 * (q.w * q.x + q.y * q.z)
-    val cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y)
-    angles.apply { x = atan2(sinr_cosp, cosr_cosp) }
+    val sinr_cosp = 2 * (w * x + y * z)
+    val cosr_cosp = 1 - 2 * (x * x + y * y)
+    angles.x = atan2(sinr_cosp, cosr_cosp)
 
     // pitch (y-axis rotation)
-    val sinp = sqrt(1 + 2 * (q.w * q.y - q.x * q.z))
-    val cosp = sqrt(1 - 2 * (q.w * q.y - q.x * q.z))
-    angles.apply { y = 2 * atan2(sinp, cosp) - PI / 2 }
+    val sinp = 2 * (w * y - z * x)
+    angles.y = if (abs(sinp) >= 1)
+        (Math.PI / 2).withSign(sinp) // use 90 degrees if out of range
+    else
+        asin(sinp)
 
     // yaw (z-axis rotation)
-    val siny_cosp = 2 * (q.w * q.z + q.x * q.y)
-    val cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
-    angles.apply { z = atan2(siny_cosp, cosy_cosp) }
+    val siny_cosp = 2 * (w * z + x * y)
+    val cosy_cosp = 1 - 2 * (y * y + z * z)
+    angles.z = atan2(siny_cosp, cosy_cosp)
 
     return angles
 }
+
 fun Quaternionf.toEuler(): Vector3f {
     return Quaterniond(this).toEuler().toVector3f()
 }

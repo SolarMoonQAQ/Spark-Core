@@ -1,15 +1,17 @@
 package cn.solarmoon.spark_core.physics.body
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toMatrix3f
 import cn.solarmoon.spark_core.util.getVec3
+import cn.solarmoon.spark_core.util.ifContains
 import cn.solarmoon.spark_core.util.putVec3
 import cn.solarmoon.spark_core.util.toBQuaternion
 import cn.solarmoon.spark_core.util.toDegrees
 import cn.solarmoon.spark_core.util.toEuler
 import cn.solarmoon.spark_core.util.toQuaternionf
+import cn.solarmoon.spark_core.util.toRadians
 import cn.solarmoon.spark_core.util.toVec3
-import cn.solarmoon.spark_core.util.toVector3f
 import com.jme3.bullet.objects.PhysicsRigidBody
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket
@@ -43,48 +45,14 @@ abstract class RigidBodyEntity(
 
     abstract override val body: PhysicsRigidBody
 
-    override fun setPos(x: Double, y: Double, z: Double) {
-        super.setPos(x, y, z)
+    override fun setPosRaw(x: Double, y: Double, z: Double) {
+        super.setPosRaw(x, y, z)
         if (!updating) {
             physicsLevel.submitImmediateTask {
                 body.setPhysicsLocation(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).toBVector3f())
             }
         }
     }
-
-    override fun setXRot(xRot: Float) {
-        super.xRot = xRot
-        if (!updating) {
-            physicsLevel.submitImmediateTask {
-                val origin = body.getPhysicsRotation(null).toQuaternionf().toEuler().toDegrees()
-                body.setPhysicsRotation(Quaternionf().rotateXYZ(xRot, origin.y, origin.z).toBQuaternion())
-            }
-        }
-    }
-
-    override fun setYRot(yRot: Float) {
-        super.yRot = yRot
-        if (!updating) {
-            physicsLevel.submitImmediateTask {
-                val origin = body.getPhysicsRotation(null).toQuaternionf().toEuler().toDegrees()
-                body.setPhysicsRotation(Quaternionf().rotateXYZ(origin.x, yRot, origin.z).toBQuaternion())
-            }
-        }
-    }
-
-    override var zRot by syncField(DATA_ZROT, { it }, { it }, {
-        val origin = body.getPhysicsRotation(null).toQuaternionf().toEuler().toDegrees()
-        body.setPhysicsRotation(Quaternionf().rotateXYZ(origin.x, origin.y, it).toBQuaternion())
-                                                              }, needAutoUpdate = true)
-
-    override var rotation: Vec3
-        get() = Vector3f(xRot, yRot, zRot).toVec3()
-        set(value) {
-            setRot(value.y.toFloat(), value.x.toFloat())
-            zRot = value.z.toFloat() % 360.0f
-        }
-
-    override var scale by syncField(DATA_SCALE, { it.toVec3() }, { it.toVector3f() }, { body.setPhysicsScale(it.toBVector3f()) }, needAutoUpdate = true)
 
     var isKinematic
         get() = body.isKinematic
@@ -94,56 +62,67 @@ abstract class RigidBodyEntity(
             }
         }
 
+    override var rotation by syncField(DATA_ROTATION) { body.setPhysicsRotation(it.toBQuaternion()) }
+    override var scale by syncField(DATA_SCALE, { it.toVec3() }, { it.toVector3f() }, { body.setPhysicsScale(it.toBVector3f()) })
     var gravity by syncField(DATA_GRAVITY, { it.toVec3() }, { it.toVector3f() }, { body.setGravity(it.toBVector3f()) })
-    var isGravityProtected by syncField(DATA_IS_GRAVITY_PROTECTED, { it }, { it }, { body.setProtectGravity(it) })
+    var isGravityProtected by syncField(DATA_IS_GRAVITY_PROTECTED) { body.setProtectGravity(it) }
     var angularFactor by syncField(DATA_ANGULAR_FACTOR, { it.toVec3() }, { it.toVector3f() }, { body.setAngularFactor(it.toBVector3f()) })
     var angularVelocity by syncField(DATA_ANGULAR_VELOCITY, { it.toVec3() }, { it.toVector3f() }, { body.setAngularVelocity(it.toBVector3f()) })
-    var angularDamping by syncField(DATA_ANGULAR_DUMPING, { it }, { it }, { body.angularDamping = it })
-    var angularSleepingThreshold by syncField(DATA_ANGULAR_SLEEPING_THRESHOLD, { it }, { it }, { body.angularSleepingThreshold = it })
+    var angularDamping by syncField(DATA_ANGULAR_DUMPING) { body.angularDamping = it }
+    var angularSleepingThreshold by syncField(DATA_ANGULAR_SLEEPING_THRESHOLD) { body.angularSleepingThreshold = it }
     var linearFactor by syncField(DATA_LINEAR_FACTOR, { it.toVec3() }, { it.toVector3f() }, { body.setLinearFactor(it.toBVector3f()) })
     var linearVelocity by syncField(DATA_LINEAR_VELOCITY, { it.toVec3() }, { it.toVector3f() }, { body.setLinearVelocity(it.toBVector3f()) })
-    var linearDamping by syncField(DATA_LINEAR_DUMPING, { it }, { it }, { body.linearDamping = it })
-    var linearSleepingThreshold by syncField(DATA_LINEAR_SLEEPING_THRESHOLD, { it }, { it }, { body.linearSleepingThreshold = it })
+    var linearDamping by syncField(DATA_LINEAR_DUMPING) { body.linearDamping = it }
+    var linearSleepingThreshold by syncField(DATA_LINEAR_SLEEPING_THRESHOLD) { body.linearSleepingThreshold = it }
     var inverseInertiaLocal by syncField(DATA_INVERSE_INERTIA_LOCAL, { it.toVec3() }, { it.toVector3f() }, { body.setInverseInertiaLocal(it.toBVector3f()) })
     val inverseInertiaWorld get() = body.getInverseInertiaWorld(null).toMatrix3f()
-    var mass by syncField(DATA_MASS, { it }, { it }, { body.setMass(it) })
+    var mass by syncField(DATA_MASS, { body.setMass(it) })
+
+    override fun baseTick() {
+        super.baseTick()
+        if (!level().isClientSide) {
+            update {
+                angularVelocity = body.getAngularVelocity(null).toVec3()
+                linearVelocity = body.getLinearVelocity(null).toVec3()
+            }
+        }
+    }
 
     override fun recreateFromPacket(packet: ClientboundAddEntityPacket) {
         super.recreateFromPacket(packet)
-        isKinematic = false // 客户端默认为运动学（运动由服务端权威下发）
+        isKinematic = true // 客户端默认为运动学（运动由服务端权威下发）
     }
 
     override fun defineSynchedData(builder: SynchedEntityData.Builder) {
         super.defineSynchedData(builder)
-        builder.define(DATA_GRAVITY, body.getGravity(null).toVector3f())
-        builder.define(DATA_IS_GRAVITY_PROTECTED, body.isGravityProtected)
-        builder.define(DATA_ANGULAR_FACTOR, body.getAngularFactor(null).toVector3f())
-        builder.define(DATA_ANGULAR_VELOCITY, body.getAngularVelocity(null).toVector3f())
-        builder.define(DATA_ANGULAR_DUMPING, body.angularDamping)
-        builder.define(DATA_ANGULAR_SLEEPING_THRESHOLD, body.angularSleepingThreshold)
-        builder.define(DATA_LINEAR_FACTOR, body.getLinearFactor(null).toVector3f())
-        builder.define(DATA_LINEAR_VELOCITY, body.getLinearVelocity(null).toVector3f())
-        builder.define(DATA_LINEAR_DUMPING, body.linearDamping)
-        builder.define(DATA_LINEAR_SLEEPING_THRESHOLD, body.linearSleepingThreshold)
-        builder.define(DATA_INVERSE_INERTIA_LOCAL, body.getInverseInertiaLocal(null).toVector3f())
-        builder.define(DATA_MASS, body.mass)
+        builder.define(DATA_GRAVITY, Vector3f())
+        builder.define(DATA_IS_GRAVITY_PROTECTED, false)
+        builder.define(DATA_ANGULAR_FACTOR, Vector3f(1f))
+        builder.define(DATA_ANGULAR_VELOCITY, Vector3f())
+        builder.define(DATA_ANGULAR_DUMPING, 0f)
+        builder.define(DATA_ANGULAR_SLEEPING_THRESHOLD, 1f)
+        builder.define(DATA_LINEAR_FACTOR, Vector3f(1f))
+        builder.define(DATA_LINEAR_VELOCITY, Vector3f())
+        builder.define(DATA_LINEAR_DUMPING, 0f)
+        builder.define(DATA_LINEAR_SLEEPING_THRESHOLD, 0.8f)
+        builder.define(DATA_INVERSE_INERTIA_LOCAL, Vector3f())
+        builder.define(DATA_MASS, 1.0f)
     }
 
     override fun readAdditionalSaveData(compound: CompoundTag) {
         super.readAdditionalSaveData(compound)
-        isKinematic = compound.getBoolean("physics_isKinematic")
-        gravity = compound.getVec3("physics_gravity")
-        isGravityProtected = compound.getBoolean("physics_isGravityProtected")
-        angularFactor = compound.getVec3("physics_angularFactor")
-        angularVelocity = compound.getVec3("physics_angularVelocity")
-        angularDamping = compound.getFloat("physics_angularDamping")
-        angularSleepingThreshold = compound.getFloat("physics_angularSleepingThreshold")
-        linearFactor = compound.getVec3("physics_linearFactor")
-        linearVelocity = compound.getVec3("physics_linearVelocity")
-        linearDamping = compound.getFloat("physics_linearDamping")
-        linearSleepingThreshold = compound.getFloat("physics_linearSleepingThreshold")
-        inverseInertiaLocal = compound.getVec3("physics_inverseInertiaLocal")
-        mass = compound.getFloat("physics_mass")
+        compound.ifContains("physics_isKinematic") { isKinematic = getBoolean(it) }
+        compound.ifContains("physics_gravity") { gravity = getVec3(it) }
+        compound.ifContains("physics_isGravityProtected") { isGravityProtected = getBoolean(it) }
+        compound.ifContains("physics_angularFactor") { angularFactor = getVec3(it) }
+        compound.ifContains("physics_angularVelocity") { angularVelocity = getVec3(it) }
+        compound.ifContains("physics_angularDamping") { angularDamping = getFloat(it) }
+        compound.ifContains("physics_angularSleepingThreshold") { angularSleepingThreshold = getFloat(it) }
+        compound.ifContains("physics_linearFactor") { linearFactor = getVec3(it) }
+        compound.ifContains("physics_linearVelocity") { linearVelocity = getVec3(it) }
+        compound.ifContains("physics_linearDamping") { linearDamping = getFloat(it) }
+        compound.ifContains("physics_linearSleepingThreshold") { linearSleepingThreshold = getFloat(it) }
+        compound.ifContains("physics_mass") { mass = getFloat(it) }
     }
 
     override fun addAdditionalSaveData(compound: CompoundTag) {
@@ -159,7 +138,6 @@ abstract class RigidBodyEntity(
         compound.putVec3("physics_linearVelocity", linearVelocity)
         compound.putFloat("physics_linearDamping", linearDamping)
         compound.putFloat("physics_linearSleepingThreshold", linearSleepingThreshold)
-        compound.putVec3("physics_inverseInertiaLocal", inverseInertiaLocal)
         compound.putFloat("physics_mass", mass)
     }
 

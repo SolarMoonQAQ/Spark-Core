@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage
+import cn.solarmoon.spark_core.sync.Syncer
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
@@ -73,6 +74,8 @@ class AnimController(
     }
 
     fun playAnimToClient(index: AnimIndex, layerId: ResourceLocation, data: AnimLayerData, exceptPlayer: ServerPlayer? = null) {
+        val animatable = animatable.animatable
+        if (animatable !is Syncer) return
         exceptPlayer?.let {
             PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, AnimPlayPayload(animatable, index, layerId, data))
         } ?: run {
@@ -81,12 +84,16 @@ class AnimController(
     }
 
     fun playAnimToServer(index: AnimIndex, layerId: ResourceLocation, data: AnimLayerData) {
-        val player = animatable.animatable
+        val animatable = animatable.animatable
+        if (animatable !is Syncer) return
+        val player = animatable
         if (player !is Player || !player.isLocalPlayer) throw IllegalArgumentException("只有本地玩家才能播放动画到服务端，对于一般实体请以服务端为准同步到客户端")
         PacketDistributor.sendToServer(AnimPlayPayload(animatable, index, layerId, data))
     }
 
     fun stopAnimToClient(layerId: ResourceLocation, transitionTime: Int, exceptPlayer: ServerPlayer? = null) {
+        val animatable = animatable.animatable
+        if (animatable !is Syncer) return
         exceptPlayer?.let {
             PacketDistributor.sendToPlayersNear(it.serverLevel(), exceptPlayer, exceptPlayer.x, exceptPlayer.y, exceptPlayer.z, 512.0, AnimStopPayload(animatable, layerId, transitionTime))
         } ?: run {
@@ -95,7 +102,9 @@ class AnimController(
     }
 
     fun stopAnimToServer(layerId: ResourceLocation, transitionTime: Int) {
-        val player = animatable.animatable
+        val animatable = animatable.animatable
+        if (animatable !is Syncer) return
+        val player = animatable
         if (player !is Player || !player.isLocalPlayer) throw IllegalArgumentException("只有本地玩家才能暂停动画到服务端，对于一般实体请以服务端为准同步到客户端")
         PacketDistributor.sendToServer(AnimStopPayload(animatable, layerId, transitionTime))
     }

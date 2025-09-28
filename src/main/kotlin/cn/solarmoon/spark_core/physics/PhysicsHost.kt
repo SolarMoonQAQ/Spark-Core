@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.sync.Syncer
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import net.minecraft.world.level.Level
 
-interface PhysicsHost: Syncer {
+interface PhysicsHost {
 
     val physicsLevel: PhysicsLevel
 

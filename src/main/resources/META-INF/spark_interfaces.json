@@ -1,16 +1,9 @@
 {
   "net/minecraft/world/level/Level": [
-    "cn/solarmoon/spark_core/physics/PhysicsHost",
-    "cn/solarmoon/spark_core/util/TaskSubmitOffice"
+    "cn/solarmoon/spark_core/LevelPatch"
   ],
   "net/minecraft/world/entity/Entity": [
-    "cn/solarmoon/spark_core/physics/PhysicsHost",
-    "cn/solarmoon/spark_core/entity/attack/HurtDataHolder",
-    "cn/solarmoon/spark_core/skill/SkillHost",
-    "cn/solarmoon/spark_core/sync/Syncer",
-    "cn/solarmoon/spark_core/preinput/IPreInputHolder",
-    "cn.solarmoon.spark_core.state_machine/IStateMachineHolder",
-    "cn/solarmoon/spark_core/entity/IEntityPatch"
+    "cn/solarmoon/spark_core/EntityPatch"
   ],
   "net/minecraft/client/player/LocalPlayer": [
     "cn/solarmoon/spark_core/entity/player/ILocalPlayerPatch"

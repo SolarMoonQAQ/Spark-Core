@@ -76,16 +76,16 @@ class BonePose(
      * 获取骨骼在世界位置的变换矩阵
      */
     fun getWorldBoneMatrix(partialTick: Number = 1f): Matrix4f {
-        val ma = model.pose.getWorldPositionMatrix(partialTick.toFloat())
+        val ma = model.animatable.getWorldPositionMatrix(partialTick.toFloat())
         return ma.mul(getSpaceBoneMatrix(partialTick))
     }
 
     fun getWorldBonePivotMatrix(partialTicks: Number = 1f): Matrix4f {
-        return model.pose.getWorldPositionMatrix(partialTicks.toFloat()).mul(getSpaceBonePivotMatrix(partialTicks))
+        return model.animatable.getWorldPositionMatrix(partialTicks.toFloat()).mul(getSpaceBonePivotMatrix(partialTicks))
     }
 
     fun getWorldBonePivot(offset: Vec3 = Vec3.ZERO, partialTicks: Number = 1f): Vector3f {
-        return model.pose.getWorldPositionMatrix(partialTicks.toFloat()).transformPosition(getSpaceBonePivot(offset, partialTicks))
+        return model.animatable.getWorldPositionMatrix(partialTicks.toFloat()).transformPosition(getSpaceBonePivot(offset, partialTicks))
     }
 
     fun copy() = BonePose(model, name).apply {

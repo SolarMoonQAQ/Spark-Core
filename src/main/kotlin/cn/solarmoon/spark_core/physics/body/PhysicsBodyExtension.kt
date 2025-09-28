@@ -38,6 +38,14 @@ fun Level.addPhysicsBody(body: PhysicsCollisionObject) {
     }
 }
 
+fun Level.removePhysicsBody(body: PhysicsCollisionObject) {
+    physicsLevel.apply {
+        submitImmediateTask {
+            world.removeCollisionObject(body)
+        }
+    }
+}
+
 private val subs = mutableMapOf<PhysicsCollisionObject, Subscription>()
 
 /**

@@ -16,13 +16,13 @@ object CollisionFuncApplier {
         if (event.entity is Player) {
             val player = event.entity
 
-            val body = PhysicsRigidBody(BoxCollisionShape(2F)).apply {
-                setGravity(Vector3f())
-                isKinematic = true
-                attachToEntity(player)
-            }
-
-            event.level.addPhysicsBody(body)
+//            val body = PhysicsRigidBody(BoxCollisionShape(2F)).apply {
+//                setGravity(Vector3f())
+//                isKinematic = true
+//                attachToEntity(player)
+//            }
+//
+//            event.level.addPhysicsBody(body)
 
         }
     }

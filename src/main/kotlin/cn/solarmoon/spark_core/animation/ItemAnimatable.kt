@@ -4,21 +4,21 @@ import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController
 import cn.solarmoon.spark_core.animation.model.ModelController
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
+import cn.solarmoon.spark_core.util.toRadians
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
+import org.joml.Matrix4f
+import kotlin.math.PI
 
 open class ItemAnimatable(
     val itemStack: ItemStack,
     override val animLevel: Level
 ) : IAnimatable<ItemStack> {
 
-    var position = Vec3.ZERO
-    var oPosition = Vec3.ZERO
-    var yRot = 0f
-    var oYRot = 0f
+    var owner: Entity? = null
 
     override val animatable = itemStack
     override val animController = AnimController(this)
@@ -29,23 +29,14 @@ open class ItemAnimatable(
     }
 
     open fun inventoryTick(owner: Entity) {
-        position = owner.getPosition(1f)
-        oPosition = owner.getPosition(0f)
-        yRot = owner.getViewYRot(1f)
-        oYRot = owner.getViewYRot(0f)
+        if (this.owner != owner) this.owner = owner
     }
 
-    override fun getWorldPosition(partialTick: Number): Vec3 {
-        return oPosition.lerp(position, partialTick.toDouble())
+    override fun getWorldPositionMatrix(partialTicks: Number): Matrix4f {
+        val owner = owner ?: return Matrix4f()
+        return Matrix4f()
+            .translate(owner.getPosition(partialTicks.toFloat()).toVector3f())
+            .rotateY(owner.getViewYRot(partialTicks.toFloat()))
     }
-
-    override fun getRootYRot(partialTick: Number): Float {
-        return Mth.lerp(oYRot, yRot, partialTick.toFloat())
-    }
-
-    override val syncerType: SyncerType
-        get() = TODO("Not yet implemented")
-    override val syncData: SyncData
-        get() = TODO("Not yet implemented")
 
 }

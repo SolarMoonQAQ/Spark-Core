@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.sync
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.sync.SyncData
+import cn.solarmoon.spark_core.sync.Syncer
 import cn.solarmoon.spark_core.sync.SyncerType
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
@@ -17,7 +18,7 @@ class AnimSpeedChangePayload private constructor(
     val time: Int,
     val speed: Double
 ): CustomPacketPayload {
-    constructor(animatable: IAnimatable<*>, time: Int, speed: Double): this(animatable.syncerType, animatable.syncData, time, speed)
+    constructor(animatable: Syncer, time: Int, speed: Double): this(animatable.syncerType, animatable.syncData, time, speed)
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
         return TYPE

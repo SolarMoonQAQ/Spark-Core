@@ -7,27 +7,19 @@ import cn.solarmoon.spark_core.sync.SyncerType
 import cn.solarmoon.spark_core.util.toRadians
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
-import net.minecraft.world.phys.Vec3
+import org.joml.Matrix4f
 import kotlin.math.PI
 
 
 interface IEntityAnimatable<T: Entity>: IAnimatable<T> {
 
-    override fun getWorldPosition(partialTick: Number): Vec3 {
-        return animatable.getPosition(partialTick.toFloat())
-    }
-
-    override fun getRootYRot(partialTick: Number): Float {
-        return PI.toFloat() - animatable.getPreciseBodyRotation(partialTick.toFloat()).toRadians()
+    override fun getWorldPositionMatrix(partialTicks: Number): Matrix4f {
+        return Matrix4f()
+            .translate(animatable.getPosition(partialTicks.toFloat()).toVector3f())
+            .rotateY(PI.toFloat() - animatable.getPreciseBodyRotation(partialTicks.toFloat()).toRadians())
     }
 
     override val animLevel: Level
         get() = animatable.level()
-
-    override val syncData: SyncData
-        get() = IntSyncData(animatable.id)
-
-    override val syncerType: SyncerType
-        get() = SparkSyncerTypes.ENTITY.get()
 
 }

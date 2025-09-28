@@ -6,11 +6,12 @@ import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.sync.Syncer
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
+import org.joml.Matrix4f
 
 /**
  * ### 动画体
  */
-interface IAnimatable<T> : Syncer {
+interface IAnimatable<T> {
 
     /**
      * 一般而言输入this即可，用于调用该动画体的持有者
@@ -29,17 +30,7 @@ interface IAnimatable<T> : Syncer {
 
     val modelController: ModelController
 
-    /**
-     * 动画体所在的世界坐标
-     * @param partialTick 主线程客户端的tick时间
-     */
-    fun getWorldPosition(partialTick: Number = 1f): Vec3
-
-    /**
-     * 动画体的yRot（弧度制）
-     * @param partialTick 主线程客户端的tick时间
-     */
-    fun getRootYRot(partialTick: Number = 1f): Float
+    fun getWorldPositionMatrix(partialTicks: Number = 1f): Matrix4f
 
     /**
      * 当任意骨骼被更新后调用，可以在此基础上对骨骼的位移旋转等参数进行调整

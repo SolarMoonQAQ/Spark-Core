@@ -4,8 +4,10 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.renderer.render
 import cn.solarmoon.spark_core.registry.common.SparkParticles
 import cn.solarmoon.spark_core.sync.SyncData
+import cn.solarmoon.spark_core.sync.Syncer
 import cn.solarmoon.spark_core.sync.SyncerType
 import cn.solarmoon.spark_core.util.SerializeHelper
+import cn.solarmoon.spark_core.util.toEuler
 import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -21,6 +23,7 @@ import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import org.joml.Matrix3f
 import org.joml.Matrix4f
+import org.joml.Quaternionf
 import java.awt.Color
 
 class AnimatableShadowParticle(
@@ -33,7 +36,7 @@ class AnimatableShadowParticle(
     z: Double
 ): Particle(level, x, y, z) {
 
-    val yRot = animatable.getRootYRot()
+    val yRot = animatable.getWorldPositionMatrix().getUnnormalizedRotation(Quaternionf()).toEuler().y
     val boneCache = animatable.modelController.model?.pose?.copy()
 
     fun getProgress(partialTicks: Float = 1f): Float {
@@ -71,7 +74,7 @@ class AnimatableShadowParticle(
         val lifeTime: Int,
         private val type: ParticleType<Option>
     ): ParticleOptions {
-        constructor(animatable: IAnimatable<*>, color: Color, lifeTime: Int): this(animatable.syncerType, animatable.syncData, color, lifeTime, SparkParticles.ANIMATABLE_SHADOW.get())
+        constructor(animatable: Syncer, color: Color, lifeTime: Int): this(animatable.syncerType, animatable.syncData, color, lifeTime, SparkParticles.ANIMATABLE_SHADOW.get())
         override fun getType(): ParticleType<*> {
             return type
         }
