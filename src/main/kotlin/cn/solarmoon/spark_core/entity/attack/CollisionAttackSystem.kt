@@ -1,6 +1,9 @@
 package cn.solarmoon.spark_core.entity.attack
 
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
+import cn.solarmoon.spark_core.physics.body.RigidBodyEntity
 import cn.solarmoon.spark_core.physics.body.owner
+import cn.solarmoon.spark_core.util.onEvent
 import net.minecraft.world.entity.Entity
 
 abstract class CollisionAttackSystem<C: CollisionAttackContext>(): AttackSystem<C>() {
@@ -20,6 +23,5 @@ abstract class CollisionAttackSystem<C: CollisionAttackContext>(): AttackSystem<
         postAttack(attacker, target, context)
         return true
     }
-
 
 }

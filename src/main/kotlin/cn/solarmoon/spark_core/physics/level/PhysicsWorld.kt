@@ -10,6 +10,7 @@ import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSoftSpace
 import com.jme3.bullet.SolverMode
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.collision.PhysicsSweepTestResult
 import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge
