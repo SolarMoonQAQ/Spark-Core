@@ -50,6 +50,42 @@ fun Level.removePhysicsBody(body: PhysicsCollisionObject) {
 
 private val subs = mutableMapOf<PhysicsCollisionObject, Subscription>()
 
+fun PhysicsCollisionObject.onCollideStarted(handler: (PhysicsBodyEvent.Collide.Started) -> Unit): Subscription {
+    return onEvent<PhysicsBodyEvent.Collide.Started> { event ->
+        handler(event)
+    }
+}
+
+fun PhysicsCollisionObject.onCollideProcessed(handler: (PhysicsBodyEvent.Collide.Processed) -> Unit): Subscription {
+    return onEvent<PhysicsBodyEvent.Collide.Processed> { event ->
+        handler(event)
+    }
+}
+
+fun PhysicsCollisionObject.onCollideEnded(handler: (PhysicsBodyEvent.Collide.Ended) -> Unit): Subscription {
+    return onEvent<PhysicsBodyEvent.Collide.Ended> { event ->
+        handler(event)
+    }
+}
+
+fun PhysicsCollisionObject.onTick(handler: (PhysicsBodyEvent.Tick) -> Unit): Subscription {
+    return onEvent<PhysicsBodyEvent.Tick> { event ->
+        handler(event)
+    }
+}
+
+fun PhysicsCollisionObject.onPrePhysicsTick(handler: (PhysicsBodyEvent.PhysicsTick.Pre) -> Unit): Subscription {
+    return onEvent<PhysicsBodyEvent.PhysicsTick.Pre> { event ->
+        handler(event)
+    }
+}
+
+fun PhysicsCollisionObject.onPostPhysicsTick(handler: (PhysicsBodyEvent.PhysicsTick.Post) -> Unit): Subscription {
+    return onEvent<PhysicsBodyEvent.PhysicsTick.Post> { event ->
+        handler(event)
+    }
+}
+
 /**
  * 绑定到指定骨骼的枢轴点
  *
