@@ -15,7 +15,7 @@ import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 class SkillPredictPayload private constructor(
-    val syncerType: SyncerType,
+    val syncerType: SyncerType<*>,
     val syncData: SyncData,
     val skillType: SkillType<*>,
     val clientId: Int,

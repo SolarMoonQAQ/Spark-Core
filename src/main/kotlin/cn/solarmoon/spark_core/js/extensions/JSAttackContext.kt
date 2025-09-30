@@ -1,13 +1,13 @@
 package cn.solarmoon.spark_core.js.extensions
 
+import cn.solarmoon.spark_core.entity.attack.AttackContext
 import cn.solarmoon.spark_core.entity.attack.AttackSystem
-import cn.solarmoon.spark_core.entity.attack.CollisionAttackSystem
 import cn.solarmoon.spark_core.js.doc.JSClass
 
-@JSClass("AttackSystem")
-interface JSAttackSystem {
+@JSClass("AttackContext")
+interface JSAttackContext {
 
-    val self get() = this as AttackSystem<*>
+    val self get() = this as AttackContext
 
     fun js_isFirstAttack(): Boolean = self.isFirstAttack
 

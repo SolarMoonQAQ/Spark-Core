@@ -35,7 +35,6 @@ class AnimInstance private constructor(
     val flags = setOf<String>()
     var time = 0.0
     var speed = 1.0
-    var totalTime = 0.0
     var maxLength = origin.animationLength
     var shouldTurnBody = false
     // 锁定ai注视目标
@@ -50,6 +49,8 @@ class AnimInstance private constructor(
         private set
     var keyframeRanges = mutableMapOf<String, KeyframeRange>()
         private set
+    var paused = false
+    var selfDriving = false
 
     val step get() = speed / PhysicsLevel.TPS
 
@@ -59,11 +60,11 @@ class AnimInstance private constructor(
         Loop.HOLD_ON_LAST_FRAME -> time
     }
 
-    fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / maxLength).coerceIn(0.0, 1.0)
+    fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / (if (paused) time + step else maxLength)).coerceIn(0.0, 1.0)
 
     fun step(overallSpeed: Double = 1.0) {
+        if (paused || selfDriving) return
         time += step * overallSpeed
-        totalTime += step * overallSpeed
     }
 
     inline fun <reified T : AnimEvent> onEvent(crossinline handler: AnimInstance.(T) -> Unit) {
@@ -87,7 +88,6 @@ class AnimInstance private constructor(
         val copy = AnimInstance(holder, animIndex)
         copy.time = time
         copy.speed = speed
-        copy.totalTime = totalTime
         copy.shouldTurnBody = shouldTurnBody
         copy.shouldTurnHead = shouldTurnHead
         copy.rejectNewAnim = rejectNewAnim
@@ -98,7 +98,6 @@ class AnimInstance private constructor(
 
     fun refresh() {
         time = 0.0
-        totalTime = 0.0
         keyframeRanges.values.forEach { it.reset() }
     }
 
@@ -115,7 +114,7 @@ class AnimInstance private constructor(
             Loop.ONCE -> {
                 if (time < maxLength) step(overallSpeed)
                 else if (!isCancelled) {
-                    holder.animLevel.submitImmediateTask {
+                    holder.animLevel?.submitImmediateTask {
                         isCancelled = true
                         triggerEvent(AnimEvent.Completed)
                     }

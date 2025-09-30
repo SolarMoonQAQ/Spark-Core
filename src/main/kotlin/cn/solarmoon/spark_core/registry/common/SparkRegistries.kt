@@ -17,7 +17,7 @@ object SparkRegistries {
         .build { it.sync(true).create() }
 
     @JvmStatic
-    val SYNCER_TYPE = SparkCore.REGISTER.registry<SyncerType>()
+    val SYNCER_TYPE = SparkCore.REGISTER.registry<SyncerType<*>>()
         .id("syncer_type")
         .build { it.sync(true).create() }
 

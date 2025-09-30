@@ -15,6 +15,8 @@ import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.Syncer;
 import cn.solarmoon.spark_core.sync.SyncerType;
+import cn.solarmoon.spark_core.util.InlineEventHandler;
+import cn.solarmoon.spark_core.util.InlineEventHandlerKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;

@@ -8,6 +8,7 @@ import net.minecraft.network.codec.StreamCodec
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.item.Item
+import net.minecraft.world.level.block.entity.BlockEntityType
 
 /**
  * 保存了客户端渲染完整模型所需的必要数据
@@ -20,11 +21,11 @@ class ModelIndex (
         return location == ResourceLocation.withDefaultNamespace("player")
     }
 
-    companion object {
-        // 定义一个默认的空 IK 路径，或者让 null 代表无 IK
-        val EMPTY_IK_PATH: ResourceLocation? = null // 或者 ResourceLocation("spark", "empty_ik")
+    override fun toString(): String {
+        return location.toString()
+    }
 
-        // 更新STREAM_CODEC以包含ikPath，使用ByteBufCodecs.optional处理可空的ResourceLocation
+    companion object {
         @JvmStatic
         val STREAM_CODEC: StreamCodec<in RegistryFriendlyByteBuf, ModelIndex> = StreamCodec.composite(
             ResourceLocation.STREAM_CODEC, ModelIndex::location
@@ -39,7 +40,6 @@ class ModelIndex (
             }
         }
 
-
         @JvmStatic
         val EMPTY get() = ModelIndex(
             ResourceLocation.fromNamespaceAndPath("minecraft", "empty"),
@@ -48,6 +48,13 @@ class ModelIndex (
         @JvmStatic
         fun of(type: EntityType<*>): ModelIndex {
             val id = BuiltInRegistries.ENTITY_TYPE.getKey(type)
+            val modelPath = id
+            return ModelIndex(modelPath)
+        }
+
+        @JvmStatic
+        fun of(type: BlockEntityType<*>): ModelIndex {
+            val id = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type)!!
             val modelPath = id
             return ModelIndex(modelPath)
         }

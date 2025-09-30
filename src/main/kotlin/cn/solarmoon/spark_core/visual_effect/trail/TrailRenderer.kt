@@ -1,14 +1,22 @@
 package cn.solarmoon.spark_core.visual_effect.trail
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import cn.solarmoon.spark_core.registry.client.SparkShaders
 import cn.solarmoon.spark_core.util.RenderTypeUtil
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
+import com.mojang.blaze3d.systems.RenderSystem
+import com.mojang.blaze3d.vertex.BufferUploader
+import com.mojang.blaze3d.vertex.DefaultVertexFormat
 import com.mojang.blaze3d.vertex.PoseStack
+import com.mojang.blaze3d.vertex.Tesselator
 import com.mojang.blaze3d.vertex.VertexConsumer
+import com.mojang.blaze3d.vertex.VertexFormat
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.LightTexture
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.texture.OverlayTexture
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector3f
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -39,13 +47,29 @@ class TrailRenderer: VisualEffectRenderer() {
         partialTicks: Float
     ) {
         meshes.forEach { mesh ->
-            val buffer = bufferSource.getBuffer(RenderTypeUtil.transparentRepair(mesh.info.textureLocation))
+            RenderSystem.enableDepthTest()
+            RenderSystem.disableCull()
+            RenderSystem.setShaderTexture(0, Minecraft.getInstance().mainRenderTarget.colorTextureId)
+            RenderSystem.setShaderTexture(1, ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "textures/test.png"))
+            RenderSystem.setShader { SparkShaders.STATIC_DISTORT }
+            RenderSystem.enableBlend()
+            RenderSystem.defaultBlendFunc()
+
+            val tesselator = Tesselator.getInstance()
+            val builder = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY)
+
             mesh.frame(partialTicks)
-            renderMesh(mesh, camPos.toVector3f(), buffer, partialTicks)
+            renderMesh(mesh, camPos.toVector3f(), builder, partialTicks)
+
+            builder.build()?.apply {
+                BufferUploader.drawWithShader(this)
+            }
+            RenderSystem.disableBlend()
+            RenderSystem.enableCull()
         }
     }
 
-    private fun renderMesh(
+    fun renderMesh(
         mesh: TrailMesh,
         camPos: Vector3f,
         buffer: VertexConsumer,

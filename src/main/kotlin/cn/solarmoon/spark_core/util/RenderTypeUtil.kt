@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.util
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.registry.client.SparkShaders
+import com.google.common.collect.ImmutableList
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.vertex.DefaultVertexFormat
 import com.mojang.blaze3d.vertex.VertexFormat
@@ -22,7 +24,7 @@ object RenderTypeUtil {
             .setLightmapState(RenderType.LIGHTMAP)
             .setOverlayState(RenderType.OVERLAY)
             .setOutputState(RenderType.TRANSLUCENT_TARGET)
-            .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+            .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
             .setLayeringState(RenderStateShard.POLYGON_OFFSET_LAYERING)
             .createCompositeState(true)
     )

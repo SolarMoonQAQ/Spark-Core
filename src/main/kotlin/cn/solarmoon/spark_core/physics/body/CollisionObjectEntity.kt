@@ -1,15 +1,11 @@
 package cn.solarmoon.spark_core.physics.body
 
-import cn.solarmoon.spark_core.physics.CollisionGroups
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.util.getQuaternionf
 import cn.solarmoon.spark_core.util.getVec3
 import cn.solarmoon.spark_core.util.ifContains
 import cn.solarmoon.spark_core.util.putQuaternionf
 import cn.solarmoon.spark_core.util.putVec3
-import cn.solarmoon.spark_core.util.setZ
-import cn.solarmoon.spark_core.util.toDegrees
-import cn.solarmoon.spark_core.util.toEuler
 import cn.solarmoon.spark_core.util.toQuaternionf
 import cn.solarmoon.spark_core.util.toVec3
 import com.jme3.bullet.collision.PhysicsCollisionObject

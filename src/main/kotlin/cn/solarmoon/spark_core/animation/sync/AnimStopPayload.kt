@@ -16,7 +16,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 class AnimStopPayload private constructor(
-    val syncerType: SyncerType,
+    val syncerType: SyncerType<*>,
     val syncData: SyncData,
     val layerId: ResourceLocation,
     val transTime: Int

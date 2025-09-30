@@ -4,19 +4,13 @@ import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.world.level.Level
 
-abstract class SyncerType {
+class SyncerType<T: Syncer>(
+    private val provider: (Level, SyncData) -> T?
+) {
 
     val registryKey get() = SparkRegistries.SYNCER_TYPE.getKey(this) ?: throw NullPointerException("同步体类型尚未注册")
 
-    abstract fun getSyncer(level: Level, syncData: SyncData): Syncer?
-
-    override fun equals(other: Any?): Boolean {
-        return (other as? SyncerType)?.registryKey == registryKey
-    }
-
-    override fun hashCode(): Int {
-        return registryKey.hashCode()
-    }
+    fun getSyncer(level: Level, syncData: SyncData): T? = provider(level, syncData)
 
     companion object {
         val CODEC = SparkRegistries.SYNCER_TYPE.byNameCodec()

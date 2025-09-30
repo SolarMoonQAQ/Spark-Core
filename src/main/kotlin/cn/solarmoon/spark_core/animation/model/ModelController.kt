@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.model
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.IBlockEntityAnimatable
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.model.origin.OModel
 import cn.solarmoon.spark_core.event.ModelChangeEvent
@@ -17,6 +18,7 @@ class ModelController(
 
     private var currentModel: ModelInstance? = when(animatable) {
         is IEntityAnimatable<*> -> ModelInstance(animatable, ModelIndex.of(animatable.animatable.type))
+        is IBlockEntityAnimatable<*> -> ModelInstance(animatable, ModelIndex.of(animatable.animatable.type))
         else -> null
     }
 

@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.entry_builder.client.LayerBuilder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.entry_builder.common.fluid.FluidBuilder
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.sync.Syncer
 import cn.solarmoon.spark_core.util.RegisterUtil
 import com.jme3.bullet.collision.shapes.CollisionShape
 import net.minecraft.core.RegistrySetBuilder
@@ -46,6 +47,7 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val dataComponentDeferredRegister = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, modId)
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
     val deltaSyncRulesRegister = lazy { DeferredRegister.create(SparkRegistries.DIFF_SYNC_SCHEMA, modId) }
+    val typedAnimDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.TYPED_ANIMATION, modId) }
     // 热重载域不再使用 DeferredRegister;这里只保留原版支持的注册表
     val syncerTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SYNCER_TYPE, modId) }
 
@@ -122,9 +124,14 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
         DeltaSyncRulesBuilder(it.value, modId, D::class)
     }
 
-    // Removed: typedAnimation() 在运行时使用 VirtualRegistry;不支持通过 DeferredRegister 进行静态注册
+    fun typedAnimation() = typedAnimDeferredRegister.let {
+        if (!it.isInitialized()) {
+            it.value.register(modBus!!)
+        }
+        TypedAnimationBuilder(it.value)
+    }
 
-    fun syncerType(): SyncerTypeBuilder {
+    fun <T: Syncer> syncerType(): SyncerTypeBuilder<T> {
         if (!syncerTypeDeferredRegister.isInitialized()) {
             syncerTypeDeferredRegister.value.register(modBus!!)
         }

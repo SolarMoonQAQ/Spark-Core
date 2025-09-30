@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.physics
 
 import cn.solarmoon.spark_core.physics.body.addPhysicsBody
 import cn.solarmoon.spark_core.physics.body.attachToEntity
-import cn.solarmoon.spark_core.physics.body.owner
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
@@ -20,8 +19,6 @@ object CollisionFuncApplier {
 //            val body = PhysicsRigidBody(BoxCollisionShape(2F)).apply {
 //                setGravity(Vector3f())
 //                isKinematic = true
-//                owner = player
-//                addCollideWithGroup(CollisionGroups.TERRAIN)
 //                attachToEntity(player)
 //            }
 //

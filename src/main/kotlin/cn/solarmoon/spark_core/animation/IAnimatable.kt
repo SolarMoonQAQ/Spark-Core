@@ -21,7 +21,7 @@ interface IAnimatable<T> {
     /**
      * 动画体所处的世界
      */
-    val animLevel: Level
+    val animLevel: Level?
 
     /**
      * 动画控制器，包含了对动画的控制/过渡/混合/获取等控制性操作，在类中新建一个新的即可

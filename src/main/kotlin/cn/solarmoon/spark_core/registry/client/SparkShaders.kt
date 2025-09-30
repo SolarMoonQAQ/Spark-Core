@@ -13,6 +13,14 @@ object SparkShaders {
     lateinit var DISTORT_SHADER: ShaderInstance
         private set
 
+    @JvmStatic
+    lateinit var STATIC_DISTORT: ShaderInstance
+        private set
+
+    @JvmStatic
+    lateinit var H_CLIP: ShaderInstance
+        private set
+
     private fun onRegisterShaders(event: RegisterShadersEvent) {
         event.registerShader(
             ShaderInstance(
@@ -21,6 +29,20 @@ object SparkShaders {
                 DefaultVertexFormat.POSITION_TEX
             )
         ) { DISTORT_SHADER = it }
+        event.registerShader(
+            ShaderInstance(
+                event.resourceProvider,
+                ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "static_distort"),
+                DefaultVertexFormat.NEW_ENTITY
+            )
+        ) { STATIC_DISTORT = it }
+        event.registerShader(
+            ShaderInstance(
+                event.resourceProvider,
+                ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "hclip"),
+                DefaultVertexFormat.NEW_ENTITY
+            )
+        ) { H_CLIP = it }
     }
 
     @JvmStatic

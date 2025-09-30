@@ -42,7 +42,6 @@ public class QueryBinding extends ContextBinding {
 //            else return anim.getTime();
 //        });
 //        var("life_time", ctx -> ctx.geoInstance().getSeekTime() / 20.0);
-
         var("moon_phase", ctx -> ctx.getAnimLevel().getMoonPhase());
         var("time_of_day", ctx -> MolangUtils.normalizeTime(ctx.getAnimLevel().getDayTime()));
         var("time_stamp", ctx -> ctx.getAnimLevel().getDayTime());

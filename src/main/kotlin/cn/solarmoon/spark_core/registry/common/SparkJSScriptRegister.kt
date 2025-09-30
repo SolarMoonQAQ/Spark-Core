@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.event.SparkJSRegisterEvent
 import cn.solarmoon.spark_core.js.extensions.JSAnimInstanceGlobal
+import cn.solarmoon.spark_core.js.extensions.JSAttackContextGlobal
 import cn.solarmoon.spark_core.js.extensions.JSLoggerGlobal
 import cn.solarmoon.spark_core.js.extensions.JSPhysicsCollisionObjectGlobal
 import cn.solarmoon.spark_core.js.extensions.JSSkillConditionGlobal
@@ -23,6 +24,7 @@ object SparkJSScriptRegister {
             put("PhysicsCollisionObject", JSPhysicsCollisionObjectGlobal)
             put("SkillCondition", JSSkillConditionGlobal)
             put("Skill", JSSkillGlobal)
+            put("AttackContext", JSAttackContextGlobal)
         }
     }
 

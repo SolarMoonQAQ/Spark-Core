@@ -31,7 +31,7 @@
  */
 package com.jme3.bullet.collision;
 
-import cn.solarmoon.spark_core.physics.CollisionGroups;
+import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent;
 import cn.solarmoon.spark_core.util.InlineEventConsumer;
 import cn.solarmoon.spark_core.util.InlineEventHandler;

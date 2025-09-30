@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent
 import cn.solarmoon.spark_core.event.PhysicsContactEvent
-import cn.solarmoon.spark_core.physics.ManifoldPoint
+import cn.solarmoon.spark_core.physics.body.ManifoldPoint
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
 import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.util.triggerEvent
@@ -10,7 +10,6 @@ import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSoftSpace
 import com.jme3.bullet.SolverMode
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import com.jme3.bullet.collision.PhysicsSweepTestResult
 import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge

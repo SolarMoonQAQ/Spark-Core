@@ -68,7 +68,7 @@ class AnimatableShadowParticle(
     }
 
     class Option private constructor(
-        val syncerType: SyncerType,
+        val syncerType: SyncerType<*>,
         val syncData: SyncData,
         val color: Color,
         val lifeTime: Int,

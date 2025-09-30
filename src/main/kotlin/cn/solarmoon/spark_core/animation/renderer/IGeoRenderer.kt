@@ -16,7 +16,6 @@ interface IGeoRenderer<T, S: IAnimatable<T>> {
 
     fun render(
         animatable: S,
-        yaw: Float,
         partialTick: Float,
         poseStack: PoseStack,
         bufferSource: MultiBufferSource,

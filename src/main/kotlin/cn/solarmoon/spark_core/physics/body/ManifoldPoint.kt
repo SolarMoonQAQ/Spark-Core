@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.physics
+package cn.solarmoon.spark_core.physics.body
 
 import com.jme3.bullet.collision.ManifoldPoints
 import com.jme3.math.Vector3f

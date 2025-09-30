@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.event
 
-import cn.solarmoon.spark_core.physics.ManifoldPoint
+import cn.solarmoon.spark_core.physics.body.ManifoldPoint
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import net.neoforged.bus.api.Event
 

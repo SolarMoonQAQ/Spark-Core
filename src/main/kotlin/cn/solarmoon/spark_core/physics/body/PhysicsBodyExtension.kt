@@ -1,9 +1,8 @@
 package cn.solarmoon.spark_core.physics.body
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.entity.attack.CollisionAttackContext
+import cn.solarmoon.spark_core.entity.attack.AttackContext
 import cn.solarmoon.spark_core.entity.attack.CollisionAttackSystem
-import cn.solarmoon.spark_core.physics.ManifoldPoint
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.util.Subscription
@@ -26,10 +25,10 @@ fun stateOf(collisionObject: PhysicsCollisionObject): PhysicsBodyState {
 var PhysicsCollisionObject.owner: PhysicsHost?
     get() = userObject as? PhysicsHost
     set(value) {
-        userObject = value
         value?.let {
             it.allPhysicsBodies[name] = this
-        }
+        } ?: owner?.allPhysicsBodies?.remove(name)
+        userObject = value
     }
 
 fun Level.addPhysicsBody(body: PhysicsCollisionObject) {
@@ -131,36 +130,4 @@ fun PhysicsRigidBody.attachToEntity(entity: Entity, offset: Vector3f = Vector3f(
 
 fun PhysicsRigidBody.detach() {
     subs[this]?.dispose()
-}
-
-fun PhysicsCollisionObject.addAttackSystem(
-    preAttack: (Entity, Entity, PhysicsCollisionObject, PhysicsCollisionObject, ManifoldPoint, ManifoldPoint) -> Unit,
-    doAttack: (Entity, Entity, PhysicsCollisionObject, PhysicsCollisionObject, ManifoldPoint, ManifoldPoint) -> Boolean,
-    postAttack: (Entity, Entity, PhysicsCollisionObject, PhysicsCollisionObject, ManifoldPoint, ManifoldPoint) -> Unit
-): CollisionAttackSystem<CollisionAttackContext> {
-    val syetem = object : CollisionAttackSystem<CollisionAttackContext>() {
-        override fun preAttack(attacker: Entity, target: Entity, context: CollisionAttackContext) {
-            preAttack(attacker, target, context.o1, context.o2, context.o1Point, context.o2Point)
-        }
-        override fun doAttack(
-            attacker: Entity,
-            target: Entity,
-            context: CollisionAttackContext
-        ): Boolean {
-            return doAttack(attacker, target, context.o1, context.o2, context.o1Point, context.o2Point)
-        }
-
-        override fun postAttack(attacker: Entity, target: Entity, context: CollisionAttackContext) {
-            postAttack(attacker, target, context.o1, context.o2, context.o1Point, context.o2Point)
-        }
-    }
-    onEvent<PhysicsBodyEvent.Collide.Processed> {
-        val o1 = it.o1
-        val o2 = it.o2
-        val o1Point = it.o1Point
-        val o2Point = it.o2Point
-        val target = o2.owner as? Entity ?: return@onEvent
-        syetem.attack(target, CollisionAttackContext(o1, o2, o1Point, o2Point))
-    }
-    return syetem
 }

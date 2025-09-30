@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.physics.body
 
-import cn.solarmoon.spark_core.physics.ManifoldPoint
 import cn.solarmoon.spark_core.util.InlineEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 

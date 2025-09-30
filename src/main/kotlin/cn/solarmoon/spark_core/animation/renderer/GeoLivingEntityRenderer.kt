@@ -27,7 +27,7 @@ open class GeoLivingEntityRenderer<T>(context: EntityRendererProvider.Context, s
         packedLight: Int
     ) {
         super<LivingEntityRenderer>.render(animatable, yaw, partialTick, poseStack, bufferSource, packedLight)
-        super<IGeoRenderer>.render(animatable, yaw, partialTick, poseStack, bufferSource, packedLight)
+        super<IGeoRenderer>.render(animatable, partialTick, poseStack, bufferSource, packedLight)
     }
 
     override fun getTextureLocation(entity: T): ResourceLocation {

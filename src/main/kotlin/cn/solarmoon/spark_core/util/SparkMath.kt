@@ -7,6 +7,7 @@ import com.jme3.bounding.BoundingBox
 import com.jme3.math.Matrix4f
 import com.jme3.math.Quaternion
 import com.jme3.math.Transform
+import net.minecraft.core.BlockPos
 import net.minecraft.core.Vec3i
 import net.minecraft.util.Mth
 import net.minecraft.world.level.ChunkPos
@@ -60,6 +61,8 @@ fun Quaternionf.getScaledAxisZ(): Vector3f {
     val matrix = Matrix3f().rotate(this)
     return Vector3f(matrix.m20, matrix.m21, matrix.m22)
 }
+
+fun BlockPos.toVec3() = Vec3(x.toDouble(), y.toDouble(), z.toDouble())
 
 fun Quaternionf.copy(): Quaternionf = Quaternionf(this)
 

@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.physics
+package cn.solarmoon.spark_core.physics.body
 
 object CollisionGroups {
 

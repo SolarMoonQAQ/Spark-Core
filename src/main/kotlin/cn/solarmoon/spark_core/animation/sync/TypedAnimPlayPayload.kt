@@ -16,7 +16,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 class TypedAnimPlayPayload private constructor(
-    val syncerType: SyncerType,
+    val syncerType: SyncerType<*>,
     val syncData: SyncData,
     val anim: TypedAnimation,
     val layerId: ResourceLocation,

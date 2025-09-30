@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 class AnimSpeedChangePayload private constructor(
-    val syncerType: SyncerType,
+    val syncerType: SyncerType<*>,
     val syncData: SyncData,
     val time: Int,
     val speed: Double

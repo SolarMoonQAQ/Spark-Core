@@ -23,7 +23,7 @@ open class GeoEntityRenderer<T>(context: EntityRendererProvider.Context): Entity
         packedLight: Int
     ) {
         super<EntityRenderer>.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight)
-        super<IGeoRenderer>.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight)
+        super<IGeoRenderer>.render(entity, partialTick, poseStack, bufferSource, packedLight)
     }
 
     override fun getTextureLocation(entity: T): ResourceLocation {

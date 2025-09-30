@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 class SkillRejectPayload private constructor(
-    val syncerType: SyncerType,
+    val syncerType: SyncerType<*>,
     val syncData: SyncData,
     val clientId: Int,
     val reason: String

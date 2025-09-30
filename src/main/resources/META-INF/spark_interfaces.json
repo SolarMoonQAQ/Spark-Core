@@ -5,6 +5,9 @@
   "net/minecraft/world/entity/Entity": [
     "cn/solarmoon/spark_core/EntityPatch"
   ],
+  "net/minecraft/world/level/block/entity/BlockEntity": [
+    "cn/solarmoon/spark_core/BlockEntityPatch"
+  ],
   "net/minecraft/client/player/LocalPlayer": [
     "cn/solarmoon/spark_core/entity/player/ILocalPlayerPatch"
   ],
