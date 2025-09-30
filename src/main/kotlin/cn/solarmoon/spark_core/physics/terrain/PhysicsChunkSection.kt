@@ -132,10 +132,8 @@ class PhysicsChunkSection(
             ))
             collisionGroup = CollisionGroups.TERRAIN
             setCollideWithGroups(CollisionGroups.NONE)
-            // 存储section信息用于查询
-            physicsBody?.owner = this@PhysicsChunkSection
         }
-
+        physicsBody!!.owner = this
         return true
     }
 

@@ -127,8 +127,8 @@ abstract class PhysicsLevel(
             it.triggerEvent(PhysicsBodyEvent.Tick)
             stateOf(it).update()
             // 收集所有需要激活地形的刚体的包围盒
-            if (!it.isStatic && it.isActive && it.owner !is PhysicsChunkSection && it.collideWithGroups and CollisionGroups.TERRAIN != 0) {
-                val owner = it.owner
+            val owner = it.owner
+            if (!it.isStatic && it.isActive && owner !is PhysicsChunkSection && it.collideWithGroups and CollisionGroups.TERRAIN != 0) {
                 if (owner !is RigidBodyEntity || (owner.isActive)) {
                     val aabb = stateOf(it).cachedBoundingBox.toAABB()
                     if (it is PhysicsRigidBody) {
