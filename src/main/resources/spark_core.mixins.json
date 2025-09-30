@@ -15,6 +15,7 @@
     "event.PlayerMixin",
     "extension.DamageSourceMixin",
     "extension.EntityMixin",
+    "extension.LevelMixin",
     "extension.LivingEntityMixin",
     "extension.LookControlMixin",
     "extension.MappedRegistryMixin",
@@ -28,7 +29,7 @@
     "js.PreInputMixin",
     "js.SkillMixin",
     "js.Vec3Mixin",
-    "extension.LevelMixin"
+    "terrain.ServerLevelMixin"
   ],
   "client": [
     "animation.CapeLayerMixin",

@@ -141,7 +141,8 @@ abstract class PhysicsLevel(
             }
         }
 
-        // 统一更新地形激活状态
+        // 统一更新地形
+        terrainManager.updateDirtySections()
         terrainManager.updateActivation(activationBoxes)
 
         // 发送物理步进请求（异步）

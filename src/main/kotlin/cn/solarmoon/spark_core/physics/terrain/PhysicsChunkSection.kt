@@ -13,6 +13,7 @@ import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
 import com.jme3.math.Transform
 import com.jme3.math.Vector3f
+import jme3utilities.math.MyMath
 import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
 import net.minecraft.world.level.block.state.BlockState
@@ -42,6 +43,14 @@ class PhysicsChunkSection(
     /**
      * 从缓存的区块中预加载所有方块状态并构建碰撞形状
      * 这个方法只在主线程调用，避免物理线程中的耗时操作
+     *
+     * 该方法会：
+     * 1. 遍历section内所有方块位置
+     * 2. 获取每个方块的碰撞形状
+     * 3. 处理复合形状，将其拆分为基本形状并应用变换
+     * 4. 将所有非空气方块的形状组合到最终的复合形状中
+     *
+     * @return Boolean 如果section包含任何碰撞体积则返回true，否则返回false
      */
     fun buildCollisionShape(): Boolean {
         val compoundShape = CompoundCollisionShape()
@@ -58,13 +67,13 @@ class PhysicsChunkSection(
                     )
 
                     // 从缓存的区块中获取方块状态，避免直接访问世界
+                    blockStates.clear()
                     val blockState = chunk.getBlockState(blockPos)
-                    blockStates[blockPos] = blockState
-
                     // 跳过空气和没有碰撞体积的方块
                     if (blockState.isAir || blockState.getCollisionShape(physicsLevel.mcLevel, blockPos).isEmpty) {
                         continue
                     }
+                    blockStates[blockPos] = blockState
 
                     // 获取方块的碰撞形状
                     val blockShape = blockState.getBulletCollisionShape(physicsLevel)
@@ -76,7 +85,25 @@ class PhysicsChunkSection(
                         z + 0.5f - 8f
                     )
 
-                    compoundShape.addChildShape(blockShape, Transform(relativePos, Quaternion.IDENTITY))
+                    // 处理复合形状：如果是复合形状，需要拆分为基本形状
+                    if (blockShape is CompoundCollisionShape) {
+                        // 遍历复合形状的所有子形状
+                        val children = blockShape.listChildren()
+                        for (childShape in children) {
+                            val shape = childShape.shape
+                            val childTransform = childShape.copyTransform(null)
+
+                            // 合并变换：方块位置 + 子形状相对位置
+                            val combinedTransform = MyMath.combine(Transform(relativePos, Quaternion.IDENTITY), childTransform, null)
+
+                            // 添加子形状到最终的复合形状
+                            compoundShape.addChildShape(shape, combinedTransform)
+                        }
+                    } else {
+                        // 对于非复合形状，直接添加
+                        compoundShape.addChildShape(blockShape, Transform(relativePos, Quaternion.IDENTITY))
+                    }
+
                     hasCollision = true
                 }
             }
@@ -113,10 +140,66 @@ class PhysicsChunkSection(
     }
 
     /**
+     * 更新物理刚体的碰撞形状
+     *
+     * 该方法会：
+     * 1. 重新构建section的碰撞形状
+     * 2. 根据新的碰撞形状决定是否需要创建、更新或销毁刚体
+     * 3. 重用现有刚体以避免重新加入物理世界的开销
+     *
+     * @return Boolean 如果刚体状态发生变化（创建、销毁或形状更新）则返回true，否则返回false
+     *
+     * 处理逻辑：
+     * - 如果section现在有碰撞体积且之前有刚体：更新现有刚体的碰撞形状
+     * - 如果section现在有碰撞体积且之前没有刚体：创建新刚体
+     * - 如果section现在没有碰撞体积且之前有刚体：销毁刚体
+     * - 如果section现在没有碰撞体积且之前没有刚体：无操作
+     */
+    fun updatePhysicsBody(): Boolean {
+        val wasActive = isActive
+        val hadBody = physicsBody != null
+
+        // 重新构建碰撞形状
+        val hasCollisionNow = buildCollisionShape()
+        var changed = false
+
+        if (hasCollisionNow) {
+            if (hadBody) {
+                // 重用现有刚体，只更新形状
+                physicsBody?.let { body ->
+                    collisionShape?.let { newShape ->
+                        physicsLevel.submitImmediateTask {
+                            body.collisionShape = newShape
+                        }
+                    }
+                }
+                changed = true
+            } else {
+                // 没有现有刚体，创建新的
+                createPhysicsBody()
+                if (wasActive) {
+                    activate()
+                }
+                changed = true
+            }
+        } else {
+            // 新的形状为空，销毁刚体
+            if (hadBody) {
+                destroyPhysicsBody()
+                changed = true
+            }
+        }
+        return changed
+    }
+
+    /**
      * 将section刚体加入物理世界
      */
     fun activate() {
-        if (isActive || physicsBody == null) return
+        if (isActive || physicsBody == null) {
+            isActive = true
+            return
+        }
         if (physicsBody!!.isInWorld) {
             isActive = true
             return
@@ -130,7 +213,10 @@ class PhysicsChunkSection(
      * 从物理世界移除section刚体
      */
     fun deactivate() {
-        if (!isActive || physicsBody == null) return
+        if (!isActive || physicsBody == null) {
+            isActive = false
+            return
+        }
         if (!physicsBody!!.isInWorld) {
             isActive = false
             return

@@ -40,8 +40,8 @@ class PhysicsChunk(
             // 构建碰撞形状，只有非空section才会创建刚体
             if (physicsSection.buildCollisionShape()) {
                 physicsSection.createPhysicsBody()
-                sections[sectionY] = physicsSection
             }
+            sections[sectionY] = physicsSection
         }
 
         isLoaded = true

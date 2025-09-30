@@ -5,11 +5,11 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.math.Vector3f
 import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.ChunkPos
-import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.chunk.LevelChunk
 import net.minecraft.world.phys.AABB
-import kotlin.math.abs
+import net.neoforged.neoforge.network.PacketDistributor
 
 /**
  * 管理所有物理区块的加载、卸载和激活
@@ -21,7 +21,11 @@ import kotlin.math.abs
 class PhysicsChunkManager(
     private val physicsLevel: PhysicsLevel
 ) {
+    // 已加载区块管理
     private val loadedChunks = mutableMapOf<ChunkPos, PhysicsChunk>()
+
+    // 脏section管理
+    private val dirtySections = mutableSetOf<SectionPos>()
 
     // 性能统计
     private var totalSections = 0
@@ -45,6 +49,9 @@ class PhysicsChunkManager(
      */
     private fun unloadChunk(chunkPos: ChunkPos) {
         val chunk = loadedChunks[chunkPos] ?: return
+
+        // 从脏section集合中移除该区块的所有section
+        dirtySections.removeAll { it == chunkPos }
 
         totalSections -= chunk.getTotalSectionCount()
         activeSections -= chunk.getActiveSectionCount()
@@ -174,11 +181,65 @@ class PhysicsChunkManager(
     }
 
     /**
-     * 处理方块更新事件（主线程调用）
+     * 批量处理方块更新事件
      */
-    fun onBlockUpdated(blockPos: BlockPos, oldState: BlockState, newState: BlockState) {
-        val chunkPos = ChunkPos(blockPos)
-        loadedChunks[chunkPos]?.onBlockUpdated(blockPos, oldState, newState)
+    fun onBlockUpdated(blockPositions: Set<BlockPos>) {
+        val dirtySections = mutableSetOf<SectionPos>()
+        blockPositions.forEach { blockPos ->
+            val sectionPos = SectionPos.of(blockPos)
+            dirtySections.add(sectionPos)
+        }
+        markDirtySections(dirtySections)
+    }
+
+    /**
+     * 标记该section为脏, 待物理步进时更新
+     */
+    fun markDirtySections(sections: Set<SectionPos>) {
+        dirtySections.addAll(sections)
+    }
+
+    /**
+     * 更新所有脏section的碰撞体积
+     * 在物理步进前调用
+     *
+     * 该方法会：
+     * 1. 遍历所有脏section并更新其物理刚体
+     * 2. 收集实际发生变化的section
+     * 3. 将实际变化的section同步到客户端
+     */
+    fun updateDirtySections() {
+        if (dirtySections.isEmpty()) return
+
+        val sectionsToUpdate = dirtySections.toMutableSet()
+        dirtySections.clear()
+
+        // 使用迭代器遍历，避免在循环中创建新集合
+        val iterator = sectionsToUpdate.iterator()
+        val actuallyUpdatedSections = mutableSetOf<SectionPos>()
+
+        while (iterator.hasNext()) {
+            val sectionPos = iterator.next()
+            val chunkPos = ChunkPos(sectionPos.x(), sectionPos.z())
+            val physicsChunk = loadedChunks[chunkPos] ?: continue
+
+            val sectionY = sectionPos.y()
+            val physicsSection = physicsChunk.getSection(sectionY) ?: continue
+
+            // 更新该section的碰撞形状，重用现有刚体
+            // 如果物理刚体实际发生了变化，则记录该section
+            if (physicsSection.updatePhysicsBody()) {
+                actuallyUpdatedSections.add(sectionPos)
+            }
+        }
+
+        // 只在服务端发送实际发生变化的section到客户端，节约带宽
+        if (!physicsLevel.mcLevel.isClientSide && actuallyUpdatedSections.isNotEmpty()) {
+            PacketDistributor.sendToPlayersInDimension(
+                physicsLevel.mcLevel as ServerLevel,
+                TerrainUpdatePayload(actuallyUpdatedSections)
+            )
+        }
     }
 
     /**
