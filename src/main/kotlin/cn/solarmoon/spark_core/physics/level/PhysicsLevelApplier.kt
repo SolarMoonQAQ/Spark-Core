@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.physics.level
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.util.PPhase
 import net.minecraft.world.level.Level
+import net.minecraft.world.level.chunk.LevelChunk
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.level.ChunkEvent
 import net.neoforged.neoforge.event.level.LevelEvent
@@ -52,8 +53,7 @@ object PhysicsLevelApplier {
     private fun chunkLoad(event: ChunkEvent.Load) {
         val level = event.level as Level
         val physLevel: PhysicsLevel = level.physicsLevel
-        physLevel.terrainChunks[event.chunk.pos] = event.chunk
-        //TODO:整合全区块方块为单一碰撞体积，减少资源占用
+        physLevel.terrainManager.onChunkLoaded(event.chunk.pos, event.chunk as LevelChunk)
     }
 
     /**
@@ -63,9 +63,7 @@ object PhysicsLevelApplier {
     private fun chunkUnload(event: ChunkEvent.Unload) {
         val level = event.level as Level
         val physLevel: PhysicsLevel = level.physicsLevel
-        if (physLevel.terrainChunks.containsKey(event.chunk.pos)){
-            physLevel.terrainChunks.remove(event.chunk.pos)
-        }
+        physLevel.terrainManager.onChunkUnloaded(event.chunk.pos)
     }
 
 }

@@ -3,12 +3,16 @@ package cn.solarmoon.spark_core.physics.level
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
+import cn.solarmoon.spark_core.physics.CollisionGroups
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
+import cn.solarmoon.spark_core.physics.body.RigidBodyEntity
+import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.physics.body.stateOf
-import cn.solarmoon.spark_core.util.PPhase
-import cn.solarmoon.spark_core.util.TaskSubmitOffice
-import cn.solarmoon.spark_core.util.triggerEvent
+import cn.solarmoon.spark_core.physics.terrain.BlockShapeManager
+import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkManager
+import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection
+import cn.solarmoon.spark_core.util.*
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
@@ -17,11 +21,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
-import net.minecraft.world.level.chunk.ChunkAccess
+import net.minecraft.world.phys.AABB
 import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -40,7 +42,8 @@ abstract class PhysicsLevel(
 
     // 协程配置
     val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
-    val scope = CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
+    val scope =
+        CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
 
     // 状态管理
     private val stateFlow = MutableStateFlow(PhysicsLevelState.IDLE)
@@ -66,8 +69,9 @@ abstract class PhysicsLevel(
         private set
 
     //地形碰撞相关
-    val terrainChunks: ConcurrentHashMap<ChunkPos, ChunkAccess> = ConcurrentHashMap(32) //已加载的区块
-    val terrainBlockBodies: ConcurrentHashMap<BlockPos, PhysicsRigidBody> = ConcurrentHashMap(1024) //已存在的地形块
+    lateinit var terrainManager: PhysicsChunkManager
+    lateinit var blockShapeManager: BlockShapeManager
+
     suspend fun CoroutineScope.run() {
         val fixedStep = 1f / TPS
         val repeat = TPS / 20
@@ -104,21 +108,42 @@ abstract class PhysicsLevel(
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
             if (overloadWarnCooldown <= 0) {
                 SparkCore.LOGGER.warn(
-                    "{} overloaded, last tick time: {}ms, rigid body in world: {}(part and entity)/{}(total)",
+                    "{} overloaded, last tick time: {}ms, rigid body in world: {} with {}",
                     name,
                     (lastStepTickTime / 1000000).toInt(),
-                    world.pcoList.size - terrainBlockBodies.size,
-                    world.pcoList.size
+                    world.pcoList.size,
+                    terrainManager.getStats()
                 )
                 overloadWarnCooldown = 40
             }
             return
         }
 
+        // 收集所有需要激活地形的刚体的包围盒
+        val activationBoxes = mutableListOf<AABB>()
+
+        // 遍历所有刚体，更新其状态
         world.pcoList.forEach {
             it.triggerEvent(PhysicsBodyEvent.Tick)
             stateOf(it).update()
+            // 收集所有需要激活地形的刚体的包围盒
+            if (!it.isStatic && it.isActive && it.owner !is PhysicsChunkSection && it.collideWithGroups and CollisionGroups.TERRAIN != 0) {
+                val owner = it.owner
+                if (owner !is RigidBodyEntity || (owner.isActive)) {
+                    val aabb = stateOf(it).cachedBoundingBox.toAABB()
+                    SparkCore.LOGGER.debug("deactivate time:{}", it.isActive)
+                    if (it is PhysicsRigidBody) {
+                        val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / TPS)
+                        if (delta.length() < 5f)
+                            aabb.expandTowards(delta)
+                    }
+                    activationBoxes.add(aabb)
+                }
+            }
         }
+
+        // 统一更新地形激活状态
+        terrainManager.updateActivation(activationBoxes)
 
         // 发送物理步进请求（异步）
         scope.launch {
@@ -133,6 +158,8 @@ abstract class PhysicsLevel(
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
         scope.launch {
             world = PhysicsWorld(this@PhysicsLevel)
+            terrainManager = PhysicsChunkManager(this@PhysicsLevel)
+            blockShapeManager = BlockShapeManager(this@PhysicsLevel)
             run()
         }
     }

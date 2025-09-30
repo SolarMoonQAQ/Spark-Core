@@ -3,12 +3,14 @@ package cn.solarmoon.spark_core.util
 import cn.solarmoon.spark_core.molang.core.value.DoubleValue
 import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import cn.solarmoon.spark_core.physics.toBVector3f
+import com.jme3.bounding.BoundingBox
 import com.jme3.math.Matrix4f
 import com.jme3.math.Quaternion
 import com.jme3.math.Transform
 import net.minecraft.core.Vec3i
 import net.minecraft.util.Mth
 import net.minecraft.world.level.ChunkPos
+import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3f
@@ -221,4 +223,13 @@ fun catmullromVector3f(prev: Vector3f, now: Vector3f, next: Vector3f, nextNext: 
 
 fun catmullromVec3(prev: Vec3, now: Vec3, next: Vec3, nextNext: Vec3, t: Float): Vec3 {
     return catmullromVector3f(prev.toVector3f(), now.toVector3f(), next.toVector3f(), nextNext.toVector3f(), t).toVec3()
+}
+
+/**
+ * 将JME的BoundingBox转换为Minecraft的AABB
+ */
+fun BoundingBox.toAABB(): AABB {
+    val min = this.getMin(null).toVec3()
+    val max = this.getMax(null).toVec3()
+    return AABB(min, max)
 }
