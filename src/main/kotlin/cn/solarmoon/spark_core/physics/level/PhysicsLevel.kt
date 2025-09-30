@@ -131,7 +131,6 @@ abstract class PhysicsLevel(
                 val owner = it.owner
                 if (owner !is RigidBodyEntity || (owner.isActive)) {
                     val aabb = stateOf(it).cachedBoundingBox.toAABB()
-                    SparkCore.LOGGER.debug("deactivate time:{}", it.isActive)
                     if (it is PhysicsRigidBody) {
                         val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / TPS)
                         if (delta.length() < 5f)

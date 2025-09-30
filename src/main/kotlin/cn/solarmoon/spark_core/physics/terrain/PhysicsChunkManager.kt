@@ -99,7 +99,6 @@ class PhysicsChunkManager(
             if (!activationRanges.isNullOrEmpty()) {
                 // 合并该区块的所有激活范围
                 val mergedRanges = mergeRanges(activationRanges)
-                SparkCore.LOGGER.debug("激活区块: {}, 范围: {}", chunkPos, mergedRanges)
                 // 激活合并后的范围
                 mergedRanges.forEach { range ->
                     chunk.activateSections(range.first, range.last)
