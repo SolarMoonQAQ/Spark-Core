@@ -94,10 +94,14 @@ abstract class CollisionObjectEntity(
         if (!level().isClientSide) {
             // 由刚体驱动变换，其它属性可从entity设置
             update {
-                setPos(body.getPhysicsLocation(null).toVec3())
-                rotation = body.getPhysicsRotation(null).toQuaternionf()
+                isActive = body.isActive
                 activationState = body.activationState
-                isContactResponse = body.isContactResponse
+                if (body.isActive) {
+                    // 仅在刚体激活时才更新位置和旋转，节约带宽
+                    setPos(body.getPhysicsLocation(null).toVec3())
+                    rotation = body.getPhysicsRotation(null).toQuaternionf()
+                    isContactResponse = body.isContactResponse
+                }
             }
         } else {
             if (lerpSteps > 0) {

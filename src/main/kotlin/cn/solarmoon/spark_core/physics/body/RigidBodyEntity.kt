@@ -82,8 +82,11 @@ abstract class RigidBodyEntity(
         super.baseTick()
         if (!level().isClientSide) {
             update {
-                angularVelocity = body.getAngularVelocity(null).toVec3()
-                linearVelocity = body.getLinearVelocity(null).toVec3()
+                if (body.isActive) {
+                    // 仅在刚体激活时才更新速度，节约带宽
+                    angularVelocity = body.getAngularVelocity(null).toVec3()
+                    linearVelocity = body.getLinearVelocity(null).toVec3()
+                }
             }
         }
     }
