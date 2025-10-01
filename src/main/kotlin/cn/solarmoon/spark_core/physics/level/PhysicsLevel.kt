@@ -140,7 +140,7 @@ abstract class PhysicsLevel(
         // 统一更新地形
         terrainManager.updateDirtySections()
         terrainManager.updateActivation(activationBoxes)
-
+        if(world.pcoList.isNotEmpty())SparkCore.LOGGER.debug(terrainManager.getStats())
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)

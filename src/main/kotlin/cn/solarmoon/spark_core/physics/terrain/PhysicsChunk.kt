@@ -23,8 +23,7 @@ class PhysicsChunk(
     private var isLoaded = false
 
     /**
-     * 加载区块物理表示
-     * 为每个section构建碰撞形状（主线程调用）
+     * 异步加载区块物理表示
      */
     fun load() {
         if (isLoaded) return
@@ -36,10 +35,8 @@ class PhysicsChunk(
             val sectionPos = SectionPos.of(chunkPos, sectionY)
             val physicsSection = PhysicsChunkSection(sectionPos, physicsLevel, chunk)
 
-            // 构建碰撞形状，只有非空section才会创建刚体
-            if (physicsSection.buildCollisionShape()) {
-                physicsSection.createPhysicsBody()
-            }
+            // 开始异步构建碰撞形状
+            physicsSection.startAsyncBuild(physicsLevel.terrainManager)
             sections[sectionY] = physicsSection
         }
 
@@ -50,7 +47,7 @@ class PhysicsChunk(
      * 卸载区块，清理所有资源
      */
     fun unload() {
-        sections.values.forEach { it.destroy() }
+        sections.values.forEach {it.destroy()}
         sections.clear()
         isLoaded = false
     }

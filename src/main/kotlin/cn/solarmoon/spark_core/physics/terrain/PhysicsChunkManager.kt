@@ -36,20 +36,18 @@ class PhysicsChunkManager(
         Runtime.getRuntime().availableProcessors().coerceAtLeast(2)
     ) { r -> Thread(r, "TerrainShapeBuilder-${physicsLevel.name}") }.asCoroutineDispatcher()
 
-    private val terrainBuilderScope = CoroutineScope(
+    val terrainBuilderScope = CoroutineScope(
         terrainBuilderExecutor + SupervisorJob() +
                 CoroutineExceptionHandler { _, exception ->
                     SparkCore.LOGGER.error("地形构建线程异常", exception)
                 }
     )
 
-    // 正在进行的构建任务跟踪
-    private val pendingBuildTasks = ConcurrentHashMap<SectionPos, Job>()
-
     // 性能统计
-    private var totalSections = 0
-    private var activeSections = 0
-
+    private val totalSections: Int
+        get() = loadedChunks.values.sumOf { it.getTotalSectionCount() }
+    private val activeSections: Int
+        get() = loadedChunks.values.sumOf { it.getActiveSectionCount() }
 
     /**
      * 加载指定区块的物理表示
@@ -60,8 +58,6 @@ class PhysicsChunkManager(
         val physicsChunk = PhysicsChunk(chunkPos, physicsLevel, chunk)
         physicsChunk.load()
         loadedChunks[chunkPos] = physicsChunk
-
-        totalSections += physicsChunk.getTotalSectionCount()
     }
 
     /**
@@ -72,9 +68,6 @@ class PhysicsChunkManager(
 
         // 从脏section集合中移除该区块的所有section
         dirtySections.removeAll { it == chunkPos }
-
-        totalSections -= chunk.getTotalSectionCount()
-        activeSections -= chunk.getActiveSectionCount()
 
         chunk.unload()
         loadedChunks.remove(chunkPos)
@@ -88,7 +81,6 @@ class PhysicsChunkManager(
         if (boundingBoxes.isEmpty()) {
             // 如果没有BoundingBox，停用所有section
             loadedChunks.values.forEach { it.deactivateAll() }
-            activeSections = 0
             return
         }
 
@@ -117,8 +109,6 @@ class PhysicsChunkManager(
             }
         }
 
-        var newActiveSections = 0
-
         loadedChunks.values.forEach { chunk ->
             val chunkPos = chunk.chunkPos
             val activationRanges = activationMap[chunkPos]
@@ -130,14 +120,11 @@ class PhysicsChunkManager(
                 mergedRanges.forEach { range ->
                     chunk.activateSections(range.first, range.last)
                 }
-                newActiveSections += chunk.getActiveSectionCount()
             } else {
                 // 停用不在激活范围内的区块
                 chunk.deactivateAll()
             }
         }
-
-        activeSections = newActiveSections
     }
 
     /**
@@ -176,61 +163,6 @@ class PhysicsChunkManager(
             focusPos.x + halfSize, focusPos.y + halfSize, focusPos.z + halfSize
         )
         updateActivation(listOf(aabb))
-    }
-
-    // 添加地形构建任务提交方法
-    fun submitTerrainBuildTask(
-        sectionPos: SectionPos,
-        block: suspend () -> Boolean
-    ): Job {
-        // 取消同位置的已有任务
-        pendingBuildTasks[sectionPos]?.cancel()
-
-        val job = terrainBuilderScope.launch {
-            try {
-                val result = block()
-                if (result) {
-                    SparkCore.LOGGER.debug("地形section {} 构建完成", sectionPos)
-                }
-            } catch (e: CancellationException) {
-                SparkCore.LOGGER.debug("地形section {} 构建被取消", sectionPos)
-            } catch (e: Exception) {
-                SparkCore.LOGGER.error("地形section {} 构建失败", sectionPos, e)
-            } finally {
-                pendingBuildTasks.remove(sectionPos)
-            }
-        }
-
-        pendingBuildTasks[sectionPos] = job
-        return job
-    }
-
-    // 批量提交构建任务
-    fun submitTerrainBuildTasks(sections: Collection<PhysicsChunkSection>) {
-        sections.forEach { section ->
-//            if (section.getBuildState() == PhysicsChunkSection.BuildState.IDLE) {
-//                section.buildCollisionShapeAsync(
-//                    onComplete = { success ->
-//                        if (success && section.isActive) {
-//                            // 如果构建完成且需要激活，创建刚体
-//                            physicsLevel.submitImmediateTask {
-//                                section.createPhysicsBody()
-//                                section.activate()
-//                            }
-//                        }
-//                    },
-//                    onError = { error: Exception ->
-//                        SparkCore.LOGGER.error("Section {} 构建失败", section.sectionPos, error)
-//                    }
-//                )
-//            }
-        }
-    }
-
-    // 取消指定section的构建任务
-    fun cancelBuildTask(sectionPos: SectionPos) {
-        pendingBuildTasks[sectionPos]?.cancel()
-        pendingBuildTasks.remove(sectionPos)
     }
 
     /**
@@ -289,31 +221,22 @@ class PhysicsChunkManager(
         val sectionsToUpdate = dirtySections.toMutableSet()
         dirtySections.clear()
 
-        // 使用迭代器遍历，避免在循环中创建新集合
-        val iterator = sectionsToUpdate.iterator()
-        val actuallyUpdatedSections = mutableSetOf<SectionPos>()
-
-        while (iterator.hasNext()) {
-            val sectionPos = iterator.next()
-            val chunkPos = ChunkPos(sectionPos.x(), sectionPos.z())
-            val physicsChunk = loadedChunks[chunkPos] ?: continue
-
-            val sectionY = sectionPos.y()
-            val physicsSection = physicsChunk.getSection(sectionY) ?: continue
-
-            // 更新该section的碰撞形状，重用现有刚体
-            // 如果物理刚体实际发生了变化，则记录该section
-            if (physicsSection.updatePhysicsBody()) {
-                actuallyUpdatedSections.add(sectionPos)
-            }
-        }
-
-        // 只在服务端发送实际发生变化的section到客户端，节约带宽
-        if (!physicsLevel.mcLevel.isClientSide && actuallyUpdatedSections.isNotEmpty()) {
+        // 直接发送原始的脏section列表，不等待异步构建完成
+        if (!physicsLevel.mcLevel.isClientSide && sectionsToUpdate.isNotEmpty()) {
             PacketDistributor.sendToPlayersInDimension(
                 physicsLevel.mcLevel as ServerLevel,
-                TerrainUpdatePayload(actuallyUpdatedSections)
+                TerrainUpdatePayload(sectionsToUpdate)
             )
+        }
+
+        // 异步更新每个脏section
+        sectionsToUpdate.forEach { sectionPos ->
+            val chunkPos = ChunkPos(sectionPos.x(), sectionPos.z())
+            val physicsChunk = loadedChunks[chunkPos] ?: return@forEach
+            val sectionY = sectionPos.y()
+            val physicsSection = physicsChunk.getSection(sectionY) ?: return@forEach
+            // 开始异步更新
+            physicsSection.startAsyncUpdate(this)
         }
     }
 
@@ -321,25 +244,20 @@ class PhysicsChunkManager(
      * 获取性能统计信息
      */
     fun getStats(): String {
-        return "物理区块: ${loadedChunks.size}, Section总数: $totalSections, 活跃Section: $activeSections"
+        return "物理区块: ${loadedChunks.size}, Section总数: $totalSections, " +
+                "活跃Section: $activeSections"
     }
 
     /**
      * 清理所有资源
      */
     fun destroy() {
-        // 取消所有进行中的构建任务
-        pendingBuildTasks.values.forEach { it.cancel() }
-        pendingBuildTasks.clear()
+        loadedChunks.values.forEach { it.unload() }
+        loadedChunks.clear()
 
         // 关闭线程池
         terrainBuilderScope.cancel()
         (terrainBuilderExecutor.executor as? ExecutorService)?.shutdownNow()
 
-        // 原有清理逻辑
-        loadedChunks.values.forEach { it.unload() }
-        loadedChunks.clear()
-        totalSections = 0
-        activeSections = 0
     }
 }
