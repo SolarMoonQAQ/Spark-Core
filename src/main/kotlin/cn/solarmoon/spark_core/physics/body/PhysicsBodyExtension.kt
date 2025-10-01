@@ -47,6 +47,13 @@ fun Level.removePhysicsBody(body: PhysicsCollisionObject) {
     }
 }
 
+fun Level.removePhysicsBody(name: String) {
+    val body = (this as PhysicsHost).getPhysicsBody(name)
+    body?.let {
+        removePhysicsBody(it)
+    }
+}
+
 private val subs = mutableMapOf<PhysicsCollisionObject, Subscription>()
 
 fun PhysicsCollisionObject.onCollideStarted(handler: (PhysicsBodyEvent.Collide.Started) -> Unit): Subscription {
