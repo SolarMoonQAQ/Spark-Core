@@ -86,42 +86,40 @@ class PhysicsChunkSection(
         var hasCollision = false
         val snapshot = snapshot ?: return false
         // 遍历section内所有方块位置
-        for (x in 0..15) {
-            for (y in 0..15) {
-                for (z in 0..15) {
-                    val block = snapshot.getBlockSnapshot(BlockPos(x, y, z))
-                    // 获取方块的碰撞形状，其他物理信息在其他刚体发生碰撞处理碰撞对时自行调用使用
-                    val blockShape = block?.state?.getBulletCollisionShape(physicsLevel) ?: continue
-                    // 计算方块在section内的相对位置
-                    val relativePos = Vector3f(
-                        x + 0.5f - 8f,
-                        y + 0.5f - 8f,
-                        z + 0.5f - 8f
-                    )
+        for (block in snapshot.shapes) {
+            val origin = BlockPos(sectionPos.minBlockX(), sectionPos.minBlockY(), sectionPos.minBlockZ())
+            val blockPos = block.key.subtract(origin)
+            val blockInfo = block.value
+            // 获取方块的碰撞形状，其他物理信息在其他刚体发生碰撞处理碰撞对时自行调用使用
+            val blockShape = blockInfo.state.getBulletCollisionShape(physicsLevel) ?: continue
+            // 计算方块在section内的相对位置
+            val relativePos = Vector3f(
+                blockPos.x + 0.5f - 8f,
+                blockPos.y + 0.5f - 8f,
+                blockPos.z + 0.5f - 8f
+            )
 
-                    // 处理复合形状：如果是复合形状，需要拆分为基本形状
-                    if (blockShape is CompoundCollisionShape) {
-                        // 遍历复合形状的所有子形状
-                        val children = blockShape.listChildren()
-                        for (childShape in children) {
-                            val shape = childShape.shape
-                            val childTransform = childShape.copyTransform(null)
+            // 处理复合形状：如果是复合形状，需要拆分为基本形状
+            if (blockShape is CompoundCollisionShape) {
+                // 遍历复合形状的所有子形状
+                val children = blockShape.listChildren()
+                for (childShape in children) {
+                    val shape = childShape.shape
+                    val childTransform = childShape.copyTransform(null)
 
-                            // 合并变换：方块位置 + 子形状相对位置
-                            val combinedTransform =
-                                MyMath.combine(Transform(relativePos, Quaternion.IDENTITY), childTransform, null)
+                    // 合并变换：方块位置 + 子形状相对位置
+                    val combinedTransform =
+                        MyMath.combine(Transform(relativePos, Quaternion.IDENTITY), childTransform, null)
 
-                            // 添加子形状到最终的复合形状
-                            compoundShape.addChildShape(shape, combinedTransform)
-                        }
-                    } else {
-                        // 对于非复合形状，直接添加
-                        compoundShape.addChildShape(blockShape, Transform(relativePos, Quaternion.IDENTITY))
-                    }
-
-                    hasCollision = true
+                    // 添加子形状到最终的复合形状
+                    compoundShape.addChildShape(shape, combinedTransform)
                 }
+            } else {
+                // 对于非复合形状，直接添加
+                compoundShape.addChildShape(blockShape, Transform(relativePos, Quaternion.IDENTITY))
             }
+
+            hasCollision = true
         }
 
         if (hasCollision) {
@@ -306,6 +304,7 @@ class PhysicsChunkSection(
         cancelBuild()
         deactivate()
         destroyPhysicsBody()
+        snapshot?.shapes?.clear()
         snapshot = null
     }
 

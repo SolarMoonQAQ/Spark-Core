@@ -124,7 +124,7 @@ abstract class PhysicsLevel(
             stateOf(it).update()
             // 收集所有需要激活地形的刚体的包围盒
             val owner = it.owner
-            if (!it.isStatic && it.isActive && owner !is PhysicsChunkSection && it.collideWithGroups and CollisionGroups.TERRAIN != 0) {
+            if (!it.isStatic && owner !is PhysicsChunkSection && it.collideWithGroups and CollisionGroups.TERRAIN != 0) {
                 if (owner !is RigidBodyEntity || (owner.isActive)) {
                     val aabb = stateOf(it).cachedBoundingBox.toAABB()
                     if (it is PhysicsRigidBody) {
@@ -139,8 +139,8 @@ abstract class PhysicsLevel(
 
         // 统一更新地形
         terrainManager.updateDirtySections()
-        terrainManager.updateActivation(activationBoxes)
-        if(world.pcoList.isNotEmpty())SparkCore.LOGGER.debug(terrainManager.getStats())
+        terrainManager.updateBuildAndActivation(activationBoxes)
+//        if(world.pcoList.isNotEmpty())SparkCore.LOGGER.debug(terrainManager.getStats())
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)

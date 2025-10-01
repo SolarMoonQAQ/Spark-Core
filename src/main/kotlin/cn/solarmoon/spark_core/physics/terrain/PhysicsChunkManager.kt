@@ -25,8 +25,11 @@ import java.util.concurrent.Executors
 class PhysicsChunkManager(
     private val physicsLevel: PhysicsLevel
 ) {
-    // 已加载区块管理
+    // 已加载的物理区块（包含构建状态）
     private val loadedChunks = mutableMapOf<ChunkPos, PhysicsChunk>()
+
+    // Minecraft已加载的区块（不构建物理表示）
+    private val mcLoadedChunks = mutableMapOf<ChunkPos, LevelChunk>()
 
     // 脏section管理
     private val dirtySections = mutableSetOf<SectionPos>()
@@ -43,6 +46,10 @@ class PhysicsChunkManager(
                 }
     )
 
+    // 配置参数
+    private val buildRadius = 4 // 构建半径（区块数）
+    private val activationRadius = 1 // 激活半径（区块数）
+
     // 性能统计
     private val totalSections: Int
         get() = loadedChunks.values.sumOf { it.getTotalSectionCount() }
@@ -53,17 +60,15 @@ class PhysicsChunkManager(
      * 加载指定区块的物理表示
      */
     private fun loadChunk(chunkPos: ChunkPos, chunk: LevelChunk) {
-        if (chunkPos in loadedChunks) return
-
-        val physicsChunk = PhysicsChunk(chunkPos, physicsLevel, chunk)
-        physicsChunk.load()
-        loadedChunks[chunkPos] = physicsChunk
+        if (chunkPos in mcLoadedChunks) return
+        mcLoadedChunks[chunkPos] = chunk
     }
 
     /**
      * 卸载指定区块的物理表示
      */
     private fun unloadChunk(chunkPos: ChunkPos) {
+        mcLoadedChunks.remove(chunkPos)
         val chunk = loadedChunks[chunkPos] ?: return
 
         // 从脏section集合中移除该区块的所有section
@@ -74,10 +79,72 @@ class PhysicsChunkManager(
     }
 
     /**
+     * 根据刚体位置更新构建和激活范围
+     */
+    fun updateBuildAndActivation(boundingBoxes: List<AABB>) {
+
+        // 1. 收集需要构建的区块
+        val chunksToBuild = collectChunksToBuild(boundingBoxes)
+
+        // 2. 开始构建新区块
+        startBuildingChunks(chunksToBuild)
+
+        // 3. 更新激活状态（只激活已构建的区块）
+        updateActivation(boundingBoxes)
+
+    }
+
+    /**
+     * 收集所有需要构建的区块
+     */
+    private fun collectChunksToBuild(boundingBoxes: List<AABB>): Set<ChunkPos> {
+        val chunksToBuild = mutableSetOf<ChunkPos>()
+
+        boundingBoxes.forEach { aabb ->
+            // 忽视超出可建造范围的AABB
+            val minY = SectionPos.blockToSectionCoord(aabb.minY.toInt())
+            val maxY = SectionPos.blockToSectionCoord(aabb.maxY.toInt())
+            if (minY > physicsLevel.mcLevel.maxSection + 1 || maxY < physicsLevel.mcLevel.minSection - 1) return@forEach
+            // 计算构建范围的区块坐标
+            val minBuildX = SectionPos.blockToSectionCoord(aabb.minX.toInt()) - buildRadius
+            val maxBuildX = SectionPos.blockToSectionCoord(aabb.maxX.toInt()) + buildRadius
+            val minBuildZ = SectionPos.blockToSectionCoord(aabb.minZ.toInt()) - buildRadius
+            val maxBuildZ = SectionPos.blockToSectionCoord(aabb.maxZ.toInt()) + buildRadius
+
+            // 收集范围内的所有区块
+            for (chunkX in minBuildX..maxBuildX) {
+                for (chunkZ in minBuildZ..maxBuildZ) {
+                    val chunkPos = ChunkPos(chunkX, chunkZ)
+                    if (chunkPos in mcLoadedChunks) {
+                        chunksToBuild.add(chunkPos)
+                    }
+                }
+            }
+        }
+
+        return chunksToBuild
+    }
+
+    /**
+     * 开始构建新区块
+     */
+    private fun startBuildingChunks(chunksToBuild: Set<ChunkPos>) {
+        chunksToBuild.forEach { chunkPos ->
+            // 如果区块未构建，开始构建
+            if (chunkPos !in loadedChunks) {
+                val mcChunk = mcLoadedChunks[chunkPos] ?: return@forEach
+                val chunk = PhysicsChunk(chunkPos, physicsLevel, mcChunk)
+                chunk.load()
+                loadedChunks[chunkPos] = chunk
+            }
+        }
+    }
+
+    /**
      * 根据BoundingBox列表更新区块激活状态
      * 统一激活所有BoundingBox范围内的section，停用范围外的section
      */
-    fun updateActivation(boundingBoxes: List<AABB>) {
+    private fun updateActivation(boundingBoxes: List<AABB>) {
         if (boundingBoxes.isEmpty()) {
             // 如果没有BoundingBox，停用所有section
             loadedChunks.values.forEach { it.deactivateAll() }
@@ -89,15 +156,19 @@ class PhysicsChunkManager(
 
         // 收集所有需要激活的区块和section范围
         boundingBoxes.forEach { aabb ->
+            // 忽视超出可建造范围的AABB
+            val minY = SectionPos.blockToSectionCoord(aabb.minY.toInt()) - 1
+            val maxY = SectionPos.blockToSectionCoord(aabb.maxY.toInt()) + 1
+            if (minY > physicsLevel.mcLevel.maxSection || maxY < physicsLevel.mcLevel.minSection) return@forEach
             // 计算BoundingBox覆盖的区块和section范围
-            val minChunkX = SectionPos.blockToSectionCoord(aabb.minX.toInt())
-            val maxChunkX = SectionPos.blockToSectionCoord(aabb.maxX.toInt())
-            val minChunkZ = SectionPos.blockToSectionCoord(aabb.minZ.toInt())
-            val maxChunkZ = SectionPos.blockToSectionCoord(aabb.maxZ.toInt())
+            val minChunkX = SectionPos.blockToSectionCoord(aabb.minX.toInt()) - activationRadius
+            val maxChunkX = SectionPos.blockToSectionCoord(aabb.maxX.toInt()) + activationRadius
+            val minChunkZ = SectionPos.blockToSectionCoord(aabb.minZ.toInt()) - activationRadius
+            val maxChunkZ = SectionPos.blockToSectionCoord(aabb.maxZ.toInt()) + activationRadius
 
             // 计算BoundingBox覆盖的section Y范围
-            val minSectionY = SectionPos.blockToSectionCoord(aabb.minY.toInt())
-            val maxSectionY = SectionPos.blockToSectionCoord(aabb.maxY.toInt())
+            val minSectionY = SectionPos.blockToSectionCoord(aabb.minY.toInt()) - 1
+            val maxSectionY = SectionPos.blockToSectionCoord(aabb.maxY.toInt()) + 1
             val sectionRange = minSectionY..maxSectionY
 
             // 为每个受影响的区块添加激活范围

@@ -12,7 +12,7 @@ import net.minecraft.world.level.chunk.LevelChunk
  * 包含section内所有非空气方块的BlockState，位置以及其他用于物理计算的信息
  */
 data class SectionSnapshot(
-    val shapes: Map<BlockPos, BlockSnapshot>,
+    val shapes: MutableMap<BlockPos, BlockSnapshot>,
     val pos: SectionPos
 ) {
 
@@ -42,13 +42,13 @@ data class SectionSnapshot(
 
             // 检查section索引是否有效
             if (sectionIndex < 0 || sectionIndex >= chunk.sections.size) {
-                return SectionSnapshot(mapOf(), pos)
+                return SectionSnapshot(mutableMapOf(), pos)
             }
 
             val section = chunk.sections[sectionIndex]
             // 如果是空section或只有空气，返回空快照
             if (section == null || section.hasOnlyAir()) {
-                return SectionSnapshot(mapOf(), pos)
+                return SectionSnapshot(mutableMapOf(), pos)
             }
 
             val blockCaches = mutableMapOf<BlockPos, BlockSnapshot>()

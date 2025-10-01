@@ -104,7 +104,7 @@ class PhysicsChunk(
     /**
      * 获取所有活跃的section数量
      */
-    fun getActiveSectionCount(): Int = sections.values.count { it.isActive }
+    fun getActiveSectionCount(): Int = sections.values.count { it.isActive && !it.isEmpty() }
 
     /**
      * 获取所有section数量
