@@ -236,3 +236,12 @@ fun BoundingBox.toAABB(): AABB {
     val max = this.getMax(null).toVec3()
     return AABB(min, max)
 }
+
+/**
+ * 将Minecraft的AABB转换为JME的BoundingBox
+ */
+fun AABB.toBoundingBox(): BoundingBox {
+    val min = this.minPosition.toBVector3f()
+    val max = this.maxPosition.toBVector3f()
+    return BoundingBox(min, max)
+}
