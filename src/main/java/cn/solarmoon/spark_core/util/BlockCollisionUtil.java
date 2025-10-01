@@ -38,27 +38,26 @@ public class BlockCollisionUtil {
      *
      * @return 方块的滑动系数，0-1之间，0表示完全不影响摩擦系数，1表示摩擦系数将在打滑时归零 <p> The sliding coefficient of the block, ranging from 0 to 1, 0 indicating that the friction coefficient will not be affected at all, and 1 indicating that the friction coefficient will be zeroed out when sliding
      */
-    public static int getSlip(ChunkAccess chunk, BlockState state, BlockPos pos) {
+    public static float getSlip(ChunkAccess chunk, BlockState state, BlockPos pos) {
         //TODO:细化逻辑
         if (state.isStickyBlock()) return 0;//粘性块不受滑动影响
-        int result = 0;
+        float result = 0.0f;
         float humidity = 0.0f;
         //湿滑处理
         if (!chunk.getFluidState(pos.above()).isEmpty()) humidity = 1.0f;
         else if (Objects.requireNonNull(chunk.getLevel()).isRainingAt(pos.above())) {
             humidity = Objects.requireNonNull(chunk.getLevel()).getRainLevel(1.0f);
-//            SparkCore.LOGGER.info("isRainingAt: {} humidity: {}", pos, humidity);
         }
         if (state.is(BlockTags.SNOW)) {//雪块视作湿滑，疏松多孔，更易打滑
-            result += 35 - (int) (20 * humidity);
+            result += 0.35f - (0.2f * humidity);
         } else if (state.getBlock() instanceof ColoredFallingBlock) {//可掉落方块视作颗粒状，疏松多孔，更易打滑
-            result += (int) (35 + 30 * humidity);
+            result += (0.35f + 0.3f * humidity);
         } else if (state.getBlock() instanceof ConcretePowderBlock) {
-            result += 35 - (int) (50 * humidity);
+            result += 0.35f - (0.5f * humidity);
         } else {//常规方块仅根据湿度调整摩擦系数
-            result += (int) (30 * humidity);
+            result += (int) (0.3 * humidity);
         }
-        return Math.min(100, result);
+        return Math.min(1, result);
     }
 
     /**

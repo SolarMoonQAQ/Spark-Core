@@ -18,7 +18,7 @@ import net.neoforged.neoforge.common.NeoForge
 class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
-    BroadphaseType.DBVT, CollisionConfiguration(8192,0)
+    BroadphaseType.DBVT, CollisionConfiguration(8192,1)
 ) {
 
     init {

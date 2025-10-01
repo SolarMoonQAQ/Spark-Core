@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
 import net.minecraft.world.level.ChunkPos
-import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.chunk.LevelChunk
 
 /**
@@ -61,7 +60,7 @@ class PhysicsChunk(
      */
     fun activateSections(minY: Int, maxY: Int) {
         sections.values.forEach { section ->
-            if (section.worldPos.y in minY..maxY) {
+            if (section.sectionPos.y in minY..maxY) {
                 section.activate()
             }
         }
@@ -72,7 +71,7 @@ class PhysicsChunk(
      */
     fun deactivateSections(minY: Int, maxY: Int) {
         sections.values.forEach { section ->
-            if (section.worldPos.minBlockY() in minY..maxY) {
+            if (section.sectionPos.minBlockY() in minY..maxY) {
                 section.deactivate()
             }
         }
@@ -103,16 +102,6 @@ class PhysicsChunk(
     fun getSectionForBlockPos(blockPos: BlockPos): PhysicsChunkSection? {
         val sectionY = SectionPos.blockToSectionCoord(blockPos.y)
         return sections[sectionY]
-    }
-
-    /**
-     * 处理方块更新（主线程调用）
-     */
-    fun onBlockUpdated(blockPos: BlockPos, oldState: BlockState, newState: BlockState) {
-        val sectionY = SectionPos.blockToSectionCoord(blockPos.y)
-        val section = sections[sectionY]
-
-        section?.onBlockUpdated(blockPos, newState)
     }
 
     /**

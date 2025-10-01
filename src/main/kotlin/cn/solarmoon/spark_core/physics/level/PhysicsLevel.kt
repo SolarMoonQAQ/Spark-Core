@@ -3,12 +3,8 @@ package cn.solarmoon.spark_core.physics.level
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
-import cn.solarmoon.spark_core.physics.CollisionGroups
 import cn.solarmoon.spark_core.physics.PhysicsHost
-import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
-import cn.solarmoon.spark_core.physics.body.RigidBodyEntity
-import cn.solarmoon.spark_core.physics.body.owner
-import cn.solarmoon.spark_core.physics.body.stateOf
+import cn.solarmoon.spark_core.physics.body.*
 import cn.solarmoon.spark_core.physics.terrain.BlockShapeManager
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkManager
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection
@@ -170,6 +166,9 @@ abstract class PhysicsLevel(
     override fun close() {
         runBlocking {
             if (::world.isInitialized) world.destroy()
+            terrainManager.destroy()
+            blockShapeManager.SHAPE_CACHE.clear()
+            blockShapeManager.STATE_CACHE.clear()
             hostManager.clear()
             scope.cancel("物理线程已关闭")
             dispatcher.close()

@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.physics.terrain
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.math.Vector3f
+import kotlinx.coroutines.*
 import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
 import net.minecraft.server.level.ServerLevel
@@ -10,6 +11,9 @@ import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.chunk.LevelChunk
 import net.minecraft.world.phys.AABB
 import net.neoforged.neoforge.network.PacketDistributor
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
  * 管理所有物理区块的加载、卸载和激活
@@ -27,9 +31,25 @@ class PhysicsChunkManager(
     // 脏section管理
     private val dirtySections = mutableSetOf<SectionPos>()
 
+    // 地形构建线程池
+    private val terrainBuilderExecutor = Executors.newFixedThreadPool(
+        Runtime.getRuntime().availableProcessors().coerceAtLeast(2)
+    ) { r -> Thread(r, "TerrainShapeBuilder-${physicsLevel.name}") }.asCoroutineDispatcher()
+
+    private val terrainBuilderScope = CoroutineScope(
+        terrainBuilderExecutor + SupervisorJob() +
+                CoroutineExceptionHandler { _, exception ->
+                    SparkCore.LOGGER.error("地形构建线程异常", exception)
+                }
+    )
+
+    // 正在进行的构建任务跟踪
+    private val pendingBuildTasks = ConcurrentHashMap<SectionPos, Job>()
+
     // 性能统计
     private var totalSections = 0
     private var activeSections = 0
+
 
     /**
      * 加载指定区块的物理表示
@@ -158,6 +178,61 @@ class PhysicsChunkManager(
         updateActivation(listOf(aabb))
     }
 
+    // 添加地形构建任务提交方法
+    fun submitTerrainBuildTask(
+        sectionPos: SectionPos,
+        block: suspend () -> Boolean
+    ): Job {
+        // 取消同位置的已有任务
+        pendingBuildTasks[sectionPos]?.cancel()
+
+        val job = terrainBuilderScope.launch {
+            try {
+                val result = block()
+                if (result) {
+                    SparkCore.LOGGER.debug("地形section {} 构建完成", sectionPos)
+                }
+            } catch (e: CancellationException) {
+                SparkCore.LOGGER.debug("地形section {} 构建被取消", sectionPos)
+            } catch (e: Exception) {
+                SparkCore.LOGGER.error("地形section {} 构建失败", sectionPos, e)
+            } finally {
+                pendingBuildTasks.remove(sectionPos)
+            }
+        }
+
+        pendingBuildTasks[sectionPos] = job
+        return job
+    }
+
+    // 批量提交构建任务
+    fun submitTerrainBuildTasks(sections: Collection<PhysicsChunkSection>) {
+        sections.forEach { section ->
+//            if (section.getBuildState() == PhysicsChunkSection.BuildState.IDLE) {
+//                section.buildCollisionShapeAsync(
+//                    onComplete = { success ->
+//                        if (success && section.isActive) {
+//                            // 如果构建完成且需要激活，创建刚体
+//                            physicsLevel.submitImmediateTask {
+//                                section.createPhysicsBody()
+//                                section.activate()
+//                            }
+//                        }
+//                    },
+//                    onError = { error: Exception ->
+//                        SparkCore.LOGGER.error("Section {} 构建失败", section.sectionPos, error)
+//                    }
+//                )
+//            }
+        }
+    }
+
+    // 取消指定section的构建任务
+    fun cancelBuildTask(sectionPos: SectionPos) {
+        pendingBuildTasks[sectionPos]?.cancel()
+        pendingBuildTasks.remove(sectionPos)
+    }
+
     /**
      * 获取指定位置的物理section
      */
@@ -253,6 +328,15 @@ class PhysicsChunkManager(
      * 清理所有资源
      */
     fun destroy() {
+        // 取消所有进行中的构建任务
+        pendingBuildTasks.values.forEach { it.cancel() }
+        pendingBuildTasks.clear()
+
+        // 关闭线程池
+        terrainBuilderScope.cancel()
+        (terrainBuilderExecutor.executor as? ExecutorService)?.shutdownNow()
+
+        // 原有清理逻辑
         loadedChunks.values.forEach { it.unload() }
         loadedChunks.clear()
         totalSections = 0
