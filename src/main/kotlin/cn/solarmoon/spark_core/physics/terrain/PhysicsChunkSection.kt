@@ -234,7 +234,6 @@ class PhysicsChunkSection(
      */
     fun activate() {
         if (isActive || physicsBody == null) {
-            isActive = true
             return
         }
         if (physicsBody!!.isInWorld) {
