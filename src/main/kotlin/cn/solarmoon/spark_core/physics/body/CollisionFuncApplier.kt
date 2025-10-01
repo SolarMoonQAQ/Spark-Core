@@ -18,17 +18,15 @@ object CollisionFuncApplier {
         val entity = event.entity
         if (entity is PhysicsHost && entity !is BlockAttachedEntity && entity !is CollisionObjectEntity) {
             val bb = entity.boundingBox
-            val x: Float = (bb.xsize / 1.2).toFloat()
-            val y: Float = (bb.ysize / 1.2).toFloat()
-            val z: Float = (bb.zsize / 1.2).toFloat()
+            val x: Float = (bb.xsize / 2).toFloat()
+            val y: Float = (bb.ysize / 2).toFloat()
+            val z: Float = (bb.zsize / 2).toFloat()
             val body = entity.createPhysicsBody(BoxCollisionShape(x, y, z), 60f, "entity_bounding_box").apply {
                 isKinematic = true
                 setProtectGravity(true)
-                isContactResponse = false
                 setGravity(Vector3f.ZERO)
                 collisionGroup = CollisionGroups.PHYSICS_BODY
                 collideWithGroups = CollisionGroups.PHYSICS_BODY
-                addCollideWithGroup(CollisionGroups.TERRAIN)
             }
             body.attachToEntity(entity)
             entity.addPhysicsBody(body)
@@ -42,9 +40,9 @@ object CollisionFuncApplier {
             val body = entity.getPhysicsBody("entity_bounding_box")
             if (body != null) {
                 val bb = entity.boundingBox
-                val x: Float = (bb.xsize / 1.2).toFloat()
-                val y: Float = (bb.ysize / 1.2).toFloat()
-                val z: Float = (bb.zsize / 1.2).toFloat()
+                val x: Float = (bb.xsize / 2).toFloat()
+                val y: Float = (bb.ysize / 2).toFloat()
+                val z: Float = (bb.zsize / 2).toFloat()
                 entity.physicsLevel.submitImmediateTask {
                     body.collisionShape = BoxCollisionShape(x, y, z)
                 }
