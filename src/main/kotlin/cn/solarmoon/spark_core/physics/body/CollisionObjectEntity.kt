@@ -142,12 +142,12 @@ abstract class CollisionObjectEntity(
     override fun onAddedToLevel() {
         super.onAddedToLevel()
         body.owner = this
-        level().addPhysicsBody(body)
+        addPhysicsBody(body)
     }
 
     override fun onRemovedFromLevel() {
         super.onRemovedFromLevel()
-        level().removePhysicsBody(body)
+        removePhysicsBody(body)
     }
 
     override fun onSyncedDataUpdated(key: EntityDataAccessor<*>) {
