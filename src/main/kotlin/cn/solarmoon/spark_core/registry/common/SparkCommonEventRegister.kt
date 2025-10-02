@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.animation.vanilla.BoneModifier
 import cn.solarmoon.spark_core.camera.CameraAdjuster
 import cn.solarmoon.spark_core.entity.EntityPatchApplier
 import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
-import cn.solarmoon.spark_core.physics.body.CollisionFuncApplier
+import cn.solarmoon.spark_core.physics.CollisionFuncApplier
 import cn.solarmoon.spark_core.physics.level.PhysicsLevelApplier
 import cn.solarmoon.spark_core.preinput.PreInputApplier
 import cn.solarmoon.spark_core.skill.SkillApplier

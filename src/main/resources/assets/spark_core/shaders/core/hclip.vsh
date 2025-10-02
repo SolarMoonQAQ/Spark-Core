@@ -28,10 +28,8 @@ out vec2 texCoord2;
 out float h;
 
 void main() {
-    vec4 worldPos = ModelMat * vec4(Position, 1.0);
-    h = worldPos.xyz.y;
-
-    // 继续用 ModelViewMat 和 ProjMat 做投影
+    vec4 localPos = inverse(ModelMat) * vec4(Position, 1.0);
+    h = localPos.y;
     gl_Position = ProjMat * (ModelViewMat * vec4(Position, 1.0));
 
     vertexDistance = fog_distance(Position, FogShape);
