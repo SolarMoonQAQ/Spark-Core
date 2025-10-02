@@ -91,7 +91,7 @@ class PhysicsChunkSection(
             val blockPos = block.key.subtract(origin)
             val blockInfo = block.value
             // 获取方块的碰撞形状，其他物理信息在其他刚体发生碰撞处理碰撞对时自行调用使用
-            val blockShape = blockInfo.state.getBulletCollisionShape(physicsLevel) ?: continue
+            val blockShape = blockInfo.state.getBulletCollisionShape(physicsLevel)
             // 计算方块在section内的相对位置
             val relativePos = Vector3f(
                 blockPos.x + 0.5f - 8f,

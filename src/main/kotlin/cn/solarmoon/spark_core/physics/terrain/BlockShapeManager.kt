@@ -43,8 +43,7 @@ class BlockShapeManager(val physicsLevel: PhysicsLevel) {
     }
 
     private fun convertVoxelToCollisionShape(blockState: BlockState): CollisionShape {
-        val voxel: VoxelShape =
-            blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
+        val voxel = blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
         try {
             val aabb = voxel.bounds()
             val halfExtents = Vector3f(
