@@ -48,6 +48,7 @@ abstract class PhysicsLevel(
     val state = stateFlow.asStateFlow()
     private val crashCount = AtomicInteger(0)
     var tickCount: Int = 0
+
     // 同步控制
     private val physicsTickChannel = Channel<Unit>(Channel.CONFLATED)
     private val stepCompletedChannel = Channel<Unit>(Channel.CONFLATED)
@@ -104,11 +105,12 @@ abstract class PhysicsLevel(
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
             if (overloadWarnCooldown <= 0) {
                 SparkCore.LOGGER.warn(
-                    "{} overloaded, last tick time: {}ms, rigid body in world: {} with {}",
+                    "{} overloaded, last tick time: {}ms, rigid body in world: {} with {}, while {} chunks loaded.",
                     name,
                     (lastStepTickTime / 1000000).toInt(),
                     world.pcoList.size,
-                    terrainManager.getStats()
+                    terrainManager.getStats(),
+                    mcLevel.chunkSource.loadedChunksCount
                 )
                 overloadWarnCooldown = 40
             }

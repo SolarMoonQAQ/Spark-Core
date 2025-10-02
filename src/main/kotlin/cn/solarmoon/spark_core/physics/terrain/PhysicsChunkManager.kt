@@ -312,6 +312,10 @@ class PhysicsChunkManager(
         }
     }
 
+    fun loaded(pos: ChunkPos): Boolean {
+        return pos in loadedChunks
+    }
+
     /**
      * 获取性能统计信息
      */

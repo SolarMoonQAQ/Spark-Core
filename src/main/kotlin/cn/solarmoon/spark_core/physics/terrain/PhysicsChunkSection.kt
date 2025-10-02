@@ -31,7 +31,8 @@ class PhysicsChunkSection(
     val chunk: LevelChunk
 ) : PhysicsHost {
     // 缓存section内所有方块的BlockState，避免物理线程中的getBlockState调用
-    private var snapshot: SectionSnapshot? = null
+    private var snapshotForBuild: SectionSnapshot? = null
+    private var snapshotForCollision: SectionSnapshot? = null
     private var collisionShape: CompoundCollisionShape? = null
     private var physicsBody: PhysicsRigidBody? = null
     override val allPhysicsBodies: MutableMap<String, PhysicsCollisionObject> = mutableMapOf()
@@ -84,14 +85,15 @@ class PhysicsChunkSection(
     private fun buildCollisionShape(): Boolean {
         val compoundShape = CompoundCollisionShape()
         var hasCollision = false
-        val snapshot = snapshot ?: return false
+        val snapshot = snapshotForBuild
+        if (snapshot == null){
+            collisionShape = null
+            return false
+        }
         // 遍历section内所有方块位置
-        for (block in snapshot.shapes) {
-            val origin = BlockPos(sectionPos.minBlockX(), sectionPos.minBlockY(), sectionPos.minBlockZ())
-            val blockPos = block.key.subtract(origin)
-            val blockInfo = block.value
+        snapshot.forEachBlock { blockPos, blockSnapshot ->
             // 获取方块的碰撞形状，其他物理信息在其他刚体发生碰撞处理碰撞对时自行调用使用
-            val blockShape = blockInfo.state.getBulletCollisionShape(physicsLevel)
+            val blockShape = blockSnapshot.state.getBulletCollisionShape(physicsLevel)
             // 计算方块在section内的相对位置
             val relativePos = Vector3f(
                 blockPos.x + 0.5f - 8f,
@@ -131,13 +133,14 @@ class PhysicsChunkSection(
     }
 
     /**
-     * 开始异步构建过程
+     * 开始异步构建过程(主线程调用)
      */
     fun startAsyncBuild(manager: PhysicsChunkManager) {
         // 取消之前的构建任务
         buildJob?.cancel()
         // 缓存section内所有方块信息
-        snapshot = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+        snapshotForBuild = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+        snapshotForCollision = snapshotForBuild?.copy()
         buildJob = manager.terrainBuilderScope.launch {
             val buildResult = buildCollisionShapeAsync(this).await()
 
@@ -149,12 +152,15 @@ class PhysicsChunkSection(
             }
         }
     }
-
+    /**
+     * 开始异步构建过程(主线程调用)
+     */
     fun startAsyncUpdate(manager: PhysicsChunkManager) {
         // 取消之前的构建任务
         buildJob?.cancel()
         // 缓存section内所有方块信息
-        snapshot = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+        snapshotForBuild = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+        snapshotForCollision = snapshotForBuild?.copy()
         buildJob = manager.terrainBuilderScope.launch {
             val wasActive = isActive
             val hadBody = physicsBody != null
@@ -258,42 +264,52 @@ class PhysicsChunkSection(
             return
         }
         // 使用包含任务队列的方法将任务提交到物理线程，确保在物理线程中执行
-        removePhysicsBodyFromWorld(physicsBody!!)
+        removePhysicsBodyFromWorld(physicsBody)
         isActive = false
     }
 
     /**
-     * 获取指定世界位置的方块状态
+     * 获取指定世界位置的方块状态(物理线程调用)
      */
-    fun getBlockState(blockPos: BlockPos): BlockState? {
-        if (isEmpty()) return null
-        return getBlockSnapshot(blockPos)?.state
+    fun getBlockState(worldPos: BlockPos): BlockState? {
+        if (isEmpty() || snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) return null
+        return getBlockSnapshot(worldPos)?.state
     }
 
     /**
-     * 获取指定世界位置的方块信息
+     * 获取指定世界位置的方块信息(物理线程调用)
      */
-    fun getBlockSnapshot(blockPos: BlockPos): SectionSnapshot.BlockSnapshot? {
-        if (isEmpty()) return null
-        return snapshot!!.shapes[blockPos]
+    fun getBlockSnapshot(worldPos: BlockPos): SectionSnapshot.BlockSnapshot? {
+        if (isEmpty() || snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) return null
+        return snapshotForCollision!!.getBlockSnapshotFromWorld(worldPos)
     }
 
     /**
      * 根据子形状索引获取对应的方块位置
-     * 用于在碰撞回调中确定具体碰撞的方块
+     * 用于在碰撞回调中确定具体碰撞的方块(物理线程调用)
      */
     fun getBlockPosForChildShape(childIndex: Int): BlockPos? {
         if (childIndex < 0 || childIndex >= 4096) return null
+        if (snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) return null
+        return snapshotForCollision!!.getWorldPos(childIndex)
+    }
 
-        val x = (childIndex / 256) % 16
-        val y = (childIndex / 16) % 16
-        val z = childIndex % 16
+    /**
+     * 标记指定位置的方块为已移除(物理线程调用)
+     */
+    fun markRemoved(worldPos: BlockPos) {
+        if (isEmpty() || snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) return
+        if(isRemoved(worldPos)) return
+        val index = SectionSnapshot.getIndex(worldPos.x, worldPos.y, worldPos.z)
+        snapshotForCollision!!.blockSnapshots[index] = null
+    }
 
-        return BlockPos(
-            sectionPos.minBlockX() + x,
-            sectionPos.minBlockY() + y,
-            sectionPos.minBlockZ() + z
-        )
+    /**
+     * 判断指定位置的方块是否已被标记移除(物理线程调用)
+     */
+    fun isRemoved(worldPos: BlockPos): Boolean {
+        if (isEmpty() || snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) return true
+        return snapshotForCollision!!.getBlockSnapshotFromWorld(worldPos) == null
     }
 
     /**
@@ -303,8 +319,8 @@ class PhysicsChunkSection(
         cancelBuild()
         deactivate()
         destroyPhysicsBody()
-        snapshot?.shapes?.clear()
-        snapshot = null
+        snapshotForBuild = null
+        snapshotForCollision = null
     }
 
     private fun destroyPhysicsBody() {

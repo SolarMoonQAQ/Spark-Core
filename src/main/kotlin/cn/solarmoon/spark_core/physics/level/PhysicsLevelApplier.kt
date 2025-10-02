@@ -1,14 +1,18 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent
 import cn.solarmoon.spark_core.util.PPhase
+import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.LevelChunk
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.level.ChunkEvent
+import net.neoforged.neoforge.event.level.ChunkTicketLevelUpdatedEvent
 import net.neoforged.neoforge.event.level.LevelEvent
 import net.neoforged.neoforge.event.tick.LevelTickEvent
+import net.neoforged.neoforge.event.tick.LevelTickEvent.Pre
 
 object PhysicsLevelApplier {
 
@@ -68,6 +72,17 @@ object PhysicsLevelApplier {
         val level = event.level as Level
         val physLevel: PhysicsLevel = level.physicsLevel
         physLevel.terrainManager.onChunkUnloaded(event.chunk.pos)
+    }
+
+    @SubscribeEvent
+    private fun chunkTicketUpdate(event: ChunkTicketLevelUpdatedEvent){
+        val level = event.level as Level
+        val physLevel: PhysicsLevel = level.physicsLevel
+        val chunkPos = ChunkPos(event.chunkPos)
+        // 卸载优先级过低的物理区块，而非等到区块卸载事件触发
+        if (event.newTicketLevel > 33 && physLevel.tickCount > 0 && physLevel.terrainManager.loaded(chunkPos)){
+            physLevel.terrainManager.onChunkUnloaded(chunkPos)
+        }
     }
     //__________以下内容转用mixin实现，服务端世界发生方块更新时标记脏section__________
 //    /**
