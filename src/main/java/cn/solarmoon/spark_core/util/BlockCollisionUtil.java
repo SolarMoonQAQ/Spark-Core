@@ -19,7 +19,7 @@ public class BlockCollisionUtil {
      */
     public static float getBlockFriction(Level level, BlockState state, BlockPos pos) {
         if (state.isStickyBlock()) return 10.0f; //粘性块拥有极大摩擦系数
-        return 2 * (1 - state.getFriction(level, pos, null));
+        return 2 * (1 - state.getFriction(level, BlockPos.ZERO, null));
     }
 
     public static float getBlockRollingFriction(Level level, BlockState state, BlockPos pos) {

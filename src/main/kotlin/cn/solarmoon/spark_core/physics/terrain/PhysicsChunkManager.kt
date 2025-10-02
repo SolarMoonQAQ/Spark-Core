@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.physics.terrain
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.math.Vector3f
+import io.netty.util.internal.ConcurrentSet
 import kotlinx.coroutines.*
 import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
@@ -32,7 +33,7 @@ class PhysicsChunkManager(
     private val mcLoadedChunks = mutableMapOf<ChunkPos, LevelChunk>()
 
     // 脏section管理
-    private val dirtySections = mutableSetOf<SectionPos>()
+    private val dirtySections = ConcurrentSet<SectionPos>()
 
     // 地形构建线程池
     private val terrainBuilderExecutor = Executors.newFixedThreadPool(
@@ -47,8 +48,8 @@ class PhysicsChunkManager(
     )
 
     // 配置参数
-    private val buildRadius = 3 // 构建半径（区块数）
-    private val activationRadius = 1 // 激活半径（区块数）
+    private val buildRadius = 2 // 构建半径（区块数）
+    private val activationRadius = 8 // 激活半径（方块数，至少1区块）
 
     // 性能统计
     private val totalSections: Int
@@ -157,14 +158,14 @@ class PhysicsChunkManager(
         // 收集所有需要激活的区块和section范围
         boundingBoxes.forEach { aabb ->
             // 忽视超出可建造范围的AABB
-            val minY = SectionPos.blockToSectionCoord(aabb.minY.toInt()) - 1
-            val maxY = SectionPos.blockToSectionCoord(aabb.maxY.toInt()) + 1
+            val minY = SectionPos.blockToSectionCoord((aabb.minY- activationRadius).toInt())
+            val maxY = SectionPos.blockToSectionCoord((aabb.maxY+ activationRadius).toInt())
             if (minY > physicsLevel.mcLevel.maxSection || maxY < physicsLevel.mcLevel.minSection) return@forEach
             // 计算BoundingBox覆盖的区块和section范围
-            val minChunkX = SectionPos.blockToSectionCoord(aabb.minX.toInt()) - activationRadius
-            val maxChunkX = SectionPos.blockToSectionCoord(aabb.maxX.toInt()) + activationRadius
-            val minChunkZ = SectionPos.blockToSectionCoord(aabb.minZ.toInt()) - activationRadius
-            val maxChunkZ = SectionPos.blockToSectionCoord(aabb.maxZ.toInt()) + activationRadius
+            val minChunkX = SectionPos.blockToSectionCoord((aabb.minX- activationRadius).toInt())
+            val maxChunkX = SectionPos.blockToSectionCoord((aabb.maxX+ activationRadius).toInt())
+            val minChunkZ = SectionPos.blockToSectionCoord((aabb.minZ- activationRadius).toInt())
+            val maxChunkZ = SectionPos.blockToSectionCoord((aabb.maxZ+ activationRadius).toInt())
 
             // 计算BoundingBox覆盖的section Y范围
             val minSectionY = SectionPos.blockToSectionCoord(aabb.minY.toInt()) - 1
@@ -289,7 +290,7 @@ class PhysicsChunkManager(
     fun updateDirtySections() {
         if (dirtySections.isEmpty()) return
 
-        val sectionsToUpdate = dirtySections.toMutableSet()
+        val sectionsToUpdate = dirtySections.toSet()
         dirtySections.clear()
 
         // 直接发送原始的脏section列表，不等待异步构建完成

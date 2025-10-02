@@ -3,6 +3,8 @@ package cn.solarmoon.spark_core.physics.terrain
 import cn.solarmoon.spark_core.util.BlockCollisionUtil
 import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
+import net.minecraft.world.level.BlockGetter
+import net.minecraft.world.level.EmptyBlockGetter
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.chunk.LevelChunk
@@ -61,9 +63,8 @@ data class SectionSnapshot(
                     for (z in 0 until 16) {
                         val worldPos = origin.offset(x, y, z)
                         val blockState = section.getBlockState(x, y, z)
-
                         // 跳过空气和没有碰撞体积的方块
-                        if (!blockState.isAir && !blockState.getCollisionShape(level, worldPos).isEmpty) {
+                        if (!blockState.isAir && !blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).isEmpty) {
                             blockCaches[worldPos] =
                                 BlockSnapshot(
                                     blockState,

@@ -13,6 +13,7 @@ import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.bullet.util.NativeLibrary
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -140,7 +141,7 @@ abstract class PhysicsLevel(
         // 统一更新地形
         terrainManager.updateDirtySections()
         terrainManager.updateBuildAndActivation(activationBoxes)
-//        if(world.pcoList.isNotEmpty())SparkCore.LOGGER.debug(terrainManager.getStats())
+        if(world.pcoList.isNotEmpty())SparkCore.LOGGER.debug(terrainManager.getStats())
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)
@@ -152,6 +153,13 @@ abstract class PhysicsLevel(
      */
     fun start() {
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
+        SparkCore.LOGGER.info(
+            "启动物理线程：{}，线程数：{}/{}, threadSafe:{}",
+            name,
+            Runtime.getRuntime().availableProcessors(),
+            NativeLibrary.countThreads(),
+            NativeLibrary.isThreadSafe()
+        )
         scope.launch {
             world = PhysicsWorld(this@PhysicsLevel)
             terrainManager = PhysicsChunkManager(this@PhysicsLevel)
@@ -165,10 +173,10 @@ abstract class PhysicsLevel(
      */
     override fun close() {
         runBlocking {
-            if (::world.isInitialized) world.destroy()
             terrainManager.destroy()
             blockShapeManager.SHAPE_CACHE.clear()
             blockShapeManager.STATE_CACHE.clear()
+            if (::world.isInitialized) world.destroy()
             hostManager.clear()
             scope.cancel("物理线程已关闭")
             dispatcher.close()

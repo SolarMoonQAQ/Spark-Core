@@ -8,17 +8,20 @@ import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.util.triggerEvent
 import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSoftSpace
+import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.SolverMode
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsBody
+import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Vector3f
+import net.minecraft.world.entity.LivingEntity
 import net.neoforged.neoforge.common.NeoForge
 
 //TODO:将计算线程数量改为通过配置文件设置
-class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
-    Vector3f(-Int.MAX_VALUE.toFloat(), -10_000f, -Int.MAX_VALUE.toFloat()),
-    Vector3f(Int.MAX_VALUE.toFloat(), 10_000f, Int.MAX_VALUE.toFloat()),
-    BroadphaseType.DBVT, CollisionConfiguration(8192,1)
+class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
+    Vector3f(-Int.MAX_VALUE.toFloat(), -1_000f, -Int.MAX_VALUE.toFloat()),
+    Vector3f(Int.MAX_VALUE.toFloat(), 15_000f, Int.MAX_VALUE.toFloat()),
+    BroadphaseType.DBVT, NativeLibrary.countThreads(), CollisionConfiguration(8192, 1)
 ) {
 
     init {
@@ -28,11 +31,11 @@ class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
         isForceUpdateAllAabbs = false
         this.solverInfo.setMode(
             SolverMode.SIMD
-            or SolverMode.WarmStart
-            or SolverMode.CacheFriendly
-            or SolverMode.CacheDirection
-            or SolverMode.ArticulatedWarmStart
-            or SolverMode.Interleave
+                    or SolverMode.WarmStart
+                    or SolverMode.CacheFriendly
+                    or SolverMode.CacheDirection
+                    or SolverMode.ArticulatedWarmStart
+                    or SolverMode.Interleave
         )
     }
 
@@ -42,7 +45,10 @@ class PhysicsWorld(val level: PhysicsLevel): PhysicsSoftSpace(
     override fun needsCollision(pcoA: PhysicsCollisionObject, pcoB: PhysicsCollisionObject): Boolean {
         if (pcoA.isStatic && pcoB.isStatic) return false
         var r = true
-        if ((pcoA.owner != null && pcoB.owner != null && pcoA.owner == pcoB.owner && pcoA.collideWithOwnerGroups and pcoB.collideWithOwnerGroups == 0)) r = false
+        if ((pcoA.owner != null && pcoB.owner != null && pcoA.owner == pcoB.owner && pcoA.collideWithOwnerGroups and pcoB.collideWithOwnerGroups == 0)) r =
+            false
+        if ((pcoA.owner != null && pcoB.owner != null && pcoA.owner is LivingEntity && pcoB.owner is LivingEntity)) r =
+            false
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
