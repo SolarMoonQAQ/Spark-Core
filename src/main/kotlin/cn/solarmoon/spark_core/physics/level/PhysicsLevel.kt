@@ -48,7 +48,6 @@ abstract class PhysicsLevel(
     val state = stateFlow.asStateFlow()
     private val crashCount = AtomicInteger(0)
     var tickCount: Int = 0
-    private var onInitialized: (() -> Unit)? = null // 初始化完成回调
     // 同步控制
     private val physicsTickChannel = Channel<Unit>(Channel.CONFLATED)
     private val stepCompletedChannel = Channel<Unit>(Channel.CONFLATED)
