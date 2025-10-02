@@ -155,6 +155,22 @@ abstract public class CollisionShape extends NativePhysicsObject {
         return result;
     }
 
+    public BoundingBox boundingBoxWithoutRecalculate(
+            Vector3f translation, Matrix3f rotation, BoundingBox storeResult) {
+        Validate.finite(translation, "translation");
+        Validate.nonNull(rotation, "rotation");
+        BoundingBox result
+                = (storeResult == null) ? new BoundingBox() : storeResult;
+
+        long shapeId = nativeId();
+        Vector3f maxima = new Vector3f();
+        Vector3f minima = new Vector3f();
+        getAabb(shapeId, translation, rotation, minima, maxima);
+        result.setMinMax(minima, maxima);
+
+        return result;
+    }
+
     /**
      * Calculate an axis-aligned bounding box with the specified translation and
      * rotation applied. Rotation is applied first. Collision margin is

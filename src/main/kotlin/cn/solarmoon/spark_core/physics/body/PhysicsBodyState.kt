@@ -14,7 +14,7 @@ class PhysicsBodyState(
     fun update() {
         lastTransform = transform
         transform = body.getTransform(null)
-        cachedBoundingBox = body.boundingBox(null)
+        cachedBoundingBox = body.boundingBoxWithoutRecalculate(null)
     }
 
 }

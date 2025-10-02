@@ -275,6 +275,17 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject impleme
         return result;
     }
 
+    public BoundingBox boundingBoxWithoutRecalculate(BoundingBox storeResult) {
+        BoundingBox result
+                = (storeResult == null) ? new BoundingBox() : storeResult;
+
+        Vector3f translation = getPhysicsLocation(null);
+        Matrix3f rotation = getPhysicsRotationMatrix(null);
+        collisionShape.boundingBoxWithoutRecalculate(translation, rotation, result);
+
+        return result;
+    }
+
     /**
      * Clear this object's ignore list.
      */

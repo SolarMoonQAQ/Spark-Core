@@ -6,13 +6,14 @@ import net.minecraft.core.SectionPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.chunk.LevelChunk
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 区块section的快照，用于在后台线程安全地构建碰撞形状
  * 包含section内所有非空气方块的BlockState，位置以及其他用于物理计算的信息
  */
 data class SectionSnapshot(
-    val shapes: MutableMap<BlockPos, BlockSnapshot>,
+    val shapes: ConcurrentHashMap<BlockPos, BlockSnapshot>,
     val pos: SectionPos
 ) {
 
@@ -42,16 +43,16 @@ data class SectionSnapshot(
 
             // 检查section索引是否有效
             if (sectionIndex < 0 || sectionIndex >= chunk.sections.size) {
-                return SectionSnapshot(mutableMapOf(), pos)
+                return SectionSnapshot(ConcurrentHashMap(), pos)
             }
 
             val section = chunk.sections[sectionIndex]
             // 如果是空section或只有空气，返回空快照
             if (section == null || section.hasOnlyAir()) {
-                return SectionSnapshot(mutableMapOf(), pos)
+                return SectionSnapshot(ConcurrentHashMap(), pos)
             }
 
-            val blockCaches = mutableMapOf<BlockPos, BlockSnapshot>()
+            val blockCaches = ConcurrentHashMap<BlockPos, BlockSnapshot>()
             val origin = pos.origin() // section的世界坐标原点
 
             // 遍历section内所有方块
