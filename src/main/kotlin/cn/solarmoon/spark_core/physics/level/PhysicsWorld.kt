@@ -18,10 +18,10 @@ import net.minecraft.world.entity.LivingEntity
 import net.neoforged.neoforge.common.NeoForge
 
 //TODO:将计算线程数量改为通过配置文件设置
-class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
+class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -1_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 15_000f, Int.MAX_VALUE.toFloat()),
-    BroadphaseType.DBVT, NativeLibrary.countThreads(), CollisionConfiguration(8192, 1)
+    BroadphaseType.DBVT, CollisionConfiguration(8192, 0)
 ) {
 
     init {

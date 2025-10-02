@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
+import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.body.*
@@ -47,7 +48,7 @@ abstract class PhysicsLevel(
     val state = stateFlow.asStateFlow()
     private val crashCount = AtomicInteger(0)
     var tickCount: Int = 0
-
+    private var onInitialized: (() -> Unit)? = null // 初始化完成回调
     // 同步控制
     private val physicsTickChannel = Channel<Unit>(Channel.CONFLATED)
     private val stepCompletedChannel = Channel<Unit>(Channel.CONFLATED)
@@ -72,7 +73,6 @@ abstract class PhysicsLevel(
     suspend fun CoroutineScope.run() {
         val fixedStep = 1f / TPS
         val repeat = TPS / 20
-
         while (isActive) {
             physicsTickChannel.receive()
             // 执行物理计算
@@ -141,7 +141,7 @@ abstract class PhysicsLevel(
         // 统一更新地形
         terrainManager.updateDirtySections()
         terrainManager.updateBuildAndActivation(activationBoxes)
-        if(world.pcoList.isNotEmpty())SparkCore.LOGGER.debug(terrainManager.getStats())
+//        if(world.pcoList.isNotEmpty())SparkCore.LOGGER.debug(terrainManager.getStats())
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)
@@ -151,7 +151,7 @@ abstract class PhysicsLevel(
     /**
      * 开启物理线程并初始化
      */
-    fun start() {
+    fun start(onInitialized: (() -> Unit)? = null) {
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
         SparkCore.LOGGER.info(
             "启动物理线程：{}，线程数：{}/{}, threadSafe:{}",
@@ -164,6 +164,10 @@ abstract class PhysicsLevel(
             world = PhysicsWorld(this@PhysicsLevel)
             terrainManager = PhysicsChunkManager(this@PhysicsLevel)
             blockShapeManager = BlockShapeManager(this@PhysicsLevel)
+
+            // 初始化完成，执行回调
+            onInitialized?.invoke()
+
             run()
         }
     }

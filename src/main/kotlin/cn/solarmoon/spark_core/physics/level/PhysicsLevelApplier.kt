@@ -1,9 +1,11 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent
 import cn.solarmoon.spark_core.util.PPhase
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.LevelChunk
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.level.ChunkEvent
 import net.neoforged.neoforge.event.level.LevelEvent
 import net.neoforged.neoforge.event.tick.LevelTickEvent
@@ -14,7 +16,10 @@ object PhysicsLevelApplier {
     private fun load(event: LevelEvent.Load) {
         val level = event.level
         if (level is Level) {
-            level.physicsLevel.start()
+            level.physicsLevel.start {
+                // 广播通知物理世界初始化完成
+                NeoForge.EVENT_BUS.post(PhysicsLevelInitEvent(level.physicsLevel))
+            }
         }
     }
 
