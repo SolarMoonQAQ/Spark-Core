@@ -288,9 +288,9 @@ class PhysicsChunkSection(
      * 根据子形状索引获取对应的方块位置
      * 用于在碰撞回调中确定具体碰撞的方块(物理线程调用)
      */
-    fun getBlockPosForChildShape(childIndex: Int): BlockPos? {
-        if (childIndex < 0 || childIndex >= 4096) return null
-        if (snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) return null
+    fun getBlockPosForChildShape(childIndex: Int): BlockPos {
+        if (childIndex < 0 || childIndex >= 4096) throw IndexOutOfBoundsException("childIndex out of range, should be in [0, 4095]")
+        if (snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) throw NullPointerException("snapshotForCollision is null or empty")
         return snapshotForCollision!!.getWorldPos(childIndex)
     }
 
