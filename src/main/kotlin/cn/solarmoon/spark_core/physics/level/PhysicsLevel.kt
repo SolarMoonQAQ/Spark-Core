@@ -13,6 +13,7 @@ import cn.solarmoon.spark_core.util.*
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.PhysicsTickListener
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.joints.New6Dof
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.bullet.util.NativeLibrary
 import kotlinx.coroutines.*
@@ -142,7 +143,7 @@ abstract class PhysicsLevel(
         // 统一更新地形
         terrainManager.updateDirtySections()
         terrainManager.updateBuildAndActivation(activationBoxes)
-//        if(world.pcoList.isNotEmpty())SparkCore.LOGGER.debug(terrainManager.getStats())
+//        if (world.pcoList.isNotEmpty()) SparkCore.LOGGER.debug("tick: " + tickCount + ", " + terrainManager.getStats())
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)
@@ -154,6 +155,7 @@ abstract class PhysicsLevel(
      */
     fun start(onInitialized: (() -> Unit)? = null) {
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
+        New6Dof.logger2.setLevel(java.util.logging.Level.WARNING)
         SparkCore.LOGGER.info(
             "启动物理线程：{}，线程数：{}/{}, threadSafe:{}",
             name,
