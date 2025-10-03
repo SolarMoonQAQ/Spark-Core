@@ -140,7 +140,6 @@ class PhysicsChunkSection(
         buildJob?.cancel()
         // 缓存section内所有方块信息
         snapshotForBuild = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
-        snapshotForCollision = snapshotForBuild?.copy()
         buildJob = manager.terrainBuilderScope.launch {
             val buildResult = buildCollisionShapeAsync(this).await()
 
@@ -160,7 +159,6 @@ class PhysicsChunkSection(
         buildJob?.cancel()
         // 缓存section内所有方块信息
         snapshotForBuild = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
-        snapshotForCollision = snapshotForBuild?.copy()
         buildJob = manager.terrainBuilderScope.launch {
             val wasActive = isActive
             val hadBody = physicsBody != null
@@ -171,6 +169,7 @@ class PhysicsChunkSection(
                     physicsBody?.let { body ->
                         collisionShape?.let { newShape ->
                             physicsLevel.submitImmediateTask {
+                                snapshotForCollision = snapshotForBuild?.copy()
                                 body.collisionShape = newShape
                             }
                         }
@@ -200,7 +199,7 @@ class PhysicsChunkSection(
      */
     private fun createPhysicsBody(): Boolean {
         val shape = collisionShape ?: return false
-
+        snapshotForCollision = snapshotForBuild?.copy()
         physicsBody = createPhysicsBody(shape, 0f, "section_$sectionPos")
         physicsBody!!.setPhysicsLocation(
             Vector3f(
@@ -300,7 +299,8 @@ class PhysicsChunkSection(
     fun markRemoved(worldPos: BlockPos) {
         if (isEmpty() || snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) return
         if(isRemoved(worldPos)) return
-        val index = SectionSnapshot.getIndex(worldPos.x, worldPos.y, worldPos.z)
+        val pos = snapshotForCollision!!.getRelativePos(worldPos)
+        val index = SectionSnapshot.getIndexFromRelativePos(pos.x, pos.y, pos.z)
         snapshotForCollision!!.blockSnapshots[index] = null
     }
 

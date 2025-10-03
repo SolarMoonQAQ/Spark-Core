@@ -14,6 +14,7 @@ import net.minecraft.world.level.chunk.LevelChunk
  */
 class SectionSnapshot private constructor(
     val blockSnapshots: Array<BlockSnapshot?>,//比起存BlockPos作为索引，使用数组更节省内存
+    val childShapeIndexes: ArrayList<Int>,//复合形状子形状索引对应的数组索引
     val pos: SectionPos
 ) {
 
@@ -22,7 +23,7 @@ class SectionSnapshot private constructor(
          * 空的SectionSnapshot实例，所有空section共享此实例以节省内存
          */
         @JvmStatic
-        val EMPTY = SectionSnapshot(Array(1) { null }, SectionPos.of(0, Int.MIN_VALUE, 0))
+        val EMPTY = SectionSnapshot(Array(1) { null }, ArrayList(1), SectionPos.of(0, Int.MIN_VALUE, 0))
 
         /**
          * 从区块创建快照（主线程调用）
@@ -43,39 +44,50 @@ class SectionSnapshot private constructor(
             }
 
             val blockSnapshots = arrayOfNulls<BlockSnapshot>(4096)
+            val childShapeIndex = ArrayList<Int>(16)
             var hasBlocks = false
-
+            var i = 0
             // 遍历section内所有方块
             for (x in 0 until 16) {
                 for (y in 0 until 16) {
                     for (z in 0 until 16) {
-                        val index = getIndex(x, y, z)
+                        val index = getIndexFromRelativePos(x, y, z)
                         val blockState = section.getBlockState(x, y, z)
 
                         // 跳过空气和没有碰撞体积的方块
-                        if (!blockState.isAir && !blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).isEmpty) {
+                        if (!blockState.isAir && !blockState.getCollisionShape(
+                                EmptyBlockGetter.INSTANCE,
+                                BlockPos.ZERO
+                            ).isEmpty
+                        ) {
                             blockSnapshots[index] = BlockSnapshot(
                                 blockState,
                                 BlockCollisionUtil.getBlockFriction(chunk.level, blockState, getWorldPos(pos, x, y, z)),
-                                BlockCollisionUtil.getBlockRollingFriction(chunk.level, blockState, getWorldPos(pos, x, y, z)),
+                                BlockCollisionUtil.getBlockRollingFriction(
+                                    chunk.level,
+                                    blockState,
+                                    getWorldPos(pos, x, y, z)
+                                ),
                                 BlockCollisionUtil.getRestitution(chunk, blockState, getWorldPos(pos, x, y, z)),
                                 BlockCollisionUtil.getSlip(chunk, blockState, getWorldPos(pos, x, y, z))
                             )
+                            childShapeIndex.add(index)
                             hasBlocks = true
+                            i++
                         }
                     }
                 }
             }
 
             // 如果没有有效方块，返回空实例
-            return if (hasBlocks) SectionSnapshot(blockSnapshots, pos) else EMPTY
+            return if (hasBlocks) SectionSnapshot(blockSnapshots, childShapeIndex, pos) else EMPTY
         }
 
         /**
          * 将相对坐标转换为数组索引
          */
         @JvmStatic
-        fun getIndex(x: Int, y: Int, z: Int): Int {
+        fun getIndexFromRelativePos(x: Int, y: Int, z: Int): Int {
             require(x in 0..15 && y in 0..15 && z in 0..15) {
                 "Coordinates must be in range 0-15, got x=$x, y=$y, z=$z"
             }
@@ -86,7 +98,7 @@ class SectionSnapshot private constructor(
          * 将数组索引转换为相对坐标
          */
         @JvmStatic
-        fun getRelativePos(index: Int): BlockPos {
+        fun getRelativePosFromIndex(index: Int): BlockPos {
             require(index in 0..4095) { "Index must be in range 0-4095, got $index" }
             val x = index and 0xF
             val y = (index shr 4) and 0xF
@@ -130,11 +142,23 @@ class SectionSnapshot private constructor(
     }
 
     /**
-     * 将数组索引转换为相对坐标
+     * 将碰撞点索引转换为相对坐标
      */
-    fun getWorldPos(index: Int): BlockPos {
-        require(index in 0..4095) { "Index must be in range 0-4095, got $index" }
-        val relPos = getRelativePos(index)
+    fun getRelativePos(childShapeIndex: Int): BlockPos {
+        require(childShapeIndex in 0..4095) { "Index must be in range 0-4095, got $childShapeIndex" }
+        val index = childShapeIndexes[childShapeIndex]
+        val x = index and 0xF
+        val y = (index shr 4) and 0xF
+        val z = (index shr 8) and 0xF
+        return BlockPos(x, y, z)
+    }
+
+    /**
+     * 将碰撞点索引转换为相对坐标
+     */
+    fun getWorldPos(childShapeIndex: Int): BlockPos {
+        require(childShapeIndex in 0..4095) { "Index must be in range 0-4095, got $childShapeIndex" }
+        val relPos = getRelativePos(childShapeIndex)
         return getWorldPos(relPos)
     }
 
@@ -142,7 +166,7 @@ class SectionSnapshot private constructor(
      * 通过相对坐标获取方块快照
      */
     fun getBlockSnapshot(relativeX: Int, relativeY: Int, relativeZ: Int): BlockSnapshot? {
-        return blockSnapshots[getIndex(relativeX, relativeY, relativeZ)]
+        return blockSnapshots[getIndexFromRelativePos(relativeX, relativeY, relativeZ)]
     }
 
     /**
@@ -181,16 +205,16 @@ class SectionSnapshot private constructor(
     inline fun forEachBlock(action: (BlockPos, BlockSnapshot) -> Unit) {
         if (isEmpty()) return
 
-        for (index in blockSnapshots.indices) {
+        for (index in childShapeIndexes) {
             val snapshot = blockSnapshots[index]
             if (snapshot != null) {
-                val relativePos = getRelativePos(index)
+                val relativePos = getRelativePosFromIndex(index)
                 action(relativePos, snapshot)
             }
         }
     }
 
     fun copy(): SectionSnapshot {
-        return SectionSnapshot(blockSnapshots.clone(), pos)
+        return SectionSnapshot(blockSnapshots.clone(), ArrayList(childShapeIndexes), pos)
     }
 }
