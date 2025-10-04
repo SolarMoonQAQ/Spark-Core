@@ -1,9 +1,11 @@
 package cn.solarmoon.spark_core.physics.body
 
 import cn.solarmoon.spark_core.physics.PhysicsHost
+import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
+import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.decoration.BlockAttachedEntity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
@@ -13,25 +15,28 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent
 
 object CollisionFuncApplier {
 
+    private val defaultBodies = mutableMapOf<Entity, PhysicsCollisionObject>()
+
     @SubscribeEvent
     private fun addBodyForEntity(event: EntityJoinLevelEvent) {
         val entity = event.entity
         if (entity is PhysicsHost && entity !is BlockAttachedEntity && entity !is CollisionObjectEntity) {
             val bb = entity.boundingBox
-            val x: Float = (bb.xsize / 2).toFloat()
-            val y: Float = (bb.ysize / 2).toFloat()
-            val z: Float = (bb.zsize / 2).toFloat()
-            val body = entity.createPhysicsBody(BoxCollisionShape(x, y, z), 60f, "entity_bounding_box").apply {
+            val x = (bb.xsize / 2).toFloat()
+            val y = (bb.ysize / 2).toFloat()
+            val z = (bb.zsize / 2).toFloat()
+            val body = PhysicsRigidBody(BoxCollisionShape(x, y, z), 60f).apply {
+                name = "body"
+                owner = entity
                 isKinematic = true
                 isContactResponse = false
                 setProtectGravity(true)
                 setGravity(Vector3f.ZERO)
                 collisionGroup = CollisionGroups.PHYSICS_BODY
                 collideWithGroups = CollisionGroups.PHYSICS_BODY
-//                addCollideWithGroup(CollisionGroups.TERRAIN)
             }
             body.attachToEntity(entity)
-            entity.addPhysicsBody(body)
+            defaultBodies[entity] = body
         }
     }
 
@@ -39,7 +44,7 @@ object CollisionFuncApplier {
     private fun updateBodyForEntity(event: EntityTickEvent.Post) {
         val entity = event.entity
         if (entity is PhysicsHost && entity !is BlockAttachedEntity && entity !is CollisionObjectEntity) {
-            val body = entity.getPhysicsBody("entity_bounding_box")
+            val body = defaultBodies[entity]
             if (body != null) {
                 val bb = entity.boundingBox
                 val x: Float = (bb.xsize / 2).toFloat()
@@ -60,12 +65,10 @@ object CollisionFuncApplier {
     @SubscribeEvent
     private fun removeBodyForEntity(event: EntityLeaveLevelEvent) {
         val entity = event.entity
-        if (entity is PhysicsHost && entity !is BlockAttachedEntity && entity !is CollisionObjectEntity) {
-            val body = entity.getPhysicsBody("entity_bounding_box")
-            if (body != null) {
-                entity.removePhysicsBody(body)
-            }
+        defaultBodies[entity]?.let {
+            event.level.removePhysicsBody(it)
         }
+        entity.allPhysicsBodies.forEach { it.value.owner = null }
     }
 
 }

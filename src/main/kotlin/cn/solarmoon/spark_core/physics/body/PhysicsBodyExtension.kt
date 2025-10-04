@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.util.Subscription
 import cn.solarmoon.spark_core.util.onEvent
 import cn.solarmoon.spark_core.util.toBQuaternion
 import cn.solarmoon.spark_core.util.toVec3
+import cn.solarmoon.spark_core.util.triggerEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import net.minecraft.world.entity.Entity
@@ -25,6 +26,8 @@ fun stateOf(collisionObject: PhysicsCollisionObject): PhysicsBodyState {
 var PhysicsCollisionObject.owner: PhysicsHost?
     get() = userObject as? PhysicsHost
     set(value) {
+        val event = triggerEvent(PhysicsBodyEvent.OwnerChanged(owner, value))
+        val value = event.newOwner
         value?.let {
             it.allPhysicsBodies[name] = this
         } ?: owner?.allPhysicsBodies?.remove(name)
