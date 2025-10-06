@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.body
 
+import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.util.InlineEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 
@@ -40,6 +41,13 @@ abstract class PhysicsBodyEvent: InlineEvent {
     abstract class PhysicsTick: PhysicsBodyEvent() {
         class Pre: PhysicsTick()
         class Post: PhysicsTick()
+    }
+
+    class OwnerChanged(
+        val originOwner: PhysicsHost?,
+        val originNewOwner: PhysicsHost?,
+    ): PhysicsBodyEvent() {
+        var newOwner: PhysicsHost? = originNewOwner
     }
 
 }

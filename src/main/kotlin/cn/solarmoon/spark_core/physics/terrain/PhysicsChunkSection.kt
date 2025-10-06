@@ -3,6 +3,9 @@ package cn.solarmoon.spark_core.physics.terrain
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.body.CollisionGroups
+import cn.solarmoon.spark_core.physics.body.addPhysicsBody
+import cn.solarmoon.spark_core.physics.body.owner
+import cn.solarmoon.spark_core.physics.body.removePhysicsBody
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
@@ -200,7 +203,10 @@ class PhysicsChunkSection(
     private fun createPhysicsBody(): Boolean {
         val shape = collisionShape ?: return false
         snapshotForCollision = snapshotForBuild?.copy()
-        physicsBody = createPhysicsBody(shape, 0f, "section_$sectionPos")
+        physicsBody = PhysicsRigidBody(shape, 0f).apply {
+            name = "section_$sectionPos"
+            owner = physicsLevel.mcLevel
+        }
         physicsBody!!.setPhysicsLocation(
             Vector3f(
                 sectionPos.minBlockX() + 8f,
@@ -246,7 +252,7 @@ class PhysicsChunkSection(
             return
         }
         // 使用包含任务队列的方法将任务提交到物理线程，确保在物理线程中执行
-        addPhysicsBody(physicsBody!!)
+        physicsLevel.mcLevel.addPhysicsBody(physicsBody!!)
         isActive = true
     }
 
@@ -263,7 +269,7 @@ class PhysicsChunkSection(
             return
         }
         // 使用包含任务队列的方法将任务提交到物理线程，确保在物理线程中执行
-        removePhysicsBodyFromWorld(physicsBody)
+        physicsLevel.mcLevel.addPhysicsBody(physicsBody!!)
         isActive = false
     }
 
@@ -324,7 +330,7 @@ class PhysicsChunkSection(
     }
 
     private fun destroyPhysicsBody() {
-        removePhysicsBody(physicsBody)
+        physicsLevel.mcLevel.removePhysicsBody(physicsBody!!)
         collisionShape = null
         isActive = false
     }
