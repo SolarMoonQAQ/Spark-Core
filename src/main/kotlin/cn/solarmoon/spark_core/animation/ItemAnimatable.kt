@@ -2,9 +2,12 @@ package cn.solarmoon.spark_core.animation
 
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController
 import cn.solarmoon.spark_core.animation.model.ModelController
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import cn.solarmoon.spark_core.util.toRadians
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.item.ItemStack
@@ -21,6 +24,11 @@ open class ItemAnimatable(
     var owner: Entity? = null
 
     override val animatable = itemStack
+    override val defaultModelIndex: ModelIndex
+        get() {
+            val res = BuiltInRegistries.ITEM.getKey(itemStack.item)
+            return ModelIndex(ResourceLocation.fromNamespaceAndPath(res.namespace, "item/${res.path}"))
+        }
     override val animController = AnimController(this)
     override val modelController = ModelController(this)
 

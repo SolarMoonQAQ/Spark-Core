@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.animation
 
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController
 import cn.solarmoon.spark_core.animation.model.ModelController
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.sync.Syncer
 import net.minecraft.world.level.Level
@@ -22,6 +23,8 @@ interface IAnimatable<T> {
      * 动画体所处的世界
      */
     val animLevel: Level?
+
+    val defaultModelIndex: ModelIndex
 
     /**
      * 动画控制器，包含了对动画的控制/过渡/混合/获取等控制性操作，在类中新建一个新的即可

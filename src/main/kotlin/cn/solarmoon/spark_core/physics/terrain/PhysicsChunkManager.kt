@@ -142,6 +142,18 @@ class PhysicsChunkManager(
     }
 
     /**
+     * 在物理线程中获取指定世界位置的方块快照
+     * 用于碰撞处理等物理计算
+     *
+     * @param worldPos 世界坐标
+     * @return 方块快照，如果位置无效或没有碰撞体积则返回null
+     */
+    fun getBlockSnapshotAt(worldPos: BlockPos): SectionSnapshot.BlockSnapshot? {
+        val section = getSectionForBlockPos(worldPos) ?: return null
+        return section.getBlockSnapshot(worldPos)
+    }
+
+    /**
      * 根据BoundingBox列表更新区块激活状态
      * 统一激活所有BoundingBox范围内的section，停用范围外的section
      */

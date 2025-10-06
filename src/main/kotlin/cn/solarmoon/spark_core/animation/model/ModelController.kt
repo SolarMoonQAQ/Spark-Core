@@ -16,11 +16,7 @@ class ModelController(
     val animatable: IAnimatable<*>
 ) {
 
-    private var currentModel: ModelInstance? = when(animatable) {
-        is IEntityAnimatable<*> -> ModelInstance(animatable, ModelIndex.of(animatable.animatable.type))
-        is IBlockEntityAnimatable<*> -> ModelInstance(animatable, ModelIndex.of(animatable.animatable.type))
-        else -> null
-    }
+    private var currentModel: ModelInstance? = ModelInstance(animatable, animatable.defaultModelIndex)
 
     val originModel get() = OModel.getOrEmpty(model?.index?.location)
 

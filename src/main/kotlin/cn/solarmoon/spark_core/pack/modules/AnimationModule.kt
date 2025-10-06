@@ -26,7 +26,17 @@ class AnimationModule: SparkPackModule {
         if (pathSegments.size < 2) throw IllegalArgumentException("动画的文件路径必须指向一个具体的模型名称（如：animations/minecraft/player/test.json 指向名为 minecraft:player 的模型，test.json为该模型下的动画）")
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val animationSet = OAnimationSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-        val id = ResourceLocation.fromNamespaceAndPath(pathSegments[0], pathSegments[1])
+        val nameSpace: String = if (pathSegments.size > 1) {
+            pathSegments[0]
+        } else {
+            SparkCore.MOD_ID
+        }
+        val path: String = if (pathSegments.size >= 2) {
+            pathSegments.subList(1, pathSegments.size).joinToString("/")
+        } else {
+            fileName.removeSuffix(".json")
+        }
+        val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
         OAnimationSet.ORIGINS.getOrPut(id) { OAnimationSet.EMPTY }.animations.putAll(animationSet.animations)
     }
 

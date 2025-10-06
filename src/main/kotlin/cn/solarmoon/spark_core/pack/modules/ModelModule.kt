@@ -32,7 +32,7 @@ class ModelModule: SparkPackModule {
         pack: SparkPackage,
         isClientSide: Boolean
     ) {
-        if (pathSegments.isEmpty()) throw IllegalArgumentException("模型的文件路径必须指向一个模型父名称（如：models/minecraft/player.json 指向名为 minecraft:player 的模型）")
+        if (pathSegments.isEmpty()) throw IllegalArgumentException("模型的文件路径必须指向一个模型父名称（如：models/minecraft/entity/player.json 指向名为 minecraft:entity/player 的模型）")
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val target = json.asJsonObject.getAsJsonArray("minecraft:geometry").first().asJsonObject.getAsJsonArray("bones")
         // 单独读取贴图长宽
@@ -69,7 +69,17 @@ class ModelModule: SparkPackModule {
                 ArrayList(cubes)
             )
         }
-        val id = ResourceLocation.fromNamespaceAndPath(pathSegments[0], fileName.removeSuffix(".json"))
+        val nameSpace: String = if (pathSegments.size > 1) {
+            pathSegments[0]
+        } else {
+            SparkCore.MOD_ID
+        }
+        val path: String = if (pathSegments.size >= 2) {
+            "${pathSegments.subList(1, pathSegments.size).joinToString("/")}/${fileName.removeSuffix(".json")}"
+        } else {
+            fileName.removeSuffix(".json")
+        }
+        val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
         OModel.ORIGINS[id] = OModel(coord.x, coord.y, LinkedHashMap(bones))
     }
 

@@ -18,7 +18,7 @@ class ModelIndex (
 ) {
 
     fun isPlayer(): Boolean {
-        return location == ResourceLocation.withDefaultNamespace("player")
+        return location == ResourceLocation.withDefaultNamespace("entity/player")
     }
 
     override fun toString(): String {
