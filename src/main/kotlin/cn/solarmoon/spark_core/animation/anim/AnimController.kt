@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.state.origin.OAnimStateMachineSet
@@ -11,6 +12,7 @@ import cn.solarmoon.spark_core.util.minus
 import cn.solarmoon.spark_core.util.plus
 import cn.solarmoon.spark_core.util.toEuler
 import cn.solarmoon.spark_core.util.toVec3
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import org.joml.Quaterniond
 import org.joml.Vector3f
@@ -73,14 +75,10 @@ class AnimController(
         val rot = Quaterniond()
         val scale = Vector3f(1f)
         layers.entries.sortedBy { it.key }.forEach { (_, layer) ->
-//            // 跳过无任何动画层
-//            if (!layer.isInTransition && layer.animation == null) return@forEach
-//            // 跳过不包含当前骨骼姿势层（即该动画中没有提及该骨骼），防止未出现的骨骼以默认0值覆盖了上层动画
-//            if (layer.animation != null && layer.animation!!.origin.getBoneAnimation(boneName) == null) return@forEach
             if (!layer.isPlaying) return@forEach
             val boneTransform = layer.blendBone(boneName)
-            val weight = layer.weight
-            if (weight == 0.0) return@forEach
+            val weight = layer.getBoneWeight(boneName)
+            if (weight == 0.0) return@forEach // 简化计算
             when(layer.blendMode) {
                 BlendMode.OVERRIDE -> {
                     pos.lerp(boneTransform.position.toVector3f(), weight.toFloat())

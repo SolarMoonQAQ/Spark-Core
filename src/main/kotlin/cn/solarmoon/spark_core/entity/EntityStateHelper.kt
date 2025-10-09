@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.entity
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.util.Side
 import cn.solarmoon.spark_core.util.toRadians
 import cn.solarmoon.spark_core.util.toVec3
@@ -20,14 +21,16 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+fun Entity.groundMovement() = position().subtract(lastPosO)
+
 fun Entity.moveCheck(): Boolean {
-    val v = deltaMovement
+    val v = groundMovement()
     val avgV = (abs(v.x) + abs(v.z)) / 2f
     return avgV >= 0.015
 }
 
 fun Entity.moveBackCheck(): Boolean {
-    val v = deltaMovement
+    val v = groundMovement()
     val forward = Vec3.directionFromRotation(0f, getPreciseBodyRotation(1f))
     // 计算移动的标量与 身体forward 方向的点积，如果乘数大于150度值则代表方向基本相反
     val dotProduct = v.normalize().x * forward.normalize().x + v.normalize().z * forward.normalize().z
@@ -39,7 +42,7 @@ fun LocalPlayer.isMoving(): Boolean {
 }
 
 fun Entity.isFalling(): Boolean {
-    return !onGround() && deltaMovement.y != 0.0 && (this !is Player || !this.abilities.flying)
+    return !onGround() && groundMovement().y != 0.0 && (this !is Player || !this.abilities.flying)
 }
 
 /**

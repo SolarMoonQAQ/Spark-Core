@@ -11,11 +11,13 @@ import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import ru.nsk.kstatemachine.state.State
+import ru.nsk.kstatemachine.state.choiceState
 import ru.nsk.kstatemachine.state.initialState
 import ru.nsk.kstatemachine.state.onEntry
 import ru.nsk.kstatemachine.state.onExit
 import ru.nsk.kstatemachine.state.state
 import ru.nsk.kstatemachine.state.transition
+import ru.nsk.kstatemachine.state.transitionOn
 import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
 
 data class OAnimStateMachine(
@@ -64,12 +66,15 @@ data class OAnimStateMachine(
             // 添加 transition
             this@OAnimStateMachine.states.forEach { (stateName, animState) ->
                 val fromState = stateMap[stateName]!!
-                animState.transitions.forEach { (targetName, condition) ->
-                    val targetState = stateMap[targetName]!!
-                    fromState.transition<AnimStateMachine.TickEvent> {
-                        this.targetState = targetState
-                        guard = { condition.evalAsBoolean(exp) }
+                val choice = choiceState {
+                    animState.transitions.forEach { (targetName, condition) ->
+                        val targetState = stateMap[targetName]!!
+                        if (condition.evalAsBoolean(exp)) return@choiceState targetState
                     }
+                    fromState
+                }
+                fromState.transition<AnimStateMachine.TickEvent> {
+                    this.targetState = choice
                 }
             }
         }

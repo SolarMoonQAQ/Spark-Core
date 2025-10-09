@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.molang.core.builtin;
 
+import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.event.MolangQueryRegisterEvent;
 import cn.solarmoon.spark_core.molang.core.binding.ContextBinding;
@@ -82,6 +83,7 @@ public class QueryBinding extends ContextBinding {
         livingEntityVar("item_max_use_duration", ctx -> getMaxUseDuration(ctx.getAnimatable()) / 20.0);
         livingEntityVar("item_remaining_use_duration", ctx -> ctx.getAnimatable().getUseItemRemainingTicks() / 20.0);
         livingEntityVar("equipment_count", ctx -> getEquipmentCount(ctx.getAnimatable()));
+        //livingEntityVar("jumping", ctx -> ctx.getAnimatable().jumping);
 
         // 为了兼容 ysm 添加的变量
         function("debug_output", new EmptyFunction());
@@ -123,15 +125,11 @@ public class QueryBinding extends ContextBinding {
     }
 
     private static float getGroundSpeed(Entity entity, IAnimatable<Entity> ctx) {
-        float partialTicks = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
-        if (partialTicks == 0) {
-            Vec3 motion = entity.getDeltaMovement().scale(20f);
-            return Mth.sqrt((float) (motion.x * motion.x + motion.z * motion.z));
-        } else {
-            double vx = 20 * (Mth.lerp(partialTicks, entity.xo, entity.getX()) - entity.xo) / partialTicks;
-            double vz = 20 * (Mth.lerp(partialTicks, entity.zo, entity.getZ()) - entity.zo) / partialTicks;
-            return Mth.sqrt((float) ((vx * vx) + (vz * vz)));
-        }
+        var lastPos = entity.getLastPosO();
+        double dx = entity.getX() - lastPos.x;
+        double dz = entity.getZ() - lastPos.z;
+        double speed = Math.sqrt(dx * dx + dz * dz) * 20.0; // 方块/秒
+        return (float) speed;
     }
 
     private static float getVerticalSpeed(Entity entity, IAnimatable<Entity> ctx) {
@@ -143,4 +141,5 @@ public class QueryBinding extends ContextBinding {
             return (float) (20 * (Mth.lerp(partialTicks, entity.yo, entity.getY()) - entity.yo) / (partialTicks));
         }
     }
+
 }

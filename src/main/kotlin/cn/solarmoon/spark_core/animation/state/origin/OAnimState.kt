@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.molang.core.value.IValue
 import cn.solarmoon.spark_core.molang.core.value.MolangValue
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import org.jetbrains.kotlin.it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.iterator
@@ -45,8 +44,7 @@ data class OAnimState(
 
                 MolangValue.CODEC.optionalFieldOf("on_entry", MolangValue.ZERO).forGetter { it.onEntry },
                 MolangValue.CODEC.optionalFieldOf("on_exit", MolangValue.ZERO).forGetter { it.onExit },
-                OParticleEffect.CODEC.listOf().optionalFieldOf("particle_effects", listOf())
-                    .forGetter { it.particleEffects },
+                OParticleEffect.CODEC.listOf().optionalFieldOf("particle_effects", listOf()).forGetter { it.particleEffects },
                 Codec.STRING.listOf().optionalFieldOf("sound_effects", listOf()).forGetter { it.soundEffects },
 
                 Codec.unboundedMap(Codec.STRING, MolangValue.CODEC).listOf().xmap(

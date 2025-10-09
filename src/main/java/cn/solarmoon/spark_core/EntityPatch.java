@@ -17,6 +17,7 @@ import cn.solarmoon.spark_core.util.BlackBoard;
 import cn.solarmoon.spark_core.util.InlineEventHandlerKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -26,14 +27,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPreInputHolder, IStateMachineHolder, IEntityPatch {
 
     @Override
-    default boolean isMoving() {
-        return false;
-    }
+    default @NotNull Vec3 getLastPosO() { return Vec3.ZERO; }
 
     @Override
-    default void setMoving(boolean b) {
-
-    }
+    default void setLastPosO(@NotNull Vec3 vec3) {}
 
     @Override
     default @NotNull BlackBoard getHurtData() {

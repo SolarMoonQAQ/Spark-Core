@@ -21,6 +21,7 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -41,9 +42,9 @@ public class EntityMixin implements EntityPatch {
     private final ConcurrentHashMap<Integer, Skill> allSkills = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Skill> predictedSkills = new ConcurrentHashMap<>();
     private final AtomicInteger skillCount = new AtomicInteger();
-    private boolean moving = false;
     private final HashMap<String, PhysicsCollisionObject> collisionObjects = new HashMap<>();
     private final HashMap<ResourceLocation, StateMachineHandler> stateMachineHandlers = new HashMap<>();
+    private Vec3 lastPosO = Vec3.ZERO;
 
     @Override
     public @NotNull Map<@NotNull ResourceLocation, @NotNull StateMachineHandler> getStateMachineHandlers() {
@@ -97,13 +98,12 @@ public class EntityMixin implements EntityPatch {
     }
 
     @Override
-    public boolean isMoving() {
-        return moving;
+    public @NotNull Vec3 getLastPosO() {
+        return lastPosO;
     }
 
     @Override
-    public void setMoving(boolean b) {
-        moving = b;
+    public void setLastPosO(@NotNull Vec3 vec3) {
+        lastPosO = vec3;
     }
-
 }

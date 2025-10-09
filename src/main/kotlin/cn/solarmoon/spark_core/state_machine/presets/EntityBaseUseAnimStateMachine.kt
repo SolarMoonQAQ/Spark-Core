@@ -2,7 +2,9 @@ package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.anim.AnimGroups
+import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.animInstance
+import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler
 import net.minecraft.world.InteractionHand
@@ -40,9 +42,8 @@ class EntityBaseUseAnimStateMachine(
         val tootHorn = state("toot_horn") { initHandState() }
         val spyglass = state("spyglass") { initHandState() }
         val swing = state("swing") {
-            val provider = 0
-            val mainHand = state("$name.main_hand") { payload = provider }
-            val offHand = state("$name.off_hand") { payload = provider }
+            val mainHand = state("$name.main_hand") { payload = AnimPayload(0f) }
+            val offHand = state("$name.off_hand") { payload = AnimPayload(0f) }
             initialChoiceState {
                 if (entity.swingingArm == InteractionHand.MAIN_HAND) mainHand else offHand
             }
@@ -64,25 +65,47 @@ class EntityBaseUseAnimStateMachine(
                     else -> null
                 }
                 val s2 = when {
-                    entity.attackAnim > 0 -> swing
-                    else -> none
+                    entity.attackAnim > 0 -> {
+                        tick = 1
+                        swing
+                    }
+                    else -> if (tick <= 0) none else {
+                        tick--
+                        swing
+                    }
                 }
                 s1 ?: s2
             }
         }
 
         onStateEntry { s, b ->
+            val payload = payload
             if (entity !is IEntityAnimatable<*>) return@onStateEntry
-            entity.animController.stopAnimation(AnimGroups.DECOR)
             val sName = s.name ?: return@onStateEntry
+            if (sName == "none") lastAnim?.exit()
             val animName = "state.use.$sName"
             val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, animInstance(entity, animName), this))
             if (event.isCanceled) return@onStateEntry
-            val anim = (event.newAnim ?: event.originAnim)?.apply { shouldTurnBody = true } ?: return@onStateEntry
-            anim.enter()
+            val anim = (event.newAnim ?: event.originAnim) ?: return@onStateEntry
+            anim.apply {
+                if (payload is AnimPayload) {
+                    group = payload.group
+                    inTransitionTime = payload.transTime
+                } else {
+                    group = AnimGroups.DECOR
+                }
+                shouldTurnBody = true
+                lastAnim?.exit()
+                enter()
+            }
+            lastAnim = anim
         }
 
     }
+
+    private var tick = 0
+
+    private var lastAnim: AnimInstance? = null
 
     suspend fun IState.initHandState() {
         val mainHand = state("$name.main_hand")

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.util.toQuaternionf
 import cn.solarmoon.spark_core.util.toVec3
 import org.joml.Quaternionf
@@ -7,11 +8,15 @@ import org.joml.Vector3f
 
 class AnimLayer {
 
-    val animations = mutableListOf<AnimInstance>()
+    val animations = mutableSetOf<AnimInstance>()
 
     var blendMode = BlendMode.OVERRIDE
 
-    var weight = 1.0
+    fun getBoneWeight(boneName: String): Double {
+        if (animations.all { !it.origin.bones.contains(boneName) }) return 0.0
+        if (animations.size == 1) return animations.first().currentWeight
+        return animations.maxOf { it.currentWeight }
+    }
 
     val isPlaying get() = animations.isNotEmpty()
 
@@ -52,14 +57,10 @@ class AnimLayer {
 
     fun physicsTick(overallSpeed: Double) {
         animations.forEach {
-            if (it.isCancelled && !it.isInTransition) {
-                it.exit()
-            }
-
             it.physTick(overallSpeed)
         }
 
-        animations.removeIf { it.isCancelled && !it.isInTransition }
+        animations.removeIf { it.state == AnimState.IDLE }
     }
 
     fun tick() {

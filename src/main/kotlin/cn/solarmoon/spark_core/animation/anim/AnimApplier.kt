@@ -37,13 +37,14 @@ object AnimApplier {
     }
 
     @SubscribeEvent
-    private fun entityTick(event: EntityTickEvent.Pre) {
+    private fun entityTick(event: EntityTickEvent.Post) {
         val entity = event.entity
         if (entity is IEntityAnimatable<*>) {
             entity.animController.tick()
 
             if (entity.isSpectator) entity.animController.stopAllAnimation()
         }
+        entity.lastPosO = entity.position()
     }
 
     @SubscribeEvent

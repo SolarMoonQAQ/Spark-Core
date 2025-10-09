@@ -1,11 +1,23 @@
 package cn.solarmoon.spark_core.animation.anim
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import net.minecraft.nbt.CompoundTag
 import org.joml.Vector2d
+import ru.nsk.kstatemachine.event.Event
+import ru.nsk.kstatemachine.state.activeStates
+import ru.nsk.kstatemachine.state.initialState
+import ru.nsk.kstatemachine.state.onEntry
+import ru.nsk.kstatemachine.state.state
+import ru.nsk.kstatemachine.state.transition
+import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
+import ru.nsk.kstatemachine.statemachine.onStateEntry
+import ru.nsk.kstatemachine.statemachine.processEventBlocking
+import ru.nsk.kstatemachine.transition.onTriggered
 import kotlin.collections.getOrPut
 import kotlin.reflect.KClass
 
@@ -14,8 +26,17 @@ class AnimInstance internal constructor(
     val animIndex: AnimIndex
 ) {
 
+    sealed class AnimStateEvent {
+        object Start: Event
+        object TransitionFinish: Event
+        object Stop: Event // 打断
+        object Finish: Event // 完成
+    }
+
+    val state get() = AnimState.valueOf(lifecycleStateMachine.activeStates().first().name!!.uppercase())
+
     val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex.location).getValidAnimation(animIndex.name)
-    val flags = setOf<String>()
+    val tag = CompoundTag()
     var time = 0.0
     var speed = 1.0
     var weight = 1.0
@@ -25,19 +46,12 @@ class AnimInstance internal constructor(
     var outTransitionTime = 0.15f
     var transitionTick = 0
         private set
-    var transitionState = TransitionState.NONE
-        private set
-    val isInTransition get() = transitionState != TransitionState.NONE
+    val isInTransition get() = state in listOf(AnimState.ENTER, AnimState.EXIT)
     var maxLength = origin.animationLength
     var shouldTurnBody = false
     // 锁定ai注视目标
     var shouldTurnHead = true
     var rejectNewAnim: (AnimInstance?) -> Boolean = { false }
-    var isCancelled = true
-        internal set(value) {
-            if (!field && value) triggerEvent(AnimEvent.End)
-            field = value
-        }
     var eventHandlers = mutableMapOf<KClass<out AnimEvent>, MutableList<AnimInstance.(AnimEvent) -> Unit>>()
         private set
     var keyframeRanges = mutableMapOf<String, KeyframeRange>()
@@ -57,52 +71,103 @@ class AnimInstance internal constructor(
         Loop.HOLD_ON_LAST_FRAME -> time
     }
 
+    private val lifecycleStateMachine = createStdLibStateMachine {
+        val idle = initialState("idle")
+        val enter = state("enter")
+        val work = state("work")
+        val exit = state("exit")
+
+        idle.apply {
+            onEntry {
+                refresh()
+            }
+
+            transition<AnimStateEvent.Start> {
+                targetState = enter
+            }
+        }
+
+        enter.apply {
+            onEntry {
+                transitionTick = inTransitionTick
+                currentWeight = 0.0
+                holder.animController.layers.getOrPut(group) { AnimLayer() }.animations.add(this@AnimInstance)
+            }
+
+            transition<AnimStateEvent.Stop> {
+                targetState = exit
+                onTriggered {
+                    triggerEvent(AnimEvent.Interrupted)
+                }
+            }
+
+            transition<AnimStateEvent.TransitionFinish> {
+                targetState = work
+            }
+        }
+
+        work.apply {
+            transition<AnimStateEvent.Stop> {
+                targetState = exit
+                onTriggered {
+                    triggerEvent(AnimEvent.Interrupted)
+                }
+            }
+
+            transition<AnimStateEvent.Finish> {
+                targetState = exit
+                onTriggered {
+                    triggerEvent(AnimEvent.Completed)
+                }
+            }
+        }
+
+        exit.apply {
+            onEntry {
+                transitionTick = outTransitionTick
+                triggerEvent(AnimEvent.End)
+            }
+
+            transition<AnimStateEvent.TransitionFinish> {
+                targetState = idle
+            }
+        }
+    }
+
     fun enter() {
-        transitionState = TransitionState.ENTER
-        transitionTick = inTransitionTick
-        currentWeight = 0.0
-        isCancelled = false
-        holder.animController.layers.getOrPut(group) { AnimLayer() }.animations.add(this)
+        lifecycleStateMachine.processEventBlocking(AnimStateEvent.Start)
     }
 
     fun exit() {
-        transitionState = TransitionState.EXIT
-        transitionTick = outTransitionTick
-        if (!isCancelled) {
-            isCancelled = true
-            triggerEvent(AnimEvent.Interrupted)
-        }
+        lifecycleStateMachine.processEventBlocking(AnimStateEvent.Stop)
     }
 
     fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / (if (paused) time + step else maxLength)).coerceIn(0.0, 1.0)
 
     fun step(overallSpeed: Double = 1.0) {
         if (paused || selfDriving) return
-        if (isInTransition) updateWeight()
         else time += step * overallSpeed
     }
 
-    private fun updateWeight() {
-        when(transitionState) {
-            TransitionState.ENTER -> {
+    fun stepWeight() {
+        when(state) {
+            AnimState.ENTER -> {
                 val progress = 1.0 - (transitionTick.toDouble() / inTransitionTick)
                 currentWeight = weight * progress
                 if (--transitionTick <= 0) {
                     currentWeight = weight
-                    transitionState = TransitionState.NONE
+                    lifecycleStateMachine.processEventBlocking(AnimStateEvent.TransitionFinish)
                 }
             }
-            TransitionState.EXIT -> {
+            AnimState.EXIT -> {
                 val progress = transitionTick.toDouble() / outTransitionTick
                 currentWeight = weight * progress
                 if (--transitionTick <= 0) {
                     currentWeight = 0.0
-                    transitionState = TransitionState.NONE
+                    lifecycleStateMachine.processEventBlocking(AnimStateEvent.TransitionFinish)
                 }
             }
-            TransitionState.NONE -> {
-                currentWeight = weight
-            }
+            else -> {}
         }
     }
 
@@ -127,21 +192,19 @@ class AnimInstance internal constructor(
     }
 
     fun physTick(overallSpeed: Double = 1.0) {
-        when(origin.loop) {
-            Loop.TRUE -> {
-                step()
-            }
-            Loop.ONCE -> {
-                if (time < maxLength) step(overallSpeed)
-                else if (!isCancelled) {
-                    holder.animLevel?.submitImmediateTask {
-                        isCancelled = true
-                        triggerEvent(AnimEvent.Completed)
-                    }
+        if (isInTransition) stepWeight()
+        else {
+            when(origin.loop) {
+                Loop.TRUE -> {
+                    step(overallSpeed)
                 }
-            }
-            Loop.HOLD_ON_LAST_FRAME -> {
-                if (time < maxLength) step(overallSpeed)
+                Loop.ONCE -> {
+                    if (time < maxLength) step(overallSpeed)
+                    else lifecycleStateMachine.processEventBlocking(AnimStateEvent.Finish)
+                }
+                Loop.HOLD_ON_LAST_FRAME -> {
+                    if (time < maxLength) step(overallSpeed)
+                }
             }
         }
     }
