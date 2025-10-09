@@ -18,7 +18,7 @@ class ModelController(
 
     private var currentModel: ModelInstance? = ModelInstance(animatable, animatable.defaultModelIndex)
 
-    val originModel get() = OModel.getOrEmpty(model?.index?.location)
+    val originModel get() = OModel.getOrEmpty(model?.index)
 
     val model get() = currentModel
 

@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.pack.modules
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
@@ -26,18 +27,8 @@ class AnimationModule: SparkPackModule {
         if (pathSegments.size < 2) throw IllegalArgumentException("动画的文件路径必须指向一个具体的模型名称（如：animations/minecraft/player/test.json 指向名为 minecraft:player 的模型，test.json为该模型下的动画）")
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val animationSet = OAnimationSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-        val nameSpace = if (pathSegments.size > 1) {
-            pathSegments[0]
-        } else {
-            SparkCore.MOD_ID
-        }
-        val path = if (pathSegments.size >= 2) {
-            pathSegments.subList(1, pathSegments.size).joinToString("/")
-        } else {
-            fileName.removeSuffix(".json")
-        }
-        val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
-        OAnimationSet.ORIGINS.getOrPut(id) { OAnimationSet.EMPTY }.animations.putAll(animationSet.animations)
+        val id = ResourceLocation.fromNamespaceAndPath(pathSegments[0], pathSegments[2])
+        OAnimationSet.ORIGINS.getOrPut(ModelIndex(pathSegments[1], id)) { OAnimationSet.EMPTY }.animations.putAll(animationSet.animations)
     }
 
     override fun onFinish(isClientSide: Boolean) {

@@ -35,7 +35,7 @@ class AnimInstance internal constructor(
 
     val state get() = AnimState.valueOf(lifecycleStateMachine.activeStates().first().name!!.uppercase())
 
-    val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex.location).getValidAnimation(animIndex.name)
+    val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex).getValidAnimation(animIndex.name)
     val tag = CompoundTag()
     var time = 0.0
     var speed = 1.0

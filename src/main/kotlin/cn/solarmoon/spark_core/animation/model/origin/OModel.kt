@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
@@ -36,13 +37,13 @@ data class OModel(
 
     companion object {
         @JvmStatic
-        fun getOrEmpty(id: ResourceLocation?) = ORIGINS[id] ?: EMPTY
+        fun getOrEmpty(id: ModelIndex?) = ORIGINS[id] ?: EMPTY
 
         /**
          * 地图加载后读取的原始模型数据，最好不要修改
          */
         @JvmStatic
-        var ORIGINS = linkedMapOf<ResourceLocation, OModel>()
+        var ORIGINS = linkedMapOf<ModelIndex, OModel>()
 
         @JvmStatic
         val EMPTY get() = OModel(0, 0, linkedMapOf())

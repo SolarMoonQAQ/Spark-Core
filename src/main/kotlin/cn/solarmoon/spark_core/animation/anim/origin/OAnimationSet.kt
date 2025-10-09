@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
@@ -27,7 +28,7 @@ data class OAnimationSet(
          * 如果res是玩家，自动返回玩家的动画集合
          */
         @JvmStatic
-        fun getOrEmpty(res: ResourceLocation?): OAnimationSet {
+        fun getOrEmpty(res: ModelIndex?): OAnimationSet {
             if (res == null) return EMPTY
             return ORIGINS[res] ?: EMPTY
         }
@@ -36,7 +37,7 @@ data class OAnimationSet(
         val EMPTY get() = OAnimationSet(linkedMapOf())
 
         @JvmStatic
-        var ORIGINS = linkedMapOf<ResourceLocation, OAnimationSet>()
+        var ORIGINS = linkedMapOf<ModelIndex, OAnimationSet>()
 
         @JvmStatic
         val CODEC: Codec<OAnimationSet> = RecordCodecBuilder.create {

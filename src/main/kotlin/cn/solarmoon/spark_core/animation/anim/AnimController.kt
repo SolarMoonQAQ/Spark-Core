@@ -23,7 +23,7 @@ class AnimController(
     val animatable: IAnimatable<*>
 ) {
 
-    val originAnimations get() = OAnimationSet.getOrEmpty(animatable.modelController.model?.index?.location)
+    val originAnimations get() = OAnimationSet.getOrEmpty(animatable.modelController.model?.index)
     val originStateMachines get() = OAnimStateMachineSet.getOrEmpty(animatable.modelController.model?.index?.location)
 
     val layers = mutableMapOf<Int, AnimLayer>()

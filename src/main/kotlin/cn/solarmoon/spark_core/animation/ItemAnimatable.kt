@@ -18,11 +18,7 @@ open class ItemAnimatable(
     var owner: Entity? = null
 
     override val animatable = itemStack
-    override val defaultModelIndex: ModelIndex
-        get() {
-            val res = BuiltInRegistries.ITEM.getKey(itemStack.item)
-            return ModelIndex(ResourceLocation.fromNamespaceAndPath(res.namespace, "item/${res.path}"))
-        }
+    override val defaultModelIndex: ModelIndex get() = ModelIndex.of(itemStack.item)
     override val animController = AnimController(this)
     override val modelController = ModelController(this)
 

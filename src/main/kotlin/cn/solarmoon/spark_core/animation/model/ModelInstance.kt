@@ -9,10 +9,10 @@ class ModelInstance(
     val index: ModelIndex
 ) {
 
-    val origin get() = OModel.getOrEmpty(index.location)
+    val origin get() = OModel.getOrEmpty(index)
 
     val pose = ModelPose(this)
 
-    var textureLocation: ResourceLocation = ResourceLocation.fromNamespaceAndPath(index.location.namespace, "textures/${index.location.path}.png")
+    var textureLocation: ResourceLocation = ResourceLocation.fromNamespaceAndPath(index.location.namespace, "textures/${index.type}/${index.location.path}.png")
 
 }

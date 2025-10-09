@@ -18,11 +18,7 @@ import kotlin.math.PI
 
 interface IEntityAnimatable<T: Entity>: IAnimatable<T> {
 
-    override val defaultModelIndex: ModelIndex
-        get() {
-            val res = BuiltInRegistries.ENTITY_TYPE.getKey(animatable.type)
-            return ModelIndex(ResourceLocation.fromNamespaceAndPath(res.namespace, "entity/${res.path}"))
-        }
+    override val defaultModelIndex: ModelIndex get() = ModelIndex.of(animatable.type)
 
     override fun getWorldPositionMatrix(partialTicks: Number): Matrix4f {
         return Matrix4f()

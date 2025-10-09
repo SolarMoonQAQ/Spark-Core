@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
-import cn.solarmoon.spark_core.entity.EntityMovingPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackagePayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageSendingTask
@@ -39,9 +38,6 @@ object SparkPayloadRegister {
         val physics = event.registrar("physics")
         physics.playToClient(SpreadingSoundPayload.TYPE, SpreadingSoundPayload.STREAM_CODEC, SpreadingSoundPayload::handler)
         physics.playToClient(TerrainUpdatePayload.TYPE, TerrainUpdatePayload.STREAM_CODEC, TerrainUpdatePayload::handler)
-
-        val entity = event.registrar("entity")
-        entity.playBidirectional(EntityMovingPayload.TYPE, EntityMovingPayload.STREAM_CODEC, EntityMovingPayload::handleInBothSide)
 
         val pack = event.registrar("package")
         pack.configurationToClient(SparkPackagePayload.TYPE, SparkPackagePayload.STREAM_CODEC, SparkPackagePayload::handleInClient)

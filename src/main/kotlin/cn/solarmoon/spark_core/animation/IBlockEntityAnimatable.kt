@@ -12,11 +12,7 @@ import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3f
 
 interface IBlockEntityAnimatable<B: BlockEntity>: IAnimatable<B> {
 
-    override val defaultModelIndex: ModelIndex
-        get() {
-            val res = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(animatable.type)!!
-            return ModelIndex(ResourceLocation.fromNamespaceAndPath(res.namespace, "block/${res.path}"))
-        }
+    override val defaultModelIndex: ModelIndex get() = ModelIndex.of(animatable.type)
 
     override fun getWorldPositionMatrix(partialTicks: Number): Matrix4f {
         return Matrix4f()
