@@ -3,21 +3,13 @@ package cn.solarmoon.spark_core.skill
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
 import cn.solarmoon.spark_core.skill.payload.SkillSyncPayload
+import cn.solarmoon.spark_core.util.triggerEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
 import kotlin.collections.set
-
-/**
- * 脚本来源信息
- * 用于追踪技能是由哪个脚本文件创建的
- */
-data class ScriptSource(
-    val apiId: String,       // API模块ID，如"skill"
-    val fileName: String     // 脚本文件名，如"axe_combo_1"
-)
 
 class SkillType<S: Skill>(
     val registryKey: ResourceLocation,
@@ -29,12 +21,6 @@ class SkillType<S: Skill>(
     var fromScript = false
         internal set
 
-    /**
-     * 脚本来源信息
-     * 如果技能是由JS脚本创建的，此字段记录来源脚本信息
-     * 非JS创建的技能此字段为null
-     */
-    var scriptSource: ScriptSource? = null
     val name = Component.translatable("skill.${registryKey.namespace}.${registryKey.path}.name")
     val description = Component.translatable("skill.${registryKey.namespace}.${registryKey.path}.description")
     val icon = ResourceLocation.fromNamespaceAndPath(registryKey.namespace, "textures/skill/${registryKey.path}.png")
@@ -46,7 +32,7 @@ class SkillType<S: Skill>(
             try {
                 it.test(holder, level)
             } catch (e: SkillStartRejectedException) {
-                SparkCore.LOGGER.error("$holder 的技能 $registryKey 在 ${Thread.currentThread().name} ${if (active) "启用" else "创建"}失败：${e.reason}")
+                SparkCore.LOGGER.error("$holder 的技能 $registryKey ${if (active) "启用" else "创建"}失败：${e.reason}")
                 provider().init(0, this, holder, level).triggerEvent(SkillEvent.Rejected(it))
                 return null
             }

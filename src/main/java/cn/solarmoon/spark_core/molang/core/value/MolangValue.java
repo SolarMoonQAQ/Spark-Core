@@ -13,6 +13,10 @@ public class MolangValue implements IValue {
     private final Expression[] expressions;//待计算的molang表达式
     public static final Codec<IValue> MOLANG_VALUE_CODEC = Codec.lazyInitialized(() -> Codec.stringResolver(MolangValue::deParse, MolangValue::parse));
 
+    public static final IValue TRUE = parse("1");
+    public static final IValue FALSE = parse("0");
+    public static final IValue ZERO = parse("0");
+
     public MolangValue(List<Expression> expressions, String originalExpressions) {
         this.expressions = expressions.toArray(new Expression[0]);
         this.originalExpressions = originalExpressions;

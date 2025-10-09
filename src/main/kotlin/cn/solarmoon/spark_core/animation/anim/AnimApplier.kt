@@ -1,16 +1,14 @@
-package cn.solarmoon.spark_core.animation.anim.play
+package cn.solarmoon.spark_core.animation.anim
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
-import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import cn.solarmoon.spark_core.registry.common.SparkCapabilities
 import net.minecraft.client.player.LocalPlayer
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
-import net.neoforged.neoforge.event.entity.player.PlayerEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
 object AnimApplier {

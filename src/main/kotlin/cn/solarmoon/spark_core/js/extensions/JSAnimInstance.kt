@@ -1,8 +1,8 @@
 package cn.solarmoon.spark_core.js.extensions
 
-import cn.solarmoon.spark_core.animation.anim.play.AnimEvent
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.KeyframeRange
+import cn.solarmoon.spark_core.animation.anim.AnimEvent
+import cn.solarmoon.spark_core.animation.anim.AnimInstance
+import cn.solarmoon.spark_core.animation.anim.KeyframeRange
 import cn.solarmoon.spark_core.js.doc.JSClass
 import org.joml.Vector2d
 

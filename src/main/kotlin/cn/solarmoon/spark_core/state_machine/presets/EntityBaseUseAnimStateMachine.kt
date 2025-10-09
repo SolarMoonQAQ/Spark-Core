@@ -1,9 +1,8 @@
 package cn.solarmoon.spark_core.state_machine.presets
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData
-import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer
+import cn.solarmoon.spark_core.animation.anim.AnimGroups
+import cn.solarmoon.spark_core.animation.anim.animInstance
 import cn.solarmoon.spark_core.event.ChangePresetAnimEvent
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler
 import net.minecraft.world.InteractionHand
@@ -41,7 +40,7 @@ class EntityBaseUseAnimStateMachine(
         val tootHorn = state("toot_horn") { initHandState() }
         val spyglass = state("spyglass") { initHandState() }
         val swing = state("swing") {
-            val provider = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER) { AnimLayerData(enterTransitionTime = 0) }
+            val provider = 0
             val mainHand = state("$name.main_hand") { payload = provider }
             val offHand = state("$name.off_hand") { payload = provider }
             initialChoiceState {
@@ -74,23 +73,20 @@ class EntityBaseUseAnimStateMachine(
 
         onStateEntry { s, b ->
             if (entity !is IEntityAnimatable<*>) return@onStateEntry
-            entity.animController.getLayer(DefaultLayer.BASE_ADDITIVE_LAYER).stopAnimation()
-            val lastState = b.transition.sourceState
+            entity.animController.stopAnimation(AnimGroups.DECOR)
             val sName = s.name ?: return@onStateEntry
             val animName = "state.use.$sName"
-            val data = s.payload
-            if (data !is AnimPlayDataProvider) return@onStateEntry
-            val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, AnimInstance.create(entity, animName), this, data))
+            val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, animInstance(entity, animName), this))
             if (event.isCanceled) return@onStateEntry
             val anim = (event.newAnim ?: event.originAnim)?.apply { shouldTurnBody = true } ?: return@onStateEntry
-            entity.animController.getLayer(data.layerId).setAnimation(anim, data.data(lastState))
+            anim.enter()
         }
 
     }
 
-    suspend fun IState.initHandState(provider: AnimPlayDataProvider = AnimPlayDataProvider(DefaultLayer.BASE_ADDITIVE_LAYER)) {
-        val mainHand = state("$name.main_hand") { payload = provider }
-        val offHand = state("$name.off_hand") { payload = provider }
+    suspend fun IState.initHandState() {
+        val mainHand = state("$name.main_hand")
+        val offHand = state("$name.off_hand")
         initialChoiceState {
             val useItem = entity.useItem
             if (ItemStack.isSameItemSameComponents(useItem, entity.mainHandItem)) mainHand else offHand

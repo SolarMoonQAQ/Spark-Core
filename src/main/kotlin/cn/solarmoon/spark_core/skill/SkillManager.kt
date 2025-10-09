@@ -23,13 +23,4 @@ object SkillManager: LinkedHashMap<ResourceLocation, SkillType<*>>() {
         return targetToSkills[target]?.toSet() ?: emptySet()
     }
 
-
-    fun debugPrintSkillOrder(context: String) {
-        SparkCore.LOGGER.debug("=== SkillManager 技能顺序验证: {} (线程: {}) ===", context, Thread.currentThread().name)
-        this.entries.forEachIndexed { index, (key, skillType) ->
-            SparkCore.LOGGER.debug("  [{}] {} -> {}", index, key, skillType.javaClass.simpleName)
-        }
-        SparkCore.LOGGER.debug("=== 总计: {} 个技能 ===", this.size)
-    }
-
 }

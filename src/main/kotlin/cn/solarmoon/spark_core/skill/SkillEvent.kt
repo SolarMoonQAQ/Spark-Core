@@ -34,12 +34,12 @@ open class SkillEvent: InlineEvent {
     class TargetDeath(val event: LivingDeathEvent): SkillEvent()
     object Init: SkillEvent()
     object Start: SkillEvent()
-    abstract class State(val state: SkillState): SkillEvent() {
-        class Enter(state: SkillState): State(state)
-        class Update(state: SkillState): State(state)
-        class Exit(state: SkillState): State(state)
+    object Update: SkillEvent()
+    class End(
+        val originCanEnd: Boolean
+    ): SkillEvent() {
+        var canEnd: Boolean = originCanEnd
     }
-    object End: SkillEvent()
     object PhysicsTick: SkillEvent()
 
     /**

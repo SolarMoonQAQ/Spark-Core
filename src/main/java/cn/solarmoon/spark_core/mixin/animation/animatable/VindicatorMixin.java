@@ -1,19 +1,15 @@
 package cn.solarmoon.spark_core.mixin.animation.animatable;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
+import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.AbstractIllager;
 import net.minecraft.world.entity.monster.Vindicator;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(Vindicator.class)
 public abstract class VindicatorMixin extends AbstractIllager implements IEntityAnimatable<Vindicator> {

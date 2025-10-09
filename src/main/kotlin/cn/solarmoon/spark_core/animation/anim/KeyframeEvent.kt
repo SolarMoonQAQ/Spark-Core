@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.animation.anim.play
+package cn.solarmoon.spark_core.animation.anim
 
 open class KeyframeEvent {
     object Enter: KeyframeEvent()

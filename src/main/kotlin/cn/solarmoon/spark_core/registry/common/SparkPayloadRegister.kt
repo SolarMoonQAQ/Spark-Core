@@ -1,10 +1,7 @@
 package cn.solarmoon.spark_core.registry.common
 
-import cn.solarmoon.spark_core.animation.sync.AnimPlayPayload
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
-import cn.solarmoon.spark_core.animation.sync.AnimStopPayload
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
-import cn.solarmoon.spark_core.animation.sync.TypedAnimPlayPayload
 import cn.solarmoon.spark_core.entity.EntityMovingPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackagePayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
@@ -26,9 +23,6 @@ object SparkPayloadRegister {
 
     private fun net(event: RegisterPayloadHandlersEvent) {
         val anim = event.registrar("animation")
-        anim.playBidirectional(TypedAnimPlayPayload.TYPE, TypedAnimPlayPayload.STREAM_CODEC, TypedAnimPlayPayload::handleBothSide)
-        anim.playBidirectional(AnimPlayPayload.TYPE, AnimPlayPayload.STREAM_CODEC, AnimPlayPayload::handleBothSide)
-        anim.playBidirectional(AnimStopPayload.TYPE, AnimStopPayload.STREAM_CODEC, AnimStopPayload::handleBothSide)
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
 

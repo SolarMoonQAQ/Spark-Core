@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.animation.anim.play
+package cn.solarmoon.spark_core.animation.anim
 
 import cn.solarmoon.spark_core.util.rotLerp
 import net.minecraft.world.phys.Vec3

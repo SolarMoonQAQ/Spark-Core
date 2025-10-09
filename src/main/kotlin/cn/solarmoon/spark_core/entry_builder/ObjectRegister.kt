@@ -47,7 +47,6 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
     val dataComponentDeferredRegister = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, modId)
     val entityDataDeferredRegister = DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, modId)
     val deltaSyncRulesRegister = lazy { DeferredRegister.create(SparkRegistries.DIFF_SYNC_SCHEMA, modId) }
-    val typedAnimDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.TYPED_ANIMATION, modId) }
     // 热重载域不再使用 DeferredRegister;这里只保留原版支持的注册表
     val syncerTypeDeferredRegister = lazy { DeferredRegister.create(SparkRegistries.SYNCER_TYPE, modId) }
 
@@ -122,13 +121,6 @@ class ObjectRegister(val modId: String, val gatherData: Boolean = true) {
             it.value.register(modBus!!)
         }
         DeltaSyncRulesBuilder(it.value, modId, D::class)
-    }
-
-    fun typedAnimation() = typedAnimDeferredRegister.let {
-        if (!it.isInitialized()) {
-            it.value.register(modBus!!)
-        }
-        TypedAnimationBuilder(it.value)
     }
 
     fun <T: Syncer> syncerType(): SyncerTypeBuilder<T> {

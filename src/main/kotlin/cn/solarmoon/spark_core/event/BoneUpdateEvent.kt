@@ -1,8 +1,7 @@
 package cn.solarmoon.spark_core.event
 
-import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.model.BonePose
-import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
+import cn.solarmoon.spark_core.animation.anim.KeyAnimData
 import cn.solarmoon.spark_core.animation.model.ModelInstance
 import net.neoforged.bus.api.Event
 

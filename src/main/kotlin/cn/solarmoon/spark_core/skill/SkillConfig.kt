@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spark_core.util.triggerEvent
+
 interface SkillConfig {
 
     val storage: LinkedHashMap<String, Any>

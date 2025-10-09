@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
+import cn.solarmoon.spark_core.util.triggerEvent
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent

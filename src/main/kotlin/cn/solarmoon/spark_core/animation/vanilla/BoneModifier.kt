@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.animation.vanilla
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
+import cn.solarmoon.spark_core.animation.anim.KeyAnimData
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.util.toRadians
 import net.minecraft.core.Direction

@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.animation.model
 
-import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.anim.play.KeyAnimData
+import cn.solarmoon.spark_core.animation.anim.KeyAnimData
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.util.rotLerp
 import net.minecraft.world.phys.Vec3

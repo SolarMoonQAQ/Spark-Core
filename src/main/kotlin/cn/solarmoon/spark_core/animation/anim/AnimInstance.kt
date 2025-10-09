@@ -1,40 +1,33 @@
-package cn.solarmoon.spark_core.animation.anim.play
+package cn.solarmoon.spark_core.animation.anim
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.util.PPhase
 import org.joml.Vector2d
+import kotlin.collections.getOrPut
 import kotlin.reflect.KClass
 
-class AnimInstance private constructor(
+class AnimInstance internal constructor(
     val holder: IAnimatable<*>,
     val animIndex: AnimIndex
 ) {
-
-    companion object {
-        @JvmStatic
-        fun create(holder: IAnimatable<*>, name: String, provider: AnimInstance.() -> Unit = {}): AnimInstance? {
-            return create(holder, AnimIndex(holder.modelController.model?.index!!, name), provider)
-        }
-
-        @JvmStatic
-        fun create(holder: IAnimatable<*>, index: AnimIndex, provider: AnimInstance.() -> Unit = {}) =
-            try {
-                AnimInstance(holder, index).apply { provider.invoke(this) }
-            } catch (e: Exception) {
-                SparkCore.logger("动画").error(e.message)
-                null
-            }
-    }
 
     val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex.location).getValidAnimation(animIndex.name)
     val flags = setOf<String>()
     var time = 0.0
     var speed = 1.0
+    var weight = 1.0
+    var currentWeight = 0.0
+        private set
+    var inTransitionTime = 0.15f
+    var outTransitionTime = 0.15f
+    var transitionTick = 0
+        private set
+    var transitionState = TransitionState.NONE
+        private set
+    val isInTransition get() = transitionState != TransitionState.NONE
     var maxLength = origin.animationLength
     var shouldTurnBody = false
     // 锁定ai注视目标
@@ -51,6 +44,10 @@ class AnimInstance private constructor(
         private set
     var paused = false
     var selfDriving = false
+    var group = AnimGroups.MAIN
+
+    val inTransitionTick get() = (inTransitionTime * PhysicsLevel.TPS).toInt()
+    val outTransitionTick get() = (outTransitionTime * PhysicsLevel.TPS).toInt()
 
     val step get() = speed / PhysicsLevel.TPS
 
@@ -60,11 +57,53 @@ class AnimInstance private constructor(
         Loop.HOLD_ON_LAST_FRAME -> time
     }
 
+    fun enter() {
+        transitionState = TransitionState.ENTER
+        transitionTick = inTransitionTick
+        currentWeight = 0.0
+        isCancelled = false
+        holder.animController.layers.getOrPut(group) { AnimLayer() }.animations.add(this)
+    }
+
+    fun exit() {
+        transitionState = TransitionState.EXIT
+        transitionTick = outTransitionTick
+        if (!isCancelled) {
+            isCancelled = true
+            triggerEvent(AnimEvent.Interrupted)
+        }
+    }
+
     fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / (if (paused) time + step else maxLength)).coerceIn(0.0, 1.0)
 
     fun step(overallSpeed: Double = 1.0) {
         if (paused || selfDriving) return
-        time += step * overallSpeed
+        if (isInTransition) updateWeight()
+        else time += step * overallSpeed
+    }
+
+    private fun updateWeight() {
+        when(transitionState) {
+            TransitionState.ENTER -> {
+                val progress = 1.0 - (transitionTick.toDouble() / inTransitionTick)
+                currentWeight = weight * progress
+                if (--transitionTick <= 0) {
+                    currentWeight = weight
+                    transitionState = TransitionState.NONE
+                }
+            }
+            TransitionState.EXIT -> {
+                val progress = transitionTick.toDouble() / outTransitionTick
+                currentWeight = weight * progress
+                if (--transitionTick <= 0) {
+                    currentWeight = 0.0
+                    transitionState = TransitionState.NONE
+                }
+            }
+            TransitionState.NONE -> {
+                currentWeight = weight
+            }
+        }
     }
 
     inline fun <reified T : AnimEvent> onEvent(crossinline handler: AnimInstance.(T) -> Unit) {
@@ -75,25 +114,6 @@ class AnimInstance private constructor(
     inline fun <reified T: AnimEvent> triggerEvent(event: T): T {
         eventHandlers[event::class]?.forEach { it(event) }
         return event
-    }
-
-    fun cancel() {
-        if (!isCancelled) {
-            isCancelled = true
-            triggerEvent(AnimEvent.Interrupted)
-        }
-    }
-
-    fun copy(): AnimInstance {
-        val copy = AnimInstance(holder, animIndex)
-        copy.time = time
-        copy.speed = speed
-        copy.shouldTurnBody = shouldTurnBody
-        copy.shouldTurnHead = shouldTurnHead
-        copy.rejectNewAnim = rejectNewAnim
-        copy.eventHandlers = eventHandlers.toMutableMap()
-        copy.keyframeRanges = keyframeRanges.mapValues { it.value.copy() }.toMutableMap()
-        return copy
     }
 
     fun refresh() {

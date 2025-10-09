@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.event
 
-import cn.solarmoon.spark_core.animation.anim.play.AnimInstance
-import cn.solarmoon.spark_core.state_machine.presets.AnimPlayDataProvider
+import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.Event
@@ -13,8 +12,7 @@ abstract class ChangePresetAnimEvent: Event() {
     class PlayerState(
         val player: Player,
         val originAnim: AnimInstance?,
-        val state: IState,
-        var data: AnimPlayDataProvider
+        val state: IState
     ): ChangePresetAnimEvent(), ICancellableEvent {
         var newAnim: AnimInstance? = null
     }
@@ -22,8 +20,7 @@ abstract class ChangePresetAnimEvent: Event() {
     class EntityUseState(
         val entity: LivingEntity,
         val originAnim: AnimInstance?,
-        val state: IState,
-        var data: AnimPlayDataProvider
+        val state: IState
     ): ChangePresetAnimEvent(), ICancellableEvent {
         var newAnim: AnimInstance? = null
     }

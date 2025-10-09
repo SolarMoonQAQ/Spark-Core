@@ -29,8 +29,8 @@ public abstract class LivingEntityMixin extends Entity {
             var controller = animatable.getAnimController();
             if (
                     controller.isPlayingAnim() &&
-                            controller.getAnimLayers().values().stream().anyMatch(animLayer ->
-                                    animLayer.isPlaying() && animLayer.getAnimation() != null && animLayer.getAnimation().getShouldTurnBody()
+                            controller.getLayers().values().stream().anyMatch(animLayer ->
+                                    animLayer.isPlaying() && animLayer.getAnimations().stream().anyMatch(anim -> anim.getShouldTurnBody())
                             )
             ) {
                 tickHeadTurn(getYRot(), 100);

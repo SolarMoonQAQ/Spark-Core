@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.skill.Skill
 import cn.solarmoon.spark_core.skill.SkillConfig
 import cn.solarmoon.spark_core.skill.SkillEvent
 import cn.solarmoon.spark_core.skill.SkillHost
-import cn.solarmoon.spark_core.skill.SkillState
+import cn.solarmoon.spark_core.util.onEvent
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
@@ -48,16 +48,8 @@ interface JSSkill {
         consumer()
     }
 
-    fun onStateEnter(consumer: (SkillState) -> Unit) = skill.onEvent<SkillEvent.State.Enter> {
-        consumer(it.state)
-    }
-
-    fun onStateUpdate(consumer: (SkillState) -> Unit) = skill.onEvent<SkillEvent.State.Update> {
-        consumer(it.state)
-    }
-
-    fun onStateExit(consumer: (SkillState) -> Unit) = skill.onEvent<SkillEvent.State.Exit> {
-        consumer(it.state)
+    fun onUpdate(consumer: () -> Unit) = skill.onEvent<SkillEvent.Update> {
+        consumer()
     }
 
     fun onEnd(consumer: () -> Unit) = skill.onEvent<SkillEvent.End> {

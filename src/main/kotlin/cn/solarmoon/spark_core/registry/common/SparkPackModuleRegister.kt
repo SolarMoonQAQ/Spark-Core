@@ -9,6 +9,7 @@ object SparkPackModuleRegister {
 
     val recipe = RecipeModule()
     val lang = LangModule()
+
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(ModelModule())
         event.register(AnimationModule())
@@ -16,6 +17,7 @@ object SparkPackModuleRegister {
         event.register(recipe)
         event.register(lang)
         event.register(TextureModule())
+        event.register(AnimStateModule())
     }
 
     fun regReloadListener(event: RegisterClientReloadListenersEvent) {

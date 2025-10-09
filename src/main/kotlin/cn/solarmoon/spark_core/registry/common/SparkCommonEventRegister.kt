@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.registry.common
 
-import cn.solarmoon.spark_core.animation.anim.play.AnimApplier
+import cn.solarmoon.spark_core.animation.anim.AnimApplier
 import cn.solarmoon.spark_core.animation.presets.DynamicStateAnimApplier
 import cn.solarmoon.spark_core.animation.vanilla.BoneModifier
 import cn.solarmoon.spark_core.camera.CameraAdjuster

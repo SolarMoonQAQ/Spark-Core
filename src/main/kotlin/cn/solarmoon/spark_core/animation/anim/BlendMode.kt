@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.animation.anim.play.layer
+package cn.solarmoon.spark_core.animation.anim
 
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.util.ByIdMap

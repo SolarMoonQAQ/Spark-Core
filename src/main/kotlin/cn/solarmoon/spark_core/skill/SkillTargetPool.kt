@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.skill
 
 import cn.solarmoon.spark_core.skill.payload.SkillPayload
+import cn.solarmoon.spark_core.util.onEvent
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.world.entity.Entity
 import net.neoforged.neoforge.network.PacketDistributor
@@ -13,6 +14,7 @@ class SkillTargetPool() {
     fun init(skill: Skill) {
         this.skill = skill
         skill.onEvent<SkillEvent.Sync> { event ->
+            val level = skill.level
             val data = event.data
             if (data.getBoolean("#AddTarget")) {
                 addTarget(level.getEntity(data.getInt("#Target"))!!)

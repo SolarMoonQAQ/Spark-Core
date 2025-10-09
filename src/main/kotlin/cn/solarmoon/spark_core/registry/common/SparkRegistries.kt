@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.animation.anim.play.TypedAnimation
 import cn.solarmoon.spark_core.delta_sync.DiffSyncSchema
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
@@ -10,11 +9,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 
 object SparkRegistries {
-
-    @JvmStatic
-    val TYPED_ANIMATION = SparkCore.REGISTER.registry<TypedAnimation>()
-        .id("typed_animation")
-        .build { it.sync(true).create() }
 
     @JvmStatic
     val SYNCER_TYPE = SparkCore.REGISTER.registry<SyncerType<*>>()

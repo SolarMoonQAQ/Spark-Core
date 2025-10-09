@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spark_core.util.onEvent
+
 open class DefaultSkillConfig: SkillConfig {
 
     override val storage: LinkedHashMap<String, Any> = linkedMapOf()
