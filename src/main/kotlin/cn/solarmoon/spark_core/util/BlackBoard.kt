@@ -7,7 +7,7 @@ open class BlackBoard {
 
     val storage = ConcurrentHashMap<Key<*>, Any>()
 
-    val isEmpty get() = storage.isEmpty
+    val isEmpty get() = storage.isEmpty()
 
     fun <T> write(key: Key<T>, value: T) {
         storage[key] = value as Any

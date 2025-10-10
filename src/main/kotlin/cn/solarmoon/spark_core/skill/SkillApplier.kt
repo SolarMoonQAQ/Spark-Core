@@ -1,8 +1,20 @@
 package cn.solarmoon.spark_core.skill
 
+import cn.solarmoon.spark_core.entity.moveCheck
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
+import cn.solarmoon.spark_core.local_control.KeyEvent
+import cn.solarmoon.spark_core.local_control.onEvent
+import cn.solarmoon.spark_core.skill.graph.ActionCondition
+import cn.solarmoon.spark_core.skill.graph.ActionController
+import cn.solarmoon.spark_core.skill.graph.ActionExitCondition
+import cn.solarmoon.spark_core.skill.graph.ActionGraph
+import cn.solarmoon.spark_core.skill.graph.ActionNode
+import cn.solarmoon.spark_core.skill.graph.actionGraph
 import cn.solarmoon.spark_core.util.triggerEvent
+import net.minecraft.client.Minecraft
+import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
@@ -13,6 +25,7 @@ import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent
 import net.neoforged.neoforge.event.entity.player.CriticalHitEvent
 import net.neoforged.neoforge.event.entity.player.SweepAttackEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
+import java.util.UUID
 
 object SkillApplier {
 
@@ -80,11 +93,41 @@ object SkillApplier {
         }
     }
 
+    val graph = actionGraph {
+        initialNode("Idle") {
+            onInput("Attack", "Combo1", object : ActionCondition {
+                override fun check(controller: ActionController): Boolean {
+                    return controller.host is Player && (controller.host as Player).deltaMovement.horizontalDistance() > 0.05f
+                }
+            })
+        }
+        node("Combo1") {
+            onInput("Attack", "Combo2")
+        }
+        node("Combo2") {
+            onInput("Attack", "Combo3")
+        }
+        node("Combo3", ActionExitCondition.True) {
+
+        }
+    }
+
+    private val controllers = mutableMapOf<UUID, ActionController>()
+
     @SubscribeEvent
     private fun playerInput(event: MovementInputUpdateEvent) {
         event.entity.activeSkills.forEach {
             it.triggerEvent(SkillEvent.LocalInputUpdate(event))
         }
+
+        controllers.computeIfAbsent(event.entity.uuid) { ActionController(event.entity, graph) }
+
+        Minecraft.getInstance().options.keyAttack.onEvent(KeyEvent.PRESS_ONCE) {
+            controllers[event.entity.uuid]!!.onInput("Attack")
+            true
+        }
+
+        controllers[event.entity.uuid]!!.tick()
     }
 
     @SubscribeEvent

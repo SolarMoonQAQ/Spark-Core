@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.body
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.entity.attack.AttackContext
 import cn.solarmoon.spark_core.entity.attack.CollisionAttackSystem

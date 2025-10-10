@@ -33,7 +33,7 @@ class AnimInstance internal constructor(
         object Finish: Event // 完成
     }
 
-    val state get() = AnimState.valueOf(lifecycleStateMachine.activeStates().first().name!!.uppercase())
+    val state get() = AnimState.valueOf(lifecycleStateMachine.activeStates().firstOrNull()?.name?.uppercase() ?: "IDLE")
 
     val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex).getValidAnimation(animIndex.name)
     val tag = CompoundTag()
@@ -91,7 +91,8 @@ class AnimInstance internal constructor(
             onEntry {
                 transitionTick = inTransitionTick
                 currentWeight = 0.0
-                holder.animController.layers.getOrPut(group) { AnimLayer() }.animations.add(this@AnimInstance)
+                holder.animController.playAnimation(this@AnimInstance)
+                triggerEvent(AnimEvent.Start)
             }
 
             transition<AnimStateEvent.Stop> {
@@ -132,6 +133,11 @@ class AnimInstance internal constructor(
                 targetState = idle
             }
         }
+    }
+
+    fun independentEnter() {
+        holder.animController.stopAnimation(group)
+        enter()
     }
 
     fun enter() {

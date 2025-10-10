@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.preinput
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PreInputEvent
+import net.minecraft.world.entity.player.Player
 import net.neoforged.neoforge.common.NeoForge
 import java.util.ArrayDeque
 
@@ -94,11 +96,8 @@ class PreInput(
      * 每tick更新，清理过期输入
      */
     fun tick() {
-        // 先移除所有过期的输入
-        inputBuffer.removeIf { it.remain >= it.maxRemainTime }
-
-        // 然后更新剩余输入的存续时间
-        inputBuffer.forEach { it.remain++ }
+        // 移除所有过期的输入
+        inputBuffer.removeIf { it.remain++ > it.maxRemainTime }
 
         // 最后尝试执行（如果未锁定）
         if (!isLocked) {

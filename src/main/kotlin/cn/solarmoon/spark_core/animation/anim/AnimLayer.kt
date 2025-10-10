@@ -14,8 +14,7 @@ class AnimLayer {
 
     fun getBoneWeight(boneName: String): Double {
         if (animations.all { !it.origin.bones.contains(boneName) }) return 0.0
-        if (animations.size == 1) return animations.first().currentWeight
-        return animations.maxOf { it.currentWeight }
+        return if (animations.size == 1) animations.maxOf { it.currentWeight } else 1.0
     }
 
     val isPlaying get() = animations.isNotEmpty()
@@ -64,7 +63,7 @@ class AnimLayer {
     }
 
     fun tick() {
-        animations.forEach {
+        animations.toList().forEach {
             it.tick()
         }
     }

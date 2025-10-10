@@ -6,9 +6,9 @@ import net.neoforged.bus.api.Event
 class NeedsCollisionEvent(
     val pcoA: PhysicsCollisionObject,
     val pcoB: PhysicsCollisionObject,
-    origin: Boolean
+    val originShouldCollide: Boolean
 ): Event() {
 
-    var shouldCollide = origin
+    var shouldCollide = originShouldCollide
 
 }

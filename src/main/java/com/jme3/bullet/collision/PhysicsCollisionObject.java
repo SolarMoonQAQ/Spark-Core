@@ -168,11 +168,11 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject impleme
     /**
      * collision groups with which this object can collide
      */
-    private int collideWithGroups = COLLISION_GROUP_01;
+    private int collideWithGroups = CollisionGroups.NONE;
     /**
      * collision group to which this object belongs
      */
-    private int collisionGroup = COLLISION_GROUP_01;
+    private int collisionGroup = CollisionGroups.PHYSICS_BODY;
     /**
      * scene object that's using this collision object
      */

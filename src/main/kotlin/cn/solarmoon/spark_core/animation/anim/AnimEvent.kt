@@ -5,14 +5,7 @@ sealed class AnimEvent {
     /**
      * 动画将要被设为当前动画时触发
      */
-    data class SwitchIn(val previous: AnimInstance?) : AnimEvent()
-
-    /**
-     * 下一个动画将要取代当前动画时触发
-     */
-    data class SwitchOut(val originNextAnim: AnimInstance?) : AnimEvent() {
-        var nextAnim = originNextAnim
-    }
+    object Start: AnimEvent()
 
     /**
      * 动画被cancel指令打断时触发（不是由于其它动画进入，而是仅对该动画本身的切断）

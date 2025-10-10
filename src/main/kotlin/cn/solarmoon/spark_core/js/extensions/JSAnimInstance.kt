@@ -13,17 +13,9 @@ interface JSAnimInstance {
 
     fun getProgress() = js_self.getProgress(1f)
 
-    fun onSwitchIn(consumer: (AnimInstance?) -> Unit) {
-        js_self.onEvent<AnimEvent.SwitchIn> {
-            val p = it.previous
-            consumer(p)
-        }
-    }
-
-    fun onSwitchOut(consumer: (AnimInstance?) -> Unit) {
-        js_self.onEvent<AnimEvent.SwitchOut> {
-            val n = it.originNextAnim
-            consumer(n)
+    fun onStart(consumer: () -> Unit) {
+        js_self.onEvent<AnimEvent.Start> {
+            consumer()
         }
     }
 

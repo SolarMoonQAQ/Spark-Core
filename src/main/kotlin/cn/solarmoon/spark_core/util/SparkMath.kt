@@ -105,6 +105,8 @@ fun Quaterniond.toEuler(): Vector3d {
     return angles
 }
 
+fun BlockPos.toVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
+
 fun Quaternionf.toEuler(): Vector3f {
     return Quaterniond(this).toEuler().toVector3f()
 }

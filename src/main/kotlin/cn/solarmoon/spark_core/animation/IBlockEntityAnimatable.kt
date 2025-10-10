@@ -1,14 +1,12 @@
 package cn.solarmoon.spark_core.animation
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex
-import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.resources.ResourceLocation
+import cn.solarmoon.spark_core.util.toVector3f
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.properties.BlockStateProperties
 import org.joml.Matrix4f
 import org.joml.Quaternionf
-import thedarkcolour.kotlinforforge.neoforge.forge.vectorutil.v3d.toVector3f
 
 interface IBlockEntityAnimatable<B: BlockEntity>: IAnimatable<B> {
 

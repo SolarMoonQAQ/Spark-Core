@@ -14,7 +14,7 @@ abstract class ChangePresetAnimEvent: Event() {
         val originAnim: AnimInstance?,
         val state: IState
     ): ChangePresetAnimEvent(), ICancellableEvent {
-        var newAnim: AnimInstance? = null
+        var newAnim: AnimInstance? = originAnim
     }
 
     class EntityUseState(
@@ -22,7 +22,7 @@ abstract class ChangePresetAnimEvent: Event() {
         val originAnim: AnimInstance?,
         val state: IState
     ): ChangePresetAnimEvent(), ICancellableEvent {
-        var newAnim: AnimInstance? = null
+        var newAnim: AnimInstance? = originAnim
     }
 
 }

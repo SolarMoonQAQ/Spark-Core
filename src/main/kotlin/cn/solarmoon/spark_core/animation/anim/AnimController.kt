@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.animation.anim
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.state.origin.OAnimStateMachineSet
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage
@@ -58,6 +59,10 @@ class AnimController(
     fun changeSpeed(time: Int, speed: Double) {
         overallSpeed = speed
         speedChangeTime = time
+    }
+
+    fun playAnimation(anim: AnimInstance) {
+        layers.getOrPut(anim.group) { AnimLayer() }.animations.add(anim)
     }
 
     fun stopAnimation(group: Int) {

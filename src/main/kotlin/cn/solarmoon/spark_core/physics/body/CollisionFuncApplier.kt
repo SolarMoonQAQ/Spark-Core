@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.body
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
@@ -23,20 +24,18 @@ object CollisionFuncApplier {
         if (entity is PhysicsHost && entity !is BlockAttachedEntity && entity !is CollisionObjectEntity) {
             val bb = entity.boundingBox
             val x = (bb.xsize / 2).toFloat()
-            val y = (bb.ysize / 2).toFloat()
+            val y = (bb.ysize / 3).toFloat()
             val z = (bb.zsize / 2).toFloat()
-            val body = PhysicsRigidBody(BoxCollisionShape(x, y, z), 60f).apply {
+            val body = PhysicsRigidBody(BoxCollisionShape(x, y, z)).apply {
                 name = "body"
                 owner = entity
                 isKinematic = true
                 isContactResponse = false
-                setProtectGravity(true)
-                setGravity(Vector3f.ZERO)
-                collisionGroup = CollisionGroups.PHYSICS_BODY
-                collideWithGroups = CollisionGroups.PHYSICS_BODY
+                collisionGroup = CollisionGroups.PAWN
             }
             body.attachToEntity(entity)
             defaultBodies[entity] = body
+            event.level.addPhysicsBody(body)
         }
     }
 

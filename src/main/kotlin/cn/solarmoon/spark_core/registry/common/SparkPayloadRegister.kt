@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
+import cn.solarmoon.spark_core.animation.sync.AnimStopPayload
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackagePayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
@@ -24,6 +25,7 @@ object SparkPayloadRegister {
         val anim = event.registrar("animation")
         anim.playToClient(AnimSpeedChangePayload.TYPE, AnimSpeedChangePayload.STREAM_CODEC, AnimSpeedChangePayload::handleInClient)
         anim.playToClient(ModelIndexSyncPayload.TYPE, ModelIndexSyncPayload.STREAM_CODEC, ModelIndexSyncPayload::handleInClient)
+        anim.playBidirectional(AnimStopPayload.TYPE, AnimStopPayload.STREAM_CODEC, AnimStopPayload::handleBothSide)
 
         val visual = event.registrar("visual_effect")
         visual.playToClient(CameraShakePayload.TYPE, CameraShakePayload.STREAM_CODEC, CameraShakePayload::handleInClient)
