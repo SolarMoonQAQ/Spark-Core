@@ -6,7 +6,7 @@ plugins {
     id("idea")
     id("net.neoforged.moddev") version "2.0.107"
     kotlin("jvm") version "2.0.21"
-//    kotlin("plugin.serialization") version "2.2.20"
+    kotlin("plugin.serialization") version "2.0.21"
     id("com.vanniktech.maven.publish") version "0.34.0"
 }
 
