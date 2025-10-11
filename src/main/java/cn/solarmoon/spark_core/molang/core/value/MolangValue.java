@@ -6,7 +6,6 @@ import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
 import com.mojang.serialization.Codec;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 public class MolangValue implements IValue {
     private final String originalExpressions;//Molang表达式的原始字符串

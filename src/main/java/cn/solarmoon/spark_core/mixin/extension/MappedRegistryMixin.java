@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
 import cn.solarmoon.spark_core.SparkCore;
-import net.minecraft.core.Holder;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;

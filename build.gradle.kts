@@ -1,11 +1,12 @@
 import org.gradle.external.javadoc.StandardJavadocDocletOptions
 
 plugins {
-    id("java")
+    id("java-library")
     id("maven-publish")
     id("idea")
     id("net.neoforged.moddev") version "2.0.107"
-    id("org.jetbrains.kotlin.jvm") version "2.2.20"
+    kotlin("jvm") version "2.0.21"
+//    kotlin("plugin.serialization") version "2.2.20"
     id("com.vanniktech.maven.publish") version "0.34.0"
 }
 
@@ -44,8 +45,8 @@ neoForge {
     setAccessTransformers(project.files("src/main/resources/META-INF/accesstransformer.cfg"))
 
     interfaceInjectionData {
-        from("src/main/resources/META-INF/interfaces.json")
-        publish(file("src/main/resources/META-INF/interfaces.json"))
+        from("src/main/resources/META-INF/spark_interfaces.json")
+        publish(file("src/main/resources/META-INF/spark_interfaces.json"))
     }
 
     runs {
@@ -156,7 +157,7 @@ fun DependencyHandlerScope.additionalRuntimeClasspath(dep: Any) {
 }
 
 dependencies {
-    // KotlinForForge 拆分依赖
+    // KotlinForForge
     implementation("thedarkcolour:kotlinforforge-neoforge:${property("kotlinforforge_version")}")
 
     // jei
@@ -177,13 +178,15 @@ dependencies {
     // 外部库 ------------------------------------------------------------------------------------------------------------
     implementation("org.mozilla:rhino:1.8.0")?.let { jarJar(it) }
     additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
+    // 状态机
+//    implementation("io.github.nsk90:kstatemachine-jvm:0.34.2")?.let { jarJar(it) }
+//    additionalRuntimeClasspath("io.github.nsk90:kstatemachine-jvm:0.34.2")
 
     // 本地库 ------------------------------------------------------------------------------------------------------------
     implementation(files(fileTree(mapOf("dir" to "mods", "includes" to listOf("*.jar")))))
-    implementation("com.google.code.gson:gson:[2.10.1,2.11.0)")
-    implementation("commons-io:commons-io:2.11.0")
 
-    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.24")
+    // 编译用，暂时无需依赖
+    implementation("org.jetbrains.kotlin:kotlin-compiler-embeddable")
 
     implementation(fileTree(mapOf("dir" to "extlibs", "includes" to listOf("*.jar"))))?.let { jarJar(it) }
     additionalRuntimeClasspath(fileTree(mapOf("dir" to "extlibs", "includes" to listOf("*.jar"))))
@@ -241,6 +244,13 @@ repositories {
     }
     maven {
         url = uri("https://maven.azuredoom.com/mods")
+    }
+    maven {
+        url = uri("https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core")
+        credentials {
+            username = System.getenv("GITMAVEN_USERNAME")
+            password = System.getenv("SolarMoonCore_TOKEN")
+        }
     }
     flatDir {
         dirs("libs")

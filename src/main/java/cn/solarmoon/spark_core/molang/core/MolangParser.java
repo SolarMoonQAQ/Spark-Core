@@ -24,7 +24,6 @@ public class MolangParser {
     }
 
     public void init() {
-
         var event = new MolangBindingRegisterEvent();
         ModLoader.postEvent(event);
         extraBindings.putAll(event.getBindings());

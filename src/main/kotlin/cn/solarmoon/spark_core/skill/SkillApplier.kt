@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.skill
 
-import cn.solarmoon.spark_core.entity.moveCheck
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
 import cn.solarmoon.spark_core.local_control.KeyEvent
@@ -8,12 +7,9 @@ import cn.solarmoon.spark_core.local_control.onEvent
 import cn.solarmoon.spark_core.skill.graph.ActionCondition
 import cn.solarmoon.spark_core.skill.graph.ActionController
 import cn.solarmoon.spark_core.skill.graph.ActionExitCondition
-import cn.solarmoon.spark_core.skill.graph.ActionGraph
-import cn.solarmoon.spark_core.skill.graph.ActionNode
 import cn.solarmoon.spark_core.skill.graph.actionGraph
 import cn.solarmoon.spark_core.util.triggerEvent
 import net.minecraft.client.Minecraft
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
@@ -97,7 +93,7 @@ object SkillApplier {
         initialNode("Idle") {
             onInput("Attack", "Combo1", object : ActionCondition {
                 override fun check(controller: ActionController): Boolean {
-                    return controller.host is Player && (controller.host as Player).deltaMovement.horizontalDistance() > 0.05f
+                    return controller.host is Player && controller.host.deltaMovement.horizontalDistance() > 0.05f
                 }
             })
         }
