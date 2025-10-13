@@ -269,7 +269,7 @@ class PhysicsChunkSection(
             return
         }
         // 使用包含任务队列的方法将任务提交到物理线程，确保在物理线程中执行
-        physicsLevel.mcLevel.addPhysicsBody(physicsBody!!)
+        physicsLevel.mcLevel.removePhysicsBody(physicsBody!!)
         isActive = false
     }
 

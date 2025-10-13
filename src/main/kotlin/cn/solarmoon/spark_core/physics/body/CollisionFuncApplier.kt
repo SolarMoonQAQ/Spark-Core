@@ -65,7 +65,7 @@ object CollisionFuncApplier {
     private fun removeBodyForEntity(event: EntityLeaveLevelEvent) {
         val entity = event.entity
         defaultBodies[entity]?.let {
-            event.level.removePhysicsBody(it)
+            if (it.isInWorld) event.level.removePhysicsBody(it)
         }
         entity.allPhysicsBodies.forEach { it.value.owner = null }
     }
