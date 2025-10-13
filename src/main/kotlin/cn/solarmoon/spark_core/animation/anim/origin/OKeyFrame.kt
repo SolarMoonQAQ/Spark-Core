@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
+import cn.solarmoon.spark_core.js.molang.JSMolangValue
+import cn.solarmoon.spark_core.js.molang.Vector3js
 import cn.solarmoon.spark_core.molang.core.value.DoubleValue
 import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import com.mojang.datafixers.util.Either
@@ -12,19 +14,19 @@ import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
 data class OKeyFrame(
-    var pre: Vector3k,
-    var post: Vector3k,
+    var pre: Vector3js,
+    var post: Vector3js,
     val interpolation: InterpolationType
 ) {
 
     companion object {
         @JvmStatic
         val CODEC: Codec<OKeyFrame> = Codec.either(
-            Vector3k.CODEC,
+            Vector3js.CODEC,
             RecordCodecBuilder.create<OKeyFrame> {
                 it.group(
-                    Vector3k.CODEC.optionalFieldOf("pre").forGetter { Optional.ofNullable(it.pre) },
-                    Vector3k.CODEC.fieldOf("post").forGetter { it.post },
+                    Vector3js.CODEC.optionalFieldOf("pre").forGetter { Optional.ofNullable(it.pre) },
+                    Vector3js.CODEC.fieldOf("post").forGetter { it.post },
                     InterpolationType.CODEC.optionalFieldOf("lerp_mode", InterpolationType.LINEAR).forGetter { it.interpolation }
                 ).apply(it) { preOp, post, type ->
                     val pre = preOp.getOrNull() ?: post
@@ -40,8 +42,8 @@ data class OKeyFrame(
         val MAP_CODEC = Codec.either(
             Codec.unboundedMap(Codec.STRING, CODEC).xmap({ LinkedHashMap(it.mapKeys { it.key.toDouble() }) }, { it.mapKeys { it.key.toString() } }),
             Codec.either(
-                Vector3k.CODEC.flatComapMap({ linkedMapOf(Pair(0.0, OKeyFrame(it, it, InterpolationType.LINEAR))) }, { if (it.size == 1 && it.firstEntry().key == 0.0) DataResult.success(it.values.first().pre) else DataResult.error { "" } }),
-                DoubleValue.DOUBLE_VALUE_CODEC.flatComapMap({ linkedMapOf(Pair(0.0, OKeyFrame(Vector3k(it,it,it), Vector3k(it,it,it), InterpolationType.LINEAR)))}, { if (it.size == 1 && it.firstEntry().key == 0.0) DataResult.success(it.values.first().pre.x) else DataResult.error { "" } })
+                Vector3js.CODEC.flatComapMap({ linkedMapOf(Pair(0.0, OKeyFrame(it, it, InterpolationType.LINEAR))) }, { if (it.size == 1 && it.firstEntry().key == 0.0) DataResult.success(it.values.first().pre) else DataResult.error { "" } }),
+                JSMolangValue.CODEC.flatComapMap({ linkedMapOf(Pair(0.0, OKeyFrame(Vector3js(it,it,it), Vector3js(it,it,it), InterpolationType.LINEAR)))}, { if (it.size == 1 && it.firstEntry().key == 0.0) DataResult.success(it.values.first().pre.x) else DataResult.error { "" } })
             ).xmap({ it.map({ it }, { it }) }, { Either.left(it) })
         ).xmap(
             { it.map( { it }, { it }) },
@@ -50,8 +52,8 @@ data class OKeyFrame(
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
-            Vector3k.STREAM_CODEC, OKeyFrame::pre,
-            Vector3k.STREAM_CODEC, OKeyFrame::post,
+            Vector3js.STREAM_CODEC, OKeyFrame::pre,
+            Vector3js.STREAM_CODEC, OKeyFrame::post,
             InterpolationType.STREAM_CODEC, OKeyFrame::interpolation,
             ::OKeyFrame
         )

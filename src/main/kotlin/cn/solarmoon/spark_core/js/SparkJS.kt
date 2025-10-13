@@ -54,6 +54,14 @@ class SparkJS {
         }
     }
 
+    fun eval(code: String) {
+        try {
+            context.evaluateString(scriptable, code, "eval", 1, null)
+        } catch (e: Exception) {
+            LOGGER.error("执行脚本失败", e)
+        }
+    }
+
     fun getScript(index: ResourceLocation) = inScripts[index]
 
 }

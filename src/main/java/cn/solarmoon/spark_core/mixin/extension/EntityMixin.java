@@ -4,6 +4,9 @@ import cn.solarmoon.spark_core.EntityPatch;
 import cn.solarmoon.spark_core.entity.IEntityPatch;
 import cn.solarmoon.spark_core.entity.attack.HurtData;
 import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
+import cn.solarmoon.spark_core.gas.*;
+import cn.solarmoon.spark_core.gas.sync.ActivateAbilityPayload;
+import cn.solarmoon.spark_core.gas.sync.GrantAbilityEntityPayload;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.preinput.IPreInputHolder;
 import cn.solarmoon.spark_core.preinput.PreInput;
@@ -22,9 +25,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,6 +52,12 @@ public class EntityMixin implements EntityPatch {
     private final HashMap<String, PhysicsCollisionObject> collisionObjects = new HashMap<>();
     private final HashMap<ResourceLocation, StateMachineHandler> stateMachineHandlers = new HashMap<>();
     private Vec3 lastPosO = Vec3.ZERO;
+    private AbilitySystemComponent asc;
+
+    @Inject(method = "onAddedToLevel", at = @At("TAIL"))
+    public void onAddedToLevel(CallbackInfo ci) {
+        asc = new AbilitySystemComponent(entity, level);
+    }
 
     @Override
     public @NotNull Map<@NotNull ResourceLocation, @NotNull StateMachineHandler> getStateMachineHandlers() {
@@ -106,4 +119,15 @@ public class EntityMixin implements EntityPatch {
     public void setLastPosO(@NotNull Vec3 vec3) {
         lastPosO = vec3;
     }
+
+    @Override
+    public @NotNull AbilitySystemComponent getAbilitySystemComponent() {
+        return asc;
+    }
+
+    @Override
+    public void syncGrantAbilitySpec(@NotNull AbilitySpec<?> spec) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new GrantAbilityEntityPayload(id, spec));
+    }
+
 }

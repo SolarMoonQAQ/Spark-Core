@@ -1,91 +1,98 @@
 package cn.solarmoon.spark_core.skill.graph
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.skill.SkillHost
 import cn.solarmoon.spark_core.skill.input.InputBuffer
+import cn.solarmoon.spark_core.skill.input.InputBufferTriggerMode
 import cn.solarmoon.spark_core.skill.input.InputEvent
 import ru.nsk.kstatemachine.event.Event
-import ru.nsk.kstatemachine.state.State
+import ru.nsk.kstatemachine.state.IState
 import ru.nsk.kstatemachine.state.initialState
 import ru.nsk.kstatemachine.state.onEntry
+import ru.nsk.kstatemachine.state.onExit
 import ru.nsk.kstatemachine.state.state
-import ru.nsk.kstatemachine.state.transition
 import ru.nsk.kstatemachine.state.transitionConditionally
-import ru.nsk.kstatemachine.state.transitionOn
 import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
 import ru.nsk.kstatemachine.transition.noTransition
 import ru.nsk.kstatemachine.transition.onTriggered
 import ru.nsk.kstatemachine.transition.targetState
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 // 此处时间轴只用于控制输入缓冲
 class ActionController(
-    val host: SkillHost,
-    val actionGraph: ActionGraph
+    val actionGraph: ActionGraph,
+    val behavior: ActionBehavior
 ) {
 
-    val buffer = InputBuffer()
+    val inputBuffer = InputBuffer()
+    var inputTriggerMode = InputBufferTriggerMode.LAST_INPUT
     var currentNode: ActionNode = actionGraph.initialNode
         private set
     var tickCount = 0
         private set
 
-    sealed class ActionEvent: Event {
-        class Tick : ActionEvent()
-        data class Input(val type: String) : ActionEvent()
+    open class ActionEvent(val type: String): Event {
+        data class Input(val value: InputEvent) : ActionEvent(value.type)
     }
 
     private val stateMachine = createStdLibStateMachine {
-        val initState = initialState(actionGraph.initialNode.id)
-
-        val states = mutableMapOf<String, State>()
-        actionGraph.nodes.forEach { (id, node) ->
-            val state = (if (id == actionGraph.initialNode.id) initState else state(id)).apply {
-                onEntry { currentNode = node }
-
-                // Tick 事件驱动退出
-                transition<ActionEvent.Tick> {
-                    guard = { node.exitCondition.check(this@ActionController) }
-                    targetState = initState
-                    onTriggered { SparkCore.LOGGER.info("${node.id} 结束 → ${initState.name}") }
-                }
-
-                // 输入事件驱动衔接
-                transitionConditionally<ActionEvent.Input> {
-                    direction = {
-                        val next = node.transitions[event.type]
-                        val nextId = next?.target
-                        val cond = next?.condition
-                        if (nextId != null && (cond == null || cond.check(this@ActionController))) {
-                            targetState(states[nextId]!!)
-                        } else noTransition()
+        val states = mutableMapOf<String, IState>()
+        val stateToNodes = mutableMapOf<IState, ActionNode>()
+        fun IState.createStates(graph: ActionGraph) {
+            val initState = initialState(graph.initialNode.id)
+            graph.nodes.forEach { (id, node) ->
+                val state = (if (id == graph.initialNode.id) initState else state(id)).apply {
+                    onEntry {
+                        currentNode = node
+                        behavior.onEnter(this@ActionController)
                     }
-                    onTriggered {
-                        SparkCore.LOGGER.info("执行动作: ${it.direction.targetState?.name}")
+
+                    onExit {
+                        behavior.onExit(this@ActionController)
                     }
+
+                    // 输入事件驱动衔接
+                    transitionConditionally<ActionEvent> {
+                        direction = {
+                            val next = node.transitionMap[event.type]?.firstOrNull { it.condition.check(this@ActionController) }
+                            if (next != null) {
+                                if (event is ActionEvent.Input) inputBuffer.pop(event.value)
+                                targetState(states[next.target]!!)
+                            } else noTransition()
+                        }
+                        onTriggered {
+                            behavior.onTriggered(it.event, stateToNodes[it.direction.targetState], this@ActionController)
+                            SparkCore.LOGGER.info("执行动作: ${it.direction.targetState?.name}")
+                        }
+                    }
+
+                    node.subGraph?.let { createStates(it) }
                 }
+                states[id] = state
+                stateToNodes[state] = node
             }
-            states[id] = state
         }
+
+        createStates(actionGraph)
     }
 
-    fun onInput(type: String, duration: Int = 5, priority: Int = 0) {
-        buffer.push(InputEvent(type, duration, tickCount, priority))
+    fun triggerEvent(type: String) {
+        stateMachine.processEventBlocking(ActionEvent(type))
+    }
+
+    fun pushInput(type: String, duration: Int = 5, priority: Int = 0) {
+        inputBuffer.push(InputEvent(type, duration, tickCount, priority))
         tryConsume()
     }
 
     fun tick() {
+        behavior.onUpdate(this)
         tickCount++
-        stateMachine.processEventBlocking(ActionEvent.Tick())
         tryConsume()
     }
 
     private fun tryConsume() {
-        val now = tickCount
-        val input = buffer.popValid(now) ?: return
-        stateMachine.processEventBlocking(ActionEvent.Input(input.type))
+        val input = inputBuffer.peekValid(tickCount, inputTriggerMode) ?: return
+        stateMachine.processEventBlocking(ActionEvent.Input(input))
     }
 
 }

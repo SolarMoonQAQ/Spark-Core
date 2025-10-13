@@ -17,10 +17,6 @@ object SparkCapabilities {
     fun register() {}
 
     @JvmStatic
-    val ITEM_ANIMATABLE = ItemCapability.create(
-        ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "item_animatable"),
-        ItemAnimatable::class.java,
-        Level::class.java
-    )
+    val ITEM_ANIMATABLE = SparkCore.REGISTER.itemCapability<ItemAnimatable, Level>("item_animatable")
 
 }

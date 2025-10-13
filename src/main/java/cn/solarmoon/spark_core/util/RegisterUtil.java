@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.util;
 
 import cn.solarmoon.spark_core.entry_builder.common.FeatureBuilder;
+import cn.solarmoon.spark_core.gas.AbilitySpec;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
 

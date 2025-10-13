@@ -29,7 +29,7 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
         var event = PlayerAnimHelperKt.shouldRenderArmAnimInFirstPersonEvent(entity);
         if (event.getShouldRender()) {
             model.setAllVisible(false);
-            event.getModifier$SparkCore_1_21_1().invoke();
+            event.getModifier$SparkCore_1_21_1_neoforge().invoke();
         }
     }
 

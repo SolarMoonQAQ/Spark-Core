@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core;
 
 import cn.solarmoon.spark_core.entity.IEntityPatch;
 import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
+import cn.solarmoon.spark_core.gas.*;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.preinput.IPreInputHolder;
@@ -24,7 +25,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPreInputHolder, IStateMachineHolder, IEntityPatch {
+public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPreInputHolder, IStateMachineHolder, IEntityPatch, AbilityHost {
+
+    @Override
+    default void syncGrantAbilitySpec(@NotNull AbilitySpec<?> spec) {}
+
+    @Override
+    default @NotNull AbilitySystemComponent getAbilitySystemComponent() { return null; }
 
     @Override
     default @NotNull Vec3 getLastPosO() { return Vec3.ZERO; }

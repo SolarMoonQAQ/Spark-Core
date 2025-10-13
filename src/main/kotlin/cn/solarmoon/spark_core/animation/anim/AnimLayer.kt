@@ -5,10 +5,11 @@ import cn.solarmoon.spark_core.util.toQuaternionf
 import cn.solarmoon.spark_core.util.toVec3
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import java.util.concurrent.ConcurrentHashMap
 
 class AnimLayer {
 
-    val animations = mutableSetOf<AnimInstance>()
+    val animations = ConcurrentHashMap.newKeySet<AnimInstance>()
 
     var blendMode = BlendMode.OVERRIDE
 

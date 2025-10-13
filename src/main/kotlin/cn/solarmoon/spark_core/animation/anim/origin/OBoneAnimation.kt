@@ -28,7 +28,7 @@ data class OBoneAnimation(
     private fun getPresentAnimValue(
         valueMap: LinkedHashMap<Double, OKeyFrame>,
         time: Double,
-        animatable: IAnimatable<*>?=null,
+        animatable: IAnimatable<*>,
         defaultValue: Vector3f
     ): Vector3f {
         // 在各个时间内两两遍历，定位到当前间隔进行变换
@@ -45,8 +45,7 @@ data class OBoneAnimation(
         }
 
         if (valueMap.isNotEmpty() && time >= valueMap.keys.last()) {
-            val eva = ExpressionEvaluator.evaluator(animatable)
-            return valueMap.values.last().post.eval(eva)
+            return valueMap.values.last().post.eval(animatable)
         }
 
         return defaultValue
@@ -56,7 +55,7 @@ data class OBoneAnimation(
      * 获取当前绑定实体在当前动画的当前tick所对应的旋转值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的旋转
      * @return 进行过基础偏移后的旋转弧度角
      */
-    fun getAnimRotAt(time: Double, animatable: IAnimatable<*>?=null): Vector3f {
+    fun getAnimRotAt(time: Double, animatable: IAnimatable<*>): Vector3f {
         return getPresentAnimValue(rotation, time, animatable, Vector3f()).mul(-1f,-1f,1f).toRadians()
     }
 
@@ -64,7 +63,7 @@ data class OBoneAnimation(
      * 获取当前绑定实体在当前动画的当前tick所对应的位移值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的位移
      * @return 获取指定tick位置的位移数值，如果不在任何区间内，返回第一个位置
      */
-    fun getAnimPosAt(time: Double, animatable: IAnimatable<*>?=null): Vector3f {
+    fun getAnimPosAt(time: Double, animatable: IAnimatable<*>): Vector3f {
         return getPresentAnimValue(position, time, animatable, Vector3f()).mul(-1/16f,1/16f,1/16f)
     }
 
@@ -72,17 +71,17 @@ data class OBoneAnimation(
      * 获取当前绑定实体在当前动画的当前tick所对应的缩放值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的缩放
      * @return 获取指定tick位置的缩放数值，如果不在任何区间内，返回第一个位置
      */
-    fun getAnimScaleAt(time: Double, animatable: IAnimatable<*>?=null): Vector3f {
+    fun getAnimScaleAt(time: Double, animatable: IAnimatable<*>): Vector3f {
         return getPresentAnimValue(scale, time, animatable, Vector3f(1f))
     }
 
-    fun getKeyAnimDataAt(time: Double): KeyAnimData {
-        return KeyAnimData(
-            getAnimPosAt(time).toVec3(),
-            getAnimRotAt(time).toVec3(),
-            getAnimScaleAt(time).toVec3()
-        )
-    }
+//    fun getKeyAnimDataAt(time: Double): KeyAnimData {
+//        return KeyAnimData(
+//            getAnimPosAt(time).toVec3(),
+//            getAnimRotAt(time).toVec3(),
+//            getAnimScaleAt(time).toVec3()
+//        )
+//    }
 
     companion object {
         @JvmStatic

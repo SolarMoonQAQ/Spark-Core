@@ -12,6 +12,6 @@ data class InputEvent(
     val expireTick = tickInserted + durationTicks
 
     fun isValid(currentTick: Int): Boolean {
-        return currentTick <= expireTick
+        return currentTick < expireTick
     }
 }

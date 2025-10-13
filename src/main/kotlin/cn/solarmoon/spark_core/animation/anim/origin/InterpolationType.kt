@@ -1,12 +1,18 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.js.eval
+import cn.solarmoon.spark_core.js.getJSBindings
+import cn.solarmoon.spark_core.js.molang.QueryContext
+import cn.solarmoon.spark_core.js.put
+import cn.solarmoon.spark_core.js.safeGetOrCreateJSContext
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
 import cn.solarmoon.spark_core.util.toVector3f
 import com.mojang.serialization.Codec
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.util.Mth
+import org.graalvm.polyglot.Context
 import org.joml.Vector3d
 import org.joml.Vector3f
 import kotlin.math.max
@@ -19,15 +25,15 @@ enum class InterpolationType {
         progress: Float,
         keyFrames: LinkedHashMap<Double, OKeyFrame>,
         presentIndex: Int,
-        animatable: IAnimatable<*>? = null,
+        animatable: IAnimatable<*>,
     ): Vector3f {
         val progress = min(progress, 1f)
         val keyFrameGroup = keyFrames.values
-        val eva = ExpressionEvaluator.evaluator(animatable)
-        val kPre = keyFrameGroup.elementAt(max(presentIndex - 1, 0)).pre.eval(eva)
-        val kNow = keyFrameGroup.elementAt(presentIndex).post.eval(eva)
-        val kTarget = keyFrameGroup.elementAt(min(presentIndex + 1, keyFrameGroup.size - 1)).pre.eval(eva)
-        val kPost = keyFrameGroup.elementAt(min(presentIndex + 2, keyFrameGroup.size - 1)).post.eval(eva)
+
+        val kPre = keyFrameGroup.elementAt(max(presentIndex - 1, 0)).pre.eval(animatable)
+        val kNow = keyFrameGroup.elementAt(presentIndex).post.eval(animatable)
+        val kTarget = keyFrameGroup.elementAt(min(presentIndex + 1, keyFrameGroup.size - 1)).pre.eval(animatable)
+        val kPost = keyFrameGroup.elementAt(min(presentIndex + 2, keyFrameGroup.size - 1)).post.eval(animatable)
 
         // 在终点就不lerp了
         if (presentIndex == keyFrameGroup.size - 1) return kNow

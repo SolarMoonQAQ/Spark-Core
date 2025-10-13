@@ -22,17 +22,25 @@ class InputBuffer {
         currentTick: Int,
         mode: InputBufferTriggerMode = InputBufferTriggerMode.LAST_INPUT
     ): InputEvent? {
+        val chosen = peekValid(currentTick, mode)
+        chosen?.let { realtimeQueue.remove(it) }
+        return chosen
+    }
+
+    fun peekValid(currentTick: Int, mode: InputBufferTriggerMode): InputEvent? {
         while (realtimeQueue.isNotEmpty() && !realtimeQueue.first().isValid(currentTick)) {
             realtimeQueue.removeFirst()
         }
         if (realtimeQueue.isEmpty()) return null
 
-        val chosen = when (mode) {
+        return when (mode) {
             InputBufferTriggerMode.LAST_INPUT -> realtimeQueue.maxByOrNull { it.tickInserted }
             InputBufferTriggerMode.HIGHEST_PRIORITY -> realtimeQueue.maxByOrNull { it.priority }
         }
-        chosen?.let { realtimeQueue.remove(it) }
-        return chosen
+    }
+
+    fun pop(event: InputEvent) {
+        realtimeQueue.remove(event)
     }
 
     // 获取完整日志（包括过期输入）

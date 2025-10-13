@@ -69,7 +69,9 @@ open class Skill: InlineEventHandler<SkillEvent> {
     open val config: SkillConfig = DefaultSkillConfig()
     val targetPool = SkillTargetPool()
 
-    val isActivated get() = lifecycleState.activeStates().first().name == "active"
+    val isActivated get() = lifecycleState.activeStates().firstOrNull()?.name == "active"
+
+    val isEnded get() = lifecycleState.activeStates().firstOrNull()?.name == "end"
 
     fun init(id: Int, type: SkillType<*>, holder: SkillHost, level: Level) = apply {
         this.id = id

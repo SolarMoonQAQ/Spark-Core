@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.entry_builder.common
 
+import cn.solarmoon.spark_core.entry_builder.RegisterBuilder
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.neoforged.bus.api.IEventBus
@@ -10,27 +11,38 @@ import net.neoforged.neoforge.registries.DeferredHolder
 import net.neoforged.neoforge.registries.DeferredRegister
 import java.util.function.Supplier
 
-class ItemBuilder<I: Item>(private val itemDeferredRegister: DeferredRegister<Item>, private val bus: IEventBus) {//
+class ItemBuilder<I : Item>(
+    deferredRegister: DeferredRegister<Item>,
+    private val bus: IEventBus
+) : RegisterBuilder<Item, I>(deferredRegister) {
 
-    private var id: String = ""
-    private var item: Supplier<I>? = null
-    private var capP: MutableList<Pair<ItemCapability<*, *>, ICapabilityProvider<ItemStack, *, *>>> = mutableListOf()
+    private val caps = mutableListOf<Pair<ItemCapability<*, *>, ICapabilityProvider<ItemStack, *, *>>>()
 
-    fun id(id: String) = apply { this.id = id }
-    fun <C> capability(cap: ItemCapability<*, C>, provider: ICapabilityProvider<ItemStack, C, *>) = apply { capP.add(Pair(cap, provider)) }
-    fun bound(item: Supplier<I>) = apply { this.item = item }
-
-    fun build(): DeferredHolder<Item, I> {
-        val reg = itemDeferredRegister.register(id, item!!)
-        if (!capP.isEmpty()) bus.addListener { e: RegisterCapabilitiesEvent -> registerCap(reg, e) }
-        return reg
+    fun capabilities(block: CapabilityDsl.() -> Unit) = apply {
+        CapabilityDsl().apply(block)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun registerCap(reg: DeferredHolder<Item, I>, event: RegisterCapabilitiesEvent) {
-        for (cap in capP) {
-            event.registerItem(cap.first as ItemCapability<Any, Any?>, cap.second as ICapabilityProvider<ItemStack, Any?, Any>, reg.get())
+    inner class CapabilityDsl {
+        infix fun <C> ItemCapability<*, C>.with(provider: ICapabilityProvider<ItemStack, C, *>) {
+            caps += this to provider
         }
     }
 
+    override fun build(): DeferredHolder<Item, I> {
+        val reg = super.build()
+        if (caps.isNotEmpty()) {
+            bus.addListener { e: RegisterCapabilitiesEvent ->
+                for ((cap, provider) in caps) {
+                    e.registerItem(
+                        cap as ItemCapability<Any, Any?>,
+                        provider as ICapabilityProvider<ItemStack, Any?, Any>,
+                        reg.get()
+                    )
+                }
+            }
+        }
+        return reg
+    }
+
 }
+

@@ -1,0 +1,36 @@
+package cn.solarmoon.spark_core.js.molang
+
+import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.js.getJSBindings
+import cn.solarmoon.spark_core.js.safeGetOrCreateJSContext
+import cn.solarmoon.spark_core.molang.core.value.Vector3k
+import net.minecraft.Util
+import net.minecraft.network.codec.ByteBufCodecs
+import org.joml.Vector3f
+
+data class Vector3js(
+    val x: JSMolangValue,
+    val y: JSMolangValue,
+    val z: JSMolangValue
+) {
+
+    fun eval(animatable: IAnimatable<*>): Vector3f {
+        val x = x.eval(animatable).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
+        val y = y.eval(animatable).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
+        val z = z.eval(animatable).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
+        return Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
+    }
+
+    companion object {
+        val CODEC = JSMolangValue.CODEC.listOf()
+            .comapFlatMap(
+                { list ->
+                    Util.fixedSize(list, 3).map { Vector3js(it[0], it[1], it[2]) }
+                },
+                { v -> listOf(v.x, v.y, v.z) }
+            )
+
+        val STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC)
+    }
+
+}

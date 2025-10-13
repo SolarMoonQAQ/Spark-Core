@@ -25,7 +25,7 @@ version = mod_version
 group = "${mod_group_id}.${mod_id}"
 
 base {
-    archivesName.set("${build_name}-${minecraft_version}")
+    archivesName.set("${build_name}-${minecraft_version}-${property("mod_loader")}")
 }
 
 java {
@@ -178,6 +178,8 @@ dependencies {
     // 外部库 ------------------------------------------------------------------------------------------------------------
     implementation("org.mozilla:rhino:1.8.0")?.let { jarJar(it) }
     additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
+
+    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
     // 状态机
 //    implementation("io.github.nsk90:kstatemachine-jvm:0.34.2")?.let { jarJar(it) }
 //    additionalRuntimeClasspath("io.github.nsk90:kstatemachine-jvm:0.34.2")
@@ -267,7 +269,7 @@ mavenPublishing {
     publishToMavenCentral(automaticRelease = true)
     signAllPublications()
 
-    coordinates("io.github.solarmoonqaq", "${property("artifact_id")}", "${property("mod_version")}")
+    coordinates("io.github.solarmoonqaq", "${property("artifact_id")}-${property("mod_loader")}", "${property("mod_version")}")
 
     pom {
         name.set("${property("mod_name")}")
