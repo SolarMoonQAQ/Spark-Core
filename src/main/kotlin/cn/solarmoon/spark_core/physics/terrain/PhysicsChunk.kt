@@ -53,22 +53,33 @@ class PhysicsChunk(
     }
 
     /**
-     * 激活指定Y范围内的section
+     * 一次性激活指定范围内的所有section
      */
-    fun activateSections(minY: Int, maxY: Int) {
+    fun activateSectionsInRanges(ranges: List<IntRange>) {
         sections.values.forEach { section ->
-            if (section.sectionPos.y in minY..maxY) {
+            val sectionY = section.sectionPos.y
+            val shouldActivate = ranges.any { range -> sectionY in range }
+
+            if (shouldActivate) {
                 section.activate()
+            } else {
+                // 如果section当前是激活状态但不在新范围内，则停用
+                if (section.isActive) {
+                    section.deactivate()
+                }
             }
         }
     }
 
     /**
-     * 停用指定Y范围内的section
+     * 一次性停用指定范围内的所有section
      */
-    fun deactivateSections(minY: Int, maxY: Int) {
+    fun deactivateSectionsInRanges(ranges: List<IntRange>) {
         sections.values.forEach { section ->
-            if (section.sectionPos.minBlockY() in minY..maxY) {
+            val sectionY = section.sectionPos.y
+            val shouldDeactivate = ranges.any { range -> sectionY in range }
+
+            if (shouldDeactivate && section.isActive) {
                 section.deactivate()
             }
         }

@@ -49,7 +49,7 @@ class PhysicsChunkManager(
 
     // 配置参数
     private val buildRadius = 2 // 构建半径（区块数）
-    private val activationRadius = 8 // 激活半径（方块数，至少1区块）
+    private val activationRadius = 8 // 激活半径（方块数）
 
     // 性能统计
     private val totalSections: Int
@@ -170,18 +170,18 @@ class PhysicsChunkManager(
         // 收集所有需要激活的区块和section范围
         boundingBoxes.forEach { aabb ->
             // 忽视超出可建造范围的AABB
-            val minY = SectionPos.blockToSectionCoord((aabb.minY- activationRadius).toInt())
-            val maxY = SectionPos.blockToSectionCoord((aabb.maxY+ activationRadius).toInt())
+            val minY = SectionPos.blockToSectionCoord((aabb.minY - activationRadius).toInt())
+            val maxY = SectionPos.blockToSectionCoord((aabb.maxY + activationRadius).toInt())
             if (minY > physicsLevel.mcLevel.maxSection || maxY < physicsLevel.mcLevel.minSection) return@forEach
             // 计算BoundingBox覆盖的区块和section范围
-            val minChunkX = SectionPos.blockToSectionCoord((aabb.minX- activationRadius).toInt())
-            val maxChunkX = SectionPos.blockToSectionCoord((aabb.maxX+ activationRadius).toInt())
-            val minChunkZ = SectionPos.blockToSectionCoord((aabb.minZ- activationRadius).toInt())
-            val maxChunkZ = SectionPos.blockToSectionCoord((aabb.maxZ+ activationRadius).toInt())
+            val minChunkX = SectionPos.blockToSectionCoord((aabb.minX - activationRadius).toInt())
+            val maxChunkX = SectionPos.blockToSectionCoord((aabb.maxX + activationRadius).toInt())
+            val minChunkZ = SectionPos.blockToSectionCoord((aabb.minZ - activationRadius).toInt())
+            val maxChunkZ = SectionPos.blockToSectionCoord((aabb.maxZ + activationRadius).toInt())
 
             // 计算BoundingBox覆盖的section Y范围
-            val minSectionY = SectionPos.blockToSectionCoord(aabb.minY.toInt()) - 1
-            val maxSectionY = SectionPos.blockToSectionCoord(aabb.maxY.toInt()) + 1
+            val minSectionY = SectionPos.blockToSectionCoord((aabb.minY - activationRadius).toInt())
+            val maxSectionY = SectionPos.blockToSectionCoord((aabb.maxY + activationRadius).toInt())
             val sectionRange = minSectionY..maxSectionY
 
             // 为每个受影响的区块添加激活范围
@@ -201,9 +201,7 @@ class PhysicsChunkManager(
                 // 合并该区块的所有激活范围
                 val mergedRanges = mergeRanges(activationRanges)
                 // 激活合并后的范围
-                mergedRanges.forEach { range ->
-                    chunk.activateSections(range.first, range.last)
-                }
+                chunk.activateSectionsInRanges(mergedRanges)
             } else {
                 // 停用不在激活范围内的区块
                 chunk.deactivateAll()

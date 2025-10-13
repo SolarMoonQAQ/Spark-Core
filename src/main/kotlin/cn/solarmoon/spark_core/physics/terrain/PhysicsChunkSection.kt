@@ -89,7 +89,7 @@ class PhysicsChunkSection(
         val compoundShape = CompoundCollisionShape()
         var hasCollision = false
         val snapshot = snapshotForBuild
-        if (snapshot == null){
+        if (snapshot == null) {
             collisionShape = null
             return false
         }
@@ -154,6 +154,7 @@ class PhysicsChunkSection(
             }
         }
     }
+
     /**
      * 开始异步构建过程(主线程调用)
      */
@@ -304,7 +305,7 @@ class PhysicsChunkSection(
      */
     fun markRemoved(worldPos: BlockPos) {
         if (isEmpty() || snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) return
-        if(isRemoved(worldPos)) return
+        if (isRemoved(worldPos)) return
         val pos = snapshotForCollision!!.getRelativePos(worldPos)
         val index = SectionSnapshot.getIndexFromRelativePos(pos.x, pos.y, pos.z)
         snapshotForCollision!!.blockSnapshots[index] = null
@@ -323,14 +324,13 @@ class PhysicsChunkSection(
      */
     fun destroy() {
         cancelBuild()
-        deactivate()
         destroyPhysicsBody()
         snapshotForBuild = null
         snapshotForCollision = null
     }
 
     private fun destroyPhysicsBody() {
-        physicsLevel.mcLevel.removePhysicsBody(physicsBody!!)
+        physicsBody?.let { if (it.isInWorld) physicsLevel.mcLevel.removePhysicsBody(it) }
         collisionShape = null
         isActive = false
     }
