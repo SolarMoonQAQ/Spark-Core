@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.entry_builder
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.entry_builder.client.KeyMappingBuilder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.gas.Ability
@@ -24,7 +25,9 @@ import net.minecraft.sounds.SoundEvent
 import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.MobCategory
 import net.minecraft.world.entity.ai.attributes.Attribute
+import net.minecraft.world.entity.monster.Zombie
 import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.crafting.Recipe
@@ -126,3 +129,6 @@ fun <R: Recipe<*>> RegisterBuilder<RecipeType<*>, RecipeType<R>>.simpleType() = 
 
 fun <D> RegisterBuilder<DataComponentType<*>, DataComponentType<D>>.dataComponentBuilder(builder: DataComponentType.Builder<D>.() -> Unit) =
     { DataComponentType.Builder<D>().also { builder(it) }.build() }
+
+fun <E: Entity> RegisterBuilder<EntityType<*>, EntityType<E>>.entityTypeBuilder(factory: EntityType.EntityFactory<E>, category: MobCategory, builder: EntityType.Builder<E>.() -> Unit = {}) =
+    { EntityType.Builder.of(factory, category).also { builder(it) }.build(id) }
