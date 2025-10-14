@@ -21,11 +21,9 @@ class BlockEntityTypeBuilder<B : BlockEntity>(
 ) : RegisterBuilder<BlockEntityType<*>, BlockEntityType<B>>(deferredRegister) {
 
     private val caps = mutableListOf<Pair<BlockCapability<*, *>, ICapabilityProvider<B, *, *>>>()
+    private val validBlocksList = mutableListOf<Block>()
 
     lateinit var factory: (BlockPos, BlockState) -> B
-
-    // 用 DSL 容器来收集 block
-    private val validBlocksList = mutableListOf<Block>()
 
     fun validBlocks(block: ValidBlocksDsl.() -> Unit) = apply {
         validBlocksList.clear()
@@ -72,6 +70,7 @@ class BlockEntityTypeBuilder<B : BlockEntity>(
         }
         return reg
     }
+
 }
 
 

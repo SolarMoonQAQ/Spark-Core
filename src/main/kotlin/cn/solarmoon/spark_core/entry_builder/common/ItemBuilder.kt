@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.entry_builder.common
 
+import cn.solarmoon.spark_core.entry_builder.CommonRegisterBuilder
 import cn.solarmoon.spark_core.entry_builder.RegisterBuilder
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
@@ -14,7 +15,7 @@ import java.util.function.Supplier
 class ItemBuilder<I : Item>(
     deferredRegister: DeferredRegister<Item>,
     private val bus: IEventBus
-) : RegisterBuilder<Item, I>(deferredRegister) {
+) : CommonRegisterBuilder<Item, I>(deferredRegister) {
 
     private val caps = mutableListOf<Pair<ItemCapability<*, *>, ICapabilityProvider<ItemStack, *, *>>>()
 

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.entry_builder.common
 
+import cn.solarmoon.spark_core.entry_builder.CommonRegisterBuilder
 import cn.solarmoon.spark_core.entry_builder.RegisterBuilder
 import net.minecraft.core.Holder
 import net.minecraft.world.entity.ai.attributes.Attribute
@@ -14,7 +15,7 @@ import java.util.function.Supplier
 class AttributeBuilder<A: Attribute>(
     attributeRegister: DeferredRegister<Attribute>,
     private val bus: IEventBus
-) : RegisterBuilder<Attribute, A>(attributeRegister) {
+): CommonRegisterBuilder<Attribute, A>(attributeRegister) {
 
     var applyToLiving = false
 
