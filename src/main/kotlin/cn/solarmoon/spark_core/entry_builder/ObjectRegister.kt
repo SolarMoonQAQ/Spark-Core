@@ -34,6 +34,8 @@ import net.minecraft.world.item.crafting.Recipe
 import net.minecraft.world.item.crafting.RecipeSerializer
 import net.minecraft.world.item.crafting.RecipeType
 import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.level.block.entity.BedBlockEntity
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.attachment.AttachmentType
@@ -86,17 +88,17 @@ class ObjectRegister(
 
     // 一般
     fun <I: Item> item(builder: ItemBuilder<I>.() -> Unit) = ItemBuilder<I>(item.value, bus).also { builder(it) }.build()
-    fun <B: Block> block(builder: RegisterBuilder<Block, B>.() -> Unit) = block.value.toCommonBuilder<Block, B>().also { builder(it) }.build()
+    fun <B: Block> block(builder: CommonRegisterBuilder<Block, B>.() -> Unit) = commonBuilder(block.value, builder)
     fun <B: BlockEntity> blockEntityType(builder: BlockEntityTypeBuilder<B>.() -> Unit) = BlockEntityTypeBuilder<B>(blockEntityType.value, bus).also { builder(it) }.build()
-    fun <E: Entity> entityType(builder: RegisterBuilder<EntityType<*>, EntityType<E>>.() -> Unit) = entityType.value.toCommonBuilder<EntityType<*>, EntityType<E>>().also { builder(it) }.build()
+    fun <E: Entity> entityType(builder: CommonRegisterBuilder<EntityType<*>, EntityType<E>>.() -> Unit) = commonBuilder(entityType.value, builder)
     fun <A: Attribute> attribute(builder: AttributeBuilder<A>.() -> Unit) = AttributeBuilder<A>(attribute.value, bus).also { builder(it) }.build()
-    fun <D> dataComponentType(builder: RegisterBuilder<DataComponentType<*>, DataComponentType<D>>.() -> Unit) = dataComponentType.value.toCommonBuilder<DataComponentType<*>, DataComponentType<D>>().also { builder(it) }.build()
-    fun <E: MobEffect> mobEffect(builder: RegisterBuilder<MobEffect, E>.() -> Unit) = mobEffect.value.toCommonBuilder<MobEffect, E>().also { builder(it) }.build()
-    fun <O: ParticleOptions> particleType(builder: RegisterBuilder<ParticleType<*>, ParticleType<O>>.() -> Unit) = particleType.value.toCommonBuilder<ParticleType<*>, ParticleType<O>>().also { builder(it) }.build()
-    fun <R: Recipe<*>> recipeType(builder: RegisterBuilder<RecipeType<*>, RecipeType<R>>.() -> Unit) = recipeType.value.toCommonBuilder<RecipeType<*>, RecipeType<R>>().also { builder(it) }.build()
-    fun <R: Recipe<*>> recipeSerializer(builder: RegisterBuilder<RecipeSerializer<*>, RecipeSerializer<R>>.() -> Unit) = recipeSerializer.value.toCommonBuilder<RecipeSerializer<*>, RecipeSerializer<R>>().also { builder(it) }.build()
-    fun creativeModeTab(builder: RegisterBuilder<CreativeModeTab, CreativeModeTab>.() -> Unit) = creativeModeTab.value.toCommonBuilder().also { builder(it) }.build()
-    fun soundEvent(builder: RegisterBuilder<SoundEvent, SoundEvent>.() -> Unit) = soundEvent.value.toCommonBuilder().also { builder(it) }.build()
+    fun <D> dataComponentType(builder: CommonRegisterBuilder<DataComponentType<*>, DataComponentType<D>>.() -> Unit) = commonBuilder(dataComponentType.value, builder)
+    fun <E: MobEffect> mobEffect(builder: CommonRegisterBuilder<MobEffect, E>.() -> Unit) = commonBuilder(mobEffect.value, builder)
+    fun <O: ParticleOptions> particleType(builder: CommonRegisterBuilder<ParticleType<*>, ParticleType<O>>.() -> Unit) = commonBuilder(particleType.value, builder)
+    fun <R: Recipe<*>> recipeType(builder: CommonRegisterBuilder<RecipeType<*>, RecipeType<R>>.() -> Unit) = commonBuilder(recipeType.value, builder)
+    fun <R: Recipe<*>> recipeSerializer(builder: CommonRegisterBuilder<RecipeSerializer<*>, RecipeSerializer<R>>.() -> Unit) = commonBuilder(recipeSerializer.value, builder)
+    fun creativeModeTab(builder: CommonRegisterBuilder<CreativeModeTab, CreativeModeTab>.() -> Unit) = commonBuilder(creativeModeTab.value, builder)
+    fun soundEvent(builder: CommonRegisterBuilder<SoundEvent, SoundEvent>.() -> Unit) = commonBuilder(soundEvent.value, builder)
 
     // 客户端
     fun keyMapping(builder: (KeyMappingBuilder) -> Unit) = KeyMappingBuilder(modId, bus).also { builder(it) }.build()
@@ -105,30 +107,16 @@ class ObjectRegister(
     fun damageType(id: String) = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(modId, id))
 
     // neoforge
-    fun <A> attachment(builder: RegisterBuilder<AttachmentType<*>, AttachmentType<A>>.() -> Unit) = attachment.value.toCommonBuilder<AttachmentType<*>, AttachmentType<A>>().also { builder(it) }.build()
-    fun <D> entityDataSerializer(builder: RegisterBuilder<EntityDataSerializer<*>, EntityDataSerializer<D>>.() -> Unit) = entityDataSerializer.value.toCommonBuilder<EntityDataSerializer<*>, EntityDataSerializer<D>>().also { builder(it) }.build()
+    fun <A> attachment(builder: CommonRegisterBuilder<AttachmentType<*>, AttachmentType<A>>.() -> Unit) = commonBuilder(attachment.value, builder)
+    fun <D> entityDataSerializer(builder: CommonRegisterBuilder<EntityDataSerializer<*>, EntityDataSerializer<D>>.() -> Unit) = commonBuilder(entityDataSerializer.value,  builder)
     inline fun <reified T, reified O: Any?> itemCapability(id: String) = ItemCapability.create(ResourceLocation.fromNamespaceAndPath(modId, id), T::class.java, O::class.java)
 
     // 星火
-    fun <A: Ability> abilityType(builder: (RegisterBuilder<AbilityType<*>, AbilityType<A>>) -> Unit) = abilityType.value.toCommonBuilder<AbilityType<*>, AbilityType<A>>().also { builder(it) }.build()
+    fun <A: Ability> abilityType(builder: (CommonRegisterBuilder<AbilityType<*>, AbilityType<A>>) -> Unit) = commonBuilder(abilityType.value, builder)
 
-    fun <A: Ability, S: AbilitySpec<A>> abilitySpecType(builder: (RegisterBuilder<AbilitySpecType<*, *>, AbilitySpecType<A, S>>) -> Unit) = abilitySpecType.value.toCommonBuilder<AbilitySpecType<*, *>, AbilitySpecType<A, S>>().also { builder(it) }.build()
-    fun <S: Syncer> syncerType(builder: RegisterBuilder<SyncerType<*>, SyncerType<S>>.() -> Unit) = syncerType.value.toCommonBuilder<SyncerType<*>, SyncerType<S>>().also { builder(it) }.build()
+    fun <A: Ability, S: AbilitySpec<A>> abilitySpecType(builder: CommonRegisterBuilder<AbilitySpecType<*, *>, AbilitySpecType<A, S>>.() -> Unit) = commonBuilder(abilitySpecType.value, builder)
+    fun <S: Syncer> syncerType(builder: CommonRegisterBuilder<SyncerType<*>, SyncerType<S>>.() -> Unit) = commonBuilder(syncerType.value, builder)
+
+    protected fun <M, N: M> commonBuilder(deferredRegister: DeferredRegister<M>, builder: CommonRegisterBuilder<M, N>.() -> Unit) = deferredRegister.toCommonBuilder<M, N>().also { builder(it) }.build()
+
 }
-
-fun <M, N: M> DeferredRegister<M>.toCommonBuilder() = RegisterBuilder<M, N>(this)
-
-fun <O: ParticleOptions> RegisterBuilder<ParticleType<*>, ParticleType<O>>.createWithCodec(ignoreDistance: Boolean, codec: (ParticleType<O>) -> MapCodec<O>, streamCodec: (ParticleType<O>) -> StreamCodec<in RegistryFriendlyByteBuf, O>) =
-    object: ParticleType<O>(ignoreDistance) {
-        override fun codec(): MapCodec<O> = codec(this)
-
-        override fun streamCodec(): StreamCodec<in RegistryFriendlyByteBuf, O> = streamCodec(this)
-    }
-
-fun <R: Recipe<*>> RegisterBuilder<RecipeType<*>, RecipeType<R>>.simpleType() = RecipeType.simple<R>(ResourceLocation.fromNamespaceAndPath(modId, id))
-
-fun <D> RegisterBuilder<DataComponentType<*>, DataComponentType<D>>.dataComponentBuilder(builder: DataComponentType.Builder<D>.() -> Unit) =
-    { DataComponentType.Builder<D>().also { builder(it) }.build() }
-
-fun <E: Entity> RegisterBuilder<EntityType<*>, EntityType<E>>.entityTypeBuilder(factory: EntityType.EntityFactory<E>, category: MobCategory, builder: EntityType.Builder<E>.() -> Unit = {}) =
-    { EntityType.Builder.of(factory, category).also { builder(it) }.build(id) }

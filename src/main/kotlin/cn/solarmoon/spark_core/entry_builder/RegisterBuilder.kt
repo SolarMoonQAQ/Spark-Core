@@ -4,7 +4,7 @@ import net.neoforged.neoforge.registries.DeferredHolder
 import net.neoforged.neoforge.registries.DeferredRegister
 
 
-open class RegisterBuilder<R, C : R>(
+abstract class RegisterBuilder<R, C : R>(
     val deferredRegister: DeferredRegister<R>
 ) {
 
@@ -12,20 +12,12 @@ open class RegisterBuilder<R, C : R>(
 
     lateinit var id: String
 
-    open lateinit var factory: () -> C
-
     open fun validate() {
         if (!this::id.isInitialized) {
-            throw IllegalStateException("id must be initialized before build()")
-        }
-        if (!this::factory.isInitialized) {
-            throw IllegalStateException("provider must be initialized before build()")
+            throw IllegalStateException("未给 ${javaClass.simpleName} 指定id!")
         }
     }
 
-    open fun build(): DeferredHolder<R, C> {
-        validate()
-        return deferredRegister.register(id, factory)
-    }
+    abstract fun build(): DeferredHolder<R, C>
 
 }
