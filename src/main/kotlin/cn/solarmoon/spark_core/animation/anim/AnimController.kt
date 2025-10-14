@@ -31,9 +31,9 @@ class AnimController(
 
     val stateMachines by lazy { originStateMachines.animationControllers.mapValues { it.value.build(animatable) } }
 
-    var speedChangeTime: Int = 0
+    var speedChangeTime = 0
         private set
-    var overallSpeed: Double = 1.0
+    var overallSpeed = 1.0f
         private set
 
     /**
@@ -56,7 +56,7 @@ class AnimController(
     /**
      * 在指定时间内改变动画整体速度，时间结束后复原
      */
-    fun changeSpeed(time: Int, speed: Double) {
+    fun changeSpeed(time: Int, speed: Float) {
         overallSpeed = speed
         speedChangeTime = time
     }
@@ -82,7 +82,7 @@ class AnimController(
         layers.entries.sortedBy { it.key }.forEach { (_, layer) ->
             if (!layer.isPlaying) return@forEach
             val boneTransform = layer.blendBone(boneName)
-            val weight = layer.getBoneWeight(boneName)
+            val weight = layer.getBoneWeight(boneName).toDouble()
             if (weight == 0.0) return@forEach // 简化计算
             when(layer.blendMode) {
                 BlendMode.OVERRIDE -> {
@@ -112,7 +112,7 @@ class AnimController(
         }
 
         if (speedChangeTime > 0) speedChangeTime--
-        else overallSpeed = 1.0
+        else overallSpeed = 1.0f
     }
 
     fun tick() {

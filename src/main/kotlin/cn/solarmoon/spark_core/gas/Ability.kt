@@ -6,24 +6,17 @@ package cn.solarmoon.spark_core.gas
  *
  * 技能通过[onEvent]进行逻辑通信，并不带由tick驱动的生命周期，具体逻辑通过[AbilityTask]完成，这样方便对逻辑进行拆分和组装
  */
-abstract class Ability(
-    val spec: AbilitySpec<*>,
-    val context: ActivationContext
-) {
+abstract class Ability {
 
     val tasks = mutableListOf<AbilityTask>()
 
-    /** 能否激活（检查冷却、资源、标签等） */
-    open fun canActivate(): ActivationResult = ActivationResult(true)
+    open fun canActivate(spec: AbilitySpec<*>, context: ActivationContext): ActivationResult = ActivationResult(true)
 
-    /** 激活时调用（运行时逻辑） */
-    open fun activate() {}
+    open fun activate(spec: AbilitySpec<*>, context: ActivationContext) {}
 
-    /** 技能结束时调用 */
-    open fun end() {}
+    open fun end(spec: AbilitySpec<*>,) {}
 
-    /** 处理来自任务或外部的事件 */
-    protected open fun onEvent(event: AbilityEvent) {}
+    open fun onEvent(spec: AbilitySpec<*>, event: AbilityEvent) {}
 
     fun addTask(task: AbilityTask) {
         tasks += task
@@ -33,11 +26,6 @@ abstract class Ability(
     fun removeTask(task: AbilityTask) {
         tasks.remove(task)
         task.stop()
-    }
-
-    /** 发送事件 */
-    fun emit(event: AbilityEvent) {
-        onEvent(event)
     }
 
 }

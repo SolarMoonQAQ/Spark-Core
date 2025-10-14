@@ -4,15 +4,17 @@ import cn.solarmoon.spark_core.gas.sync.ActivateAbilityLocalPayload
 import net.minecraft.world.level.Level
 import net.neoforged.neoforge.network.PacketDistributor
 
-class AbilitySystemComponent(
+open class AbilitySystemComponent(
     val owner: AbilityHost,
     val level: Level
 ) {
 
     private var nextHandleId = 1
-    private val abilities = mutableMapOf<AbilityHandle, AbilitySpec<*>>()
+    private val abilitySpecs = mutableMapOf<AbilityHandle, AbilitySpec<*>>()
 
-    val allAbilitySpecs get() = abilities.toMap()
+    val abilitySpecsByAbilityType get() = abilitySpecs.values.groupBy { it.abilityType.registryKey }
+
+    val allAbilitySpecs get() = abilitySpecs.toMap()
 
     /**
      * #### 授予技能
@@ -20,9 +22,9 @@ class AbilitySystemComponent(
      */
     fun grantAbility(spec: AbilitySpec<*>) {
         val handle = AbilityHandle(nextHandleId++)
-        spec.handle = handle
+        spec.initialize(this, handle)
         if (!level.isClientSide) {
-            abilities[handle] = spec
+            abilitySpecs[handle] = spec
             owner.syncGrantAbilitySpec(spec)
         }
     }
@@ -33,7 +35,7 @@ class AbilitySystemComponent(
      */
     fun activateAbility(handle: AbilityHandle, context: ActivationContext) {
         if (!level.isClientSide) {
-            abilities[handle]?.tryActivate(context)
+            abilitySpecs[handle]?.tryActivate(context)
             owner.syncActivateAbility(handle, context)
         }
     }
@@ -43,25 +45,37 @@ class AbilitySystemComponent(
      * 此方法仅能用于本地客户端的玩家激活技能，会立刻在本地尝试启用技能（预测），但同时会向服务端请求技能激活，如果服务端拒绝会结束客户端预测，反之正常广播给其它玩家
      */
     fun activateAbilityLocal(handle: AbilityHandle, context: ActivationContext) {
-        abilities[handle]?.apply {
+        abilitySpecs[handle]?.apply {
             tryActivate(context)
             PacketDistributor.sendToServer(ActivateAbilityLocalPayload(handle, context))
         }
     }
 
-    fun getSpec(handle: AbilityHandle) = abilities[handle]
+    fun emitEvent(event: AbilityEvent) {
+        abilitySpecs.values.forEach { spec ->
+            spec.activeAbilities.forEach { ability ->
+                ability.onEvent(spec, event)
+            }
+        }
+    }
+
+    fun getSpec(handle: AbilityHandle) = abilitySpecs[handle]
 
     fun endAbility(handle: AbilityHandle) {
-        abilities[handle]?.endAll()
+        abilitySpecs[handle]?.endAll()
     }
 
     fun tick() {
-        abilities.values.forEach { it.tick() }
+        abilitySpecs.values.forEach { it.tick() }
     }
 
     // 仅同步用
     internal fun putSpec(spec: AbilitySpec<*>) {
-        abilities[spec.handle] = spec
+        abilitySpecs[spec.handle] = spec
+    }
+
+    internal fun active(handle: AbilityHandle, context: ActivationContext) {
+        abilitySpecs[handle]?.tryActivate(context)
     }
 
 }

@@ -23,7 +23,6 @@
     "js.AttackContextMixin",
     "js.EntityMixin",
     "js.IAnimatableMixin",
-    "js.KeyframeRangeMixin",
     "js.LevelMixin",
     "js.PhysicsCollisionObjectMixin",
     "js.PreInputMixin",

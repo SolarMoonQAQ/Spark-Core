@@ -40,10 +40,10 @@ data class OKeyFrame(
 
         @JvmStatic
         val MAP_CODEC = Codec.either(
-            Codec.unboundedMap(Codec.STRING, CODEC).xmap({ LinkedHashMap(it.mapKeys { it.key.toDouble() }) }, { it.mapKeys { it.key.toString() } }),
+            Codec.unboundedMap(Codec.STRING, CODEC).xmap({ LinkedHashMap(it.mapKeys { it.key.toFloat() }) }, { it.mapKeys { it.key.toString() } }),
             Codec.either(
-                Vector3js.CODEC.flatComapMap({ linkedMapOf(Pair(0.0, OKeyFrame(it, it, InterpolationType.LINEAR))) }, { if (it.size == 1 && it.firstEntry().key == 0.0) DataResult.success(it.values.first().pre) else DataResult.error { "" } }),
-                JSMolangValue.CODEC.flatComapMap({ linkedMapOf(Pair(0.0, OKeyFrame(Vector3js(it,it,it), Vector3js(it,it,it), InterpolationType.LINEAR)))}, { if (it.size == 1 && it.firstEntry().key == 0.0) DataResult.success(it.values.first().pre.x) else DataResult.error { "" } })
+                Vector3js.CODEC.flatComapMap({ linkedMapOf(Pair(0.0f, OKeyFrame(it, it, InterpolationType.LINEAR))) }, { if (it.size == 1 && it.firstEntry().key == 0.0f) DataResult.success(it.values.first().pre) else DataResult.error { "" } }),
+                JSMolangValue.CODEC.flatComapMap({ linkedMapOf(Pair(0.0f, OKeyFrame(Vector3js(it,it,it), Vector3js(it,it,it), InterpolationType.LINEAR)))}, { if (it.size == 1 && it.firstEntry().key == 0.0f) DataResult.success(it.values.first().pre.x) else DataResult.error { "" } })
             ).xmap({ it.map({ it }, { it }) }, { Either.left(it) })
         ).xmap(
             { it.map( { it }, { it }) },
@@ -61,7 +61,7 @@ data class OKeyFrame(
         @JvmStatic
         val MAP_STREAM_CODEC = ByteBufCodecs.map(
             ::LinkedHashMap,
-            ByteBufCodecs.DOUBLE,
+            ByteBufCodecs.FLOAT,
             STREAM_CODEC
         )
     }

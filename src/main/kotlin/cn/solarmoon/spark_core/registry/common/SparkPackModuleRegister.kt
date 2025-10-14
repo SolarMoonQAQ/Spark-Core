@@ -18,6 +18,7 @@ object SparkPackModuleRegister {
         event.register(lang)
         event.register(TextureModule())
         event.register(AnimStateModule())
+        event.register(AbilityTypeModule())
     }
 
     fun regReloadListener(event: RegisterClientReloadListenersEvent) {

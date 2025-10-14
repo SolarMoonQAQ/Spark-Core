@@ -3,6 +3,9 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.AnimStopPayload
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
+import cn.solarmoon.spark_core.gas.sync.ActivateAbilityLocalPayload
+import cn.solarmoon.spark_core.gas.sync.ActivateAbilityPayload
+import cn.solarmoon.spark_core.gas.sync.GrantAbilityEntityPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackagePayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageSendingTask
@@ -46,6 +49,10 @@ object SparkPayloadRegister {
         pack.configurationToServer(SparkPackageSendingTask.Return.TYPE, SparkPackageSendingTask.Return.STREAM_CODEC, SparkPackageSendingTask.Return::onAct)
         pack.playToClient(SparkPackageReloadPayload.TYPE, SparkPackageReloadPayload.STREAM_CODEC, SparkPackageReloadPayload::handleInClient)
 
+        val gas = event.registrar("gas")
+        gas.playToClient(GrantAbilityEntityPayload.TYPE, GrantAbilityEntityPayload.STREAM_CODEC, GrantAbilityEntityPayload::handleInClient)
+        gas.playToClient(ActivateAbilityPayload.TYPE, ActivateAbilityPayload.STREAM_CODEC, ActivateAbilityPayload::handleInClient)
+        gas.playToServer(ActivateAbilityLocalPayload.TYPE, ActivateAbilityLocalPayload.STREAM_CODEC, ActivateAbilityLocalPayload::handleInServer)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

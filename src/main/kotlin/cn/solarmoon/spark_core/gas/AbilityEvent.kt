@@ -12,7 +12,6 @@ import java.util.function.Function
 
 data class AbilityEvent(
     val tag: GameplayTag,                 // 事件类型
-    val source: AbilityHandle,            // 来源技能
     val payload: Any? = null      // 自定义数据
 ) {
 

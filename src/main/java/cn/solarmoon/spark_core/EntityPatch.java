@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPreInputHolder, IStateMachineHolder, IEntityPatch, AbilityHost {
 
     @Override
-    default void syncGrantAbilitySpec(@NotNull AbilitySpec<?> spec) {}
+    default void setAbilitySystemComponent(@NotNull AbilitySystemComponent abilitySystemComponent) {};
 
     @Override
     default @NotNull AbilitySystemComponent getAbilitySystemComponent() { return null; }

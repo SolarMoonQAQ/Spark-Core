@@ -54,11 +54,6 @@ public class EntityMixin implements EntityPatch {
     private Vec3 lastPosO = Vec3.ZERO;
     private AbilitySystemComponent asc;
 
-    @Inject(method = "onAddedToLevel", at = @At("TAIL"))
-    public void onAddedToLevel(CallbackInfo ci) {
-        asc = new AbilitySystemComponent(entity, level);
-    }
-
     @Override
     public @NotNull Map<@NotNull ResourceLocation, @NotNull StateMachineHandler> getStateMachineHandlers() {
         return stateMachineHandlers;
@@ -126,8 +121,8 @@ public class EntityMixin implements EntityPatch {
     }
 
     @Override
-    public void syncGrantAbilitySpec(@NotNull AbilitySpec<?> spec) {
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new GrantAbilityEntityPayload(id, spec));
+    public void setAbilitySystemComponent(@NotNull AbilitySystemComponent abilitySystemComponent) {
+        asc = abilitySystemComponent;
     }
 
 }

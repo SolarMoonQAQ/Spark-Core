@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.KeyAnimData
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
 import cn.solarmoon.spark_core.util.toRadians
@@ -15,9 +16,9 @@ import org.joml.Vector3f
  * 骨骼动画，是一个完整动画的一部分，是动画的最小单位，受animation制约和控制
  */
 data class OBoneAnimation(
-    val rotation: LinkedHashMap<Double, OKeyFrame>,
-    val position: LinkedHashMap<Double, OKeyFrame>,
-    val scale: LinkedHashMap<Double, OKeyFrame>
+    val rotation: LinkedHashMap<Float, OKeyFrame>,
+    val position: LinkedHashMap<Float, OKeyFrame>,
+    val scale: LinkedHashMap<Float, OKeyFrame>
 ) {
 
     /**
@@ -26,9 +27,9 @@ data class OBoneAnimation(
     var rootAnimation: OAnimation? = null
 
     private fun getPresentAnimValue(
-        valueMap: LinkedHashMap<Double, OKeyFrame>,
-        time: Double,
-        animatable: IAnimatable<*>,
+        valueMap: LinkedHashMap<Float, OKeyFrame>,
+        time: Float,
+        anim: AnimInstance,
         defaultValue: Vector3f
     ): Vector3f {
         // 在各个时间内两两遍历，定位到当前间隔进行变换
@@ -40,12 +41,12 @@ data class OBoneAnimation(
             if (time >= tNow && time < tTarget) {
                 val timeInternal = tTarget - tNow
                 val progress = (time - tNow) / timeInternal
-                return kTarget.value.interpolation.lerp(progress.toFloat(), valueMap, index, animatable)
+                return kTarget.value.interpolation.lerp(progress, valueMap, index, anim)
             }
         }
 
         if (valueMap.isNotEmpty() && time >= valueMap.keys.last()) {
-            return valueMap.values.last().post.eval(animatable)
+            return valueMap.values.last().post.eval(anim)
         }
 
         return defaultValue
@@ -55,24 +56,24 @@ data class OBoneAnimation(
      * 获取当前绑定实体在当前动画的当前tick所对应的旋转值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的旋转
      * @return 进行过基础偏移后的旋转弧度角
      */
-    fun getAnimRotAt(time: Double, animatable: IAnimatable<*>): Vector3f {
-        return getPresentAnimValue(rotation, time, animatable, Vector3f()).mul(-1f,-1f,1f).toRadians()
+    fun getAnimRotAt(time: Float, anim: AnimInstance): Vector3f {
+        return getPresentAnimValue(rotation, time, anim, Vector3f()).mul(-1f,-1f,1f).toRadians()
     }
 
     /**
      * 获取当前绑定实体在当前动画的当前tick所对应的位移值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的位移
      * @return 获取指定tick位置的位移数值，如果不在任何区间内，返回第一个位置
      */
-    fun getAnimPosAt(time: Double, animatable: IAnimatable<*>): Vector3f {
-        return getPresentAnimValue(position, time, animatable, Vector3f()).mul(-1/16f,1/16f,1/16f)
+    fun getAnimPosAt(time: Float, anim: AnimInstance): Vector3f {
+        return getPresentAnimValue(position, time, anim, Vector3f()).mul(-1/16f,1/16f,1/16f)
     }
 
     /**
      * 获取当前绑定实体在当前动画的当前tick所对应的缩放值，也就是说该值没有额外加工，仅是代表了动画文件里某一tick的缩放
      * @return 获取指定tick位置的缩放数值，如果不在任何区间内，返回第一个位置
      */
-    fun getAnimScaleAt(time: Double, animatable: IAnimatable<*>): Vector3f {
-        return getPresentAnimValue(scale, time, animatable, Vector3f(1f))
+    fun getAnimScaleAt(time: Float, anim: AnimInstance): Vector3f {
+        return getPresentAnimValue(scale, time, anim, Vector3f(1f))
     }
 
 //    fun getKeyAnimDataAt(time: Double): KeyAnimData {

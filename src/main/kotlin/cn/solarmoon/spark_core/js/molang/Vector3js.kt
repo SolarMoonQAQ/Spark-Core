@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.js.molang
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.js.getJSBindings
 import cn.solarmoon.spark_core.js.safeGetOrCreateJSContext
 import cn.solarmoon.spark_core.molang.core.value.Vector3k
@@ -14,10 +15,10 @@ data class Vector3js(
     val z: JSMolangValue
 ) {
 
-    fun eval(animatable: IAnimatable<*>): Vector3f {
-        val x = x.eval(animatable).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
-        val y = y.eval(animatable).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
-        val z = z.eval(animatable).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
+    fun eval(anim: AnimInstance): Vector3f {
+        val x = x.eval(anim).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
+        val y = y.eval(anim).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
+        val z = z.eval(anim).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
         return Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
     }
 

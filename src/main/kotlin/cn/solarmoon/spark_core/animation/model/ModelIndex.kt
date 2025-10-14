@@ -39,7 +39,7 @@ data class ModelIndex (
         val CODEC: Codec<ModelIndex> = RecordCodecBuilder.create { instance ->
             instance.group(
                 Codec.STRING.fieldOf("type").forGetter { it.type },
-                ResourceLocation.CODEC.fieldOf("model_path").forGetter(ModelIndex::location),
+                ResourceLocation.CODEC.fieldOf("path").forGetter(ModelIndex::location),
             ).apply(instance, ::ModelIndex)
         }
 

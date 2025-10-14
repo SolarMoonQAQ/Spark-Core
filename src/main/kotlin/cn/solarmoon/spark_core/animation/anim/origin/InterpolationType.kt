@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.js.eval
 import cn.solarmoon.spark_core.js.getJSBindings
 import cn.solarmoon.spark_core.js.molang.QueryContext
@@ -23,17 +24,17 @@ enum class InterpolationType {
 
     fun lerp(
         progress: Float,
-        keyFrames: LinkedHashMap<Double, OKeyFrame>,
+        keyFrames: LinkedHashMap<Float, OKeyFrame>,
         presentIndex: Int,
-        animatable: IAnimatable<*>,
+        anim: AnimInstance,
     ): Vector3f {
         val progress = min(progress, 1f)
         val keyFrameGroup = keyFrames.values
 
-        val kPre = keyFrameGroup.elementAt(max(presentIndex - 1, 0)).pre.eval(animatable)
-        val kNow = keyFrameGroup.elementAt(presentIndex).post.eval(animatable)
-        val kTarget = keyFrameGroup.elementAt(min(presentIndex + 1, keyFrameGroup.size - 1)).pre.eval(animatable)
-        val kPost = keyFrameGroup.elementAt(min(presentIndex + 2, keyFrameGroup.size - 1)).post.eval(animatable)
+        val kPre = keyFrameGroup.elementAt(max(presentIndex - 1, 0)).pre.eval(anim)
+        val kNow = keyFrameGroup.elementAt(presentIndex).post.eval(anim)
+        val kTarget = keyFrameGroup.elementAt(min(presentIndex + 1, keyFrameGroup.size - 1)).pre.eval(anim)
+        val kPost = keyFrameGroup.elementAt(min(presentIndex + 2, keyFrameGroup.size - 1)).post.eval(anim)
 
         // 在终点就不lerp了
         if (presentIndex == keyFrameGroup.size - 1) return kNow
@@ -48,11 +49,11 @@ enum class InterpolationType {
 
             CATMULLROM -> {
                 val x =
-                    Mth.catmullrom(progress, kPre.x.toFloat(), kNow.x.toFloat(), kTarget.x.toFloat(), kPost.x.toFloat())
+                    Mth.catmullrom(progress, kPre.x, kNow.x, kTarget.x, kPost.x)
                 val y =
-                    Mth.catmullrom(progress, kPre.y.toFloat(), kNow.y.toFloat(), kTarget.y.toFloat(), kPost.y.toFloat())
+                    Mth.catmullrom(progress, kPre.y, kNow.y, kTarget.y, kPost.y)
                 val z =
-                    Mth.catmullrom(progress, kPre.z.toFloat(), kNow.z.toFloat(), kTarget.z.toFloat(), kPost.z.toFloat())
+                    Mth.catmullrom(progress, kPre.z, kNow.z, kTarget.z, kPost.z)
                 return Vector3f(x, y, z)
             }
         }

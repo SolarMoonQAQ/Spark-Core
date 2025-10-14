@@ -8,7 +8,7 @@ interface JSAnimatable {
 
     val self get() = this as IAnimatable<*>
 
-    fun changeSpeed(time: Int, speed: Double) {
+    fun changeSpeed(time: Int, speed: Float) {
         if (time > 0) {
             self.animController.changeSpeed(time, speed)
         }

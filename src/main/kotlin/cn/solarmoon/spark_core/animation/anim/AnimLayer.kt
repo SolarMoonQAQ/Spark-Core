@@ -13,15 +13,15 @@ class AnimLayer {
 
     var blendMode = BlendMode.OVERRIDE
 
-    fun getBoneWeight(boneName: String): Double {
-        if (animations.all { !it.origin.bones.contains(boneName) }) return 0.0
-        return if (animations.size == 1) animations.maxOf { it.currentWeight } else 1.0
+    fun getBoneWeight(boneName: String): Float {
+        if (animations.all { !it.origin.bones.contains(boneName) }) return 0.0f
+        return if (animations.size == 1) animations.maxOf { it.currentWeight } else 1.0f
     }
 
     val isPlaying get() = animations.isNotEmpty()
 
     fun blendBone(boneName: String): KeyAnimData {
-        val totalWeight = animations.sumOf { it.currentWeight }
+        val totalWeight = animations.sumOf { it.currentWeight.toDouble() }
         val boneBaseRot = Quaternionf()
 
         // 如果总权重为0，则返回默认姿势（简化计算）
@@ -33,16 +33,15 @@ class AnimLayer {
         val rot = boneBaseRot; var accumulatedWeight = 0f
         val scale = Vector3f(1f)
         animations.forEach {
-            val animatable = it.holder
             val boneData = it.origin.getBoneAnimation(boneName) ?: return@forEach
             val pt = (it.currentWeight / totalWeight).toFloat()
             val time = it.typedTime
-            pos.add(boneData.getAnimPosAt(time, animatable).mul(pt))
+            pos.add(boneData.getAnimPosAt(time, it).mul(pt))
 //            rot.slerp(boneData.getAnimRotAt(time, animatable).toQuaternionf(), pt)
-            scale.add(boneData.getAnimScaleAt(time, animatable).mul(pt)).sub(Vector3f(pt))
+            scale.add(boneData.getAnimScaleAt(time, it).mul(pt)).sub(Vector3f(pt))
 
             // 计算pt和时间
-            val origRot = boneData.getAnimRotAt(time, animatable).toQuaternionf()
+            val origRot = boneData.getAnimRotAt(time, it).toQuaternionf()
             if (accumulatedWeight == 0f) {
                 rot.set(origRot)
                 accumulatedWeight = pt
@@ -55,7 +54,7 @@ class AnimLayer {
         return KeyAnimData(pos.toVec3(), rot.getEulerAnglesXYZ(Vector3f()).toVec3(), scale.toVec3())
     }
 
-    fun physicsTick(overallSpeed: Double) {
+    fun physicsTick(overallSpeed: Float) {
         animations.forEach {
             it.physTick(overallSpeed)
         }

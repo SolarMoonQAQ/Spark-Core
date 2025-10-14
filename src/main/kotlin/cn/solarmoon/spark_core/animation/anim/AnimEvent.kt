@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.animation.anim
 
+import cn.solarmoon.spark_core.js.molang.JSMolangValue
+
 sealed class AnimEvent {
 
     /**
@@ -26,5 +28,7 @@ sealed class AnimEvent {
      * 动画生命周期tick时触发
      */
     object Tick : AnimEvent()
+
+    class Notify(val point: AnimNotify.Point, val value: JSMolangValue): AnimEvent()
 
 }

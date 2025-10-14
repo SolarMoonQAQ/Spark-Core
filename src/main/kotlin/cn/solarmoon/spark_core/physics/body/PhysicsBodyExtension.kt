@@ -46,15 +46,9 @@ fun Level.addPhysicsBody(body: PhysicsCollisionObject) {
 fun Level.removePhysicsBody(body: PhysicsCollisionObject) {
     physicsLevel.apply {
         submitImmediateTask {
+            body.owner = null
             world.removeCollisionObject(body)
         }
-    }
-}
-
-fun Level.removePhysicsBody(name: String) {
-    val body = (this as PhysicsHost).getPhysicsBody(name)
-    body?.let {
-        removePhysicsBody(it)
     }
 }
 

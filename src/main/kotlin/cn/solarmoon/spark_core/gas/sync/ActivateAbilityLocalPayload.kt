@@ -21,7 +21,7 @@ class ActivateAbilityLocalPayload(
         fun handleInServer(payload: ActivateAbilityLocalPayload, context: IPayloadContext) {
             context.enqueueWork {
                 val requester = context.player()
-                requester.abilitySystemComponent.activateAbility(payload.handle, payload.context)
+                requester.abilitySystemComponent.active(payload.handle, payload.context)
                 PacketDistributor.sendToPlayersTrackingEntity(requester, ActivateAbilityPayload(requester.id, payload.handle, payload.context))
             }.exceptionally {
                 null
@@ -31,11 +31,12 @@ class ActivateAbilityLocalPayload(
         @JvmStatic
         val TYPE = CustomPacketPayload.Type<ActivateAbilityLocalPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "ability_activate_local"))
 
-//        @JvmStatic
-//        val STREAM_CODEC = StreamCodec.composite(
-//            AbilityHandle.STREAM_CODEC, ActivateAbilityLocalPayload::handle,
-//            ::ActivateAbilityLocalPayload
-//        )
+        @JvmStatic
+        val STREAM_CODEC = StreamCodec.composite(
+            AbilityHandle.STREAM_CODEC, ActivateAbilityLocalPayload::handle,
+            ActivationContext.STREAM_CODEC, ActivateAbilityLocalPayload::context,
+            ::ActivateAbilityLocalPayload
+        )
     }
 
 }

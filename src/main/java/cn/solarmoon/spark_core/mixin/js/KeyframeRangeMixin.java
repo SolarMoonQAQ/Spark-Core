@@ -1,9 +1,0 @@
-package cn.solarmoon.spark_core.mixin.js;
-
-import cn.solarmoon.spark_core.animation.anim.KeyframeRange;
-import cn.solarmoon.spark_core.js.extensions.JSKeyframeRange;
-import org.spongepowered.asm.mixin.Mixin;
-
-@Mixin(KeyframeRange.class)
-public class KeyframeRangeMixin implements JSKeyframeRange {
-}

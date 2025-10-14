@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
+import cn.solarmoon.spark_core.js.molang.JSMolangValue
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
@@ -10,8 +11,9 @@ import net.minecraft.network.codec.StreamCodec
  */
 data class OAnimation(
     val loop: Loop,
-    val animationLength: Double,
-    val bones: LinkedHashMap<String, OBoneAnimation>
+    val animationLength: Float,
+    val bones: LinkedHashMap<String, OBoneAnimation>,
+    val timeline: LinkedHashMap<Float, List<JSMolangValue>>
 ) {
 
     init {
@@ -22,11 +24,34 @@ data class OAnimation(
 
     companion object {
         @JvmStatic
+        val TIMELINE_CODEC: Codec<LinkedHashMap<Float, List<JSMolangValue>>> =
+            Codec.unboundedMap(
+                Codec.STRING,
+                Codec.either(JSMolangValue.CODEC, Codec.list(JSMolangValue.CODEC))
+            ).xmap(
+                { map ->
+                    LinkedHashMap(map.mapKeys { it.key.toFloat() }.mapValues { (_, v) ->
+                        v.map({ listOf(it) }, { it }) // Either.Left -> 单个值转 List, Either.Right -> 已经是 List
+                    })
+                },
+                { linked ->
+                    linked.mapKeys { it.key.toString() }.mapValues { (_, list) ->
+                        if (list.size == 1) {
+                            com.mojang.datafixers.util.Either.left(list[0])
+                        } else {
+                            com.mojang.datafixers.util.Either.right(list)
+                        }
+                    }
+                }
+            )
+
+        @JvmStatic
         val CODEC: Codec<OAnimation> = RecordCodecBuilder.create {
             it.group(
                 Loop.CODEC.optionalFieldOf("loop", Loop.ONCE).forGetter { it.loop },
-                Codec.DOUBLE.optionalFieldOf("animation_length", 9999999.0).forGetter { it.animationLength },
-                OBoneAnimation.MAP_CODEC.fieldOf("bones").forGetter { it.bones }
+                Codec.FLOAT.optionalFieldOf("animation_length", 9999999.0f).forGetter { it.animationLength },
+                OBoneAnimation.MAP_CODEC.fieldOf("bones").forGetter { it.bones },
+                TIMELINE_CODEC.optionalFieldOf("timeline", LinkedHashMap()).forGetter { it.timeline }
             ).apply(it, ::OAnimation)
         }
 
@@ -36,8 +61,9 @@ data class OAnimation(
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(
             Loop.STREAM_CODEC, OAnimation::loop,
-            ByteBufCodecs.DOUBLE, OAnimation::animationLength,
+            ByteBufCodecs.FLOAT, OAnimation::animationLength,
             OBoneAnimation.MAP_STREAM_CODEC, OAnimation::bones,
+            ByteBufCodecs.map(::LinkedHashMap, ByteBufCodecs.FLOAT, JSMolangValue.STREAM_CODEC.apply(ByteBufCodecs.list())), OAnimation::timeline,
             ::OAnimation
         )
 

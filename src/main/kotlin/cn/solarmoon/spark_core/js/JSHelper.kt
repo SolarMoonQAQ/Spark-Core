@@ -18,7 +18,6 @@ private val context = ThreadLocal.withInitial {
         .allowAllAccess(true)
         .build()
 }
-
 fun safeGetOrCreateJSContext() = context.get()
 
 fun org.graalvm.polyglot.Context.getJSBindings() = getBindings("js")

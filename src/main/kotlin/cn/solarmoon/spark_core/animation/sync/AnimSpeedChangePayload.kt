@@ -11,14 +11,15 @@ import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
+import kotlin.Float
 
 class AnimSpeedChangePayload private constructor(
     val syncerType: SyncerType<*>,
     val syncData: SyncData,
     val time: Int,
-    val speed: Double
+    val speed: Float
 ): CustomPacketPayload {
-    constructor(animatable: Syncer, time: Int, speed: Double): this(animatable.syncerType, animatable.syncData, time, speed)
+    constructor(animatable: Syncer, time: Int, speed: Float): this(animatable.syncerType, animatable.syncData, time, speed)
 
     override fun type(): CustomPacketPayload.Type<out CustomPacketPayload?> {
         return TYPE
@@ -42,7 +43,7 @@ class AnimSpeedChangePayload private constructor(
             SyncerType.STREAM_CODEC, AnimSpeedChangePayload::syncerType,
             SyncData.STREAM_CODEC, AnimSpeedChangePayload::syncData,
             ByteBufCodecs.INT, AnimSpeedChangePayload::time,
-            ByteBufCodecs.DOUBLE, AnimSpeedChangePayload::speed,
+            ByteBufCodecs.FLOAT, AnimSpeedChangePayload::speed,
             ::AnimSpeedChangePayload
         )
     }

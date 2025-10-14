@@ -5,9 +5,11 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
+import cn.solarmoon.spark_core.js.eval
+import cn.solarmoon.spark_core.js.molang.JSMolangValue
+import cn.solarmoon.spark_core.js.safeGetOrCreateJSContext
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import net.minecraft.nbt.CompoundTag
-import org.joml.Vector2d
 import ru.nsk.kstatemachine.event.Event
 import ru.nsk.kstatemachine.state.activeStates
 import ru.nsk.kstatemachine.state.initialState
@@ -15,7 +17,6 @@ import ru.nsk.kstatemachine.state.onEntry
 import ru.nsk.kstatemachine.state.state
 import ru.nsk.kstatemachine.state.transition
 import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
-import ru.nsk.kstatemachine.statemachine.onStateEntry
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
 import ru.nsk.kstatemachine.transition.onTriggered
 import kotlin.collections.getOrPut
@@ -26,7 +27,7 @@ class AnimInstance internal constructor(
     val animIndex: AnimIndex
 ) {
 
-    sealed class AnimStateEvent {
+    private sealed class AnimStateEvent {
         object Start: Event
         object TransitionFinish: Event
         object Stop: Event // 打断
@@ -35,12 +36,12 @@ class AnimInstance internal constructor(
 
     val state get() = AnimState.valueOf(lifecycleStateMachine.activeStates().firstOrNull()?.name?.uppercase() ?: "IDLE")
 
-    val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex).getValidAnimation(animIndex.name)
+    val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex).getAnimation(animIndex.name) ?: throw IllegalArgumentException("没有找到索引为 $animIndex 的动画")
     val tag = CompoundTag()
-    var time = 0.0
-    var speed = 1.0
-    var weight = 1.0
-    var currentWeight = 0.0
+    var time = 0.0f
+    var speed = 1.0f
+    var weight = 1.0f
+    var currentWeight = 0.0f
         private set
     var inTransitionTime = 0.15f
     var outTransitionTime = 0.15f
@@ -54,11 +55,10 @@ class AnimInstance internal constructor(
     var rejectNewAnim: (AnimInstance?) -> Boolean = { false }
     var eventHandlers = mutableMapOf<KClass<out AnimEvent>, MutableList<AnimInstance.(AnimEvent) -> Unit>>()
         private set
-    var keyframeRanges = mutableMapOf<String, KeyframeRange>()
-        private set
     var paused = false
     var selfDriving = false
     var group = AnimGroups.MAIN
+    private val notifies = mutableListOf<AnimNotify>()
 
     val inTransitionTick get() = (inTransitionTime * PhysicsLevel.TPS).toInt()
     val outTransitionTick get() = (outTransitionTime * PhysicsLevel.TPS).toInt()
@@ -69,6 +69,16 @@ class AnimInstance internal constructor(
         Loop.TRUE -> time % origin.animationLength
         Loop.ONCE -> time
         Loop.HOLD_ON_LAST_FRAME -> time
+    }
+
+    init {
+        origin.timeline.forEach { timeline, script0 ->
+            registerNotify(AnimNotify.Point("fromOrigin", timeline)).onEnter {
+                val script = JSMolangValue(script0.joinToString(""))
+                triggerEvent(AnimEvent.Notify(this, script))
+                script.eval(this@AnimInstance)
+            }
+        }
     }
 
     private val lifecycleStateMachine = createStdLibStateMachine {
@@ -90,7 +100,7 @@ class AnimInstance internal constructor(
         enter.apply {
             onEntry {
                 transitionTick = inTransitionTick
-                currentWeight = 0.0
+                currentWeight = 0.0f
                 holder.animController.playAnimation(this@AnimInstance)
                 triggerEvent(AnimEvent.Start)
             }
@@ -126,7 +136,11 @@ class AnimInstance internal constructor(
         exit.apply {
             onEntry {
                 transitionTick = outTransitionTick
-                triggerEvent(AnimEvent.End)
+                if (it.event is AnimStateEvent.Finish) holder.animLevel?.submitImmediateTask {
+                    triggerEvent(AnimEvent.End)
+                } else {
+                    triggerEvent(AnimEvent.End)
+                }
             }
 
             transition<AnimStateEvent.TransitionFinish> {
@@ -148,9 +162,9 @@ class AnimInstance internal constructor(
         lifecycleStateMachine.processEventBlocking(AnimStateEvent.Stop)
     }
 
-    fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / (if (paused) time + step else maxLength)).coerceIn(0.0, 1.0)
+    fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / (if (paused) time + step else maxLength)).coerceIn(0.0f, 1.0f)
 
-    fun step(overallSpeed: Double = 1.0) {
+    fun step(overallSpeed: Float = 1.0f) {
         if (paused || selfDriving) return
         else time += step * overallSpeed
     }
@@ -158,7 +172,7 @@ class AnimInstance internal constructor(
     fun stepWeight() {
         when(state) {
             AnimState.ENTER -> {
-                val progress = 1.0 - (transitionTick.toDouble() / inTransitionTick)
+                val progress = if (inTransitionTick <= 0) 1f else 1.0f - (transitionTick.toFloat() / inTransitionTick)
                 currentWeight = weight * progress
                 if (--transitionTick <= 0) {
                     currentWeight = weight
@@ -166,10 +180,10 @@ class AnimInstance internal constructor(
                 }
             }
             AnimState.EXIT -> {
-                val progress = transitionTick.toDouble() / outTransitionTick
+                val progress = if (outTransitionTick <= 0) 0f else transitionTick.toFloat() / outTransitionTick
                 currentWeight = weight * progress
                 if (--transitionTick <= 0) {
-                    currentWeight = 0.0
+                    currentWeight = 0.0f
                     lifecycleStateMachine.processEventBlocking(AnimStateEvent.TransitionFinish)
                 }
             }
@@ -188,16 +202,15 @@ class AnimInstance internal constructor(
     }
 
     fun refresh() {
-        time = 0.0
-        keyframeRanges.values.forEach { it.reset() }
+        time = 0.0f
     }
 
     fun tick() {
         triggerEvent(AnimEvent.Tick)
-        keyframeRanges.forEach { (id, range) -> range.check(this) }
+        notifies.forEach { it.check(this) }
     }
 
-    fun physTick(overallSpeed: Double = 1.0) {
+    fun physTick(overallSpeed: Float = 1.0f) {
         if (isInTransition) stepWeight()
         else {
             when(origin.loop) {
@@ -205,8 +218,10 @@ class AnimInstance internal constructor(
                     step(overallSpeed)
                 }
                 Loop.ONCE -> {
-                    if (time < maxLength) step(overallSpeed)
-                    else lifecycleStateMachine.processEventBlocking(AnimStateEvent.Finish)
+                    if (time <= maxLength) step(overallSpeed)
+                    else {
+                        lifecycleStateMachine.processEventBlocking(AnimStateEvent.Finish)
+                    }
                 }
                 Loop.HOLD_ON_LAST_FRAME -> {
                     if (time < maxLength) step(overallSpeed)
@@ -216,39 +231,10 @@ class AnimInstance internal constructor(
     }
 
     // 关键帧系统方法
-    /**
-     * 注册一个关键帧范围
-     * @param id 范围的唯一标识符
-     * @param start 开始时间
-     * @param end 结束时间
-     * @return KeyframeRange对象，可用于注册事件处理器
-     */
-    fun registerKeyframeRange(id: String, start: Double, end: Double): KeyframeRange {
-        val range = KeyframeRange(id, start, end)
-        keyframeRanges[id] = range
-        return range
-    }
 
-    fun registerKeyframeRangeEnd(id: String, end: Double) = registerKeyframeRange(id, 0.0, end)
-
-    fun registerKeyframeRangeStart(id: String, start: Double) = registerKeyframeRange(id, start, maxLength)
-
-    fun registerKeyframeRanges(id: String, vararg range: Vector2d, provider: KeyframeRange.(Int) -> Unit = {}): List<KeyframeRange> {
-        val kfs = mutableListOf<KeyframeRange>()
-        range.forEachIndexed { index, r ->
-            val kf = registerKeyframeRange("$id$index", r.x, r.y)
-            provider(kf, index)
-            kfs.add(kf)
-        }
-        return kfs.toList()
-    }
-
-    /**
-     * 移除一个关键帧范围
-     * @param id 范围的唯一标识符
-     */
-    fun removeKeyframeRange(id: String) {
-        keyframeRanges.remove(id)
+    fun <N: AnimNotify> registerNotify(notify: N): N {
+        notifies += notify
+        return notify
     }
 
 }

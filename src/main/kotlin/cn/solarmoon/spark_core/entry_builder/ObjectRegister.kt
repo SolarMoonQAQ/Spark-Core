@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.entry_builder.client.KeyMappingBuilder
 import cn.solarmoon.spark_core.entry_builder.common.*
 import cn.solarmoon.spark_core.gas.Ability
 import cn.solarmoon.spark_core.gas.AbilitySpec
-import cn.solarmoon.spark_core.gas.AbilitySpecType
 import cn.solarmoon.spark_core.gas.AbilityType
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
 import cn.solarmoon.spark_core.sync.Syncer
@@ -69,8 +68,6 @@ class ObjectRegister(
     val entityDataSerializer = registry { NeoForgeRegistries.ENTITY_DATA_SERIALIZERS.key() }
 
     val syncerType = registry { SparkRegistries.SYNCER_TYPE.key() }
-    val abilityType = registry { SparkRegistries.ABILITY_TYPE.key() }
-    val abilitySpecType = registry { SparkRegistries.ABILITY_SPEC_TYPE.key() }
 
     protected fun <T> registry(key: () -> ResourceKey<out Registry<T>>) = lazy {
         DeferredRegister.create(key(), modId).apply {
@@ -112,9 +109,6 @@ class ObjectRegister(
     inline fun <reified T, reified O: Any?> itemCapability(id: String) = ItemCapability.create(ResourceLocation.fromNamespaceAndPath(modId, id), T::class.java, O::class.java)
 
     // 星火
-    fun <A: Ability> abilityType(builder: (CommonRegisterBuilder<AbilityType<*>, AbilityType<A>>) -> Unit) = commonBuilder(abilityType.value, builder)
-
-    fun <A: Ability, S: AbilitySpec<A>> abilitySpecType(builder: CommonRegisterBuilder<AbilitySpecType<*, *>, AbilitySpecType<A, S>>.() -> Unit) = commonBuilder(abilitySpecType.value, builder)
     fun <S: Syncer> syncerType(builder: CommonRegisterBuilder<SyncerType<*>, SyncerType<S>>.() -> Unit) = commonBuilder(syncerType.value, builder)
 
     protected fun <M, N: M> commonBuilder(deferredRegister: DeferredRegister<M>, builder: CommonRegisterBuilder<M, N>.() -> Unit) = deferredRegister.toCommonBuilder<M, N>().also { builder(it) }.build()

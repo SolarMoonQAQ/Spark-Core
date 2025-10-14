@@ -32,12 +32,13 @@ class ActivateAbilityPayload(
         @JvmStatic
         val TYPE = CustomPacketPayload.Type<ActivateAbilityPayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "ability_activate"))
 
-//        @JvmStatic
-//        val STREAM_CODEC = StreamCodec.composite(
-//            ByteBufCodecs.INT, ActivateAbilityPayload::entityId,
-//            AbilityHandle.STREAM_CODEC, ActivateAbilityPayload::handle,
-//            ::ActivateAbilityPayload
-//        )
+        @JvmStatic
+        val STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, ActivateAbilityPayload::entityId,
+            AbilityHandle.STREAM_CODEC, ActivateAbilityPayload::handle,
+            ActivationContext.STREAM_CODEC, ActivateAbilityPayload::context,
+            ::ActivateAbilityPayload
+        )
     }
 
 }
