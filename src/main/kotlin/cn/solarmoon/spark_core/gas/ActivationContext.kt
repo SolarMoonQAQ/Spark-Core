@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.gas
 
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
+import cn.solarmoon.spark_core.state_machine.graph.ActionCondition
+import com.mojang.serialization.MapCodec
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
@@ -17,9 +19,17 @@ import java.util.function.Function
  */
 interface ActivationContext {
 
+    val codec: MapCodec<out ActivationContext>
+
     val streamCodec: StreamCodec<RegistryFriendlyByteBuf, out ActivationContext>
 
     companion object {
+        val CODEC = SparkRegistries.ACTIVATION_CONTEXT_CODEC.byNameCodec()
+            .dispatch(
+                ActivationContext::codec,
+                Function.identity()
+            )
+
         val STREAM_CODEC = ByteBufCodecs.registry(SparkRegistries.ACTIVATION_CONTEXT_STREAM_CODEC.key()).dispatch(
             ActivationContext::streamCodec,
             Function.identity()
@@ -27,6 +37,7 @@ interface ActivationContext {
     }
 
     object Empty: ActivationContext {
+        override val codec: MapCodec<out ActivationContext> = MapCodec.unit(Empty)
         override val streamCodec: StreamCodec<RegistryFriendlyByteBuf, out ActivationContext> = StreamCodec.unit(Empty)
     }
 

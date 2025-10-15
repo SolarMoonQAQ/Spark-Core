@@ -2,8 +2,6 @@ package cn.solarmoon.spark_core.animation.anim.origin
 
 import cn.solarmoon.spark_core.js.molang.JSMolangValue
 import cn.solarmoon.spark_core.js.molang.Vector3js
-import cn.solarmoon.spark_core.molang.core.value.DoubleValue
-import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import com.mojang.datafixers.util.Either
 import com.mojang.serialization.Codec
 import com.mojang.serialization.DataResult

@@ -1,10 +1,6 @@
 package cn.solarmoon.spark_core.js.molang
 
-import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
-import cn.solarmoon.spark_core.js.getJSBindings
-import cn.solarmoon.spark_core.js.safeGetOrCreateJSContext
-import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import net.minecraft.Util
 import net.minecraft.network.codec.ByteBufCodecs
 import org.joml.Vector3f

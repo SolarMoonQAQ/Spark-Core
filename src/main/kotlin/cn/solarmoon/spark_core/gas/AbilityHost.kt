@@ -14,4 +14,6 @@ interface AbilityHost {
 
     fun syncEndAbility(handle: AbilityHandle)
 
+    fun syncEndAllAbilities()
+
 }

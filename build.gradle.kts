@@ -176,10 +176,8 @@ dependencies {
     implementation("maven.modrinth:first-person-model:Sx5QD2SF")
 
     // 外部库 ------------------------------------------------------------------------------------------------------------
-    implementation("org.mozilla:rhino:1.8.0")?.let { jarJar(it) }
-    additionalRuntimeClasspath("org.mozilla:rhino:1.8.0")
-
-    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
+    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")?.let { jarJar(it) }
+    additionalRuntimeClasspath("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
     // 状态机
 //    implementation("io.github.nsk90:kstatemachine-jvm:0.34.2")?.let { jarJar(it) }
 //    additionalRuntimeClasspath("io.github.nsk90:kstatemachine-jvm:0.34.2")

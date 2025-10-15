@@ -1,7 +1,5 @@
 package cn.solarmoon.spark_core.util
 
-import cn.solarmoon.spark_core.molang.core.value.DoubleValue
-import cn.solarmoon.spark_core.molang.core.value.Vector3k
 import cn.solarmoon.spark_core.physics.toBVector3f
 import com.jme3.bounding.BoundingBox
 import com.jme3.math.Matrix4f
@@ -21,12 +19,9 @@ import org.joml.Vector2d
 import org.joml.Vector3d
 import org.joml.Vector3f
 import java.lang.Math
-import java.lang.Math.copySign
-import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
-import kotlin.math.sqrt
 import kotlin.math.withSign
 
 fun Vec3.toRadians(): Vec3 {
@@ -182,18 +177,6 @@ fun Vec3.toChunkPos() = ChunkPos(x.toInt() shr 4, z.toInt() shr 4)
 fun com.jme3.math.Vector3f.toChunkPos() = ChunkPos(x.toInt() shr 4, z.toInt() shr 4)
 
 fun Vector3f.toChunkPos() = ChunkPos(x.toInt() shr 4, z.toInt() shr 4)
-
-fun Vec3.toVector3k() = Vector3k(
-    DoubleValue(x),
-    DoubleValue(y),
-    DoubleValue(z)
-)
-
-fun Vector3d.toVector3k() = Vector3k(
-    DoubleValue(x),
-    DoubleValue(y),
-    DoubleValue(z)
-)
 
 fun Matrix4f.toMatrix4f() = org.joml.Matrix4f(
     m00, m10, m20, m30,

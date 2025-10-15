@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister
-import cn.solarmoon.spark_core.molang.core.MolangParser
 import cn.solarmoon.spark_core.pack.NativeLoader
 import cn.solarmoon.spark_core.pack.SparkPackResourceLoader
 import cn.solarmoon.spark_core.physics.selectLib
@@ -22,8 +21,6 @@ class SparkCore(modEventBus: IEventBus, modContainer: ModContainer) {
         @JvmField
         val LOGGER = logger()
         val REGISTER = ObjectRegister(MOD_ID)
-        @JvmField
-        val PARSER = MolangParser(HashMap(4))
         lateinit var EVENT_BUS: IEventBus
             private set
 
@@ -44,7 +41,6 @@ class SparkCore(modEventBus: IEventBus, modContainer: ModContainer) {
         }
 
         SparkRegistries.register()
-        SparkJSScriptRegister.register(modEventBus)
         SparkVisualEffects.register()
         SparkCommonEventRegister.register(modEventBus)
         SparkPayloadRegister.register(modEventBus)

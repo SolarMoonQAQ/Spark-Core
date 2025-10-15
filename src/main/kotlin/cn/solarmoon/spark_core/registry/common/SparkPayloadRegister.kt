@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.gas.sync.CancelAbilityEntityPayload
 import cn.solarmoon.spark_core.gas.sync.ClearAbilityEntityPayload
 import cn.solarmoon.spark_core.gas.sync.EndAbilityEntityPayload
+import cn.solarmoon.spark_core.gas.sync.EndAllAbilitiesEntityPayload
 import cn.solarmoon.spark_core.gas.sync.TryActivateAbilityLocalPayload
 import cn.solarmoon.spark_core.gas.sync.TryActivateAbilityEntityPayload
 import cn.solarmoon.spark_core.gas.sync.GiveAbilityEntityPayload
@@ -13,11 +14,6 @@ import cn.solarmoon.spark_core.pack.sync.SparkPackagePayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageSendingTask
 import cn.solarmoon.spark_core.physics.terrain.TerrainUpdatePayload
-import cn.solarmoon.spark_core.skill.payload.SkillPayload
-import cn.solarmoon.spark_core.skill.payload.SkillPredictPayload
-import cn.solarmoon.spark_core.skill.payload.SkillPredictSyncPayload
-import cn.solarmoon.spark_core.skill.payload.SkillRejectPayload
-import cn.solarmoon.spark_core.skill.payload.SkillSyncPayload
 import cn.solarmoon.spark_core.sound.payload.SpreadingSoundPayload
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakePayload
 import net.neoforged.bus.api.IEventBus
@@ -36,13 +32,6 @@ object SparkPayloadRegister {
         val visual = event.registrar("visual_effect")
         visual.playToClient(CameraShakePayload.TYPE, CameraShakePayload.STREAM_CODEC, CameraShakePayload::handleInClient)
 
-        val skill = event.registrar("skill")
-        skill.playToServer(SkillPredictPayload.TYPE, SkillPredictPayload.STREAM_CODEC, SkillPredictPayload::handleInServer)
-        skill.playToClient(SkillRejectPayload.TYPE, SkillRejectPayload.STREAM_CODEC, SkillRejectPayload::handleInClient)
-        skill.playToClient(SkillPredictSyncPayload.TYPE, SkillPredictSyncPayload.STREAM_CODEC, SkillPredictSyncPayload::handleInClient)
-        skill.playToClient(SkillSyncPayload.TYPE, SkillSyncPayload.STREAM_CODEC, SkillSyncPayload::handleInClient)
-        skill.playBidirectional(SkillPayload.TYPE, SkillPayload.STREAM_CODEC, SkillPayload::handleInBothSide)
-
         val physics = event.registrar("physics")
         physics.playToClient(SpreadingSoundPayload.TYPE, SpreadingSoundPayload.STREAM_CODEC, SpreadingSoundPayload::handler)
         physics.playToClient(TerrainUpdatePayload.TYPE, TerrainUpdatePayload.STREAM_CODEC, TerrainUpdatePayload::handler)
@@ -59,6 +48,7 @@ object SparkPayloadRegister {
         gas.playToServer(TryActivateAbilityLocalPayload.TYPE, TryActivateAbilityLocalPayload.STREAM_CODEC, TryActivateAbilityLocalPayload::handleInServer)
         gas.playToClient(CancelAbilityEntityPayload.TYPE, CancelAbilityEntityPayload.STREAM_CODEC, CancelAbilityEntityPayload::handleInClient)
         gas.playToClient(EndAbilityEntityPayload.TYPE, EndAbilityEntityPayload.STREAM_CODEC, EndAbilityEntityPayload::handleInClient)
+        gas.playToClient(EndAllAbilitiesEntityPayload.TYPE, EndAllAbilitiesEntityPayload.STREAM_CODEC, EndAllAbilitiesEntityPayload::handleInClient)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

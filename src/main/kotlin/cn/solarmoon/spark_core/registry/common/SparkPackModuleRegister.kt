@@ -13,7 +13,6 @@ object SparkPackModuleRegister {
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(ModelModule())
         event.register(AnimationModule())
-        event.register(JSScriptModule())
         event.register(recipe)
         event.register(lang)
         event.register(TextureModule())

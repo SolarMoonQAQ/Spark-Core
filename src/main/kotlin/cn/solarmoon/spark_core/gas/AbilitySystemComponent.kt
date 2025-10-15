@@ -85,6 +85,13 @@ class AbilitySystemComponent(
         }
     }
 
+    fun endAllAbilities() {
+        if (!level.isClientSide) {
+            abilitySpecs.values.forEach { it.endAll() }
+            owner.syncEndAllAbilities()
+        }
+    }
+
     fun registerListener(tag: GameplayTag, spec: AbilitySpec<*>, callback: (AbilityEvent) -> Unit) {
         listeners.computeIfAbsent(tag) { mutableMapOf() }
             .computeIfAbsent(spec) { mutableListOf() }
@@ -127,6 +134,10 @@ class AbilitySystemComponent(
         abilitySpecs[handle]?.apply {
             tryActivate(context)
         }
+    }
+
+    fun onRepEndAllAbilities() {
+        abilitySpecs.values.forEach { it.endAll() }
     }
 
 }

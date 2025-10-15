@@ -2,11 +2,9 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.delta_sync.DiffSyncSchema
-import cn.solarmoon.spark_core.gas.AbilityEvent
-import cn.solarmoon.spark_core.gas.AbilitySpec
 import cn.solarmoon.spark_core.gas.AbilityType
 import cn.solarmoon.spark_core.gas.ActivationContext
-import cn.solarmoon.spark_core.skill.graph.ActionCondition
+import cn.solarmoon.spark_core.state_machine.graph.ActionCondition
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.MapCodec
@@ -16,6 +14,10 @@ import net.minecraft.network.codec.StreamCodec
 object SparkRegistries {
 
     val ABILITY_TYPE_CODEC = SparkCore.REGISTER.registry<MapCodec<out AbilityType.Serializer>>("ability_type_codec") {
+        it.sync(true).create()
+    }
+
+    val ACTIVATION_CONTEXT_CODEC = SparkCore.REGISTER.registry<MapCodec<out ActivationContext>>("activation_context_codec") {
         it.sync(true).create()
     }
 

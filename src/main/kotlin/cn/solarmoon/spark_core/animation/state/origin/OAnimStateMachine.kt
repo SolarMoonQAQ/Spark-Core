@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.animation.anim.AnimGroups
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.animInstance
 import cn.solarmoon.spark_core.animation.state.AnimStateMachine
-import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import ru.nsk.kstatemachine.state.State
@@ -26,7 +25,6 @@ data class OAnimStateMachine(
 ) {
 
     fun build(animatable: IAnimatable<*>): AnimStateMachine {
-        val exp = ExpressionEvaluator.evaluator(animatable)
         // 每个状态对应一个 Map<动画名, AnimInstance>
         val stateAnims = mutableMapOf<String, Map<String, AnimInstance>>()
 
@@ -39,7 +37,7 @@ data class OAnimStateMachine(
                     animInstance(animatable, animName)!!.apply {
                         group = AnimGroups.STATE
                         inTransitionTime = animState.blendTransition
-                        onEvent<AnimEvent.Tick> { weight = animWeight.evalAsDouble(exp).toFloat() }
+                        onEvent<AnimEvent.Tick> { weight = animWeight.eval(this).asFloat() }
                     }
                 }
 
@@ -52,11 +50,11 @@ data class OAnimStateMachine(
                     onEntry {
                         SparkCore.LOGGER.info("进入状态: $stateName，Animations: ${anims.keys}")
                         anims.values.forEach { it.enter() }
-                        animState.onEntry.evalUnsafe(exp)
+                        //animState.onEntry.eval()
                     }
                     onExit {
                         anims.values.forEach { it.exit() }
-                        animState.onExit.evalUnsafe(exp)
+                        //animState.onExit.eval(exp)
                     }
                 }
 
@@ -69,7 +67,7 @@ data class OAnimStateMachine(
                 val choice = choiceState {
                     animState.transitions.forEach { (targetName, condition) ->
                         val targetState = stateMap[targetName]!!
-                        if (condition.evalAsBoolean(exp)) return@choiceState targetState
+                        //if (condition.eval(exp)) return@choiceState targetState
                     }
                     fromState
                 }

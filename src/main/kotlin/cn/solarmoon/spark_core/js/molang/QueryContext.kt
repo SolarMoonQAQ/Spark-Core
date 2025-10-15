@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.js.molang
 
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
+import cn.solarmoon.spark_core.util.createParticleByString
 import cn.solarmoon.spark_core.util.toVec3
 import net.minecraft.core.BlockPos
 import net.minecraft.resources.ResourceLocation
@@ -21,14 +22,27 @@ class QueryContext(
 
     @HostAccess.Export
     fun playSound(sound: String, source: String) {
-        val pos = position().toVec3()
+        val pos = position().toVec3().add(0.0, 1.0, 0.0)
         level?.playSound(null, pos.x, pos.y, pos.z, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()))
     }
 
     @HostAccess.Export
     fun playSound(sound: String, source: String, volume: Double, pitch: Double) {
-        val pos = position().toVec3()
+        val pos = position().toVec3().add(0.0, 1.0, 0.0)
         level?.playSound(null, pos.x, pos.y, pos.z, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()), volume.toFloat(), pitch.toFloat())
+    }
+
+    @HostAccess.Export
+    fun addParticle(particle: String, pos: DoubleArray) {
+        addParticle(particle, "", pos)
+    }
+
+    @HostAccess.Export
+    fun addParticle(particle: String, reader: String, pos: DoubleArray) {
+        val pos = pos.toVec3()
+        level?.apply {
+            addParticle(createParticleByString(registryAccess(), particle, reader), pos.x, pos.y, pos.z, 0.0, 0.0, 0.0)
+        }
     }
 
 }

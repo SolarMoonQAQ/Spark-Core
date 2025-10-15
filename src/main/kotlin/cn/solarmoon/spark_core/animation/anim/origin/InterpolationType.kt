@@ -1,19 +1,11 @@
 package cn.solarmoon.spark_core.animation.anim.origin
 
-import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
-import cn.solarmoon.spark_core.js.eval
-import cn.solarmoon.spark_core.js.getJSBindings
-import cn.solarmoon.spark_core.js.molang.QueryContext
-import cn.solarmoon.spark_core.js.put
-import cn.solarmoon.spark_core.js.safeGetOrCreateJSContext
-import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator
 import cn.solarmoon.spark_core.util.toVector3f
 import com.mojang.serialization.Codec
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.util.Mth
-import org.graalvm.polyglot.Context
 import org.joml.Vector3d
 import org.joml.Vector3f
 import kotlin.math.max

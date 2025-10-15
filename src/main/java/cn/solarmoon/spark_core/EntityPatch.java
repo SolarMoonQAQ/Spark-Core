@@ -7,25 +7,20 @@ import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.preinput.IPreInputHolder;
 import cn.solarmoon.spark_core.preinput.PreInput;
-import cn.solarmoon.spark_core.skill.Skill;
-import cn.solarmoon.spark_core.skill.SkillHost;
 import cn.solarmoon.spark_core.state_machine.IStateMachineHolder;
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.Syncer;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.BlackBoard;
-import cn.solarmoon.spark_core.util.InlineEventHandlerKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPreInputHolder, IStateMachineHolder, IEntityPatch, AbilityHost {
+public interface EntityPatch extends PhysicsHost, HurtDataHolder, IPreInputHolder, IStateMachineHolder, IEntityPatch, AbilityHost, Syncer {
 
     @Override
     default void syncGiveAbility(@NotNull AbilitySpec<?> spec) {};
@@ -41,6 +36,9 @@ public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPr
 
     @Override
     default void syncEndAbility(@NotNull AbilityHandle handle) {};
+
+    @Override
+    default void syncEndAllAbilities() {};
 
     @Override
     default void setAbilitySystemComponent(@NotNull AbilitySystemComponent abilitySystemComponent) {};
@@ -67,21 +65,6 @@ public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPr
     @Override
     default @NotNull Map<@NotNull String, @NotNull PhysicsCollisionObject> getAllPhysicsBodies() {
         return Map.of();
-    }
-
-    @Override
-    default @NotNull AtomicInteger getSkillCount() {
-        return null;
-    }
-
-    @Override
-    default @NotNull ConcurrentHashMap<@NotNull Integer, @NotNull Skill> getAllSkills() {
-        return null;
-    }
-
-    @Override
-    default @NotNull ConcurrentHashMap<@NotNull Integer, @NotNull Skill> getPredictedSkills() {
-        return null;
     }
 
     @Override
