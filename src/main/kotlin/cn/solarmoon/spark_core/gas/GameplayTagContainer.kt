@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.gas
 
+import net.minecraft.network.codec.ByteBufCodecs
+
 /**
  * 标签集合
  */
@@ -18,5 +20,11 @@ data class GameplayTagContainer(
     fun isEmpty() = tags.isEmpty()
 
     override fun toString() = tags.joinToString(", ")
+
+    companion object {
+        val CODEC = GameplayTag.CODEC.listOf().xmap({ GameplayTagContainer(it.toMutableSet()) }, { it.tags.toList() })
+
+        val STREAM_CODEC = GameplayTag.STEAM_CODEC.apply(ByteBufCodecs.list()).map({ GameplayTagContainer(it.toMutableSet()) }, { it.tags.toList() })
+    }
 
 }

@@ -1,25 +1,17 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
 import cn.solarmoon.spark_core.EntityPatch;
-import cn.solarmoon.spark_core.entity.IEntityPatch;
 import cn.solarmoon.spark_core.entity.attack.HurtData;
-import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
 import cn.solarmoon.spark_core.gas.*;
-import cn.solarmoon.spark_core.gas.sync.ActivateAbilityPayload;
-import cn.solarmoon.spark_core.gas.sync.GrantAbilityEntityPayload;
+import cn.solarmoon.spark_core.gas.sync.*;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.preinput.IPreInputHolder;
 import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.registry.common.SparkSyncerTypes;
 import cn.solarmoon.spark_core.skill.Skill;
-import cn.solarmoon.spark_core.skill.SkillHost;
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler;
 import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
-import cn.solarmoon.spark_core.sync.Syncer;
 import cn.solarmoon.spark_core.sync.SyncerType;
-import cn.solarmoon.spark_core.util.InlineEventHandler;
-import cn.solarmoon.spark_core.util.InlineEventHandlerKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -29,9 +21,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -125,4 +114,28 @@ public class EntityMixin implements EntityPatch {
         asc = abilitySystemComponent;
     }
 
+    @Override
+    public void syncGiveAbility(@NotNull AbilitySpec<?> spec) {
+        PacketDistributor.sendToAllPlayers(new GiveAbilityEntityPayload(id, spec));
+    }
+
+    @Override
+    public void syncClearAbility(@NotNull AbilityHandle handle) {
+        PacketDistributor.sendToAllPlayers(new ClearAbilityEntityPayload(id, handle));
+    }
+
+    @Override
+    public void syncTryActivateAbility(@NotNull AbilityHandle handle, @NotNull ActivationContext context) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new TryActivateAbilityEntityPayload(id, handle, context));
+    }
+
+    @Override
+    public void syncCancelAbility(@NotNull AbilityHandle handle) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new CancelAbilityEntityPayload(id, handle));
+    }
+
+    @Override
+    public void syncEndAbility(@NotNull AbilityHandle handle) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new EndAbilityEntityPayload(id, handle));
+    }
 }

@@ -24,11 +24,14 @@ class SparkCore(modEventBus: IEventBus, modContainer: ModContainer) {
         val REGISTER = ObjectRegister(MOD_ID)
         @JvmField
         val PARSER = MolangParser(HashMap(4))
+        lateinit var EVENT_BUS: IEventBus
+            private set
 
         fun logger(suffix: String = ""): Logger = LoggerFactory.getLogger("星火核心/$suffix")
     }
 
     init {
+        EVENT_BUS = modEventBus
         SparkPackResourceLoader.loadAllModules()
         NativeLoader.load("bullet", selectLib())
         REGISTER.register(modEventBus)

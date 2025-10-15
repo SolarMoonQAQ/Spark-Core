@@ -118,7 +118,7 @@ class PlayerBaseAnimStateMachine(
 
     private fun IState.playRelativeAnim(animName: String) {
         val payload = payload
-        val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, animInstance(player, animName), this))
+        val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.PlayerState(player, animInstance(player, animName, false), this))
         if (event.isCanceled) return
         val anim = (event.newAnim ?: event.originAnim) ?: return
         anim.apply {

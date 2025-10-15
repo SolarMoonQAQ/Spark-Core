@@ -38,9 +38,9 @@ class AttackAbility(
     val hitBoxes = mutableMapOf<String, PhysicsRigidBody>()
     val hitContexts = mutableMapOf<String, AttackContext>()
 
-    override fun canActivate(spec: AbilitySpec<*>, context: ActivationContext): ActivationResult {
+    override fun canActivate(spec: AbilitySpec<*>, context: ActivationContext): Boolean {
         val isAnimatable = spec.asc.owner is IEntityAnimatable<*>
-        return if (isAnimatable) super.canActivate(spec, context) else ActivationResult(false)
+        return if (isAnimatable) super.canActivate(spec, context) else false
     }
 
     override fun activate(spec: AbilitySpec<*>, context: ActivationContext) {
@@ -50,13 +50,13 @@ class AttackAbility(
                 it.value.context.getJSBindings().putMember("sof", this@AttackAbility)
             }
             onEvent<AnimEvent.End> {
-                end(spec)
+                spec.endAbility(this@AttackAbility, false)
             }
         }!!
         animation.independentEnter()
     }
 
-    override fun end(spec: AbilitySpec<*>) {
+    override fun end(spec: AbilitySpec<*>, wasCancelled: Boolean) {
         hitBoxes.values.forEach {
             owner.animatable.level().removePhysicsBody(it)
         }
@@ -109,23 +109,23 @@ class AttackAbility(
         hitBoxes[id]?.collideWithGroups = CollisionGroups.NONE
     }
 
-}
+    class Serializer(
+        val animIndex: AnimIndex,
+        val tags: GameplayTagContainer
+    ): AbilityType.Serializer {
+        override val codec: MapCodec<out AbilityType.Serializer> = CODEC
 
-class AttackAbilityTypeSerializer(
-    val animIndex: AnimIndex
-): AbilityType.Serializer {
+        override fun create(): AbilityType<*> {
+            return AbilityType(tags = tags) { AttackAbility(animIndex) }
+        }
 
-    override val codec: MapCodec<out AbilityType.Serializer> = CODEC
-
-    override fun create(): AbilityType<*> {
-        return AbilityType(InstancingPolicy.INSTANCED_PER_ACTOR) { AttackAbility(animIndex) }
-    }
-
-    companion object {
-        val CODEC = RecordCodecBuilder.mapCodec {
-            it.group(
-                AnimIndex.CODEC.fieldOf("anim_index").forGetter(AttackAbilityTypeSerializer::animIndex),
-            ).apply(it, ::AttackAbilityTypeSerializer)
+        companion object {
+            val CODEC = RecordCodecBuilder.mapCodec {
+                it.group(
+                    AnimIndex.CODEC.fieldOf("anim_index").forGetter(Serializer::animIndex),
+                    GameplayTagContainer.CODEC.fieldOf("tags").forGetter(Serializer::tags),
+                ).apply(it, ::Serializer)
+            }
         }
     }
 

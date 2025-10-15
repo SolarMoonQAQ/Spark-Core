@@ -1,9 +1,8 @@
 package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.gas.AbilitySpec
 import cn.solarmoon.spark_core.gas.ActivationContext
-import cn.solarmoon.spark_core.gas.AttackAbilityTypeSerializer
+import cn.solarmoon.spark_core.gas.AttackAbility
 import cn.solarmoon.spark_core.skill.graph.ActionCondition
 import cn.solarmoon.spark_core.sync.BlockPosSyncData
 import cn.solarmoon.spark_core.sync.IntSyncData
@@ -25,10 +24,9 @@ object SparkCodeRegister {
         event.register(SparkRegistries.ACTION_CONDITION_CODEC.key(), id("all")) { ActionCondition.All.CODEC }
         event.register(SparkRegistries.ACTION_CONDITION_CODEC.key(), id("any")) { ActionCondition.Any.CODEC }
 
-        event.register(SparkRegistries.ABILITY_SPEC_STREAM_CODEC.key(), id("common")) { AbilitySpec.streamCodec }
         event.register(SparkRegistries.ACTIVATION_CONTEXT_STREAM_CODEC.key(), id("empty")) { ActivationContext.Empty.streamCodec }
 
-        event.register(SparkRegistries.ABILITY_TYPE_CODEC.key(), id("attack")) { AttackAbilityTypeSerializer.CODEC }
+        event.register(SparkRegistries.ABILITY_TYPE_CODEC.key(), id("attack")) { AttackAbility.Serializer.CODEC }
     }
 
     private fun id(id: String) = ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, id)

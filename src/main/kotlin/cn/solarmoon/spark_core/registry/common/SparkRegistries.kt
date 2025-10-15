@@ -19,10 +19,6 @@ object SparkRegistries {
         it.sync(true).create()
     }
 
-    val ABILITY_SPEC_STREAM_CODEC = SparkCore.REGISTER.registry<StreamCodec<RegistryFriendlyByteBuf, out AbilitySpec<*>>>("ability_spec_stream_codec") {
-        it.sync(true).create()
-    }
-
     val ACTIVATION_CONTEXT_STREAM_CODEC = SparkCore.REGISTER.registry<StreamCodec<RegistryFriendlyByteBuf, out ActivationContext>>("activation_context_stream_codec") {
         it.sync(true).create()
     }

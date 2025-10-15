@@ -6,5 +6,8 @@
       "path": "minecraft:player"
     },
     "name": "unarmed.attack_4"
-  }
+  },
+  "tags": [
+    "sof.attack"
+  ]
 }

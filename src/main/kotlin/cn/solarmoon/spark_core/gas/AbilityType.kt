@@ -7,7 +7,8 @@ import net.minecraft.network.codec.ByteBufCodecs
 import java.util.function.Function
 
 class AbilityType<A: Ability>(
-    val instancingPolicy: InstancingPolicy,
+    val instancingPolicy: InstancingPolicy = InstancingPolicy.INSTANCED_PER_ACTOR,
+    val tags: GameplayTagContainer = GameplayTagContainer(),
     private val provider: () -> A,
 ) {
 

@@ -1,22 +1,12 @@
 package cn.solarmoon.spark_core.gas
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import cn.solarmoon.spark_core.sync.SyncData
-import net.minecraft.network.RegistryFriendlyByteBuf
-import net.minecraft.network.codec.ByteBufCodecs
-import net.minecraft.network.codec.StreamCodec
-import java.util.function.Function
 
 /**
  * ### 技能容器
- * 包含对技能实例的引用，用于调配技能实例
- *
- * 同时，技能容器强制要求实现自身的网络解码，因为技能容器总是以服务器为权威下发
- *
- * 完全可以类比如MOBA游戏的技能槽的功能
+ * 包含对技能实例的引用，用于调配技能实例，可以储存一些动态参数，如技能等级/蓝耗等
  */
-open class AbilitySpec<A: Ability>(
+class AbilitySpec<A: Ability>(
     val abilityType: AbilityType<A>,
 ) {
 
@@ -25,19 +15,20 @@ open class AbilitySpec<A: Ability>(
     var handle: AbilityHandle = AbilityHandle(-1)
         private set
 
+    val dynamicTags = GameplayTagContainer()
     val activeAbilities = mutableListOf<Ability>()
 
-    open val streamCodec: StreamCodec<RegistryFriendlyByteBuf, out AbilitySpec<*>> = Companion.streamCodec
+    val isActive get() = activeAbilities.isNotEmpty()
 
     fun initialize(asc: AbilitySystemComponent, handle: AbilityHandle) {
         this.asc = asc
         this.handle = handle
     }
 
-    fun tryActivate(context: ActivationContext) {
+    fun tryActivate(context: ActivationContext): Boolean {
         if (!::asc.isInitialized) {
-            SparkCore.LOGGER.info("技能容器还未授予到技能持有者中，无法激活技能")
-            return
+            SparkCore.LOGGER.info("技能容器(${AbilityTypeManager.getKey(abilityType)})还未授予到技能持有者中，无法激活技能")
+            return false
         }
 
         val ability = when (abilityType.instancingPolicy) {
@@ -50,35 +41,40 @@ open class AbilitySpec<A: Ability>(
         }
 
         val result = ability.canActivate(this, context)
-        when(result.success) {
+        when(result) {
             true -> {
                 activeAbilities += ability
                 ability.activate(this, context)
             }
             false -> {
-                return
             }
         }
+        return result
     }
 
-    open fun tick() {
+    fun tick() {
         activeAbilities.forEach { it.tasks.forEach { it.tick() } }
     }
 
+    fun endAbility(ability: Ability, wasCancelled: Boolean) {
+        if (!activeAbilities.contains(ability)) return
+        ability.end(this, wasCancelled)
+        // 结束所有task
+        ability.tasks.toList().forEach { it.end(ownerFinished = true) }
+        ability.tasks.clear()
+        activeAbilities.remove(ability)
+    }
+
+    fun cancelAll() {
+        activeAbilities.toList().forEach { endAbility(it, wasCancelled = true) }
+    }
+
     fun endAll() {
-        activeAbilities.forEach { it.end(this) }
-        activeAbilities.clear()
+        activeAbilities.toList().forEach { endAbility(it, wasCancelled = false) }
     }
 
     companion object {
-        val streamCodec: StreamCodec<RegistryFriendlyByteBuf, out AbilitySpec<*>> = StreamCodec.composite(
-            AbilityType.STREAM_CODEC, AbilitySpec<*>::abilityType
-        ) { AbilitySpec(it) }
-
-        val STREAM_CODEC = ByteBufCodecs.registry(SparkRegistries.ABILITY_SPEC_STREAM_CODEC.key()).dispatch(
-            AbilitySpec<*>::streamCodec,
-            Function.identity()
-        )
+        val STREAM_CODEC = AbilityType.STREAM_CODEC.map({ AbilitySpec(it) }, { it.abilityType })
     }
 
 }

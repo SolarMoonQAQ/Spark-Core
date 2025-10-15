@@ -3,11 +3,11 @@ package cn.solarmoon.spark_core.skill
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PlayerGetAttackStrengthEvent
-import cn.solarmoon.spark_core.gas.AbilityHandle
 import cn.solarmoon.spark_core.gas.AbilitySpec
 import cn.solarmoon.spark_core.gas.AbilitySystemComponent
 import cn.solarmoon.spark_core.gas.AbilityTypeManager
 import cn.solarmoon.spark_core.gas.ActivationContext
+import cn.solarmoon.spark_core.gas.gameplayTag
 import cn.solarmoon.spark_core.local_control.KeyEvent
 import cn.solarmoon.spark_core.local_control.onEvent
 import cn.solarmoon.spark_core.skill.graph.ActionBehavior
@@ -104,27 +104,29 @@ object SkillApplier {
         }
     }
 
-    val controller = lazy { ActionController(graph, object : ActionBehavior {
-        override fun onEnter(controller: ActionController) {
-            try {
-                val id = ResourceLocation.parse(controller.currentNode.id)
-                Minecraft.getInstance().player?.abilitySystemComponent?.apply {
-                    SparkCore.LOGGER.error(allAbilitySpecs.toString())
-                    activateAbilityLocal(abilitySpecsByAbilityType[id]!!.first().handle, ActivationContext.Empty)
+    val controller = lazy {
+        ActionController(graph, object : ActionBehavior {
+            override fun onEnter(controller: ActionController) {
+                try {
+                    val id = ResourceLocation.parse(controller.currentNode.id)
+                    Minecraft.getInstance().player?.abilitySystemComponent?.apply {
+                        SparkCore.LOGGER.error(allAbilitySpecs.toString())
+                        tryActivateAbilityLocal(findSpecFromLocation(id)!!.handle, ActivationContext.Empty)
+                    }
+                } catch (e: Exception) {
+                    SparkCore.LOGGER.error(e.toString())
                 }
-            } catch (e: Exception) {
-                SparkCore.LOGGER.error(e.toString())
             }
-        }
-    }) }
+        })
+    }
 
     @SubscribeEvent
     fun onJoin(event: EntityJoinLevelEvent) {
         val entity = event.entity
         entity.abilitySystemComponent = AbilitySystemComponent(entity, event.level)
-        AbilityTypeManager.allAbilityTypes.values.forEach {
-            entity.abilitySystemComponent.grantAbility(AbilitySpec(it))
-        }
+        AbilityTypeManager.allAbilityTypes.values
+            .filter { it.tags.has(gameplayTag("sof")) }
+            .forEach { entity.abilitySystemComponent.giveAbility(AbilitySpec(it)) }
     }
 
     @SubscribeEvent

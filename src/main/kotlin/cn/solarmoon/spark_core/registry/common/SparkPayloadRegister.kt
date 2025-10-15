@@ -3,9 +3,12 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.animation.sync.AnimSpeedChangePayload
 import cn.solarmoon.spark_core.animation.sync.AnimStopPayload
 import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
-import cn.solarmoon.spark_core.gas.sync.ActivateAbilityLocalPayload
-import cn.solarmoon.spark_core.gas.sync.ActivateAbilityPayload
-import cn.solarmoon.spark_core.gas.sync.GrantAbilityEntityPayload
+import cn.solarmoon.spark_core.gas.sync.CancelAbilityEntityPayload
+import cn.solarmoon.spark_core.gas.sync.ClearAbilityEntityPayload
+import cn.solarmoon.spark_core.gas.sync.EndAbilityEntityPayload
+import cn.solarmoon.spark_core.gas.sync.TryActivateAbilityLocalPayload
+import cn.solarmoon.spark_core.gas.sync.TryActivateAbilityEntityPayload
+import cn.solarmoon.spark_core.gas.sync.GiveAbilityEntityPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackagePayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageSendingTask
@@ -50,9 +53,12 @@ object SparkPayloadRegister {
         pack.playToClient(SparkPackageReloadPayload.TYPE, SparkPackageReloadPayload.STREAM_CODEC, SparkPackageReloadPayload::handleInClient)
 
         val gas = event.registrar("gas")
-        gas.playToClient(GrantAbilityEntityPayload.TYPE, GrantAbilityEntityPayload.STREAM_CODEC, GrantAbilityEntityPayload::handleInClient)
-        gas.playToClient(ActivateAbilityPayload.TYPE, ActivateAbilityPayload.STREAM_CODEC, ActivateAbilityPayload::handleInClient)
-        gas.playToServer(ActivateAbilityLocalPayload.TYPE, ActivateAbilityLocalPayload.STREAM_CODEC, ActivateAbilityLocalPayload::handleInServer)
+        gas.playToClient(GiveAbilityEntityPayload.TYPE, GiveAbilityEntityPayload.STREAM_CODEC, GiveAbilityEntityPayload::handleInClient)
+        gas.playToServer(ClearAbilityEntityPayload.TYPE, ClearAbilityEntityPayload.STREAM_CODEC, ClearAbilityEntityPayload::handleInClient)
+        gas.playToClient(TryActivateAbilityEntityPayload.TYPE, TryActivateAbilityEntityPayload.STREAM_CODEC, TryActivateAbilityEntityPayload::handleInClient)
+        gas.playToServer(TryActivateAbilityLocalPayload.TYPE, TryActivateAbilityLocalPayload.STREAM_CODEC, TryActivateAbilityLocalPayload::handleInServer)
+        gas.playToClient(CancelAbilityEntityPayload.TYPE, CancelAbilityEntityPayload.STREAM_CODEC, CancelAbilityEntityPayload::handleInClient)
+        gas.playToClient(EndAbilityEntityPayload.TYPE, EndAbilityEntityPayload.STREAM_CODEC, EndAbilityEntityPayload::handleInClient)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

@@ -28,6 +28,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 public interface EntityPatch extends PhysicsHost, HurtDataHolder, SkillHost, IPreInputHolder, IStateMachineHolder, IEntityPatch, AbilityHost {
 
     @Override
+    default void syncGiveAbility(@NotNull AbilitySpec<?> spec) {};
+
+    @Override
+    default void syncClearAbility(@NotNull AbilityHandle handle) {};
+
+    @Override
+    default void syncTryActivateAbility(@NotNull AbilityHandle handle, @NotNull ActivationContext context) {};
+
+    @Override
+    default void syncCancelAbility(@NotNull AbilityHandle handle) {};
+
+    @Override
+    default void syncEndAbility(@NotNull AbilityHandle handle) {};
+
+    @Override
     default void setAbilitySystemComponent(@NotNull AbilitySystemComponent abilitySystemComponent) {};
 
     @Override

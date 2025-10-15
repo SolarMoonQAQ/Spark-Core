@@ -10,22 +10,30 @@ abstract class Ability {
 
     val tasks = mutableListOf<AbilityTask>()
 
-    open fun canActivate(spec: AbilitySpec<*>, context: ActivationContext): ActivationResult = ActivationResult(true)
+    open fun canActivate(spec: AbilitySpec<*>, context: ActivationContext) = true
 
     open fun activate(spec: AbilitySpec<*>, context: ActivationContext) {}
 
-    open fun end(spec: AbilitySpec<*>,) {}
+    /**
+     * 不要手动触发这个end，真正结束请通过[AbilitySpec.endAbility]
+     * @param wasCancelled 是否被打断而不是正常结束
+     */
+    open fun end(spec: AbilitySpec<*>, wasCancelled: Boolean) {}
 
     open fun onEvent(spec: AbilitySpec<*>, event: AbilityEvent) {}
 
-    fun addTask(task: AbilityTask) {
+    fun readyForActivation(task: AbilityTask) {
         tasks += task
-        task.start()
+        task.activate()
     }
 
     fun removeTask(task: AbilityTask) {
         tasks.remove(task)
-        task.stop()
+    }
+
+    fun endAllTasks(ownerFinished: Boolean) {
+        tasks.toList().forEach { it.end(ownerFinished) }
+        tasks.clear()
     }
 
 }

@@ -84,7 +84,7 @@ class EntityBaseUseAnimStateMachine(
             val sName = s.name ?: return@onStateEntry
             if (sName == "none") lastAnim?.exit()
             val animName = "state.use.$sName"
-            val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, animInstance(entity, animName), this))
+            val event = NeoForge.EVENT_BUS.post(ChangePresetAnimEvent.EntityUseState(entity, animInstance(entity, animName, false), this))
             if (event.isCanceled) return@onStateEntry
             val anim = (event.newAnim ?: event.originAnim) ?: return@onStateEntry
             anim.apply {

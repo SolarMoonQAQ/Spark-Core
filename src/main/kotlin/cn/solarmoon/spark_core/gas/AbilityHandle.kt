@@ -4,10 +4,8 @@ import net.minecraft.network.codec.ByteBufCodecs
 
 /**
  * ### 技能句柄（唯一标识符）
- * *使用内联，减少创建开销*
  */
-@JvmInline
-value class AbilityHandle(val id: Int) {
+data class AbilityHandle(val id: Int) {
     fun isValid() = id > 0
     override fun toString() = "AbilityHandle($id)"
 
