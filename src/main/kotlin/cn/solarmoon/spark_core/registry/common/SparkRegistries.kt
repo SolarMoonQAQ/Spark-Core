@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.delta_sync.DiffSyncSchema
 import cn.solarmoon.spark_core.gas.AbilityType
 import cn.solarmoon.spark_core.gas.ActivationContext
-import cn.solarmoon.spark_core.state_machine.graph.ActionCondition
+import cn.solarmoon.spark_core.state_machine.graph.StateCondition
 import cn.solarmoon.spark_core.sync.SyncData
 import cn.solarmoon.spark_core.sync.SyncerType
 import com.mojang.serialization.MapCodec
@@ -25,7 +25,7 @@ object SparkRegistries {
         it.sync(true).create()
     }
 
-    val ACTION_CONDITION_CODEC = SparkCore.REGISTER.registry<MapCodec<out ActionCondition>>("action_condition") {
+    val ACTION_CONDITION_CODEC = SparkCore.REGISTER.registry<MapCodec<out StateCondition>>("action_condition") {
         it.sync(true).create()
     }
 

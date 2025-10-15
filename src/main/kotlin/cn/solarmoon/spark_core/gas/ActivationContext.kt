@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.gas
 
 import cn.solarmoon.spark_core.registry.common.SparkRegistries
-import cn.solarmoon.spark_core.state_machine.graph.ActionCondition
 import com.mojang.serialization.MapCodec
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs

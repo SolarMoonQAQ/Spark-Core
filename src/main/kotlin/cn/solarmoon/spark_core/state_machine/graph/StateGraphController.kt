@@ -19,14 +19,14 @@ import ru.nsk.kstatemachine.transition.targetState
 import kotlin.collections.get
 
 // 此处时间轴只用于控制输入缓冲
-class ActionController(
-    val actionGraph: ActionGraph,
-    val behavior: ActionBehavior
+class StateGraphController(
+    val stateGraph: StateGraph,
+    val behavior: StateGraphBehavior
 ) {
 
     val inputBuffer = InputBuffer()
     var inputTriggerMode = InputBufferTriggerMode.LAST_INPUT
-    var currentNode: ActionNode = actionGraph.initialNode
+    var currentNode: StateNode = stateGraph.initialNode
         private set
     var tickCount = 0
         private set
@@ -37,31 +37,31 @@ class ActionController(
 
     private val stateMachine = createStdLibStateMachine {
         val states = mutableMapOf<String, IState>()
-        val stateToNodes = mutableMapOf<IState, ActionNode>()
-        fun IState.createStates(graph: ActionGraph) {
+        val stateToNodes = mutableMapOf<IState, StateNode>()
+        fun IState.createStates(graph: StateGraph) {
             val initState = initialState(graph.initialNode.id)
             graph.nodes.forEach { (id, node) ->
                 val state = (if (id == graph.initialNode.id) initState else state(id)).apply {
                     onEntry {
                         currentNode = node
-                        behavior.onEnter(this@ActionController)
+                        behavior.onEnter(this@StateGraphController)
                     }
 
                     onExit {
-                        behavior.onExit(this@ActionController)
+                        behavior.onExit(this@StateGraphController)
                     }
 
                     // 输入事件驱动衔接
                     transitionConditionally<ActionEvent> {
                         direction = {
-                            val next = node.transitionMap[event.type]?.firstOrNull { it.condition.check(this@ActionController) }
+                            val next = node.transitionMap[event.type]?.firstOrNull { it.condition.check(this@StateGraphController) }
                             if (next != null) {
                                 if (event is ActionEvent.Input) inputBuffer.pop(event.value)
                                 targetState(states[next.target]!!)
                             } else noTransition()
                         }
                         onTriggered {
-                            behavior.onTriggered(it.event, stateToNodes[it.direction.targetState], this@ActionController)
+                            behavior.onTriggered(it.event, stateToNodes[it.direction.targetState], this@StateGraphController)
                             SparkCore.LOGGER.info("执行动作: ${it.direction.targetState?.name}")
                         }
                     }
@@ -73,7 +73,7 @@ class ActionController(
             }
         }
 
-        createStates(actionGraph)
+        createStates(stateGraph)
     }
 
     fun triggerEvent(type: String) {
