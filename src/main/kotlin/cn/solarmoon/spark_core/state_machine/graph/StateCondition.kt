@@ -12,8 +12,17 @@ interface StateCondition {
 
     fun check(controller: StateGraphController): Boolean
 
+    // 逻辑非
+    operator fun not() = Reverse(this)
+
+    // 逻辑或
+    infix fun or(other: StateCondition) = Any(listOf(this, other))
+
+    // 逻辑与
+    infix fun and(other: StateCondition) = All(listOf(this, other))
+
     companion object {
-        val CODEC = SparkRegistries.ACTION_CONDITION_CODEC.byNameCodec()
+        val CODEC = SparkRegistries.STATE_CONDITION_CODEC.byNameCodec()
             .dispatch(
                 StateCondition::codec,
                 Function.identity()
@@ -83,16 +92,4 @@ interface StateCondition {
     }
 
 }
-
-// 逻辑非
-operator fun StateCondition.not() =
-    Reverse(this)
-
-// 逻辑或
-infix fun StateCondition.or(other: StateCondition) =
-    StateCondition.Any(listOf(this, other))
-
-// 逻辑与
-infix fun StateCondition.and(other: StateCondition) =
-    StateCondition.All(listOf(this, other))
 

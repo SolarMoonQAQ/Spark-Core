@@ -6,7 +6,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 data class StateNode(
     val id: String,
     val transitions: List<StateTransition>,
-    val subGraph: StateGraph? = null
+    val onEnter: List<StateAction> = listOf(),
+    val onExit: List<StateAction> = listOf(),
+    val subGraph: StateMachineGraph? = null
 ) {
 
     val transitionMap = transitions.groupBy { it.event }
@@ -16,7 +18,9 @@ data class StateNode(
             it.group(
                 Codec.STRING.fieldOf("id").forGetter(StateNode::id),
                 StateTransition.CODEC.listOf().optionalFieldOf("transitions", listOf()).forGetter(StateNode::transitions),
-                Codec.lazyInitialized { StateGraph.CODEC }.optionalFieldOf("sub_graph", null as StateGraph?).forGetter(StateNode::subGraph)
+                StateAction.CODEC.listOf().optionalFieldOf("on_enter", listOf()).forGetter(StateNode::onEnter),
+                StateAction.CODEC.listOf().optionalFieldOf("on_exit", listOf()).forGetter(StateNode::onExit),
+                Codec.lazyInitialized { StateMachineGraph.CODEC }.optionalFieldOf("sub_graph", null as StateMachineGraph?).forGetter(StateNode::subGraph)
             ).apply(it, ::StateNode)
         }
     }

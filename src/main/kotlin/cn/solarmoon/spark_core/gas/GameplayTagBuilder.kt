@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.gas
 
-fun gameplayTag(id: String): GameplayTag {
-    return GameplayTag(id)
+fun String.toGameplayTag(): GameplayTag {
+    return GameplayTag(this)
 }
 
 infix fun GameplayTag.attach(value: Any): GameplayTag {

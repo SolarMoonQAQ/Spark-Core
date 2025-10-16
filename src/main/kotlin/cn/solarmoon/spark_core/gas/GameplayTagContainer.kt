@@ -21,6 +21,8 @@ data class GameplayTagContainer(
 
     override fun toString() = tags.joinToString(", ")
 
+    operator fun contains(tag: GameplayTag): Boolean = has(tag)
+
     companion object {
         val CODEC = GameplayTag.CODEC.listOf().xmap({ GameplayTagContainer(it.toMutableSet()) }, { it.tags.toList() })
 

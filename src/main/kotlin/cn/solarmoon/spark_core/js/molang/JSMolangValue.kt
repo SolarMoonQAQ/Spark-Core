@@ -13,6 +13,7 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec3
 import net.neoforged.neoforge.common.NeoForge
 import org.graalvm.polyglot.Value
+import org.graalvm.polyglot.proxy.ProxyObject
 
 @JvmInline
 value class JSMolangValue(val value: String) {
