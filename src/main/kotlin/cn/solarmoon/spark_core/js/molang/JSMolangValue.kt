@@ -22,6 +22,7 @@ value class JSMolangValue(val value: String) {
 
     fun eval(anim: AnimInstance): Value {
         context.getJSBindings().apply {
+            putMember("math", MathContext())
             putMember("q", QueryContext(anim))
             putMember("query", QueryContext(anim))
             NeoForge.EVENT_BUS.post(OnMolangValueBindingEvent(this@JSMolangValue, anim, context, this))
