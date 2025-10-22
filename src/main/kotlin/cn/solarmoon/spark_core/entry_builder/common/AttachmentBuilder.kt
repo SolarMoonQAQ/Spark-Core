@@ -12,14 +12,16 @@ import java.util.function.Supplier
 
 class AttachmentBuilder<A>(
     deferredRegister: DeferredRegister<AttachmentType<*>>
-): RegisterBuilder<AttachmentType<*>, AttachmentType<A>>(deferredRegister) {
+) : RegisterBuilder<AttachmentType<*>, AttachmentType<A>>(deferredRegister) {
 
     lateinit var factory: (IAttachmentHolder) -> A
-    lateinit var serializer: Codec<A>
+    var serializer: Codec<A>? = null
     var shouldSerialize = { a: A -> true }
 
     override fun build(): DeferredHolder<AttachmentType<*>, AttachmentType<A>> {
-        return deferredRegister.register(id, Supplier { AttachmentType.builder(factory).serialize(serializer, shouldSerialize).build() })
+        return serializer?.let {
+            deferredRegister.register(id, Supplier { AttachmentType.builder(factory).build() })
+        } ?: deferredRegister.register(id, Supplier { AttachmentType.builder(factory).serialize(serializer!!, shouldSerialize).build() })
     }
 
 }
