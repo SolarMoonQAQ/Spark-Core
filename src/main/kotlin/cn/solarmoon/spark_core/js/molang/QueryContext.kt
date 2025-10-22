@@ -20,7 +20,8 @@ class QueryContext(
     val level get() = animatable.animLevel
 
     @HostAccess.Export
-    fun anim_time() = anim.time.toDouble()
+    @JvmField
+    val anim_time = anim.time.toDouble()
 
     @HostAccess.Export
     fun position() = animatable.getWorldPositionMatrix(1f).transformPosition(Vector3f())
