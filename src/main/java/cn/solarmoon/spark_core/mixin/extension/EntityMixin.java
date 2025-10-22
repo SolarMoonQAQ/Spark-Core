@@ -1,11 +1,11 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
 import cn.solarmoon.spark_core.EntityPatch;
+import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.entity.attack.HurtData;
 import cn.solarmoon.spark_core.gas.*;
 import cn.solarmoon.spark_core.gas.sync.*;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.registry.common.SparkSyncerTypes;
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler;
 import cn.solarmoon.spark_core.sync.IntSyncData;
@@ -32,12 +32,12 @@ public class EntityMixin implements EntityPatch {
     @Shadow private int id;
     @Shadow private Level level;
     private Entity entity = (Entity) (Object) this;
-    private final PreInput preInput = new PreInput(entity);
     private final HurtData data = new HurtData();
-    private final HashMap<String, PhysicsCollisionObject> collisionObjects = new HashMap<>();
+    private final ConcurrentHashMap<String, PhysicsCollisionObject> collisionObjects = new ConcurrentHashMap<>();
     private final HashMap<ResourceLocation, StateMachineHandler> stateMachineHandlers = new HashMap<>();
     private Vec3 lastPosO = Vec3.ZERO;
     private AbilitySystemComponent asc;
+    private final GameplayTagContainer tags = new GameplayTagContainer();
 
     @Override
     public @NotNull Map<@NotNull ResourceLocation, @NotNull StateMachineHandler> getStateMachineHandlers() {
@@ -52,11 +52,6 @@ public class EntityMixin implements EntityPatch {
     @Override
     public @NotNull Map<@NotNull String, PhysicsCollisionObject> getAllPhysicsBodies() {
         return collisionObjects;
-    }
-
-    @Override
-    public @NotNull PreInput getPreInput() {
-        return preInput;
     }
 
     @Override
@@ -122,5 +117,10 @@ public class EntityMixin implements EntityPatch {
     @Override
     public void syncEndAllAbilities() {
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new EndAllAbilitiesEntityPayload(id));
+    }
+
+    @Override
+    public @NotNull GameplayTagContainer getGameplayTags() {
+        return tags;
     }
 }

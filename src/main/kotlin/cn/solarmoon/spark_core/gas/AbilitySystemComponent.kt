@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.gas
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.gas.sync.EndAbilityLocalPayload
 import cn.solarmoon.spark_core.gas.sync.TryActivateAbilityLocalPayload
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.level.Level
@@ -89,6 +90,13 @@ class AbilitySystemComponent(
         if (!level.isClientSide) {
             abilitySpecs.values.forEach { it.endAll() }
             owner.syncEndAllAbilities()
+        }
+    }
+
+    fun endAbilityLocal(handle: AbilityHandle) {
+        if (FMLEnvironment.dist.isClient) {
+            abilitySpecs[handle]?.endAll()
+            PacketDistributor.sendToServer(EndAbilityLocalPayload(handle))
         }
     }
 

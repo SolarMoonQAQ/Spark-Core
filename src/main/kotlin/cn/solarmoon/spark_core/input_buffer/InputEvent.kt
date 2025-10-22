@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.skill.input_buffer
+package cn.solarmoon.spark_core.input_buffer
 
 data class InputEvent(
     val type: String,              // 输入类型

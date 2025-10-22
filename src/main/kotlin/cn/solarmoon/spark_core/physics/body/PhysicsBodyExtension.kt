@@ -97,7 +97,7 @@ fun PhysicsCollisionObject.onPostPhysicsTick(handler: (PhysicsBodyEvent.PhysicsT
  */
 fun PhysicsRigidBody.attachToBone(owner: IAnimatable<*>, boneName: String, offset: Vector3f = Vector3f()) {
     detach()
-    subs[this] = onEvent<PhysicsBodyEvent.PhysicsTick.Pre> { // 动画在物理线程运行所以频率和其一致
+    subs[this] = onEvent<PhysicsBodyEvent.Tick> { // 动画在物理线程运行所以频率和其一致
         owner.modelController.model?.pose?.getBonePose(boneName)?.let { pose ->
             val ma = pose.getWorldBonePivotMatrix()
             ma.translate(offset)

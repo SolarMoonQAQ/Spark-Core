@@ -1,4 +1,4 @@
-package cn.solarmoon.spark_core.skill.input_buffer
+package cn.solarmoon.spark_core.input_buffer
 
 // 输入缓冲器
 class InputBuffer {
@@ -27,15 +27,15 @@ class InputBuffer {
         return chosen
     }
 
-    fun peekValid(currentTick: Int, mode: InputBufferTriggerMode): InputEvent? {
+    fun peekValid(currentTick: Int, mode: InputBufferTriggerMode = InputBufferTriggerMode.LAST_INPUT): InputEvent? {
         while (realtimeQueue.isNotEmpty() && !realtimeQueue.first().isValid(currentTick)) {
             realtimeQueue.removeFirst()
         }
         if (realtimeQueue.isEmpty()) return null
 
         return when (mode) {
-            InputBufferTriggerMode.LAST_INPUT -> realtimeQueue.maxByOrNull { it.tickInserted }
-            InputBufferTriggerMode.HIGHEST_PRIORITY -> realtimeQueue.maxByOrNull { it.priority }
+            InputBufferTriggerMode.LAST_INPUT -> realtimeQueue.asReversed().maxByOrNull { it.tickInserted }
+            InputBufferTriggerMode.HIGHEST_PRIORITY -> realtimeQueue.asReversed().maxByOrNull { it.priority }
         }
     }
 

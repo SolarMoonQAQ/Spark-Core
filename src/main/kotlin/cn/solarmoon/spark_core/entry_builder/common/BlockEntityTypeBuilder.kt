@@ -21,18 +21,18 @@ class BlockEntityTypeBuilder<B : BlockEntity>(
 ) : RegisterBuilder<BlockEntityType<*>, BlockEntityType<B>>(deferredRegister) {
 
     private val caps = mutableListOf<Pair<BlockCapability<*, *>, ICapabilityProvider<B, *, *>>>()
-    private val validBlocksList = mutableListOf<() -> Block>()
+    private var validBlocksDsl: ValidBlocksDsl.() -> Unit = {}
 
     lateinit var factory: (BlockPos, BlockState) -> B
 
     fun validBlocks(block: ValidBlocksDsl.() -> Unit) = apply {
-        validBlocksList.clear()
-        ValidBlocksDsl().apply(block)
+        this.validBlocksDsl = block
     }
 
     inner class ValidBlocksDsl {
+        val validBlocksList = mutableListOf<Block>()
         operator fun Block.unaryPlus() {
-            validBlocksList += { this }
+            validBlocksList += this
         }
     }
 
@@ -55,7 +55,7 @@ class BlockEntityTypeBuilder<B : BlockEntity>(
 
     override fun build(): DeferredHolder<BlockEntityType<*>, BlockEntityType<B>> {
         val reg = deferredRegister.register(id, Supplier {
-            BlockEntityType.Builder.of(factory, *validBlocksList.map { it() }.toTypedArray()).build(null)
+            BlockEntityType.Builder.of(factory, *ValidBlocksDsl().apply { validBlocksDsl() }.validBlocksList.toTypedArray()).build(null)
         })
         if (caps.isNotEmpty()) {
             bus.addListener { e: RegisterCapabilitiesEvent ->

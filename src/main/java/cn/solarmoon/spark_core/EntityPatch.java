@@ -5,8 +5,6 @@ import cn.solarmoon.spark_core.entity.attack.HurtDataHolder;
 import cn.solarmoon.spark_core.gas.*;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.preinput.IPreInputHolder;
-import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.state_machine.IStateMachineHolder;
 import cn.solarmoon.spark_core.state_machine.StateMachineHandler;
 import cn.solarmoon.spark_core.sync.SyncData;
@@ -20,7 +18,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public interface EntityPatch extends PhysicsHost, HurtDataHolder, IPreInputHolder, IStateMachineHolder, IEntityPatch, AbilityHost, Syncer {
+public interface EntityPatch extends PhysicsHost, HurtDataHolder, IStateMachineHolder, IEntityPatch, AbilityHost, Syncer {
+
+    @Override
+    default @NotNull GameplayTagContainer getGameplayTags() { return null; };
 
     @Override
     default void syncGiveAbility(@NotNull AbilitySpec<?> spec) {};
@@ -65,11 +66,6 @@ public interface EntityPatch extends PhysicsHost, HurtDataHolder, IPreInputHolde
     @Override
     default @NotNull Map<@NotNull String, @NotNull PhysicsCollisionObject> getAllPhysicsBodies() {
         return Map.of();
-    }
-
-    @Override
-    default @NotNull PreInput getPreInput() {
-        return null;
     }
 
     @Override

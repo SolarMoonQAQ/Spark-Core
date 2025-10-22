@@ -164,7 +164,7 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param rotation the local orientation of the child shape (not null,
      * unaffected)
      */
-    public void addChildShape(
+    public ChildCollisionShape addChildShape(
             CollisionShape childShape, Vector3f offset, Matrix3f rotation) {
         if (childShape instanceof CompoundCollisionShape) {
             throw new IllegalArgumentException(
@@ -179,6 +179,7 @@ public class CompoundCollisionShape extends CollisionShape {
 
         long parentId = nativeId();
         addChildShape(parentId, childId, offset, rotation);
+        return child;
     }
 
     /**
@@ -190,10 +191,10 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param transform the local transform of the child shape (not null,
      * unaffected)
      */
-    public void addChildShape(CollisionShape shape, Transform transform) {
+    public ChildCollisionShape addChildShape(CollisionShape shape, Transform transform) {
         Vector3f offset = transform.getTranslation(); // alias
         Matrix3f rotation = transform.getRotation().toRotationMatrix();
-        addChildShape(shape, offset, rotation);
+        return addChildShape(shape, offset, rotation);
     }
 
     /**

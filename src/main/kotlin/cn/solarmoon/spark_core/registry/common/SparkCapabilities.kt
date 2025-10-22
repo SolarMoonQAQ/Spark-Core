@@ -10,7 +10,9 @@ import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.IEventBus
+import net.neoforged.neoforge.attachment.AttachmentType
 import net.neoforged.neoforge.capabilities.ItemCapability
+import java.util.function.Supplier
 
 object SparkCapabilities {
     @JvmStatic
@@ -18,5 +20,4 @@ object SparkCapabilities {
 
     @JvmStatic
     val ITEM_ANIMATABLE = SparkCore.REGISTER.itemCapability<ItemAnimatable, Level>("item_animatable")
-
 }

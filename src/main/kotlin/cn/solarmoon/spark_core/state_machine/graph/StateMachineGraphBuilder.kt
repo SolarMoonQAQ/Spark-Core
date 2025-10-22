@@ -9,27 +9,31 @@ annotation class StateGraphDsl
 interface NodeContainer {
     fun node(
         id: String,
+        initial: Boolean,
         block: StateNodeBuilder.() -> Unit = {}
     ): StateNodeBuilder
+
+    fun node(
+        id: String,
+        block: StateNodeBuilder.() -> Unit = {}
+    ): StateNodeBuilder = node(id, false, block)
 
     fun initialNode(
         id: String,
         block: StateNodeBuilder.() -> Unit = {}
-    ): StateNodeBuilder
+    ): StateNodeBuilder = node(id, true, block)
 }
 
 @StateGraphDsl
 class StateMachineGraphBuilder : NodeContainer {
-    private val nodes = mutableMapOf<String, StateNodeBuilder>()
-    private var initial: StateNodeBuilder? = null
+    private val nodes = mutableListOf<StateNodeBuilder>()
+    private var initialNode: StateNodeBuilder? = null
 
-    override fun initialNode(id: String, block: StateNodeBuilder.() -> Unit) = node(id, block).also { initial = it }
-
-    override fun node(id: String, block: StateNodeBuilder.() -> Unit) = StateNodeBuilder(id).apply(block).also { nodes[id] = it }
+    override fun node(id: String, initial: Boolean, block: StateNodeBuilder.() -> Unit) = StateNodeBuilder(id).apply(block).also { if (initial) initialNode = it else nodes += it }
 
     fun build(): StateMachineGraph {
-        val init = initial ?: error("必须至少定义一个初始节点")
-        return StateMachineGraph(init.build(), nodes.mapValues { it.value.build() })
+        val init = initialNode ?: error("必须至少定义一个初始节点")
+        return StateMachineGraph(init.build(), nodes.map { it.build() })
     }
 }
 
@@ -38,24 +42,21 @@ class StateNodeBuilder(
     private val id: String
 ) : NodeContainer {
     private val transitions = mutableListOf<StateTransitionBuilder>()
-    private val subNodes = mutableMapOf<String, StateNodeBuilder>()
-    private var initial: StateNodeBuilder? = null
+    private val subNodes = mutableListOf<StateNodeBuilder>()
+    private var initialNode: StateNodeBuilder? = null
 
     // 新增：进入/退出动作
     private val onEnterActions = mutableListOf<StateAction>()
     private val onExitActions = mutableListOf<StateAction>()
 
     fun on(event: String, block: StateTransitionBuilder.() -> Unit = {}) =
-        StateTransitionBuilder(event, id).also {
+        StateTransitionBuilder(event).also {
             block(it)
             transitions.add(it)
         }
 
-    override fun initialNode(id: String, block: StateNodeBuilder.() -> Unit) =
-        node(id, block).also { initial = it }
-
-    override fun node(id: String, block: StateNodeBuilder.() -> Unit) =
-        StateNodeBuilder(id).apply(block).also { subNodes[id] = it }
+    override fun node(id: String, initial: Boolean, block: StateNodeBuilder.() -> Unit) =
+        StateNodeBuilder(id).apply(block).also { if (initial) initialNode = it else subNodes += it }
 
     // DSL: onEnter { +action }
     fun onEnter(block: ActionListBuilder.() -> Unit) {
@@ -72,13 +73,13 @@ class StateNodeBuilder(
     }
 
     fun build(): StateNode {
-        check(!(subNodes.isNotEmpty() && initial == null)) { "必须为子状态机设定一个初始状态" }
+        check(!(subNodes.isNotEmpty() && initialNode == null)) { "必须为子状态机设定一个初始状态" }
         return StateNode(
             id,
             transitions.map { it.build() },
             onEnterActions,
             onExitActions,
-            initial?.let { StateMachineGraph(it.build(), subNodes.mapValues { it.value.build() }) },
+            initialNode?.let { StateMachineGraph(it.build(), subNodes.map { it.build() }) },
         )
     }
 }
@@ -94,8 +95,7 @@ class ActionListBuilder {
 
 @StateGraphDsl
 class StateTransitionBuilder(
-    val event: String,
-    val source: String
+    val event: String
 ) {
     var target: String? = null
     var condition: StateCondition = StateCondition.True
@@ -110,7 +110,7 @@ class StateTransitionBuilder(
 
     fun build(): StateTransition {
         val target = target ?: error("必须指定目标节点")
-        return StateTransition(event, source, target, condition)
+        return StateTransition(event, target, condition)
     }
 }
 

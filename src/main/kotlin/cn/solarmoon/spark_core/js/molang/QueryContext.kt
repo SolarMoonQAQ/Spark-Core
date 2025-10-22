@@ -27,14 +27,21 @@ class QueryContext(
     fun position() = animatable.getWorldPositionMatrix(1f).transformPosition(Vector3f())
     @HostAccess.Export
     fun playSound(sound: String, source: String) {
-        val pos = position().toVec3().add(0.0, 1.0, 0.0)
-        level?.playSound(null, pos.x, pos.y, pos.z, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()))
+        val p = position().toVec3().add(0.0, 1.0, 0.0)
+        val pos = doubleArrayOf(p.x, p.y, p.z)
+        playSound(pos, sound, source, 1.0, 1.0)
     }
 
     @HostAccess.Export
     fun playSound(sound: String, source: String, volume: Double, pitch: Double) {
-        val pos = position().toVec3().add(0.0, 1.0, 0.0)
-        level?.playSound(null, pos.x, pos.y, pos.z, SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()), volume.toFloat(), pitch.toFloat())
+        val p = position().toVec3().add(0.0, 1.0, 0.0)
+        val pos = doubleArrayOf(p.x, p.y, p.z)
+        playSound(pos, sound, source, volume, pitch)
+    }
+
+    @HostAccess.Export
+    fun playSound(pos: DoubleArray, sound: String, source: String, volume: Double, pitch: Double) {
+        level?.playSound(null, pos[0], pos[1], pos[2], SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound)), SoundSource.valueOf(source.uppercase()), volume.toFloat(), pitch.toFloat())
     }
 
     @HostAccess.Export

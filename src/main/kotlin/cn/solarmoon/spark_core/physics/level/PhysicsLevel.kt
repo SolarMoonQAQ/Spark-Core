@@ -180,9 +180,11 @@ abstract class PhysicsLevel(
      */
     override fun close() {
         runBlocking {
-            terrainManager.destroy()
-            blockShapeManager.SHAPE_CACHE.clear()
-            blockShapeManager.STATE_CACHE.clear()
+            if (::terrainManager.isInitialized) terrainManager.destroy()
+            if (::blockShapeManager.isInitialized) {
+                blockShapeManager.SHAPE_CACHE.clear()
+                blockShapeManager.STATE_CACHE.clear()
+            }
             if (::world.isInitialized) world.destroy()
             hostManager.clear()
             scope.cancel("物理线程已关闭")

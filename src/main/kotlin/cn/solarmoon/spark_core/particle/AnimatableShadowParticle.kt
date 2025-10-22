@@ -60,7 +60,7 @@ class AnimatableShadowParticle(
         setAlpha(1 - getProgress(partialTicks))
         val color = Color(rCol, gCol, bCol, alpha).rgb
         if (boneCache == null) return
-        animatable.modelController.originModel.render(boneCache, posMa, Matrix3f(), buffer, light, overlay, color, partialTicks)
+        animatable.modelController.originModel.render(boneCache, posMa, Matrix3f(), buffer, light, overlay, color, 1f)
     }
 
     override fun getRenderType(): ParticleRenderType {

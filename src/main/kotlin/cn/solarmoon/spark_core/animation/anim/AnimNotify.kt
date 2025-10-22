@@ -16,8 +16,12 @@ sealed class AnimNotify(val id: String) {
 
         override fun check(anim: AnimInstance) {
             val t = anim.typedTime.toFloat()
+
+            if (time == 0f && lastTime < 0f && t == 0f) {
+                handlers.forEach { it(this, anim) }
+            }
+
             if (lastTime >= 0f) {
-                // 判断是否跨过 time
                 if (lastTime < time && t >= time) {
                     handlers.forEach { it(this, anim) }
                 }

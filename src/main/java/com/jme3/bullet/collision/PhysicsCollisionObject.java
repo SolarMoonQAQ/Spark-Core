@@ -67,6 +67,7 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject impleme
     // *************************************************************************
     // constants and loggers
 
+    public boolean shouldShowDebugBoxWhenNonColldeWith = false;
     public boolean isColliding = false;
 
     public String name = UUID.randomUUID().toString();

@@ -4,6 +4,7 @@ import net.minecraft.client.KeyMapping
 import net.neoforged.bus.api.EventPriority
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent
+import net.neoforged.neoforge.common.NeoForge
 
 object LocalController {
 

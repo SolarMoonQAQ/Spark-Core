@@ -19,11 +19,9 @@ object BoneModifier {
         if (player !is IEntityAnimatable<*> || player !is LivingEntity) return
         val old = event.oldTransform
         if (event.bonePose.name == "head") {
-            val netHeadYaw = (player.yHeadRot - player.yBodyRot).coerceIn(-75.0f, 75.0f).toDouble()
-            val headPitch = player.xRot.toDouble()
             event.newTransform = KeyAnimData(
                 old.position,
-                event.originNewTransform.rotation.subtract(Vec3(headPitch, netHeadYaw, 0.0).toRadians()),
+                event.originNewTransform.rotation.add(Vec3(-player.xRot.toDouble(), (-player.yHeadRot + player.yBodyRot).toDouble(), 0.0).toRadians()),
                 old.scale
             )
         }

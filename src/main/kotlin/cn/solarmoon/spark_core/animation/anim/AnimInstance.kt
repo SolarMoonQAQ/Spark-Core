@@ -9,8 +9,10 @@ import cn.solarmoon.spark_core.js.eval
 import cn.solarmoon.spark_core.js.molang.JSMolangValue
 import cn.solarmoon.spark_core.js.safeGetOrCreateJSContext
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import kotlinx.serialization.json.Json
 import net.minecraft.nbt.CompoundTag
 import ru.nsk.kstatemachine.event.Event
+import ru.nsk.kstatemachine.serialization.persistence.KStateMachineSerializersModule
 import ru.nsk.kstatemachine.state.activeStates
 import ru.nsk.kstatemachine.state.initialState
 import ru.nsk.kstatemachine.state.onEntry
@@ -81,70 +83,72 @@ class AnimInstance internal constructor(
         }
     }
 
-    private val lifecycleStateMachine = createStdLibStateMachine {
-        val idle = initialState("idle")
-        val enter = state("enter")
-        val work = state("work")
-        val exit = state("exit")
+    private val lifecycleStateMachine by lazy {
+        createStdLibStateMachine {
+            val idle = initialState("idle")
+            val enter = state("enter")
+            val work = state("work")
+            val exit = state("exit")
 
-        idle.apply {
-            onEntry {
-                refresh()
-            }
+            idle.apply {
+                onEntry {
+                    refresh()
+                }
 
-            transition<AnimStateEvent.Start> {
-                targetState = enter
-            }
-        }
-
-        enter.apply {
-            onEntry {
-                transitionTick = inTransitionTick
-                currentWeight = 0.0f
-                holder.animController.playAnimation(this@AnimInstance)
-                triggerEvent(AnimEvent.Start)
-            }
-
-            transition<AnimStateEvent.Stop> {
-                targetState = exit
-                onTriggered {
-                    triggerEvent(AnimEvent.Interrupted)
+                transition<AnimStateEvent.Start> {
+                    targetState = enter
                 }
             }
 
-            transition<AnimStateEvent.TransitionFinish> {
-                targetState = work
-            }
-        }
+            enter.apply {
+                onEntry {
+                    transitionTick = inTransitionTick
+                    currentWeight = 0.0f
+                    holder.animController.playAnimation(this@AnimInstance)
+                    triggerEvent(AnimEvent.Start)
+                }
 
-        work.apply {
-            transition<AnimStateEvent.Stop> {
-                targetState = exit
-                onTriggered {
-                    triggerEvent(AnimEvent.Interrupted)
+                transition<AnimStateEvent.Stop> {
+                    targetState = exit
+                    onTriggered {
+                        triggerEvent(AnimEvent.Interrupted)
+                    }
+                }
+
+                transition<AnimStateEvent.TransitionFinish> {
+                    targetState = work
                 }
             }
 
-            transition<AnimStateEvent.Finish> {
-                targetState = exit
-                onTriggered {
-                    triggerEvent(AnimEvent.Completed)
+            work.apply {
+                transition<AnimStateEvent.Stop> {
+                    targetState = exit
+                    onTriggered {
+                        triggerEvent(AnimEvent.Interrupted)
+                    }
                 }
-            }
-        }
 
-        exit.apply {
-            onEntry {
-                transitionTick = outTransitionTick
-                if (it.event is AnimStateEvent.Finish) holder.animLevel?.submitImmediateTask {
-                    triggerEvent(AnimEvent.End)
-                } else {
-                    triggerEvent(AnimEvent.End)
+                transition<AnimStateEvent.Finish> {
+                    targetState = exit
+                    onTriggered {
+                        triggerEvent(AnimEvent.Completed)
+                    }
                 }
             }
 
-            transition<AnimStateEvent.TransitionFinish> {
-                targetState = idle
+            exit.apply {
+                onEntry {
+                    transitionTick = outTransitionTick
+                    if (it.event is AnimStateEvent.Finish) holder.animLevel?.submitImmediateTask {
+                        triggerEvent(AnimEvent.End)
+                    } else {
+                        triggerEvent(AnimEvent.End)
+                    }
+                }
+
+                transition<AnimStateEvent.TransitionFinish> {
+                    targetState = idle
+                }
             }
         }
     }
@@ -155,11 +159,15 @@ class AnimInstance internal constructor(
     }
 
     fun enter() {
-        lifecycleStateMachine.processEventBlocking(AnimStateEvent.Start)
+        holder.animLevel!!.physicsLevel.submitImmediateTask {
+            lifecycleStateMachine.processEventBlocking(AnimStateEvent.Start)
+        }
     }
 
     fun exit() {
-        lifecycleStateMachine.processEventBlocking(AnimStateEvent.Stop)
+        holder.animLevel!!.physicsLevel.submitImmediateTask {
+            lifecycleStateMachine.processEventBlocking(AnimStateEvent.Stop)
+        }
     }
 
     fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / (if (paused) time + step else maxLength)).coerceIn(0.0f, 1.0f)

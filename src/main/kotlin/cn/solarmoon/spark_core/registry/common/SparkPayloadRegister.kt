@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.animation.sync.ModelIndexSyncPayload
 import cn.solarmoon.spark_core.gas.sync.CancelAbilityEntityPayload
 import cn.solarmoon.spark_core.gas.sync.ClearAbilityEntityPayload
 import cn.solarmoon.spark_core.gas.sync.EndAbilityEntityPayload
+import cn.solarmoon.spark_core.gas.sync.EndAbilityLocalPayload
 import cn.solarmoon.spark_core.gas.sync.EndAllAbilitiesEntityPayload
 import cn.solarmoon.spark_core.gas.sync.TryActivateAbilityLocalPayload
 import cn.solarmoon.spark_core.gas.sync.TryActivateAbilityEntityPayload
@@ -49,6 +50,7 @@ object SparkPayloadRegister {
         gas.playToClient(CancelAbilityEntityPayload.TYPE, CancelAbilityEntityPayload.STREAM_CODEC, CancelAbilityEntityPayload::handleInClient)
         gas.playToClient(EndAbilityEntityPayload.TYPE, EndAbilityEntityPayload.STREAM_CODEC, EndAbilityEntityPayload::handleInClient)
         gas.playToClient(EndAllAbilitiesEntityPayload.TYPE, EndAllAbilitiesEntityPayload.STREAM_CODEC, EndAllAbilitiesEntityPayload::handleInClient)
+        gas.playToServer(EndAbilityLocalPayload.TYPE, EndAbilityLocalPayload.STREAM_CODEC, EndAbilityLocalPayload::handleInServer)
     }
 
     private fun task(event: RegisterConfigurationTasksEvent) {

@@ -95,16 +95,16 @@ class ObjectRegister(
     fun <R: Recipe<*>> recipeType(builder: CommonRegisterBuilder<RecipeType<*>, RecipeType<R>>.() -> Unit) = commonBuilder(recipeType.value, builder)
     fun <R: Recipe<*>> recipeSerializer(builder: CommonRegisterBuilder<RecipeSerializer<*>, RecipeSerializer<R>>.() -> Unit) = commonBuilder(recipeSerializer.value, builder)
     fun creativeModeTab(builder: CommonRegisterBuilder<CreativeModeTab, CreativeModeTab>.() -> Unit) = commonBuilder(creativeModeTab.value, builder)
-    fun soundEvent(builder: CommonRegisterBuilder<SoundEvent, SoundEvent>.() -> Unit) = commonBuilder(soundEvent.value, builder)
+    fun soundEvent(builder: SoundEventBuilder.() -> Unit) = SoundEventBuilder(soundEvent.value).also { builder(it) }.build()
 
     // 客户端
-    fun keyMapping(builder: (KeyMappingBuilder) -> Unit) = KeyMappingBuilder(modId, bus).also { builder(it) }.build()
+    fun keyMapping(builder: KeyMappingBuilder.() -> Unit) = KeyMappingBuilder(modId, bus).also { builder(it) }.build()
 
     // 数据
     fun damageType(id: String) = ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(modId, id))
 
     // neoforge
-    fun <A> attachment(builder: CommonRegisterBuilder<AttachmentType<*>, AttachmentType<A>>.() -> Unit) = commonBuilder(attachment.value, builder)
+    fun <A> attachment(builder: AttachmentBuilder<A>.() -> Unit) = AttachmentBuilder<A>(attachment.value).also { builder(it) }.build()
     fun <D> entityDataSerializer(builder: CommonRegisterBuilder<EntityDataSerializer<*>, EntityDataSerializer<D>>.() -> Unit) = commonBuilder(entityDataSerializer.value,  builder)
     inline fun <reified T, reified O: Any?> itemCapability(id: String) = ItemCapability.create(ResourceLocation.fromNamespaceAndPath(modId, id), T::class.java, O::class.java)
 
