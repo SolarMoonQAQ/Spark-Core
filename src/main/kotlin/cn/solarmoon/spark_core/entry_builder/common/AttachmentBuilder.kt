@@ -20,8 +20,8 @@ class AttachmentBuilder<A>(
 
     override fun build(): DeferredHolder<AttachmentType<*>, AttachmentType<A>> {
         return serializer?.let {
-            deferredRegister.register(id, Supplier { AttachmentType.builder(factory).build() })
-        } ?: deferredRegister.register(id, Supplier { AttachmentType.builder(factory).serialize(serializer!!, shouldSerialize).build() })
+            deferredRegister.register(id, Supplier { AttachmentType.builder(factory).serialize(serializer!!, shouldSerialize).build() })
+        } ?: deferredRegister.register(id, Supplier { AttachmentType.builder(factory).build() })
     }
 
 }
