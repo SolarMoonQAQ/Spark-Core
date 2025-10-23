@@ -206,7 +206,7 @@ class PhysicsChunkSection(
         snapshotForCollision = snapshotForBuild?.copy()
         physicsBody = PhysicsRigidBody(shape, 0f).apply {
             name = "section_$sectionPos"
-            owner = physicsLevel.mcLevel
+            owner = this@PhysicsChunkSection
         }
         physicsBody!!.setPhysicsLocation(
             Vector3f(
