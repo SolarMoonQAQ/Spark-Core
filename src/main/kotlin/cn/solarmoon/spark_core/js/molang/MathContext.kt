@@ -4,6 +4,7 @@ import org.graalvm.polyglot.HostAccess
 
 class MathContext() {
     @HostAccess.Export
+    @JvmField
     val pi = Math.PI
 
     @HostAccess.Export
