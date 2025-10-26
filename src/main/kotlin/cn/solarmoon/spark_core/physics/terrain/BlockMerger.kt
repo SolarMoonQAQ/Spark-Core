@@ -3,6 +3,8 @@ package cn.solarmoon.spark_core.physics.terrain
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.math.Vector3f
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.EmptyBlockGetter
 import net.minecraft.world.level.block.state.BlockState
 
 /**
@@ -26,9 +28,14 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
          * 转换为碰撞形状
          */
         fun toCollisionShape(): BoxCollisionShape {
+            var height = when(shapeType){
+                1 -> 0.5f // 完整方块
+                2,3 -> 0.25f // 半砖
+                else -> 0.5f
+            }
             val halfExtents = Vector3f(
                 width / 2.0f,
-                0.5f, // 完整方块高度为1，半高为0.5
+                height,
                 depth / 2.0f
             )
             return BoxCollisionShape(halfExtents)
@@ -67,7 +74,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
     }
 
     /**
-     * 两阶段合并
+     * 三阶段合并
      */
     fun mergeLayer(
         levelY: Int,
@@ -169,9 +176,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                     continue
                 }
 
-                val startShapeType = physicsLevel.blockShapeManager.getShapeType(
-                    startState.getBulletCollisionShape(physicsLevel)
-                )
+                val startShapeType = physicsLevel.blockShapeManager.getShapeType(startState)
 
                 // 寻找z方向连续的长度
                 var endZ = z
@@ -181,9 +186,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                     val checkState = blockStates[x][checkZ] ?: break
                     if (!isMergeable(checkState)) break
 
-                    val checkShapeType = physicsLevel.blockShapeManager.getShapeType(
-                        checkState.getBulletCollisionShape(physicsLevel)
-                    )
+                    val checkShapeType = physicsLevel.blockShapeManager.getShapeType(checkState)
                     if (checkShapeType != startShapeType) break
 
                     endZ = checkZ
@@ -245,9 +248,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
 
                 if (!isMergeable(blockState)) continue
 
-                val shapeType = physicsLevel.blockShapeManager.getShapeType(
-                    blockState.getBulletCollisionShape(physicsLevel)
-                )
+                val shapeType = physicsLevel.blockShapeManager.getShapeType(blockState)
 
                 val centerOffsetY = calculateCenterOffset(blockState)
 
@@ -297,9 +298,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                     break
                 }
 
-                val shapeType = physicsLevel.blockShapeManager.getShapeType(
-                    state.getBulletCollisionShape(physicsLevel)
-                )
+                val shapeType = physicsLevel.blockShapeManager.getShapeType(state)
                 if (shapeType != targetShapeType) {
                     canExtend = false
                     break
@@ -362,9 +361,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                 val startState = blockStates[startX][startZ] ?: continue
                 if (!isMergeable(startState)) continue
 
-                val shapeType = physicsLevel.blockShapeManager.getShapeType(
-                    startState.getBulletCollisionShape(physicsLevel)
-                )
+                val shapeType = physicsLevel.blockShapeManager.getShapeType(startState)
 
                 // 当前行的最大可能宽度
                 val maxWidth = rightLengths[startX][startZ]
@@ -381,9 +378,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                         val extendState = blockStates[startX][extendZ]
                         if (extendState == null || !isMergeable(extendState)) break
 
-                        val extendShapeType = physicsLevel.blockShapeManager.getShapeType(
-                            extendState.getBulletCollisionShape(physicsLevel)
-                        )
+                        val extendShapeType = physicsLevel.blockShapeManager.getShapeType(extendState)
                         if (extendShapeType != shapeType) break
 
                         // 更新当前最小宽度
@@ -437,9 +432,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                 val state = blockStates[checkX][checkZ]
                 if (state == null || !isMergeable(state)) break
 
-                val checkShapeType = physicsLevel.blockShapeManager.getShapeType(
-                    state.getBulletCollisionShape(physicsLevel)
-                )
+                val checkShapeType = physicsLevel.blockShapeManager.getShapeType(state)
                 if (checkShapeType != targetShapeType) break
 
                 rowWidth++
@@ -475,18 +468,18 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
      * 检查方块是否可合并
      */
     private fun isMergeable(blockState: BlockState): Boolean {
-        val shape = blockState.getBulletCollisionShape(physicsLevel)
-        return physicsLevel.blockShapeManager.isMergeableShape(shape)
+        return physicsLevel.blockShapeManager.isMergeableShape(blockState)
     }
 
     /**
      * 计算形状的Y中心偏移
      */
     private fun calculateCenterOffset(blockState: BlockState): Float {
+        if (blockState.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO)) return 0f
         val shape = blockState.getBulletCollisionShape(physicsLevel)
         return when (shape) {
-            physicsLevel.blockShapeManager.UP_HALF_BLOCK -> 0.25f
-            physicsLevel.blockShapeManager.DOWN_HALF_BLOCK -> -0.25f
+            physicsLevel.blockShapeManager.UP_HALF_BLOCK -> -0.25f
+            physicsLevel.blockShapeManager.DOWN_HALF_BLOCK -> 0.25f
             else -> 0f
         }
     }

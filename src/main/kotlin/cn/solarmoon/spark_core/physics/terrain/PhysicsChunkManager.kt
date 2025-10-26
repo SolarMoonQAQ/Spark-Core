@@ -12,7 +12,6 @@ import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.chunk.LevelChunk
 import net.minecraft.world.phys.AABB
 import net.neoforged.neoforge.network.PacketDistributor
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -37,7 +36,7 @@ class PhysicsChunkManager(
 
     // 地形构建线程池
     private val terrainBuilderExecutor = Executors.newFixedThreadPool(
-        (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1).coerceAtMost(3)
+        (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1).coerceAtMost(2)
     ) { r -> Thread(r, "TerrainShapeBuilder-${physicsLevel.name}") }.asCoroutineDispatcher()
 
     val terrainBuilderScope = CoroutineScope(

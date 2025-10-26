@@ -119,9 +119,9 @@ class PhysicsChunkSection(
                 for (z in 0 until 16) {
                     val blockSnapshot = snapshot.getBlockSnapshot(x, levelY, z)
                     if (blockSnapshot != null) {
-                        val shape = blockSnapshot.state.getBulletCollisionShape(physicsLevel)
                         // 如果是复杂形状且没有被合并过
-                        if (!physicsLevel.blockShapeManager.isMergeableShape(shape)) {
+                        if (!physicsLevel.blockShapeManager.isMergeableShape(blockSnapshot.state)) {
+                            val shape = blockSnapshot.state.getBulletCollisionShape(physicsLevel)
                             addComplexShape(compoundShape, x, levelY, z, shape)
                             hasCollision = true
                         }
@@ -255,6 +255,7 @@ class PhysicsChunkSection(
         )
         physicsBody!!.collisionGroup = CollisionGroups.TERRAIN
         physicsBody!!.setCollideWithGroups(CollisionGroups.NONE)
+//        physicsBody!!.shouldShowDebugBoxWhenNonColldeWith = true
         return true
     }
 

@@ -31,6 +31,7 @@ object CollisionFuncApplier {
                 isKinematic = true
                 isContactResponse = false
                 collisionGroup = CollisionGroups.PAWN
+//                addCollideWithGroup(CollisionGroups.TERRAIN)
                 onEvent<PhysicsBodyEvent.Tick> {
                     val bb = entity.boundingBox
                     val x: Float = (bb.xsize / 2).toFloat()
