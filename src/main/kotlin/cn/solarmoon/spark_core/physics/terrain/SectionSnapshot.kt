@@ -14,7 +14,6 @@ import net.minecraft.world.level.chunk.LevelChunk
  */
 class SectionSnapshot private constructor(
     val blockSnapshots: Array<BlockSnapshot?>,//比起存BlockPos作为索引，使用数组更节省内存
-    val childShapeIndexes: ArrayList<Int>,//复合形状子形状索引对应的数组索引
     val pos: SectionPos
 ) {
 
@@ -23,7 +22,7 @@ class SectionSnapshot private constructor(
          * 空的SectionSnapshot实例，所有空section共享此实例以节省内存
          */
         @JvmStatic
-        val EMPTY = SectionSnapshot(Array(1) { null }, ArrayList(1), SectionPos.of(0, Int.MIN_VALUE, 0))
+        val EMPTY = SectionSnapshot(Array(1) { null }, SectionPos.of(0, Int.MIN_VALUE, 0))
 
         /**
          * 从区块创建快照（主线程调用）
@@ -80,7 +79,7 @@ class SectionSnapshot private constructor(
             }
 
             // 如果没有有效方块，返回空实例
-            return if (hasBlocks) SectionSnapshot(blockSnapshots, childShapeIndex, pos) else EMPTY
+            return if (hasBlocks) SectionSnapshot(blockSnapshots, pos) else EMPTY
         }
 
         /**
@@ -142,27 +141,6 @@ class SectionSnapshot private constructor(
     }
 
     /**
-     * 将碰撞点索引转换为相对坐标
-     */
-    fun getRelativePos(childShapeIndex: Int): BlockPos {
-        require(childShapeIndex in 0..4095) { "Index must be in range 0-4095, got $childShapeIndex" }
-        val index = childShapeIndexes[childShapeIndex]
-        val x = index and 0xF
-        val y = (index shr 4) and 0xF
-        val z = (index shr 8) and 0xF
-        return BlockPos(x, y, z)
-    }
-
-    /**
-     * 将碰撞点索引转换为相对坐标
-     */
-    fun getWorldPos(childShapeIndex: Int): BlockPos {
-        require(childShapeIndex in 0..4095) { "Index must be in range 0-4095, got $childShapeIndex" }
-        val relPos = getRelativePos(childShapeIndex)
-        return getWorldPos(relPos)
-    }
-
-    /**
      * 通过相对坐标获取方块快照
      */
     fun getBlockSnapshot(relativeX: Int, relativeY: Int, relativeZ: Int): BlockSnapshot? {
@@ -199,22 +177,7 @@ class SectionSnapshot private constructor(
         return blockSnapshots.count { it != null }
     }
 
-    /**
-     * 遍历所有非空的方块快照
-     */
-    inline fun forEachBlock(action: (BlockPos, BlockSnapshot) -> Unit) {
-        if (isEmpty()) return
-
-        for (index in childShapeIndexes) {
-            val snapshot = blockSnapshots[index]
-            if (snapshot != null) {
-                val relativePos = getRelativePosFromIndex(index)
-                action(relativePos, snapshot)
-            }
-        }
-    }
-
     fun copy(): SectionSnapshot {
-        return SectionSnapshot(blockSnapshots.clone(), ArrayList(childShapeIndexes), pos)
+        return SectionSnapshot(blockSnapshots.clone(), pos)
     }
 }

@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.physics.body.removePhysicsBody
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Quaternion
@@ -33,6 +34,7 @@ class PhysicsChunkSection(
     override val physicsLevel: PhysicsLevel,
     val chunk: LevelChunk
 ) : PhysicsHost {
+    val blockMerger = BlockMerger(physicsLevel)
     // 缓存section内所有方块的BlockState，避免物理线程中的getBlockState调用
     private var snapshotForBuild: SectionSnapshot? = null
     private var snapshotForCollision: SectionSnapshot? = null
@@ -76,55 +78,56 @@ class PhysicsChunkSection(
 
     /**
      * 从缓存的区块中预加载所有方块状态并构建碰撞形状
-     *
-     * 该方法会：
-     * 1. 遍历section缓存的所有方块位置
-     * 2. 获取每个方块的碰撞形状
-     * 3. 处理复合形状，将其拆分为基本形状并应用变换
-     * 4. 将所有非空气方块的形状组合到最终的复合形状中
-     *
-     * @return Boolean 如果section包含任何碰撞体积则返回true，否则返回false
+     * 使用洪水填充算法合并相同形状的方块
      */
     private fun buildCollisionShape(): Boolean {
         val compoundShape = CompoundCollisionShape()
         var hasCollision = false
         val snapshot = snapshotForBuild
-        if (snapshot == null) {
+        if (snapshot == null || snapshot == SectionSnapshot.EMPTY) {
             collisionShape = null
             return false
         }
-        // 遍历section内所有方块位置
-        snapshot.forEachBlock { blockPos, blockSnapshot ->
-            // 获取方块的碰撞形状，其他物理信息在其他刚体发生碰撞处理碰撞对时自行调用使用
-            val blockShape = blockSnapshot.state.getBulletCollisionShape(physicsLevel)
-            // 计算方块在section内的相对位置
-            val relativePos = Vector3f(
-                blockPos.x + 0.5f - 8f,
-                blockPos.y + 0.5f - 8f,
-                blockPos.z + 0.5f - 8f
-            )
 
-            // 处理复合形状：如果是复合形状，需要拆分为基本形状
-            if (blockShape is CompoundCollisionShape) {
-                // 遍历复合形状的所有子形状
-                val children = blockShape.listChildren()
-                for (childShape in children) {
-                    val shape = childShape.shape
-                    val childTransform = childShape.copyTransform(null)
+        // 按Y层处理
+        for (levelY in 0 until 16) {
+            // 准备当前层的方块状态数组
+            val layerBlocks = Array(16) { Array<BlockState?>(16) { null } }
 
-                    // 合并变换：方块位置 + 子形状相对位置
-                    val combinedTransform =
-                        MyMath.combine(Transform(relativePos, Quaternion.IDENTITY), childTransform, null)
-
-                    // 添加子形状到最终的复合形状
-                    compoundShape.addChildShape(shape, combinedTransform)
+            for (x in 0 until 16) {
+                for (z in 0 until 16) {
+                    val blockSnapshot = snapshot.getBlockSnapshot(x, levelY, z)
+                    if (blockSnapshot != null) {
+                        layerBlocks[x][z] = blockSnapshot.state
+                    }
                 }
-            } else {
-                // 对于非复合形状，直接添加
-                compoundShape.addChildShape(blockShape, Transform(relativePos, Quaternion.IDENTITY))
             }
 
-            hasCollision = true
+            // 合并当前层的方块
+            val mergedRects = blockMerger.mergeLayer(levelY, layerBlocks)
+
+            // 添加合并后的形状
+            for (rect in mergedRects) {
+                val collisionShape = rect.toCollisionShape()
+                val centerPos = rect.getCenter(levelY)
+                compoundShape.addChildShape(collisionShape, centerPos)
+                hasCollision = true
+            }
+
+            // 处理无法合并的复杂形状
+            for (x in 0 until 16) {
+                for (z in 0 until 16) {
+                    val blockSnapshot = snapshot.getBlockSnapshot(x, levelY, z)
+                    if (blockSnapshot != null) {
+                        val shape = blockSnapshot.state.getBulletCollisionShape(physicsLevel)
+                        // 如果是复杂形状且没有被合并过
+                        if (!physicsLevel.blockShapeManager.isMergeableShape(shape)) {
+                            addComplexShape(compoundShape, x, levelY, z, shape)
+                            hasCollision = true
+                        }
+                    }
+                }
+            }
         }
 
         if (hasCollision) {
@@ -133,6 +136,41 @@ class PhysicsChunkSection(
         }
 
         return false
+    }
+
+    /**
+     * 添加复杂形状（保持原有逻辑）
+     */
+    private fun addComplexShape(
+        compoundShape: CompoundCollisionShape,
+        x: Int, y: Int, z: Int,
+        shapeToAdd: CollisionShape
+    ) {
+        val relativePos = Vector3f(
+            x + 0.5f - 8f,
+            y + 0.5f - 8f,
+            z + 0.5f - 8f
+        )
+
+        // 处理复合形状：如果是复合形状，需要拆分为基本形状
+        if (shapeToAdd is CompoundCollisionShape) {
+            // 遍历复合形状的所有子形状
+            val children = shapeToAdd.listChildren()
+            for (childShape in children) {
+                val shape = childShape.shape
+                val childTransform = childShape.copyTransform(null)
+
+                // 合并变换：方块位置 + 子形状相对位置
+                val combinedTransform =
+                    MyMath.combine(Transform(relativePos, Quaternion.IDENTITY), childTransform, null)
+
+                // 添加子形状到最终的复合形状
+                compoundShape.addChildShape(shape, combinedTransform)
+            }
+        } else {
+            // 对于非复合形状，直接添加
+            compoundShape.addChildShape(shapeToAdd, Transform(relativePos, Quaternion.IDENTITY))
+        }
     }
 
     /**
@@ -217,6 +255,7 @@ class PhysicsChunkSection(
         )
         physicsBody!!.collisionGroup = CollisionGroups.TERRAIN
         physicsBody!!.setCollideWithGroups(CollisionGroups.NONE)
+        physicsBody!!.shouldShowDebugBoxWhenNonColldeWith = true
         return true
     }
 
@@ -292,13 +331,15 @@ class PhysicsChunkSection(
     }
 
     /**
-     * 根据子形状索引获取对应的方块位置
-     * 用于在碰撞回调中确定具体碰撞的方块(物理线程调用)
+     * 根据碰撞点获取方块位置
      */
-    fun getBlockPosForChildShape(childIndex: Int): BlockPos {
-        if (childIndex < 0 || childIndex >= 4096) throw IndexOutOfBoundsException("childIndex out of range, should be in [0, 4095]")
-        if (snapshotForCollision == null || snapshotForCollision?.isEmpty() == true) throw NullPointerException("snapshotForCollision is null or empty")
-        return snapshotForCollision!!.getWorldPos(childIndex)
+    fun getBlockPosFromContactPoint(worldContactPoint: Vector3f, normal: Vector3f, distance: Float): BlockPos {
+        var pos = worldContactPoint.add(normal.mult(distance))
+        return BlockPos(
+            Math.floor(pos.x.toDouble()).toInt(),
+            Math.floor(pos.y.toDouble()).toInt(),
+            Math.floor(pos.z.toDouble()).toInt()
+        )
     }
 
     /**

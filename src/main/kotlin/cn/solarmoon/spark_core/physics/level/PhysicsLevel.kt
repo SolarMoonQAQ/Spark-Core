@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.physics.level
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
-import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.body.*
@@ -183,7 +182,6 @@ abstract class PhysicsLevel(
             if (::terrainManager.isInitialized) terrainManager.destroy()
             if (::blockShapeManager.isInitialized) {
                 blockShapeManager.SHAPE_CACHE.clear()
-                blockShapeManager.STATE_CACHE.clear()
             }
             if (::world.isInitialized) world.destroy()
             hostManager.clear()

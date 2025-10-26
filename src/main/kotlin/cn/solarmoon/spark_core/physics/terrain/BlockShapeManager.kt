@@ -21,8 +21,9 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class BlockShapeManager(val physicsLevel: PhysicsLevel) {
     val SHAPE_CACHE: MutableMap<BlockState, CollisionShape> = ConcurrentHashMap()
-    val STATE_CACHE: MutableMap<CollisionShape, BlockState> = ConcurrentHashMap()
-    private val DEFAULT_SHAPE = BoxCollisionShape(0.5f)
+    val FULL_BLOCK = BoxCollisionShape(0.5f)
+    val UP_HALF_BLOCK = CompoundCollisionShape(1).addChildShape(BoxCollisionShape(0.5f, 0.25f, 0.5f), Vector3f(0f, 0.375f, 0f))
+    val DOWN_HALF_BLOCK = CompoundCollisionShape(1).addChildShape(BoxCollisionShape(0.5f, 0.25f, 0.5f), Vector3f(0f, -0.375f, 0f))
 
     private fun generateShapeCache(blockState: BlockState): CollisionShape {
         val shape = convertVoxelToCollisionShape(blockState)
@@ -36,13 +37,9 @@ class BlockShapeManager(val physicsLevel: PhysicsLevel) {
         }
     }
 
-    fun getBlockState(shape: CollisionShape): BlockState? {
-        return if (shape is CompoundCollisionShape) {
-            STATE_CACHE[shape.listChildren()[0].shape]
-        } else STATE_CACHE[shape]
-    }
-
     private fun convertVoxelToCollisionShape(blockState: BlockState): CollisionShape {
+        if(blockState.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO))
+            return FULL_BLOCK
         val voxel = blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
         try {
             val aabb = voxel.bounds()
@@ -52,7 +49,6 @@ class BlockShapeManager(val physicsLevel: PhysicsLevel) {
                 (aabb.zsize / 2).toFloat()
             )
             val box = BoxCollisionShape(halfExtents)
-            STATE_CACHE[box] = blockState
             if (aabb.center.x == 0.5 && aabb.center.y == 0.5 && aabb.center.z == 0.5) {
                 return box
             } else {
@@ -69,15 +65,33 @@ class BlockShapeManager(val physicsLevel: PhysicsLevel) {
                 return compound
             }
         } catch (e: Exception) {
-            return DEFAULT_SHAPE
+            return FULL_BLOCK
+        }
+    }
+
+    /**
+     * 判断形状是否是可合并的简单形状
+     */
+    fun isMergeableShape(shape: CollisionShape): Boolean {
+        return shape == FULL_BLOCK ||
+                shape == UP_HALF_BLOCK ||
+                shape == DOWN_HALF_BLOCK
+        // 后续可以添加更多可合并的形状，如不同高度的雪层等
+    }
+
+    /**
+     * 获取形状的类型标识，用于合并时的形状匹配
+     */
+    fun getShapeType(shape: CollisionShape): Int {
+        return when (shape) {
+            FULL_BLOCK -> 1
+            UP_HALF_BLOCK -> 2
+            DOWN_HALF_BLOCK -> 3
+            else -> 0 // 0表示不可合并的复杂形状
         }
     }
 }
 
 fun BlockState.getBulletCollisionShape(level: PhysicsLevel): CollisionShape {
     return level.blockShapeManager.getCollisionShape(this)
-}
-
-fun CollisionShape.getBlockState(level: PhysicsLevel): BlockState? {
-    return level.blockShapeManager.getBlockState(this)
 }
