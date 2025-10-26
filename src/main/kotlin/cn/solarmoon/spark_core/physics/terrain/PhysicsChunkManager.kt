@@ -37,7 +37,7 @@ class PhysicsChunkManager(
 
     // 地形构建线程池
     private val terrainBuilderExecutor = Executors.newFixedThreadPool(
-        Runtime.getRuntime().availableProcessors().coerceAtLeast(2)
+        (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1).coerceAtMost(3)
     ) { r -> Thread(r, "TerrainShapeBuilder-${physicsLevel.name}") }.asCoroutineDispatcher()
 
     val terrainBuilderScope = CoroutineScope(
@@ -49,7 +49,7 @@ class PhysicsChunkManager(
 
     // 配置参数
     private val buildRadius = 2 // 构建半径（区块数）
-    private val activationRadius = 4 // 激活半径（方块数）
+    private val activationRadius = 2 // 激活半径（方块数）
 
     // 性能统计
     private val totalSections: Int

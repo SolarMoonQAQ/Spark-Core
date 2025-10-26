@@ -255,7 +255,6 @@ class PhysicsChunkSection(
         )
         physicsBody!!.collisionGroup = CollisionGroups.TERRAIN
         physicsBody!!.setCollideWithGroups(CollisionGroups.NONE)
-        physicsBody!!.shouldShowDebugBoxWhenNonColldeWith = true
         return true
     }
 
