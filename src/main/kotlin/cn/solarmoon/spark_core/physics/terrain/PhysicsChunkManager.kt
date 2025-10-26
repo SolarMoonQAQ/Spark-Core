@@ -57,18 +57,9 @@ class PhysicsChunkManager(
         get() = loadedChunks.values.sumOf { it.getActiveSectionCount() }
 
     /**
-     * 加载指定区块的物理表示
-     */
-    private fun loadChunk(chunkPos: ChunkPos, chunk: LevelChunk) {
-        if (chunkPos in mcLoadedChunks) return
-        mcLoadedChunks[chunkPos] = chunk
-    }
-
-    /**
      * 卸载指定区块的物理表示
      */
-    private fun unloadChunk(chunkPos: ChunkPos) {
-        mcLoadedChunks.remove(chunkPos)
+    fun unloadPhysicsChunk(chunkPos: ChunkPos) {
         val chunk = loadedChunks[chunkPos] ?: return
 
         // 从脏section集合中移除该区块的所有section
@@ -258,14 +249,16 @@ class PhysicsChunkManager(
      * 处理区块加载事件（主线程调用）
      */
     fun onChunkLoaded(chunkPos: ChunkPos, chunk: LevelChunk) {
-        loadChunk(chunkPos, chunk)
+        if (chunkPos in mcLoadedChunks) return
+        mcLoadedChunks[chunkPos] = chunk
     }
 
     /**
      * 处理区块卸载事件（主线程调用）
      */
     fun onChunkUnloaded(chunkPos: ChunkPos) {
-        unloadChunk(chunkPos)
+        mcLoadedChunks.remove(chunkPos)
+        unloadPhysicsChunk(chunkPos)
     }
 
     /**

@@ -81,7 +81,7 @@ object PhysicsLevelApplier {
         val chunkPos = ChunkPos(event.chunkPos)
         // 卸载优先级过低的物理区块，而非等到区块卸载事件触发
         if (event.newTicketLevel > 33 && physLevel.tickCount > 0 && physLevel.terrainManager.loaded(chunkPos)){
-            physLevel.terrainManager.onChunkUnloaded(chunkPos)
+            physLevel.terrainManager.unloadPhysicsChunk(chunkPos)
         }
     }
     //__________以下内容转用mixin实现，服务端世界发生方块更新时标记脏section__________
