@@ -67,9 +67,48 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
     }
 
     /**
-     * 在指定层级合并方块 - 改进版本
+     * 两阶段合并
      */
     fun mergeLayer(
+        levelY: Int,
+        blockStates: Array<Array<BlockState?>>
+    ): List<MergedRect> {
+        val mergedRects = mutableListOf<MergedRect>()
+
+        // 第一阶段：最大矩形优先合并
+        val phase1Rects = mergeXDirectionFirst(levelY, blockStates)
+
+        // 过滤掉1x1的矩形，只保留较大的矩形
+        val (largeRects, smallRects) = phase1Rects.partition { rect ->
+            rect.width > 1 || rect.depth > 1
+        }
+        mergedRects.addAll(largeRects)
+
+        val processed = Array(16) { BooleanArray(16) }
+        // 只标记较大矩形区域为已处理，1x1矩形区域保持未处理状态
+        for (rect in largeRects) {
+            for (z in rect.minZ..rect.maxZ) {
+                for (x in rect.minX..rect.maxX) {
+                    processed[x][z] = true
+                }
+            }
+        }
+
+        // 第二阶段：专门合并z方向连续方块（包括第一阶段留下的1x1矩形）
+        val phase2Rects = mergeZDirectionRemains(levelY, blockStates, processed)
+        mergedRects.addAll(phase2Rects)
+
+        // 第三阶段：处理剩余的单个方块
+        val phase3Rects = mergeSingleBlocks(levelY, blockStates, processed)
+        mergedRects.addAll(phase3Rects)
+
+        return mergedRects
+    }
+
+    /**
+     * 第一阶段：x方向优先，合并尽可能大的矩形
+     */
+    private fun mergeXDirectionFirst(
         levelY: Int,
         blockStates: Array<Array<BlockState?>> // [16][16] 的二维数组
     ): List<MergedRect> {
@@ -100,8 +139,181 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                 )
             )
         }
+        return mergedRects
+    }
+
+    /**
+     * 第二阶段：专门合并z方向连续的剩余方块
+     */
+    private fun mergeZDirectionRemains(
+        levelY: Int,
+        blockStates: Array<Array<BlockState?>>,
+        processed: Array<BooleanArray>
+    ): List<MergedRect> {
+        val mergedRects = mutableListOf<MergedRect>()
+
+        // 按x列扫描
+        for (x in 0 until 16) {
+            var z = 0
+            while (z < 16) {
+                // 跳过已处理的方块
+                if (processed[x][z]) {
+                    z++
+                    continue
+                }
+
+                val startState = blockStates[x][z]
+
+                if (startState == null || !isMergeable(startState)) {
+                    z++
+                    continue
+                }
+
+                val startShapeType = physicsLevel.blockShapeManager.getShapeType(
+                    startState.getBulletCollisionShape(physicsLevel)
+                )
+
+                // 寻找z方向连续的长度
+                var endZ = z
+                for (checkZ in z + 1 until 16) {
+                    if (processed[x][checkZ]) break
+
+                    val checkState = blockStates[x][checkZ] ?: break
+                    if (!isMergeable(checkState)) break
+
+                    val checkShapeType = physicsLevel.blockShapeManager.getShapeType(
+                        checkState.getBulletCollisionShape(physicsLevel)
+                    )
+                    if (checkShapeType != startShapeType) break
+
+                    endZ = checkZ
+                }
+
+                val length = endZ - z + 1
+
+                // 只有当连续长度大于1时才合并（避免单个方块）
+                if (length > 1) {
+                    // 检查是否可以扩展到相邻的x列（形成更宽的条带）
+                    val maxWidth = findMaxZStripWidth(x, z, endZ, blockStates, processed, startShapeType)
+
+                    val centerOffsetY = calculateCenterOffset(startState)
+                    mergedRects.add(
+                        MergedRect(
+                            x, z,
+                            x + maxWidth - 1, endZ,
+                            startShapeType,
+                            centerOffsetY
+                        )
+                    )
+
+                    // 标记为已处理
+                    for (currentZ in z..endZ) {
+                        for (currentX in x until x + maxWidth) {
+                            if (currentX < 16) {
+                                processed[currentX][currentZ] = true
+                            }
+                        }
+                    }
+
+                    z = endZ + 1
+                } else {
+                    z++
+                }
+            }
+        }
 
         return mergedRects
+    }
+
+    /**
+     * 第三阶段：处理剩余的单个方块
+     */
+    private fun mergeSingleBlocks(
+        levelY: Int,
+        blockStates: Array<Array<BlockState?>>,
+        processed: Array<BooleanArray>
+    ): List<MergedRect> {
+        val singleRects = mutableListOf<MergedRect>()
+
+        // 扫描所有位置，寻找未处理的单个方块
+        for (x in 0 until 16) {
+            for (z in 0 until 16) {
+                // 跳过已处理的方块
+                if (processed[x][z]) continue
+
+                val blockState = blockStates[x][z] ?: continue
+
+                if (!isMergeable(blockState)) continue
+
+                val shapeType = physicsLevel.blockShapeManager.getShapeType(
+                    blockState.getBulletCollisionShape(physicsLevel)
+                )
+
+                val centerOffsetY = calculateCenterOffset(blockState)
+
+                // 创建1x1的矩形
+                singleRects.add(
+                    MergedRect(
+                        x, z,
+                        x, z, // 1x1矩形，所以maxX和maxZ与min相同
+                        shapeType,
+                        centerOffsetY
+                    )
+                )
+
+                // 标记为已处理（虽然这一步不是必须的，但为了完整性）
+                processed[x][z] = true
+            }
+        }
+
+        return singleRects
+    }
+
+    /**
+     * 查找z方向条带的最大可能宽度
+     */
+    private fun findMaxZStripWidth(
+        startX: Int, startZ: Int, endZ: Int,
+        blockStates: Array<Array<BlockState?>>,
+        processed: Array<BooleanArray>,
+        targetShapeType: Int
+    ): Int {
+        var maxWidth = 1
+
+        // 向右扩展检查
+        for (extendX in startX + 1 until 16) {
+            // 检查从startZ到endZ的所有z坐标
+            var canExtend = true
+            for (checkZ in startZ..endZ) {
+                if (extendX >= 16 || processed[extendX][checkZ]) {
+                    canExtend = false
+                    break
+                }
+
+                val state = blockStates[extendX][checkZ]
+
+                if (state == null || !isMergeable(state)) {
+                    canExtend = false
+                    break
+                }
+
+                val shapeType = physicsLevel.blockShapeManager.getShapeType(
+                    state.getBulletCollisionShape(physicsLevel)
+                )
+                if (shapeType != targetShapeType) {
+                    canExtend = false
+                    break
+                }
+            }
+
+            if (canExtend) {
+                maxWidth++
+            } else {
+                break
+            }
+        }
+
+        return maxWidth
     }
 
     /**

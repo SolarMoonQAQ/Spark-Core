@@ -49,7 +49,7 @@ class PhysicsChunkManager(
 
     // 配置参数
     private val buildRadius = 2 // 构建半径（区块数）
-    private val activationRadius = 8 // 激活半径（方块数）
+    private val activationRadius = 4 // 激活半径（方块数）
 
     // 性能统计
     private val totalSections: Int
