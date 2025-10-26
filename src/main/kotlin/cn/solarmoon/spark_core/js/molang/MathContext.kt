@@ -52,6 +52,12 @@ class MathContext() {
     fun round(value: Double) = Math.round(value)
 
     @HostAccess.Export
+    fun mod(value1: Double, value2: Double) = value1 % value2
+
+    @HostAccess.Export
+    fun sign(value: Double) = Math.signum(value)
+
+    @HostAccess.Export
     fun min(value1: Double, value2: Double) = Math.min(value1, value2)
 
     @HostAccess.Export

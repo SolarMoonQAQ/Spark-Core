@@ -12,9 +12,9 @@ data class Vector3js(
 ) {
 
     fun eval(anim: AnimInstance): Vector3f {
-        val x = x.eval(anim).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
-        val y = y.eval(anim).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
-        val z = z.eval(anim).takeIf { it.fitsInDouble() }?.asDouble() ?: 0.0
+        val x = x.evalAsDouble(anim)
+        val y = y.evalAsDouble(anim)
+        val z = z.evalAsDouble(anim)
         return Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
     }
 

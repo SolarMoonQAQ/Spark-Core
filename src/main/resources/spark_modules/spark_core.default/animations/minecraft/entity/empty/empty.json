@@ -1,0 +1,11 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"empty": {
+			"loop": true,
+			"animation_length": 0,
+			"override_previous_animation": true,
+			"bones": {}
+		}
+	}
+}
