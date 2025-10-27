@@ -113,9 +113,10 @@ fun JSMolangValue.evalAsString(animatable: IAnimatable<*>): String =
 /**
  * 通用方法：返回 Object (Boolean/Double/String)
  */
-fun JSMolangValue.evalAsObject(anim: AnimInstance): Any {
+fun JSMolangValue.evalAsObject(anim: AnimInstance): Any? {
     val value = this.eval(anim)
     return when {
+        value.isNull -> null
         value.isBoolean -> value.asBoolean()
         value.isString -> value.asString()
         value.fitsInDouble() -> value.asDouble()
