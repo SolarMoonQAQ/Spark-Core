@@ -70,8 +70,11 @@ class ManifoldPoint(
         return storeVector
     }
 
-    fun getNormalWorldOnB(storeVector: Vector3f = Vector3f()): Vector3f {
+    fun getNormalWorld(storeVector: Vector3f = Vector3f()): Vector3f {
         ManifoldPoints.getNormalWorldOnB(id, storeVector)
+        if (index == 0) { //转化为物体A的接触法线
+            storeVector.multLocal(-1f)
+        }
         return storeVector
     }
 

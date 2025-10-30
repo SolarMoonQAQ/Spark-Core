@@ -43,7 +43,6 @@ class SectionSnapshot private constructor(
             }
 
             val blockSnapshots = arrayOfNulls<BlockSnapshot>(4096)
-            val childShapeIndex = ArrayList<Int>(16)
             var hasBlocks = false
             var i = 0
             // 遍历section内所有方块
@@ -70,7 +69,6 @@ class SectionSnapshot private constructor(
                                 BlockCollisionUtil.getRestitution(chunk, blockState, getWorldPos(pos, x, y, z)),
                                 BlockCollisionUtil.getSlip(chunk, blockState, getWorldPos(pos, x, y, z))
                             )
-                            childShapeIndex.add(index)
                             hasBlocks = true
                             i++
                         }
@@ -144,7 +142,8 @@ class SectionSnapshot private constructor(
      * 通过相对坐标获取方块快照
      */
     fun getBlockSnapshot(relativeX: Int, relativeY: Int, relativeZ: Int): BlockSnapshot? {
-        return blockSnapshots[getIndexFromRelativePos(relativeX, relativeY, relativeZ)]
+        val index = getIndexFromRelativePos(relativeX, relativeY, relativeZ)
+        return blockSnapshots[index]
     }
 
     /**
