@@ -1,16 +1,16 @@
 package cn.solarmoon.spark_core.sound;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.phys.Vec3;
 
 public interface ISoundSpreader {
-    Vec3 getPosition(ResourceLocation name);
+    Vec3 getPosition(SoundEvent event);
 
-    Vec3 getSpeed(ResourceLocation name);
+    Vec3 getSpeed(SoundEvent event);
 
-    float getRange(ResourceLocation name);
+    float getRange(SoundEvent event);
 
-    float getPitch(ResourceLocation name);
+    float getPitch(SoundEvent event);
 
-    float getVolume(ResourceLocation name);
+    float getVolume(SoundEvent event);
 }

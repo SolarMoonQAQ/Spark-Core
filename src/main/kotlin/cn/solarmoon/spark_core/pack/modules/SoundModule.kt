@@ -45,11 +45,7 @@ class SoundModule : SparkPackModule {
             } else {
                 SparkCore.MOD_ID
             }
-            val path: String = if (pathSegments.size >= 2) {
-                "$id/${pathSegments.subList(1, pathSegments.size).joinToString("/")}/$fileName"
-            } else {
-                "$id/$fileName"
-            }
+            val path = fileName.removeSuffix(".ogg")
             val audioStream = JOrbisAudioStream(ByteArrayInputStream(content))
             val sound = SoundData(audioStream.readAll(), audioStream.getFormat())
             sounds[ResourceLocation.fromNamespaceAndPath(nameSpace, path)] = sound

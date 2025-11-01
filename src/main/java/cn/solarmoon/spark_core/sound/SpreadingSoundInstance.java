@@ -1,17 +1,23 @@
 package cn.solarmoon.spark_core.sound;
 
+import cn.solarmoon.spark_core.pack.modules.SoundModule;
+import cn.solarmoon.spark_core.registry.common.SparkSounds;
+import com.mojang.blaze3d.audio.SoundBuffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.sound.PlaySoundSourceEvent;
 import org.jetbrains.annotations.Nullable;
 
+import javax.sound.sampled.AudioFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,11 +27,11 @@ import java.util.Map;
  * 声音传播范围的实现参考自https://github.com/MCModderAnchor/TACZ
  */
 @OnlyIn(Dist.CLIENT)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     @Nullable
     public final ISoundSpreader ISoundSpreader;
-    public final SoundEvent soundEvent;
-    public final ResourceLocation name;
+    private final SoundEvent soundEvent;
     public final LinkedHashMap<Vec3, Float> spreadDistances = new LinkedHashMap<>(20);
     public final LinkedHashMap<Vec3, Vec3> speeds = new LinkedHashMap<>(20);
     private final LinkedHashMap<Vec3, Float> ranges = new LinkedHashMap<>(20);
@@ -36,35 +42,19 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     /**
      * <p>针对单次声源的构造函数，用于创建单个定点声源的音效实例</p>
      *
-     * @param soundEvent
-     * @param soundType
-     * @param position
-     * @param speed
-     * @param pitch
-     * @param volume
+     * @param soundEvent 声音事件，随用随建时可用于分辨来自同一源的不同声音
+     * @param soundType 声音类型，方块，环境等
+     * @param position 声音位置
+     * @param speed 声音发出时的速度
+     * @param range 声音的最大距离
+     * @param pitch 声音的音高
+     * @param volume 声音的音量
      */
     public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float range, float pitch, float volume) {
-        this(soundEvent, soundType, soundEvent.getLocation(), position, speed, range, pitch, volume);
-    }
-
-    /**
-     * <p>针对单次声源的构造函数，用于创建单个定点声源的音效实例，可特别指定声源名称供子类使用</p>
-     *
-     * @param soundEvent
-     * @param soundType
-     * @param name
-     * @param position
-     * @param speed
-     * @param range
-     * @param pitch
-     * @param volume
-     */
-    protected SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ResourceLocation name, Vec3 position, Vec3 speed, float range, float pitch, float volume) {
-        super(soundEvent, soundType, SoundInstance.createUnseededRandom());
+        super(SparkSounds.getCUSTOM_SOUND().get(), soundType, SoundInstance.createUnseededRandom());
         this.ISoundSpreader = null;
         this.attenuation = Attenuation.NONE;
         this.soundEvent = soundEvent;
-        this.name = name;
         this.x = position.x;
         this.y = position.y;
         this.z = position.z;
@@ -80,37 +70,24 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     /**
      * <p>针对持续发出声音的声源的构造函数，用于创建位置速度音高等时刻改变声源的音效实例</p>
      *
-     * @param soundEvent
-     * @param soundType
-     * @param ISoundSpreader
+     * @param soundEvent 声音事件，随用随建时可用于分辨来自同一源的不同声音
+     * @param soundType 声音类型，方块，环境等
+     * @param soundSpreader 声源，音效会通过接口提供的方法更新其位置
      */
-    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader) {
-        this(soundEvent, soundType, soundEvent.getLocation(), ISoundSpreader);
-    }
-
-    /**
-     * <p>针对持续发出声音的声源的构造函数，用于创建位置速度音高等时刻改变声源的音效实例，可特别指定声源名称供子类使用</p>
-     *
-     * @param soundEvent
-     * @param soundType
-     * @param name
-     * @param ISoundSpreader
-     */
-    protected SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ResourceLocation name, ISoundSpreader ISoundSpreader) {
-        super(soundEvent, soundType, SoundInstance.createUnseededRandom());
-        this.ISoundSpreader = ISoundSpreader;
+    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader) {
+        super(SparkSounds.getCUSTOM_SOUND().get(), soundType, SoundInstance.createUnseededRandom());
+        this.ISoundSpreader = soundSpreader;
         this.attenuation = Attenuation.NONE;
         this.soundEvent = soundEvent;
-        this.name = name;
-        var position = ISoundSpreader.getPosition(name);
+        var position = soundSpreader.getPosition(soundEvent);
         this.x = position.x;
         this.y = position.y;
         this.z = position.z;
-        this.pitch = ISoundSpreader.getPitch(name);
-        this.volume = ISoundSpreader.getVolume(name);
+        this.pitch = soundSpreader.getPitch(soundEvent);
+        this.volume = soundSpreader.getVolume(soundEvent);
         this.spreadDistances.put(position, 0F);
-        this.speeds.put(position, ISoundSpreader.getSpeed(name));
-        this.ranges.put(position, ISoundSpreader.getRange(name));
+        this.speeds.put(position, soundSpreader.getSpeed(soundEvent));
+        this.ranges.put(position, soundSpreader.getRange(soundEvent));
         this.pitches.put(position, this.pitch);
         this.volumes.put(position, this.volume);
     }
@@ -148,11 +125,36 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         }
         if (ISoundSpreader != null) {
             //记录最新的声源位置速度
-            var position = ISoundSpreader.getPosition(name);
+            var position = ISoundSpreader.getPosition(getSoundEvent());
             this.spreadDistances.put(position, 0F);
-            this.speeds.put(position, ISoundSpreader.getSpeed(name));
-            this.pitches.put(position, ISoundSpreader.getPitch(name));
-            this.volumes.put(position, ISoundSpreader.getVolume(name));
+            this.speeds.put(position, ISoundSpreader.getSpeed(getSoundEvent()));
+            this.pitches.put(position, ISoundSpreader.getPitch(getSoundEvent()));
+            this.volumes.put(position, ISoundSpreader.getVolume(getSoundEvent()));
+        }
+    }
+
+    @Nullable
+    public SoundBuffer getSoundBuffer() {
+        SoundData soundData = SoundModule.getSound(getSoundEvent().getLocation());
+        if (soundData == null) {
+            return SpreadingSoundHelper.INSTANCE.getSoundBuffer(getSoundEvent().getLocation());
+        }
+        AudioFormat rawFormat = soundData.audioFormat();
+        if (rawFormat.getChannels() > 1) {
+            AudioFormat monoFormat = new AudioFormat(rawFormat.getEncoding(), rawFormat.getSampleRate(), rawFormat.getSampleSizeInBits(), 1, rawFormat.getFrameSize(), rawFormat.getFrameRate(), rawFormat.isBigEndian(), rawFormat.properties());
+            return new SoundBuffer(soundData.byteBuffer(), monoFormat);
+        }
+        return new SoundBuffer(soundData.byteBuffer(), soundData.audioFormat());
+    }
+
+    @SubscribeEvent
+    public static void onPlaySoundSource(PlaySoundSourceEvent event) {
+        if (event.getSound() instanceof SpreadingSoundInstance instance) {
+            SoundBuffer soundBuffer = instance.getSoundBuffer();
+            if (soundBuffer != null) {
+                event.getChannel().attachStaticBuffer(soundBuffer);
+                event.getChannel().play();
+            }
         }
     }
 
@@ -195,9 +197,12 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.volume = volume;
     }
 
-
     @Override
     public boolean canStartSilent() {
         return true;
+    }
+
+    public SoundEvent getSoundEvent() {
+        return this.soundEvent;
     }
 }

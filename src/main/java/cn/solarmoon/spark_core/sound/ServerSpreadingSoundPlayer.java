@@ -21,13 +21,14 @@ public class ServerSpreadingSoundPlayer implements ISpreadingSoundPlayer {
                     2 * range,
                     new SpreadingSoundPayload(soundEvent, soundType, position, speed, range, pitch, volume)
             );
-        else throw new IllegalArgumentException("method was called on a client-side level");
+        else throw new IllegalStateException("method was called on a client-side level");
     }
 
     public void playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader) {
         if (level instanceof ServerLevel serverLevel) {
             //TODO: 怎么找到客户端对应的ISpreadingSoundSource？
-        } else throw new IllegalArgumentException("method was called on a client-side level");
+            throw new UnsupportedOperationException("method was called on a server-side level, but client-side ISoundSpreader is not supported yet");
+        } else throw new IllegalStateException("method was called on a client-side level");
     }
 
     @Override

@@ -26,27 +26,29 @@ public class SpreadingSoundHelper {
     }
 
     /**
-     * 播放带音速延迟和多普勒效果的扩散音效，双端可用
-     * @param soundEvent
-     * @param soundType
-     * @param position
-     * @param speed
-     * @param range
-     * @param pitch
-     * @param volume
+     * 播放带音速延迟和多普勒效果的扩散音效，适用于定点播放的声音，双端可用
+     * @param level 播放声音的维度
+     * @param soundEvent 音效事件，包含音效注册名
+     * @param soundType 声音类型，方块，环境等
+     * @param position 声音位置
+     * @param speed 声音发出时的速度
+     * @param range 声音的最大距离
+     * @param pitch 声音的音高
+     * @param volume 声音的音量
      */
     public static void playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float range, float pitch, float volume){
         INSTANCE.playSpreadingSound(level, soundEvent, soundType, position, speed, range, pitch, volume);
     }
 
     /**
-     * 播放带音速延迟和多普勒效果的扩散音效，仅在客户端调用时有效
-     * @param soundEvent
-     * @param soundType
-     * @param ISoundSpreader
+     * 播放带音速延迟和多普勒效果的扩散音效，适用于持续播放且移动的声音，仅在客户端调用时有效
+     * @param level 播放声音的维度
+     * @param soundEvent 声音事件，随用随建时可用于分辨来自同一源的不同声音
+     * @param soundType 声音类型，方块，环境等
+     * @param soundSpreader 声源，音效会通过接口提供的方法更新其位置
      */
-    public static void playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader){
-        INSTANCE.playSpreadingSound(level, soundEvent, soundType, ISoundSpreader);
+    public static void playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader){
+        INSTANCE.playSpreadingSound(level, soundEvent, soundType, soundSpreader);
     }
 
     public static SoundBuffer getSoundBuffer(ResourceLocation location){
