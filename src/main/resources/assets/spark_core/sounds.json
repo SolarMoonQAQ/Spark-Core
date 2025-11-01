@@ -1,0 +1,9 @@
+{
+  "custom_sound": {
+    "sounds": [
+      {
+        "name": "spark_core:empty"
+      }
+    ]
+  }
+}

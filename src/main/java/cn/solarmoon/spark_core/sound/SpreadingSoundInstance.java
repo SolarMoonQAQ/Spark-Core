@@ -17,12 +17,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
+ * 带音速传播(非延迟，而是波面抵达收听者)和多普勒效应的音效实例
  * 声音传播范围的实现参考自https://github.com/MCModderAnchor/TACZ
  */
 @OnlyIn(Dist.CLIENT)
 public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     @Nullable
-    public final ISpreadingSoundSource ISpreadingSoundSource;
+    public final ISoundSpreader ISoundSpreader;
     public final SoundEvent soundEvent;
     public final ResourceLocation name;
     public final LinkedHashMap<Vec3, Float> spreadDistances = new LinkedHashMap<>(20);
@@ -60,7 +61,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
      */
     protected SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ResourceLocation name, Vec3 position, Vec3 speed, float range, float pitch, float volume) {
         super(soundEvent, soundType, SoundInstance.createUnseededRandom());
-        this.ISpreadingSoundSource = null;
+        this.ISoundSpreader = null;
         this.attenuation = Attenuation.NONE;
         this.soundEvent = soundEvent;
         this.name = name;
@@ -81,10 +82,10 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
      *
      * @param soundEvent
      * @param soundType
-     * @param ISpreadingSoundSource
+     * @param ISoundSpreader
      */
-    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ISpreadingSoundSource ISpreadingSoundSource) {
-        this(soundEvent, soundType, soundEvent.getLocation(), ISpreadingSoundSource);
+    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader) {
+        this(soundEvent, soundType, soundEvent.getLocation(), ISoundSpreader);
     }
 
     /**
@@ -93,24 +94,25 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
      * @param soundEvent
      * @param soundType
      * @param name
-     * @param ISpreadingSoundSource
+     * @param ISoundSpreader
      */
-    protected SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ResourceLocation name, ISpreadingSoundSource ISpreadingSoundSource) {
+    protected SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ResourceLocation name, ISoundSpreader ISoundSpreader) {
         super(soundEvent, soundType, SoundInstance.createUnseededRandom());
-        this.ISpreadingSoundSource = ISpreadingSoundSource;
+        this.ISoundSpreader = ISoundSpreader;
         this.attenuation = Attenuation.NONE;
         this.soundEvent = soundEvent;
         this.name = name;
-        this.x = ISpreadingSoundSource.getPosition(name).x;
-        this.y = ISpreadingSoundSource.getPosition(name).y;
-        this.z = ISpreadingSoundSource.getPosition(name).z;
-        this.pitch = ISpreadingSoundSource.getPitch(name);
-        this.volume = ISpreadingSoundSource.getVolume(name);
-        this.spreadDistances.put(ISpreadingSoundSource.getPosition(name), 0F);
-        this.speeds.put(ISpreadingSoundSource.getPosition(name), ISpreadingSoundSource.getSpeed(name));
-        this.ranges.put(ISpreadingSoundSource.getPosition(name), ISpreadingSoundSource.getRange(name));
-        this.pitches.put(ISpreadingSoundSource.getPosition(name), this.pitch);
-        this.volumes.put(ISpreadingSoundSource.getPosition(name), this.volume);
+        var position = ISoundSpreader.getPosition(name);
+        this.x = position.x;
+        this.y = position.y;
+        this.z = position.z;
+        this.pitch = ISoundSpreader.getPitch(name);
+        this.volume = ISoundSpreader.getVolume(name);
+        this.spreadDistances.put(position, 0F);
+        this.speeds.put(position, ISoundSpreader.getSpeed(name));
+        this.ranges.put(position, ISoundSpreader.getRange(name));
+        this.pitches.put(position, this.pitch);
+        this.volumes.put(position, this.volume);
     }
 
     @Override
@@ -144,12 +146,13 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
                 iterator.remove();
             }
         }
-        if (ISpreadingSoundSource != null) {
+        if (ISoundSpreader != null) {
             //记录最新的声源位置速度
-            this.spreadDistances.put(ISpreadingSoundSource.getPosition(name), 0F);
-            this.speeds.put(ISpreadingSoundSource.getPosition(name), ISpreadingSoundSource.getSpeed(name));
-            this.pitches.put(ISpreadingSoundSource.getPosition(name), ISpreadingSoundSource.getPitch(name));
-            this.volumes.put(ISpreadingSoundSource.getPosition(name), ISpreadingSoundSource.getVolume(name));
+            var position = ISoundSpreader.getPosition(name);
+            this.spreadDistances.put(position, 0F);
+            this.speeds.put(position, ISoundSpreader.getSpeed(name));
+            this.pitches.put(position, ISoundSpreader.getPitch(name));
+            this.volumes.put(position, ISoundSpreader.getVolume(name));
         }
     }
 

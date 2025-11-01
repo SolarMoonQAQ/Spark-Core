@@ -1,10 +1,21 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent
+import cn.solarmoon.spark_core.sound.ClientSpreadingSoundPlayer
+import cn.solarmoon.spark_core.sound.CustomSoundInstance
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper
 import cn.solarmoon.spark_core.util.PPhase
+import net.minecraft.core.particles.BlockParticleOption
+import net.minecraft.core.particles.ParticleTypes
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.sounds.SoundEvent
+import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.LevelChunk
+import net.minecraft.world.phys.Vec3
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.level.ChunkEvent
@@ -46,6 +57,26 @@ object PhysicsLevelApplier {
         val level = event.level
         level.processTasks(PPhase.ALL)
         level.processTasks(PPhase.POST)
+        if (level.isClientSide && level.random.nextInt(100) < 10) {
+            val sound = CustomSoundInstance(
+                SoundSource.BLOCKS,
+                ResourceLocation.fromNamespaceAndPath(
+                    "minecraft",
+                    "block.grass.break"
+                ),
+                Vec3.ZERO,
+                Vec3.ZERO,
+                64.0f,
+                1.0f,
+                1.0f
+            )
+            ClientSpreadingSoundPlayer.playSpreadingSound(sound)
+            level.addParticle(BlockParticleOption(ParticleTypes.BLOCK,
+                BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("minecraft", "dirt"))
+                    .defaultBlockState()
+            ), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            )
+        }
     }
 
     /**

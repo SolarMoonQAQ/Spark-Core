@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.sound;
 
+import com.mojang.blaze3d.audio.SoundBuffer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
@@ -41,9 +43,13 @@ public class SpreadingSoundHelper {
      * 播放带音速延迟和多普勒效果的扩散音效，仅在客户端调用时有效
      * @param soundEvent
      * @param soundType
-     * @param ISpreadingSoundSource
+     * @param ISoundSpreader
      */
-    public static void playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISpreadingSoundSource ISpreadingSoundSource){
-        INSTANCE.playSpreadingSound(level, soundEvent, soundType, ISpreadingSoundSource);
+    public static void playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader){
+        INSTANCE.playSpreadingSound(level, soundEvent, soundType, ISoundSpreader);
+    }
+
+    public static SoundBuffer getSoundBuffer(ResourceLocation location){
+        return INSTANCE.getSoundBuffer(location);
     }
 }

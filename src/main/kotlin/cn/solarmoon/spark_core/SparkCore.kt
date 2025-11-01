@@ -55,6 +55,7 @@ class SparkCore(modEventBus: IEventBus, modContainer: ModContainer) {
         SparkParticles.register()
         SparkPackModuleRegister.register(modEventBus)
         SparkStateMachineRegister.register()
+        SparkSounds.register()
     }
 
 }

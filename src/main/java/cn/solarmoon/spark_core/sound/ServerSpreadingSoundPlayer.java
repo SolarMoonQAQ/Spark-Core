@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.sound;
 
 import cn.solarmoon.spark_core.sound.payload.SpreadingSoundPayload;
+import com.mojang.blaze3d.audio.SoundBuffer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -22,9 +24,14 @@ public class ServerSpreadingSoundPlayer implements ISpreadingSoundPlayer {
         else throw new IllegalArgumentException("method was called on a client-side level");
     }
 
-    public void playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISpreadingSoundSource ISpreadingSoundSource) {
+    public void playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader) {
         if (level instanceof ServerLevel serverLevel) {
             //TODO: 怎么找到客户端对应的ISpreadingSoundSource？
         } else throw new IllegalArgumentException("method was called on a client-side level");
+    }
+
+    @Override
+    public SoundBuffer getSoundBuffer(ResourceLocation location) {
+        return null;
     }
 }
