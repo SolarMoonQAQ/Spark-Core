@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.sound;
 
+import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.pack.modules.SoundModule;
 import cn.solarmoon.spark_core.registry.common.SparkSounds;
 import com.mojang.blaze3d.audio.SoundBuffer;
@@ -18,6 +19,7 @@ import net.neoforged.neoforge.client.event.sound.PlaySoundSourceEvent;
 import org.jetbrains.annotations.Nullable;
 
 import javax.sound.sampled.AudioFormat;
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -139,18 +141,61 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         if (soundData == null) {
             return SpreadingSoundHelper.INSTANCE.getSoundBuffer(getSoundEvent().getLocation());
         }
+
         AudioFormat rawFormat = soundData.audioFormat();
-        if (rawFormat.getChannels() > 1) {
-            AudioFormat monoFormat = new AudioFormat(rawFormat.getEncoding(), rawFormat.getSampleRate(), rawFormat.getSampleSizeInBits(), 1, rawFormat.getFrameSize(), rawFormat.getFrameRate(), rawFormat.isBigEndian(), rawFormat.properties());
-            return new SoundBuffer(soundData.byteBuffer(), monoFormat);
+
+        // 格式验证
+        if (!isValidAudioFormat(rawFormat)) {
+            SparkCore.LOGGER.error("Invalid audio format: {}", rawFormat);
+            return null;
         }
-        return new SoundBuffer(soundData.byteBuffer(), soundData.audioFormat());
+
+        // 创建原始缓冲区的副本，避免并发修改
+        ByteBuffer buffer = soundData.byteBuffer().duplicate();
+
+
+        if (buffer == null || buffer.capacity() == 0) {
+            SparkCore.LOGGER.error("Invalid audio buffer");
+            return null;
+        }
+
+        // 确保缓冲区位置为0
+        buffer.rewind();
+
+        try {
+            if (rawFormat.getChannels() > 1) {
+                // 转换为单声道
+                AudioFormat monoFormat = new AudioFormat(
+                        rawFormat.getEncoding(),
+                        rawFormat.getSampleRate(),
+                        rawFormat.getSampleSizeInBits(),
+                        1, // 单声道
+                        rawFormat.getSampleSizeInBits() / 8, // 单声道帧大小
+                        rawFormat.getSampleRate(),
+                        rawFormat.isBigEndian(),
+                        rawFormat.properties()
+                );
+
+                ByteBuffer monoBuffer = convertToMono(buffer, rawFormat);
+                if (monoBuffer == null) {
+                    return null;
+                }
+
+                return new SoundBuffer(monoBuffer, monoFormat);
+            }
+
+            return new SoundBuffer(buffer, rawFormat);
+        } catch (Exception e) {
+            SparkCore.LOGGER.error("Failed to create SoundBuffer", e);
+            return null;
+        }
     }
 
     @SubscribeEvent
     public static void onPlaySoundSource(PlaySoundSourceEvent event) {
         if (event.getSound() instanceof SpreadingSoundInstance instance) {
             SoundBuffer soundBuffer = instance.getSoundBuffer();
+
             if (soundBuffer != null) {
                 event.getChannel().attachStaticBuffer(soundBuffer);
                 event.getChannel().play();
@@ -204,5 +249,59 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
 
     public SoundEvent getSoundEvent() {
         return this.soundEvent;
+    }
+
+    private boolean isValidAudioFormat(AudioFormat format) {
+        return format.getSampleSizeInBits() == 16 &&
+                format.getEncoding() == AudioFormat.Encoding.PCM_SIGNED &&
+                format.getSampleRate() >= 8000 && format.getSampleRate() <= 48000;
+    }
+
+    /**
+     * 将多声道音频转换为单声道
+     */
+    private ByteBuffer convertToMono(ByteBuffer source, AudioFormat format) {
+        try {
+            int channels = format.getChannels();
+            int sampleSize = format.getSampleSizeInBits() / 8; // 字节数
+            int frameSize = format.getFrameSize();
+            int totalFrames = source.capacity() / frameSize;
+
+            // 单声道缓冲区大小
+            int monoSize = totalFrames * sampleSize;
+            ByteBuffer monoBuffer = ByteBuffer.allocateDirect(monoSize);
+
+            source.rewind();
+
+            for (int frame = 0; frame < totalFrames; frame++) {
+                long sum = 0;
+
+                // 对每个声道的样本求和
+                for (int channel = 0; channel < channels; channel++) {
+                    int samplePos = frame * frameSize + channel * sampleSize;
+                    source.position(samplePos);
+
+                    if (sampleSize == 2) {
+                        sum += source.getShort();
+                    } else {
+                        // 处理其他位深度
+                        SparkCore.LOGGER.warn("Unsupported sample size: {}", sampleSize);
+                        return null;
+                    }
+                }
+
+                // 计算平均值并写入单声道缓冲区
+                short monoSample = (short) (sum / channels);
+                monoBuffer.putShort(monoSample);
+            }
+
+            monoBuffer.rewind();
+            source.rewind(); // 恢复原始缓冲区位置
+
+            return monoBuffer;
+        } catch (Exception e) {
+            SparkCore.LOGGER.error("Failed to convert to mono", e);
+            return null;
+        }
     }
 }
