@@ -1,7 +1,10 @@
 package cn.solarmoon.spark_core.physics.visualizer
 
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
+import com.jme3.bullet.collision.shapes.CapsuleCollisionShape
 import com.jme3.bullet.collision.shapes.CollisionShape
+import com.jme3.bullet.collision.shapes.CylinderCollisionShape
+import com.jme3.bullet.collision.shapes.SphereCollisionShape
 import kotlin.reflect.KClass
 
 object ShapeVisualizerRegistry {
@@ -10,6 +13,9 @@ object ShapeVisualizerRegistry {
 
     init {
         register(BoxCollisionShape::class, ::BoxVisualizer)
+        register(SphereCollisionShape::class, ::SphereVisualizer)
+        register(CylinderCollisionShape::class, ::CylinderVisualizer)
+        register(CapsuleCollisionShape::class, ::CapsuleVisualizer)
     }
 
     fun register(c: KClass<out CollisionShape>, s: () -> ShapeVisualizer) {
