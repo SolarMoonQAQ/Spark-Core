@@ -25,10 +25,10 @@ class SoundVisualizer {
         fun saveWaveformImage(soundData: cn.solarmoon.spark_core.sound.SoundData, filename: String) {
             val buffer = soundData.byteBuffer()
             val totalSamples = buffer.capacity() / 2
-            val samples = FloatArray(totalSamples)
+            val samples = DoubleArray(totalSamples)
 
             for (i in 0 until totalSamples) {
-                samples[i] = buffer.getShort(i * 2).toFloat() / Short.MAX_VALUE.toFloat()
+                samples[i] = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE.toDouble()
             }
 
             val image = BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB)
@@ -50,11 +50,11 @@ class SoundVisualizer {
             // 绘制波形
             g.color = Color.GREEN
             val centerY = 300
-            val scaleY = 250.0f
+            val scaleY = 250.0
 
             for (i in 0 until samples.size - 1) {
-                val x1 = (800 * i / samples.size.toFloat()).toInt()
-                val x2 = (800 * (i + 1) / samples.size.toFloat()).toInt()
+                val x1 = (800 * i / samples.size.toDouble()).toInt()
+                val x2 = (800 * (i + 1) / samples.size.toDouble()).toInt()
                 val y1 = centerY - (samples[i] * scaleY).toInt()
                 val y2 = centerY - (samples[i + 1] * scaleY).toInt()
                 g.drawLine(x1, y1, x2, y2)
@@ -74,27 +74,27 @@ class SoundVisualizer {
         /**
          * 计算频谱数据
          */
-        private fun calculateSpectrum(samples: FloatArray, sampleRate: Int): FloatArray {
+        private fun calculateSpectrum(samples: DoubleArray, sampleRate: Int): DoubleArray {
             // 简单的FFT实现（实际项目中建议使用成熟库如JTransforms）
             val n = samples.size
-            val spectrum = FloatArray(n / 2)
+            val spectrum = DoubleArray(n / 2)
 
             // 应用汉宁窗
-            val windowed = FloatArray(n)
+            val windowed = DoubleArray(n)
             for (i in 0 until n) {
-                val window = 0.5f * (1 - cos(2 * PI * i / (n - 1)).toFloat())
+                val window = 0.5 * (1 - cos(2 * PI * i / (n - 1)))
                 windowed[i] = samples[i] * window
             }
 
             // 计算幅度谱（简化版本）
             for (freqBin in 0 until n / 2) {
-                var real = 0.0f
-                var imag = 0.0f
+                var real = 0.0
+                var imag = 0.0
 
                 for (t in 0 until n) {
                     val angle = 2 * PI * freqBin * t / n
-                    real += windowed[t] * cos(angle).toFloat()
-                    imag -= windowed[t] * sin(angle).toFloat()
+                    real += windowed[t] * cos(angle)
+                    imag -= windowed[t] * sin(angle)
                 }
 
                 val magnitude = sqrt(real * real + imag * imag) / n
@@ -107,7 +107,7 @@ class SoundVisualizer {
         /**
          * 绘制时域波形
          */
-        private fun drawTimeDomain(samples: FloatArray, title: String) {
+        private fun drawTimeDomain(samples: DoubleArray, title: String) {
             val graphWidth = WINDOW_WIDTH - 2 * MARGIN
             val graphHeight = (WINDOW_HEIGHT / 2) - 2 * MARGIN
             val startY = WINDOW_HEIGHT - MARGIN - graphHeight
@@ -144,7 +144,7 @@ class SoundVisualizer {
 
             val pointsToDraw = min(samples.size, 2000) // 限制点数以提高性能
             for (i in 0 until pointsToDraw) {
-                val x = MARGIN + (graphWidth * i / pointsToDraw.toFloat())
+                val x = MARGIN + (graphWidth * i / pointsToDraw.toDouble())
                 val y = startY + graphHeight / 2 + (samples[i] * graphHeight / 2)
                 glVertex2f(x.toFloat(), y.toFloat())
             }
@@ -158,7 +158,7 @@ class SoundVisualizer {
         /**
          * 绘制频域频谱
          */
-        private fun drawFrequencyDomain(spectrum: FloatArray, title: String) {
+        private fun drawFrequencyDomain(spectrum: DoubleArray, title: String) {
             val graphWidth = WINDOW_WIDTH - 2 * MARGIN
             val graphHeight = (WINDOW_HEIGHT / 2) - 2 * MARGIN
             val startY = MARGIN
@@ -178,8 +178,8 @@ class SoundVisualizer {
 
             val pointsToDraw = min(spectrum.size, 1000)
             for (i in 0 until pointsToDraw) {
-                val x = MARGIN + (graphWidth * i / pointsToDraw.toFloat())
-                val magnitude = min(spectrum[i] * 100, 1.0f) // 缩放幅度
+                val x = MARGIN + (graphWidth * i / pointsToDraw.toDouble())
+                val magnitude = min(spectrum[i] * 100, 1.0) // 缩放幅度
                 val y = startY + (magnitude * graphHeight)
                 glVertex2f(x.toFloat(), y.toFloat())
             }
@@ -193,7 +193,7 @@ class SoundVisualizer {
         /**
          * 绘制信息面板
          */
-        private fun drawInfoPanel(soundData: cn.solarmoon.spark_core.sound.SoundData, samples: FloatArray, spectrum: FloatArray) {
+        private fun drawInfoPanel(soundData: cn.solarmoon.spark_core.sound.SoundData, samples: DoubleArray, spectrum: DoubleArray) {
             val format = soundData.audioFormat()
             val infoX = WINDOW_WIDTH - 250
             var infoY = WINDOW_HEIGHT - 150
@@ -217,9 +217,9 @@ class SoundVisualizer {
             infoY += 15
 
             // 计算统计信息
-            val maxAmplitude = samples.maxOrNull() ?: 0f
-            val minAmplitude = samples.minOrNull() ?: 0f
-            val rms = sqrt(samples.map { it * it }.average()).toFloat()
+            val maxAmplitude = samples.maxOrNull() ?: 0.0
+            val minAmplitude = samples.minOrNull() ?: 0.0
+            val rms = sqrt(samples.map { it * it }.average())
 
             drawText(infoX, infoY, "Max: ${"%.3f".format(maxAmplitude)}", 0.8f, 0.8f, 0.8f)
             infoY += 15
@@ -273,23 +273,22 @@ object SoundVisualizationTest {
     private fun testSineWave() {
         println("测试正弦波...")
         val sineWave = SoundSynthesizers.sineWave(
-            duration = 1.0f,
-            frequency = 1.0f, // A4
-            amplitude = 0.8f
+            duration = 1.0,
+            frequency = 1.0, // A4
+            amplitude = 0.8
         )
 
         // 保存为图片
         SoundVisualizer.saveWaveformImage(sineWave, "sine_wave_440hz")
-
     }
 
     private fun testSquareWave() {
         println("测试方波...")
         val squareWave = SoundSynthesizers.squareWave(
-            duration = 1.0f,
-            frequency = 1.0f,
-            amplitude = 0.6f,
-            dutyCycle = 0.5f
+            duration = 1.0,
+            frequency = 1.0,
+            amplitude = 0.6,
+            dutyCycle = 0.5
         )
 
         SoundVisualizer.saveWaveformImage(squareWave, "square_wave_220hz")
@@ -298,29 +297,29 @@ object SoundVisualizationTest {
     private fun testWhiteNoise() {
         println("测试白噪音...")
         val whiteNoise = SoundSynthesizers.whiteNoise(
-            duration = 1.0f,
-            amplitude = 0.5f,
+            duration = 1.0,
+            amplitude = 0.5,
             true
         )
 
         SoundVisualizer.saveWaveformImage(whiteNoise, "white_noise")
         // 应用滤波器测试
-        val filtered = SoundSynthesizers.highPassFilter(whiteNoise, 800f)
+        val filtered = SoundSynthesizers.highPassFilter(whiteNoise, 800.0)
         SoundVisualizer.saveWaveformImage(filtered, "filtered_white_noise")
     }
 
     private fun testComplexSound() {
         println("测试复杂声音...")
         val motorSound = SoundSynthesizers.motorSound(
-            duration = 3.0f,
-            baseFrequency = 10.0f,
-            roughness = 0.2f
+            duration = 3.0,
+            baseFrequency = 10.0,
+            roughness = 0.2
         )
 
         SoundVisualizer.saveWaveformImage(motorSound, "motor_sound")
 
         // 应用滤波器测试
-        val filtered = SoundSynthesizers.lowPassFilter(motorSound, 800f)
+        val filtered = SoundSynthesizers.lowPassFilter(motorSound, 800.0)
         SoundVisualizer.saveWaveformImage(filtered, "filtered_motor_sound")
     }
 }

@@ -17,7 +17,7 @@ public abstract class ServerLevelMixin {
 
     @Inject(method = "onBlockStateChange", at = @At("HEAD"))
     private void onBlockStateChange(BlockPos pos, BlockState blockState, BlockState newState, CallbackInfo ci) {
-        if (blockState.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO))
+        if (blockState.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO) && newState.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO))
             return; // 更新前后均为完整方块，无需更新区块方体形状
         PhysicsChunkManager terrainManager = ((ServerLevel) (Object) this).getPhysicsLevel().getTerrainManager();
         if (terrainManager != null) {

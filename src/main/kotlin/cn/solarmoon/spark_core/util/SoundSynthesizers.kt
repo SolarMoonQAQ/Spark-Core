@@ -21,10 +21,10 @@ object SoundSynthesizers {
      * @param release 释音时间(秒)
      */
     data class ADSREnvelope(
-        val attack: Float = 0.1f,    // 起音时间(秒)
-        val decay: Float = 0.1f,     // 衰减时间(秒)
-        val sustain: Float = 0.7f,   // 持续电平(0.0-1.0)
-        val release: Float = 0.2f    // 释音时间(秒)
+        val attack: Double = 0.1,    // 起音时间(秒)
+        val decay: Double = 0.1,     // 衰减时间(秒)
+        val sustain: Double = 0.7,   // 持续电平(0.0-1.0)
+        val release: Double = 0.2    // 释音时间(秒)
     )
 
     /**
@@ -44,7 +44,7 @@ object SoundSynthesizers {
         val totalSamples = buffer.capacity() / (format.sampleSizeInBits / 8)
 
         // 自动计算总时长（秒）
-        val duration = totalSamples.toFloat() / sampleRate
+        val duration = totalSamples.toDouble() / sampleRate
 
         val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
 
@@ -59,15 +59,15 @@ object SoundSynthesizers {
 
         for (i in 0 until actualTotalSamples) {
             val envelopeValue = when {
-                i < attackSamples -> i.toFloat() / attackSamples // 线性起音
+                i < attackSamples -> i.toDouble() / attackSamples // 线性起音
                 i < attackSamples + decaySamples -> {
-                    val decayProgress = (i - attackSamples).toFloat() / decaySamples
-                    1.0f - (1.0f - envelope.sustain) * decayProgress // 衰减到持续电平
+                    val decayProgress = (i - attackSamples).toDouble() / decaySamples
+                    1.0 - (1.0 - envelope.sustain) * decayProgress // 衰减到持续电平
                 }
                 i < attackSamples + decaySamples + actualSustainSamples -> envelope.sustain
                 else -> {
-                    val releaseProgress = (i - (attackSamples + decaySamples + actualSustainSamples)).toFloat() / releaseSamples
-                    envelope.sustain * (1.0f - releaseProgress) // 释音
+                    val releaseProgress = (i - (attackSamples + decaySamples + actualSustainSamples)).toDouble() / releaseSamples
+                    envelope.sustain * (1.0 - releaseProgress) // 释音
                 }
             }
 
@@ -97,27 +97,27 @@ object SoundSynthesizers {
     @JvmOverloads
     fun lowPassFilter(
         soundData: SoundData,
-        cutoff: Float = 1000f,
-        resonance: Float = 0.5f
+        cutoff: Double = 1000.0,
+        resonance: Double = 0.5
     ): SoundData {
         val buffer = soundData.byteBuffer()
         val format = soundData.audioFormat()
-        val sampleRate = format.sampleRate.toFloat()
+        val sampleRate = format.sampleRate.toDouble()
         val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
 
-        val dt = 1.0f / sampleRate
-        val RC = 1.0f / (2.0f * Math.PI.toFloat() * cutoff)
+        val dt = 1.0 / sampleRate
+        val RC = 1.0 / (2.0 * Math.PI * cutoff)
         val alpha = dt / (RC + dt)
 
-        var prevOutput = 0.0f
+        var prevOutput = 0.0
 
         for (i in 0 until buffer.capacity() / 2) {
-            val input = buffer.getShort(i * 2).toFloat() / Short.MAX_VALUE
+            val input = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
             val output = prevOutput + alpha * (input - prevOutput)
             prevOutput = output
 
-            val resonated = output * (1.0f + resonance * 0.1f).coerceAtMost(1.5f)
-            val finalOutput = resonated.coerceIn(-1.0f, 1.0f)
+            val resonated = output * (1.0 + resonance * 0.1).coerceAtMost(1.5)
+            val finalOutput = resonated.coerceIn(-1.0, 1.0)
 
             newBuffer.putShort(i * 2, (finalOutput * Short.MAX_VALUE).toInt().toShort())
         }
@@ -137,22 +137,22 @@ object SoundSynthesizers {
     @JvmOverloads
     fun highPassFilter(
         soundData: SoundData,
-        cutoff: Float = 200f
+        cutoff: Double = 200.0
     ): SoundData {
         val buffer = soundData.byteBuffer()
         val format = soundData.audioFormat()
-        val sampleRate = format.sampleRate.toFloat()
+        val sampleRate = format.sampleRate.toDouble()
         val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
 
-        val rc = 1.0f / (2.0f * Math.PI.toFloat() * cutoff)
-        val dt = 1.0f / sampleRate
+        val rc = 1.0 / (2.0 * Math.PI * cutoff)
+        val dt = 1.0 / sampleRate
         val alpha = rc / (rc + dt)
 
-        var prevInput = 0.0f
-        var prevOutput = 0.0f
+        var prevInput = 0.0
+        var prevOutput = 0.0
 
         for (i in 0 until buffer.capacity() / 2) {
-            val input = buffer.getShort(i * 2).toFloat() / Short.MAX_VALUE
+            val input = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
             val output = alpha * (prevOutput + input - prevInput)
 
             prevInput = input
@@ -177,34 +177,34 @@ object SoundSynthesizers {
     @JvmOverloads
     fun bandPassFilter(
         soundData: SoundData,
-        centerFreq: Float = 1000f,
-        bandwidth: Float = 500f
+        centerFreq: Double = 1000.0,
+        bandwidth: Double = 500.0
     ): SoundData {
         val buffer = soundData.byteBuffer()
         val format = soundData.audioFormat()
-        val sampleRate = format.sampleRate.toFloat()
+        val sampleRate = format.sampleRate.toDouble()
         val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
 
-        val R = 1.0f - 3.0f * bandwidth / sampleRate
-        val cosTheta = (2.0f * R * Math.cos(2.0f * Math.PI * centerFreq / sampleRate)) / (1.0f + R * R)
-        val alpha = (1.0f - R * R) * Math.sin(2.0f * Math.PI * centerFreq / sampleRate) / 2.0f
+        val R = 1.0 - 3.0 * bandwidth / sampleRate
+        val cosTheta = (2.0 * R * Math.cos(2.0 * Math.PI * centerFreq / sampleRate)) / (1.0 + R * R)
+        val alpha = (1.0 - R * R) * Math.sin(2.0 * Math.PI * centerFreq / sampleRate) / 2.0
 
-        var prevInput1 = 0.0f
-        var prevInput2 = 0.0f
-        var prevOutput1 = 0.0f
-        var prevOutput2 = 0.0f
+        var prevInput1 = 0.0
+        var prevInput2 = 0.0
+        var prevOutput1 = 0.0
+        var prevOutput2 = 0.0
 
         for (i in 0 until buffer.capacity() / 2) {
-            val input = buffer.getShort(i * 2).toFloat() / Short.MAX_VALUE
+            val input = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
 
             val output = alpha * (input - prevInput2) +
-                    2.0f * R * cosTheta * prevOutput1 -
+                    2.0 * R * cosTheta * prevOutput1 -
                     R * R * prevOutput2
 
             prevInput2 = prevInput1
             prevInput1 = input
             prevOutput2 = prevOutput1
-            prevOutput1 = output.toFloat()
+            prevOutput1 = output
 
             newBuffer.putShort(i * 2, (output * Short.MAX_VALUE).toInt().toShort())
         }
@@ -225,18 +225,18 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun sineWave(
-        duration: Float,
-        frequency: Float,
-        amplitude: Float = 0.5f,
-        phaseOffset: Float = 0.0f,
+        duration: Double,
+        frequency: Double,
+        amplitude: Double = 0.5,
+        phaseOffset: Double = 0.0,
         sampleRate: Int = 44100
     ): SoundData {
         val samples = (duration * sampleRate).toInt()
         val byteBuffer = ByteBuffer.allocateDirect(samples * 2) // 16-bit mono
 
         for (i in 0 until samples) {
-            val time = i.toFloat() / sampleRate
-            val sample = (amplitude * Math.sin(2.0 * Math.PI * frequency * time + phaseOffset).toFloat() * Short.MAX_VALUE).toInt()
+            val time = i.toDouble() / sampleRate
+            val sample = (amplitude * Math.sin(2.0 * Math.PI * frequency * time + phaseOffset) * Short.MAX_VALUE).toInt()
             byteBuffer.putShort(i * 2, sample.toShort())
         }
 
@@ -256,22 +256,22 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun gaussianWhiteNoise(
-        duration: Float,
-        amplitude: Float = 0.3f,
+        duration: Double,
+        amplitude: Double = 0.3,
         sampleRate: Int = 44100
     ): SoundData {
         val samples = (duration * sampleRate).toInt()
         val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
 
         // 使用振幅控制标准差，确保大部分样本在合理范围内
-        val stdDev = amplitude * 0.5f
+        val stdDev = amplitude * 0.5
 
         for (i in 0 until samples) {
             // 生成高斯分布随机数（均值为0，标准差为stdDev）
-            val gaussianValue = (random.nextGaussian() * stdDev).toFloat()
+            val gaussianValue = random.nextGaussian() * stdDev
 
             // 裁剪到安全范围并转换为short
-            val clippedValue = gaussianValue.coerceIn(-1.0f, 1.0f)
+            val clippedValue = gaussianValue.coerceIn(-1.0, 1.0)
             val sample = (clippedValue * Short.MAX_VALUE).toInt()
             byteBuffer.putShort(i * 2, sample.toShort())
         }
@@ -291,8 +291,8 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun whiteNoise(
-        duration: Float,
-        amplitude: Float = 0.3f,
+        duration: Double,
+        amplitude: Double = 0.3,
         useGaussian: Boolean = true,
         sampleRate: Int = 44100
     ): SoundData {
@@ -305,9 +305,9 @@ object SoundSynthesizers {
 
             for (i in 0 until samples) {
                 // 均匀分布但进行软化处理
-                val uniform = random.nextFloat() * 2 - 1
+                val uniform = random.nextDouble() * 2 - 1
                 // 应用软化曲线，减少极端值
-                val softened = Math.signum(uniform) * Math.sqrt(Math.abs(uniform).toDouble()).toFloat()
+                val softened = Math.signum(uniform) * Math.sqrt(Math.abs(uniform))
                 val sample = (amplitude * softened * Short.MAX_VALUE).toInt()
                 byteBuffer.putShort(i * 2, sample.toShort())
             }
@@ -331,23 +331,23 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun squareWave(
-        duration: Float,
-        frequency: Float,
-        amplitude: Float = 0.5f,
-        dutyCycle: Float = 0.5f,
-        phaseOffset: Float = 0.0f,
+        duration: Double,
+        frequency: Double,
+        amplitude: Double = 0.5,
+        dutyCycle: Double = 0.5,
+        phaseOffset: Double = 0.0,
         sampleRate: Int = 44100
     ): SoundData {
-        require(dutyCycle in 0.0f..1.0f) { "占空比必须在0.0到1.0之间" }
+        require(dutyCycle in 0.0..1.0) { "占空比必须在0.0到1.0之间" }
 
         val samples = (duration * sampleRate).toInt()
         val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
 
         for (i in 0 until samples) {
-            val time = i.toFloat() / sampleRate
-            val period = 1.0f / frequency
+            val time = i.toDouble() / sampleRate
+            val period = 1.0 / frequency
             // 考虑相位偏移
-            val phase = ((time * frequency + phaseOffset / (2 * Math.PI.toFloat())) % 1.0f).toFloat()
+            val phase = ((time * frequency + phaseOffset / (2 * Math.PI)) % 1.0)
             val sample = if (phase < dutyCycle) amplitude else -amplitude
             val sampleValue = (sample * Short.MAX_VALUE).toInt()
             byteBuffer.putShort(i * 2, sampleValue.toShort())
@@ -371,10 +371,10 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun sawtoothWave(
-        duration: Float,
-        frequency: Float,
-        amplitude: Float = 0.5f,
-        phaseOffset: Float = 0.0f,
+        duration: Double,
+        frequency: Double,
+        amplitude: Double = 0.5,
+        phaseOffset: Double = 0.0,
         rising: Boolean = true,
         sampleRate: Int = 44100
     ): SoundData {
@@ -382,9 +382,9 @@ object SoundSynthesizers {
         val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
 
         for (i in 0 until samples) {
-            val time = i.toFloat() / sampleRate
+            val time = i.toDouble() / sampleRate
             // 考虑相位偏移
-            val phase = ((time * frequency + phaseOffset / (2 * Math.PI.toFloat())) % 1.0f).toFloat()
+            val phase = ((time * frequency + phaseOffset / (2 * Math.PI)) % 1.0)
             val sample = if (rising) {
                 amplitude * (2 * phase - 1) // 上升锯齿：从-1到1
             } else {
@@ -412,26 +412,26 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun triangleWave(
-        duration: Float,
-        frequency: Float,
-        amplitude: Float = 0.5f,
-        phaseOffset: Float = 0.0f,
-        symmetry: Float = 0.5f,
+        duration: Double,
+        frequency: Double,
+        amplitude: Double = 0.5,
+        phaseOffset: Double = 0.0,
+        symmetry: Double = 0.5,
         sampleRate: Int = 44100
     ): SoundData {
-        require(symmetry in 0.0f..1.0f) { "对称性必须在0.0到1.0之间" }
+        require(symmetry in 0.0..1.0) { "对称性必须在0.0到1.0之间" }
 
         val samples = (duration * sampleRate).toInt()
         val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
 
         for (i in 0 until samples) {
-            val time = i.toFloat() / sampleRate
+            val time = i.toDouble() / sampleRate
             // 考虑相位偏移
-            val phase = ((time * frequency + phaseOffset / (2 * Math.PI.toFloat())) % 1.0f).toFloat()
+            val phase = ((time * frequency + phaseOffset / (2 * Math.PI)) % 1.0)
 
-            val sample = if (symmetry == 0f) {
+            val sample = if (symmetry == 0.0) {
                 -amplitude
-            } else if (symmetry == 1f) {
+            } else if (symmetry == 1.0) {
                 amplitude
             } else if (phase < symmetry) {
                 amplitude * (2 * phase / symmetry - 1)
@@ -460,23 +460,23 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun pulseWave(
-        duration: Float,
-        frequency: Float,
-        amplitude: Float = 0.5f,
-        pulseWidth: Float = 0.1f,
-        phaseOffset: Float = 0.0f,
+        duration: Double,
+        frequency: Double,
+        amplitude: Double = 0.5,
+        pulseWidth: Double = 0.1,
+        phaseOffset: Double = 0.0,
         sampleRate: Int = 44100
     ): SoundData {
-        require(pulseWidth in 0.0f..1.0f) { "脉冲宽度必须在0.0到1.0之间" }
+        require(pulseWidth in 0.0..1.0) { "脉冲宽度必须在0.0到1.0之间" }
 
         val samples = (duration * sampleRate).toInt()
         val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
 
         for (i in 0 until samples) {
-            val time = i.toFloat() / sampleRate
+            val time = i.toDouble() / sampleRate
             // 考虑相位偏移
-            val phase = ((time * frequency + phaseOffset / (2 * Math.PI.toFloat())) % 1.0f).toFloat()
-            val sample = if (phase < pulseWidth) amplitude else 0.0f
+            val phase = ((time * frequency + phaseOffset / (2 * Math.PI)) % 1.0)
+            val sample = if (phase < pulseWidth) amplitude else 0.0
             val sampleValue = (sample * Short.MAX_VALUE).toInt()
             byteBuffer.putShort(i * 2, sampleValue.toShort())
         }
@@ -499,21 +499,21 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun frequencyModulation(
-        duration: Float,
-        carrierFreq: Float,
-        modulatorFreq: Float,
-        modulationIndex: Float = 1.0f,
-        amplitude: Float = 0.5f,
+        duration: Double,
+        carrierFreq: Double,
+        modulatorFreq: Double,
+        modulationIndex: Double = 1.0,
+        amplitude: Double = 0.5,
         sampleRate: Int = 44100
     ): SoundData {
         val samples = (duration * sampleRate).toInt()
         val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
 
         for (i in 0 until samples) {
-            val time = i.toFloat() / sampleRate
+            val time = i.toDouble() / sampleRate
             // FM合成公式：A * sin(2πfc*t + I*sin(2πfm*t))
-            val modulator = Math.sin(2.0 * Math.PI * modulatorFreq * time).toFloat()
-            val sample = amplitude * Math.sin(2.0 * Math.PI * carrierFreq * time + modulationIndex * modulator).toFloat()
+            val modulator = Math.sin(2.0 * Math.PI * modulatorFreq * time)
+            val sample = amplitude * Math.sin(2.0 * Math.PI * carrierFreq * time + modulationIndex * modulator)
             val sampleValue = (sample * Short.MAX_VALUE).toInt()
             byteBuffer.putShort(i * 2, sampleValue.toShort())
         }
@@ -534,23 +534,23 @@ object SoundSynthesizers {
     @JvmStatic
     fun amplitudeModulation(
         soundData: SoundData,
-        modFrequency: Float = 5.0f,
-        modDepth: Float = 0.5f
+        modFrequency: Double = 5.0,
+        modDepth: Double = 0.5
     ): SoundData {
         val buffer = soundData.byteBuffer()
         val format = soundData.audioFormat()
-        val sampleRate = format.sampleRate.toFloat()
+        val sampleRate = format.sampleRate.toDouble()
         val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
 
         for (i in 0 until buffer.capacity() / 2) {
-            val time = i.toFloat() / sampleRate
-            val originalSample = buffer.getShort(i * 2).toFloat() / Short.MAX_VALUE
+            val time = i.toDouble() / sampleRate
+            val originalSample = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
 
             // 振幅调制：A(t) = 1 + depth * sin(2π * modFreq * t)
-            val modulator = 1.0f + modDepth * Math.sin(2.0f * Math.PI * modFrequency * time).toFloat()
+            val modulator = 1.0 + modDepth * Math.sin(2.0 * Math.PI * modFrequency * time)
             val modulatedSample = originalSample * modulator
 
-            newBuffer.putShort(i * 2, (modulatedSample.coerceIn(-1.0f, 1.0f) * Short.MAX_VALUE).toInt().toShort())
+            newBuffer.putShort(i * 2, (modulatedSample.coerceIn(-1.0, 1.0) * Short.MAX_VALUE).toInt().toShort())
         }
 
         newBuffer.rewind()
@@ -570,12 +570,12 @@ object SoundSynthesizers {
         val mixedBuffer = ByteBuffer.allocateDirect(maxSamples)
 
         for (i in 0 until maxSamples / 2) {
-            var mixedSample = 0.0f
+            var mixedSample = 0.0
 
             for (sound in sounds) {
                 val buffer = sound.byteBuffer()
                 if (i * 2 < buffer.capacity()) {
-                    val sample = buffer.getShort(i * 2).toFloat() / Short.MAX_VALUE
+                    val sample = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
                     mixedSample += sample
                 }
             }
@@ -595,22 +595,21 @@ object SoundSynthesizers {
     @JvmStatic
     @JvmOverloads
     fun motorSound(
-        duration: Float,
-        baseFrequency: Float,
-        roughness: Float = 0.1f, // 粗糙度控制
-        amplitude: Float = 0.5f,
+        duration: Double,
+        baseFrequency: Double,
+        roughness: Double = 0.1, // 粗糙度控制
+        amplitude: Double = 0.5,
         sampleRate: Int = 44100
     ): SoundData {
         // 基础频率的方波
-        val baseWave = squareWave(duration, baseFrequency, amplitude * 0.7f, 0.5f, sampleRate = sampleRate)
+        val baseWave = squareWave(duration, baseFrequency, amplitude * 0.7, 0.5, sampleRate = sampleRate)
 
         // 高频成分
-        val highFreq = squareWave(duration, baseFrequency * 2f, amplitude * 0.3f, 0.5f, sampleRate = sampleRate)
+        val highFreq = squareWave(duration, baseFrequency * 2.0, amplitude * 0.3, 0.5, sampleRate = sampleRate)
 
         // 使用高斯噪声（更自然的粗糙度）
-        val noise = gaussianWhiteNoise(duration, amplitude * roughness * 0.05f, sampleRate)
+        val noise = gaussianWhiteNoise(duration, amplitude * roughness * 0.05, sampleRate)
 
         return mixSounds(listOf(baseWave, highFreq, noise))
     }
-
 }
