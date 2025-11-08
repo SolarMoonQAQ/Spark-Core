@@ -28,12 +28,10 @@ object BrushlessMotorSynthesizer {
      * 电机运行状态
      * @param rpm 当前转速(RPM)
      * @param load 负载程度(0.0-1.0)
-     * @param throttle 油门/功率(0.0-1.0)
      */
     data class MotorState(
         val rpm: Double,
-        val load: Double = 0.5,
-        val throttle: Double = 0.5
+        val load: Double = 0.5
     )
 
     // 添加随机源用于相位生成
@@ -234,47 +232,6 @@ object BrushlessMotorSynthesizer {
         val order: Int,
         val amplitude: Double
     )
-
-    /**
-     * 创建动态电机音效序列
-     * 用于模拟加速、减速等动态过程
-     */
-    @JvmStatic
-    fun createDynamicMotorSequence(
-        duration: Double,
-        initialState: MotorState,
-        finalState: MotorState,
-        config: MotorConfig = MotorConfig(),
-        steps: Int = 10,
-        sampleRate: Int = 44100
-    ): List<SoundData> {
-        val sequence = mutableListOf<SoundData>()
-        val stepDuration = duration / steps
-
-        for (step in 0 until steps) {
-            val progress = step.toDouble() / (steps - 1)
-            val currentRpm = initialState.rpm + (finalState.rpm - initialState.rpm) * progress
-            val currentLoad = initialState.load + (finalState.load - initialState.load) * progress
-            val currentThrottle = initialState.throttle + (finalState.throttle - initialState.throttle) * progress
-
-            val currentState = MotorState(
-                rpm = currentRpm,
-                load = currentLoad,
-                throttle = currentThrottle
-            )
-
-            val stepSound = synthesizeBrushlessMotor(
-                duration = stepDuration,
-                state = currentState,
-                config = config,
-                sampleRate = sampleRate
-            )
-
-            sequence.add(stepSound)
-        }
-
-        return sequence
-    }
 
     /**
      * 快速创建常见类型无刷电机的预设配置

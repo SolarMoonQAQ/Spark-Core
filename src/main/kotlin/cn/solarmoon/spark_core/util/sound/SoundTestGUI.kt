@@ -242,13 +242,6 @@ object SoundTestGUI {
         loadSlider.paintLabels = true
         panel.add(loadSlider)
 
-        // 油门调节
-        panel.add(JLabel("油门 (0.0-1.0):"))
-        val throttleSlider = JSlider(0, 100, 50)
-        throttleSlider.paintTicks = true
-        throttleSlider.paintLabels = true
-        panel.add(throttleSlider)
-
         // 持续时间
         panel.add(JLabel("持续时间 (秒):"))
         val durationSpinner = JSpinner(SpinnerNumberModel(3.0, 1.0, 10.0, 0.5))
@@ -269,7 +262,6 @@ object SoundTestGUI {
         testButton.addActionListener {
             val rpm = rpmSlider.value.toDouble()
             val load = loadSlider.value / 100.0
-            val throttle = throttleSlider.value / 100.0
             val duration = durationSpinner.value as Double
             val polePairs = polePairsSpinner.value as Int
 
@@ -282,8 +274,7 @@ object SoundTestGUI {
 
             val state = BrushlessMotorSynthesizer.MotorState(
                 rpm = rpm,
-                load = load,
-                throttle = throttle
+                load = load
             )
 
             val soundData = BrushlessMotorSynthesizer.synthesizeBrushlessMotor(

@@ -1,8 +1,9 @@
 package cn.solarmoon.spark_core.mixin.sound;
 
 import cn.solarmoon.spark_core.mixin_interface.ISoundEngineMixin;
+import cn.solarmoon.spark_core.sound.ClientSpreadingSoundPlayer;
+import cn.solarmoon.spark_core.sound.SoundSourcePoint;
 import cn.solarmoon.spark_core.sound.SpreadingSoundInstance;
-import com.google.common.collect.Lists;
 import com.mojang.blaze3d.audio.Listener;
 import com.mojang.blaze3d.audio.SoundBuffer;
 import net.minecraft.client.Minecraft;
@@ -23,8 +24,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 @Mixin(value = SoundEngine.class)
 public abstract class SoundEngineMixin implements ISoundEngineMixin {
@@ -36,8 +38,11 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
     @Final
     private SoundBufferLibrary soundBuffers;
 
+    /**
+     * 存放所有正在扩散的音效实例(正在播放的存放于SoundEngine中的tickingSounds中)
+     */
     @Unique
-    private final List<SpreadingSoundInstance> spark_core$spreadingSounds = new CopyOnWriteArrayList<>();
+    private final List<SpreadingSoundInstance> spark_core$spreadingSounds = new ArrayList<>();
 
     @Shadow
     public void play(SoundInstance soundInstance) {
@@ -46,26 +51,53 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
 
     @Inject(method = "tickNonPaused", at = @At("RETURN"))
     private void spark_core$tickSpreadingSounds(CallbackInfo ci) {
-        Vec3 pos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        for (SpreadingSoundInstance instance : this.spark_core$spreadingSounds) {
-            instance.tick();
-            boolean shouldPlay = false;
+        Vec3 listenerPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
 
-            for (Vec3 key : instance.spreadDistances.keySet()) {
-                float spreadDistance = instance.spreadDistances.get(key);
-                double distance = pos.distanceToSqr(key);
-                if (distance <= spreadDistance * spreadDistance) {
-                    shouldPlay = true;
-                    break;
+        Iterator<SpreadingSoundInstance> iterator = this.spark_core$spreadingSounds.iterator();
+        while (iterator.hasNext()) {
+            SpreadingSoundInstance instance = iterator.next();
+
+            // 移除已停止的实例
+            if (instance.isStopped()) {
+                iterator.remove();
+                continue;
+            }
+            // 先检查收听者是否在声音传播范围内
+            if (!instance.isListenerInRange(listenerPos)) {
+                if (!instance.isPlaying) {
+                    // 已开始播放的声音实例存在于SoundEngine的tickingSounds中，由SoundEngine负责更新
+                    instance.tick();
                 }
+                // 不在范围内，跳过详细的波面检查
+                continue;
             }
-            if (shouldPlay) {
-                instance.setVolume(spark_core$calculateVolume(instance));
-                instance.setPitch(spark_core$calculatePitch(instance));
-                this.play(instance);
-                instance.isPlaying = true;
-                this.spark_core$spreadingSounds.remove(instance);
+
+            // 检查所有已到达的声源点 TODO:检测收听者和相邻两点连线段的距离，或许更加准确？
+            List<SoundSourcePoint> reachedPoints = instance.getReachedSoundPoints(listenerPos);
+            if (!reachedPoints.isEmpty()) {
+                for (SoundSourcePoint point : reachedPoints) {
+                    instance.applySoundPoint(point);// 将抵达的波面的音效历史数据应用到声音实例
+
+                    // 如果是第一个到达的波面且实例尚未播放，则开始播放
+                    if (!instance.isPlaying && point == reachedPoints.getFirst()) {
+                        //预初始化音调音量
+                        instance.setVolume(spark_core$calculateVolume(instance));
+                        instance.setPitch(spark_core$calculatePitch(instance));
+                        this.play(instance);
+                        instance.isPlaying = true;
+                    }
+                }
+                instance.updateAABB();
             }
+
+            if (instance.isPlaying && instance.soundPoints.isEmpty()) {
+                // 所有波面都已处理完毕，可以安全移除
+                iterator.remove();
+            }
+        }
+        // 协调器清理
+        if (Minecraft.getInstance().level != null) {
+            ClientSpreadingSoundPlayer.cleanupStoppedInstances();
         }
     }
 
@@ -103,11 +135,10 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
     public float spark_core$calculateVolume(SpreadingSoundInstance sound) {
         Vec3 sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
         float distance = (float) listener.getTransform().position().distanceTo(sourcePos);
-        float range = sound.getRange(sourcePos);
         float volume = sound.getVolume();
         //平方衰减
         // Square fall-off
-        float rate = 1f - Math.min(distance / range, 1f);
+        float rate = 1f - Math.min(distance / sound.getMaxRange(), 1f);
         return volume * rate * rate;
     }
 
@@ -119,7 +150,7 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
         else
             listenerSpeed = Vec3.ZERO;
         Vec3 sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
-        Vec3 sourceSpeed = sound.getSpeed(sourcePos);
+        Vec3 sourceSpeed = sound.getSpeed();
         Vec3 toListener = listener.getTransform().position().subtract(sourcePos).normalize();
 
         // 计算相对速度在方向上的投影
