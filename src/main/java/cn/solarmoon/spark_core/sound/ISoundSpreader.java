@@ -61,7 +61,9 @@ public interface ISoundSpreader {
      * @return 声源的运动速度向量，单位：方块/秒（注意：不是每tick）
      */
     @NotNull
-    Vec3 getSpeed(UUID uuid, SoundEvent event);
+    default Vec3 getSpeed(UUID uuid, SoundEvent event){
+        return Vec3.ZERO;
+    }
 
     /**
      * 获取声源的实时音高（频率倍数）
@@ -80,7 +82,9 @@ public interface ISoundSpreader {
      * @param event 当前播放的声音事件
      * @return 音高乘数，有效范围通常为 [0.5, 2.0]
      */
-    float getPitch(UUID uuid, SoundEvent event);
+    default float getPitch(UUID uuid, SoundEvent event){
+        return 1.0f;
+    }
 
     /**
      * 获取声源的实时音量
@@ -99,6 +103,8 @@ public interface ISoundSpreader {
      * @param event 当前播放的声音事件
      * @return 声源原始音量，范围 [0.0, 1.0]
      */
-    float getVolume(UUID uuid, SoundEvent event);
+    default float getVolume(UUID uuid, SoundEvent event){
+        return 1.0f;
+    }
 
 }
