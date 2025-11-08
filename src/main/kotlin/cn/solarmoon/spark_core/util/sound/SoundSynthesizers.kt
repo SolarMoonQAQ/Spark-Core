@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.util
 import cn.solarmoon.spark_core.sound.SoundData
 import net.minecraft.util.RandomSource
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import javax.sound.sampled.AudioFormat
 
 /**
@@ -43,40 +44,36 @@ object SoundSynthesizers {
         val sampleRate = format.sampleRate.toInt()
         val totalSamples = buffer.capacity() / (format.sampleSizeInBits / 8)
 
-        // 自动计算总时长（秒）
-        val duration = totalSamples.toDouble() / sampleRate
+        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity()).order(ByteOrder.LITTLE_ENDIAN)
 
-        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
+        val attackSamples = (envelope.attack * sampleRate).toInt().coerceAtLeast(1)
+        val decaySamples = (envelope.decay * sampleRate).toInt().coerceAtLeast(1)
+        val releaseSamples = (envelope.release * sampleRate).toInt().coerceAtLeast(1)
+        val sustainSamples = (totalSamples - attackSamples - decaySamples - releaseSamples).coerceAtLeast(0)
 
-        val attackSamples = (envelope.attack * sampleRate).toInt()
-        val decaySamples = (envelope.decay * sampleRate).toInt()
-        val releaseSamples = (envelope.release * sampleRate).toInt()
-        val sustainSamples = totalSamples - attackSamples - decaySamples - releaseSamples
-
-        // 确保样本数合理
-        val actualSustainSamples = sustainSamples.coerceAtLeast(0)
-        val actualTotalSamples = (attackSamples + decaySamples + actualSustainSamples + releaseSamples).coerceAtMost(totalSamples)
+        val actualTotalSamples = (attackSamples + decaySamples + sustainSamples + releaseSamples).coerceAtMost(totalSamples)
 
         for (i in 0 until actualTotalSamples) {
             val envelopeValue = when {
-                i < attackSamples -> i.toDouble() / attackSamples // 线性起音
+                i < attackSamples -> i.toDouble() / attackSamples
                 i < attackSamples + decaySamples -> {
                     val decayProgress = (i - attackSamples).toDouble() / decaySamples
-                    1.0 - (1.0 - envelope.sustain) * decayProgress // 衰减到持续电平
+                    1.0 - (1.0 - envelope.sustain) * decayProgress
                 }
-                i < attackSamples + decaySamples + actualSustainSamples -> envelope.sustain
+                i < attackSamples + decaySamples + sustainSamples -> envelope.sustain
                 else -> {
-                    val releaseProgress = (i - (attackSamples + decaySamples + actualSustainSamples)).toDouble() / releaseSamples
-                    envelope.sustain * (1.0 - releaseProgress) // 释音
+                    val releaseProgress = (i - (attackSamples + decaySamples + sustainSamples)).toDouble() / releaseSamples
+                    envelope.sustain * (1.0 - releaseProgress)
                 }
             }
 
-            val originalSample = buffer.getShort(i * 2)
+            // 安全地获取样本
+            val originalSample = if (i * 2 < buffer.capacity()) buffer.getShort(i * 2) else 0
             val newSample = (originalSample * envelopeValue).toInt().toShort()
             newBuffer.putShort(i * 2, newSample)
         }
 
-        // 填充剩余样本（如果有）
+        // 填充剩余样本
         for (i in actualTotalSamples until totalSamples) {
             newBuffer.putShort(i * 2, 0)
         }
@@ -103,7 +100,7 @@ object SoundSynthesizers {
         val buffer = soundData.byteBuffer()
         val format = soundData.audioFormat()
         val sampleRate = format.sampleRate.toDouble()
-        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
+        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity()).order(ByteOrder.LITTLE_ENDIAN)
 
         val dt = 1.0 / sampleRate
         val RC = 1.0 / (2.0 * Math.PI * cutoff)
@@ -142,7 +139,7 @@ object SoundSynthesizers {
         val buffer = soundData.byteBuffer()
         val format = soundData.audioFormat()
         val sampleRate = format.sampleRate.toDouble()
-        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
+        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity()).order(ByteOrder.LITTLE_ENDIAN)
 
         val rc = 1.0 / (2.0 * Math.PI * cutoff)
         val dt = 1.0 / sampleRate
@@ -183,7 +180,7 @@ object SoundSynthesizers {
         val buffer = soundData.byteBuffer()
         val format = soundData.audioFormat()
         val sampleRate = format.sampleRate.toDouble()
-        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
+        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity()).order(ByteOrder.LITTLE_ENDIAN)
 
         val R = 1.0 - 3.0 * bandwidth / sampleRate
         val cosTheta = (2.0 * R * Math.cos(2.0 * Math.PI * centerFreq / sampleRate)) / (1.0 + R * R)
@@ -232,12 +229,20 @@ object SoundSynthesizers {
         sampleRate: Int = 44100
     ): SoundData {
         val samples = (duration * sampleRate).toInt()
-        val byteBuffer = ByteBuffer.allocateDirect(samples * 2) // 16-bit mono
-
+        val byteBuffer = ByteBuffer.allocateDirect(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
+        // 奈奎斯特频率检查
+        val nyquistFrequency = sampleRate / 2.0
+        if (frequency > nyquistFrequency * 0.9) {
+            println("警告: 频率 $frequency Hz 接近奈奎斯特频率 $nyquistFrequency Hz，可能出现混叠")
+        }
+        // 使用基于时间的相位计算，避免累积误差
         for (i in 0 until samples) {
             val time = i.toDouble() / sampleRate
-            val sample = (amplitude * Math.sin(2.0 * Math.PI * frequency * time + phaseOffset) * Short.MAX_VALUE).toInt()
-            byteBuffer.putShort(i * 2, sample.toShort())
+            // 直接计算每个样本的相位，避免累积
+            val phase = 2.0 * Math.PI * frequency * time + phaseOffset
+            val sample = amplitude * Math.sin(phase)
+            val sampleValue = (sample * Short.MAX_VALUE).toInt()
+            byteBuffer.putShort(i * 2, sampleValue.toShort())
         }
 
         byteBuffer.rewind()
@@ -261,7 +266,7 @@ object SoundSynthesizers {
         sampleRate: Int = 44100
     ): SoundData {
         val samples = (duration * sampleRate).toInt()
-        val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
+        val byteBuffer = ByteBuffer.allocateDirect(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
 
         // 使用振幅控制标准差，确保大部分样本在合理范围内
         val stdDev = amplitude * 0.5
@@ -301,7 +306,7 @@ object SoundSynthesizers {
         } else {
             // 原均匀分布版本，但添加软化处理
             val samples = (duration * sampleRate).toInt()
-            val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
+            val byteBuffer = ByteBuffer.allocateDirect(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
 
             for (i in 0 until samples) {
                 // 均匀分布但进行软化处理
@@ -339,9 +344,13 @@ object SoundSynthesizers {
         sampleRate: Int = 44100
     ): SoundData {
         require(dutyCycle in 0.0..1.0) { "占空比必须在0.0到1.0之间" }
-
+        // 奈奎斯特频率检查
+        val nyquistFrequency = sampleRate / 2.0
+        if (frequency > nyquistFrequency * 0.9) {
+            println("警告: 频率 $frequency Hz 接近奈奎斯特频率 $nyquistFrequency Hz，可能出现混叠")
+        }
         val samples = (duration * sampleRate).toInt()
-        val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
+        val byteBuffer = ByteBuffer.allocateDirect(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
 
         for (i in 0 until samples) {
             val time = i.toDouble() / sampleRate
@@ -379,16 +388,22 @@ object SoundSynthesizers {
         sampleRate: Int = 44100
     ): SoundData {
         val samples = (duration * sampleRate).toInt()
-        val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
+        val byteBuffer = ByteBuffer.allocateDirect(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
+
+        val nyquistFrequency = sampleRate / 2.0
+        if (frequency > nyquistFrequency * 0.9) {
+            println("警告: 频率 $frequency Hz 接近奈奎斯特频率 $nyquistFrequency Hz，可能出现混叠")
+        }
 
         for (i in 0 until samples) {
             val time = i.toDouble() / sampleRate
-            // 考虑相位偏移
-            val phase = ((time * frequency + phaseOffset / (2 * Math.PI)) % 1.0)
+            // 统一使用弧度制相位计算
+            val phase = (2.0 * Math.PI * frequency * time + phaseOffset) % (2.0 * Math.PI)
+            val normalizedPhase = phase / (2.0 * Math.PI)
             val sample = if (rising) {
-                amplitude * (2 * phase - 1) // 上升锯齿：从-1到1
+                amplitude * (2 * normalizedPhase - 1) // 上升锯齿：从-1到1
             } else {
-                amplitude * (1 - 2 * phase) // 下降锯齿：从1到-1
+                amplitude * (1 - 2 * normalizedPhase) // 下降锯齿：从1到-1
             }
             val sampleValue = (sample * Short.MAX_VALUE).toInt()
             byteBuffer.putShort(i * 2, sampleValue.toShort())
@@ -421,22 +436,28 @@ object SoundSynthesizers {
     ): SoundData {
         require(symmetry in 0.0..1.0) { "对称性必须在0.0到1.0之间" }
 
+        val nyquistFrequency = sampleRate / 2.0
+        if (frequency > nyquistFrequency * 0.9) {
+            println("警告: 频率 $frequency Hz 接近奈奎斯特频率 $nyquistFrequency Hz，可能出现混叠")
+        }
+
         val samples = (duration * sampleRate).toInt()
-        val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
+        val byteBuffer = ByteBuffer.allocateDirect(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
 
         for (i in 0 until samples) {
             val time = i.toDouble() / sampleRate
-            // 考虑相位偏移
-            val phase = ((time * frequency + phaseOffset / (2 * Math.PI)) % 1.0)
+            // 统一使用弧度制相位计算
+            val phase = (2.0 * Math.PI * frequency * time + phaseOffset) % (2.0 * Math.PI)
+            val normalizedPhase = phase / (2.0 * Math.PI)
 
             val sample = if (symmetry == 0.0) {
                 -amplitude
             } else if (symmetry == 1.0) {
                 amplitude
-            } else if (phase < symmetry) {
-                amplitude * (2 * phase / symmetry - 1)
+            } else if (normalizedPhase < symmetry) {
+                amplitude * (2 * normalizedPhase / symmetry - 1)
             } else {
-                amplitude * (1 - 2 * (phase - symmetry) / (1 - symmetry))
+                amplitude * (1 - 2 * (normalizedPhase - symmetry) / (1 - symmetry))
             }
             val sampleValue = (sample * Short.MAX_VALUE).toInt()
             byteBuffer.putShort(i * 2, sampleValue.toShort())
@@ -469,14 +490,20 @@ object SoundSynthesizers {
     ): SoundData {
         require(pulseWidth in 0.0..1.0) { "脉冲宽度必须在0.0到1.0之间" }
 
+        val nyquistFrequency = sampleRate / 2.0
+        if (frequency > nyquistFrequency * 0.9) {
+            println("警告: 频率 $frequency Hz 接近奈奎斯特频率 $nyquistFrequency Hz，可能出现混叠")
+        }
+
         val samples = (duration * sampleRate).toInt()
-        val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
+        val byteBuffer = ByteBuffer.allocateDirect(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
 
         for (i in 0 until samples) {
             val time = i.toDouble() / sampleRate
-            // 考虑相位偏移
-            val phase = ((time * frequency + phaseOffset / (2 * Math.PI)) % 1.0)
-            val sample = if (phase < pulseWidth) amplitude else 0.0
+            // 统一使用弧度制相位计算
+            val phase = (2.0 * Math.PI * frequency * time + phaseOffset) % (2.0 * Math.PI)
+            val normalizedPhase = phase / (2.0 * Math.PI)
+            val sample = if (normalizedPhase < pulseWidth) amplitude else 0.0
             val sampleValue = (sample * Short.MAX_VALUE).toInt()
             byteBuffer.putShort(i * 2, sampleValue.toShort())
         }
@@ -507,7 +534,7 @@ object SoundSynthesizers {
         sampleRate: Int = 44100
     ): SoundData {
         val samples = (duration * sampleRate).toInt()
-        val byteBuffer = ByteBuffer.allocateDirect(samples * 2)
+        val byteBuffer = ByteBuffer.allocateDirect(samples * 2).order(ByteOrder.LITTLE_ENDIAN)
 
         for (i in 0 until samples) {
             val time = i.toDouble() / sampleRate
@@ -540,7 +567,7 @@ object SoundSynthesizers {
         val buffer = soundData.byteBuffer()
         val format = soundData.audioFormat()
         val sampleRate = format.sampleRate.toDouble()
-        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity())
+        val newBuffer = ByteBuffer.allocateDirect(buffer.capacity()).order(ByteOrder.LITTLE_ENDIAN)
 
         for (i in 0 until buffer.capacity() / 2) {
             val time = i.toDouble() / sampleRate
@@ -558,35 +585,150 @@ object SoundSynthesizers {
     }
 
     /**
-     * 混合多个声音数据
+     * 音效循环合成器 - 用于高频率循环播放单个音效
+     * @param sourceSound 源音效数据
+     * @param loopFrequency 循环频率(Hz)
+     * @param duration 总时长(秒)
+     * @param overlap 是否允许音效重叠(用于高频率情况)
+     * @param sampleRate 采样率(Hz)
+     * @param autoNormalize 是否自动归一化(默认true)
      */
     @JvmStatic
-    fun mixSounds(sounds: List<SoundData>): SoundData {
+    @JvmOverloads
+    fun soundLoop(
+        sourceSound: SoundData,
+        loopFrequency: Double,
+        duration: Double,
+        overlap: Boolean = true,
+        sampleRate: Int = 44100,
+        autoNormalize: Boolean = true
+    ): SoundData {
+        require(loopFrequency > 0) { "Loop frequency must be positive" }
+        require(duration > 0) { "Duration must be positive" }
+        require(sampleRate > 0) { "Sample rate must be positive" }
+
+        val sourceBuffer = sourceSound.byteBuffer()
+        val sourceFormat = sourceSound.audioFormat()
+        val sourceSamples = sourceBuffer.capacity() / 2
+
+        // 计算循环间隔(采样数)
+        val intervalSamples = (sampleRate / loopFrequency).toInt()
+        require(intervalSamples > 0) { "Interval samples must be positive" }
+
+        // 如果源音效比间隔长且不允许重叠，则截断
+        val effectiveSourceSamples = if (!overlap && sourceSamples > intervalSamples) {
+            intervalSamples
+        } else {
+            sourceSamples
+        }
+
+        val totalSamples = (duration * sampleRate).toInt()
+        require(totalSamples > 0) { "Total samples must be positive" }
+
+        // 使用Double数组进行计算，避免溢出
+        val mixedSamples = DoubleArray(totalSamples) { 0.0 }
+
+        // 计算可以放置的音效数量
+        val numLoops = if (overlap) {
+            Math.ceil(duration * loopFrequency).toInt().coerceAtLeast(1)
+        } else {
+            val maxLoops = ((totalSamples - effectiveSourceSamples) / intervalSamples + 1).coerceAtLeast(1)
+            maxLoops.coerceAtMost((duration * loopFrequency).toInt() + 1)
+        }
+
+        // 放置音效实例到Double数组
+        for (loopIndex in 0 until numLoops) {
+            val startSample = (loopIndex * intervalSamples).coerceAtMost(
+                (totalSamples - effectiveSourceSamples).coerceAtLeast(0)
+            )
+
+            for (i in 0 until effectiveSourceSamples) {
+                val targetIndex = startSample + i
+                if (targetIndex < totalSamples) {
+                    val sourceSample = sourceBuffer.getShort(i * 2).toDouble() / Short.MAX_VALUE.toDouble()
+                    mixedSamples[targetIndex] += sourceSample
+                }
+            }
+        }
+
+        // 峰值归一化
+        val outputBuffer = ByteBuffer.allocateDirect(totalSamples * 2).order(ByteOrder.LITTLE_ENDIAN)
+
+        if (autoNormalize) {
+            // 找到最大绝对值
+            val maxAmplitude = mixedSamples.maxByOrNull { Math.abs(it) } ?: 0.0
+            val peak = Math.abs(maxAmplitude)
+
+            if (peak > 0.0) {
+                val scaleFactor = if (peak > 1.0) 1.0 / peak else 1.0
+
+                for (i in 0 until totalSamples) {
+                    val normalizedSample = (mixedSamples[i] * scaleFactor * Short.MAX_VALUE).toInt()
+                    outputBuffer.putShort(i * 2, normalizedSample.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort())
+                }
+            } else {
+                // 所有样本都是0
+                for (i in 0 until totalSamples) {
+                    outputBuffer.putShort(i * 2, 0)
+                }
+            }
+        } else {
+            // 不进行归一化，直接裁剪到有效范围
+            for (i in 0 until totalSamples) {
+                val rawSample = (mixedSamples[i] * Short.MAX_VALUE).toInt()
+                outputBuffer.putShort(i * 2, rawSample.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort())
+            }
+        }
+
+        outputBuffer.rewind()
+        return SoundData(outputBuffer, sourceFormat)
+    }
+
+    /**
+     * 混合多个声音数据（使用峰值归一化防止削波）
+     */
+    @JvmStatic
+    fun mixSounds(sounds: List<SoundData>, autoNormalize: Boolean = true): SoundData {
         require(sounds.isNotEmpty()) { "至少需要一个声音数据" }
 
         val format = sounds.first().audioFormat()
         val maxSamples = sounds.maxOf { it.byteBuffer().capacity() / 2 }
+        val mixedSamples = DoubleArray(maxSamples) { 0.0 }
 
-        val mixedBuffer = ByteBuffer.allocateDirect(maxSamples)
-
-        for (i in 0 until maxSamples / 2) {
-            var mixedSample = 0.0
-
-            for (sound in sounds) {
-                val buffer = sound.byteBuffer()
-                if (i * 2 < buffer.capacity()) {
-                    val sample = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE
-                    mixedSample += sample
-                }
+        // 将所有声音混合到Double数组
+        for (sound in sounds) {
+            val buffer = sound.byteBuffer()
+            for (i in 0 until buffer.capacity() / 2) {
+                val sample = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE.toDouble()
+                mixedSamples[i] += sample
             }
-
-            mixedSample = mixedSample / sounds.size.coerceAtLeast(1)
-            val finalSample = (mixedSample * Short.MAX_VALUE).toInt().toShort()
-            mixedBuffer.putShort(i * 2, finalSample)
         }
 
-        mixedBuffer.rewind()
-        return SoundData(mixedBuffer, format)
+        val outputBuffer = ByteBuffer.allocateDirect(maxSamples * 2).order(ByteOrder.LITTLE_ENDIAN)
+
+        if (autoNormalize) {
+            // 峰值归一化
+            val peak = mixedSamples.maxByOrNull { Math.abs(it) } ?: 0.0
+            val scaleFactor = if (Math.abs(peak) > 1.0) 1.0 / Math.abs(peak) else 1.0
+
+            for (i in 0 until maxSamples) {
+                val normalizedSample = (mixedSamples[i] * scaleFactor * Short.MAX_VALUE).toInt()
+                try{
+                    outputBuffer.putShort(i * 2, normalizedSample.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort())
+                } catch (e: IndexOutOfBoundsException){
+                    println("error: $e")
+                }
+            }
+        } else {
+            // 直接裁剪
+            for (i in 0 until maxSamples) {
+                val rawSample = (mixedSamples[i] * Short.MAX_VALUE).toInt()
+                outputBuffer.putShort(i * 2, rawSample.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort())
+            }
+        }
+
+        outputBuffer.rewind()
+        return SoundData(outputBuffer, format)
     }
 
     /**
