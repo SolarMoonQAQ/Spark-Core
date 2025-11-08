@@ -123,7 +123,7 @@ public interface ISoundSpreader {
      */
     @Nullable
     default UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, int fadeIn, int fadeOut) {
-        if (level.isClientSide()) {
+        if (!level.isClientSide()) {
             SparkCore.LOGGER.warn("ISoundSpreader.playSpreadingSound() should only be called on the client side!");
             return null;
         }
@@ -156,7 +156,7 @@ public interface ISoundSpreader {
      */
     @Nullable
     default UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType, int fadeIn, int fadeOut) {
-        if (level.isClientSide()) {
+        if (!level.isClientSide()) {
             SparkCore.LOGGER.warn("ISoundSpreader.transitionSound() should only be called on the client side!");
             return null;
         }
