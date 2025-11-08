@@ -61,13 +61,12 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
      * @param soundType  声音类型，方块，环境等
      * @param position   声音位置
      * @param speed      声音发出时的速度
-     * @param maxRange   声音的最大距离
      * @param pitch      声音的音高
      * @param volume     声音的音量
      * @param fadeInTicks   声音淡入的时长，单位：tick
      * @param fadeOutTicks  声音淡出的时长，单位：tick
      */
-    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float maxRange, float pitch, float volume, int fadeInTicks, int fadeOutTicks) {
+    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeInTicks, int fadeOutTicks) {
         super(SparkSounds.getCUSTOM_SOUND().get(), soundType, SoundInstance.createUnseededRandom());
         this.ISoundSpreader = null;
         this.attenuation = Attenuation.NONE;//衰减根据与听者的距离自动调整
@@ -77,7 +76,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.z = position.z;
         this.pitch = pitch;
         this.volume = volume;
-        this.maxRange = maxRange;
+        this.maxRange = soundEvent.getRange(1.0f);
         this.fadeInTicks = fadeInTicks;
         this.fadeOutTicks = fadeOutTicks;
         this.fadeProgress = (fadeInTicks > 0) ? 0 : 1; // 如果没有淡入，立即完成
@@ -96,11 +95,10 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
      * @param soundEvent    声音事件，随用随建时可用于分辨来自同一源的不同声音
      * @param soundType     声音类型，方块，环境等
      * @param soundSpreader 声源，音效会通过接口提供的方法更新其位置
-     * @param maxRange      声音的最大距离
      * @param fadeInTicks   声音淡入的时长，单位：tick
      * @param fadeOutTicks  声音淡出的时长，单位：tick
      */
-    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader, float maxRange, int fadeInTicks, int fadeOutTicks) {
+    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader, int fadeInTicks, int fadeOutTicks) {
         super(SparkSounds.getCUSTOM_SOUND().get(), soundType, SoundInstance.createUnseededRandom());
         this.ISoundSpreader = soundSpreader;
         this.attenuation = Attenuation.NONE;//衰减根据与听者的距离自动调整
@@ -109,7 +107,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.x = position.x;
         this.y = position.y;
         this.z = position.z;
-        this.maxRange = maxRange;
+        this.maxRange = soundEvent.getRange(1.0f);
         this.pitch = soundSpreader.getPitch(this.uuid, soundEvent);
         this.volume = soundSpreader.getVolume(this.uuid, soundEvent);
         this.speed = soundSpreader.getSpeed(this.uuid, soundEvent);

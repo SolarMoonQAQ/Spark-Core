@@ -35,20 +35,20 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     }
 
     @Override
-    public void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float range, float pitch, float volume, int fadeIn, int fadeOut) {
-        var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, range, pitch, volume, fadeIn, fadeOut);
+    public void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut) {
+        var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
         sound.setUUID(uuid);
         playSpreadingSound(sound);
     }
 
-    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float range, float pitch, float volume, int fadeIn, int fadeOut) {
-        var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, range, pitch, volume, fadeIn, fadeOut);
+    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut) {
+        var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
         playSpreadingSound(sound);
         return sound.getUUID();
     }
 
-    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, float maxRange, int fadeIn, int fadeOut) {
-        var sound = new SpreadingSoundInstance(soundEvent, soundType, ISoundSpreader, maxRange, fadeIn, fadeOut);
+    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, int fadeIn, int fadeOut) {
+        var sound = new SpreadingSoundInstance(soundEvent, soundType, ISoundSpreader, fadeIn, fadeOut);
         playSpreadingSound(sound);
         return sound.getUUID();
     }
@@ -59,17 +59,16 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
      * @param newSoundEvent 新音效事件
      * @param soundType 声音类型
      * @param soundSpreader 动态声源（可为null）
-     * @param maxRange 最大范围
      * @param fadeIn 淡入时长
      * @param fadeOut 淡出时长
      * @return 新实例的UUID
      */
     public UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
-                                ISoundSpreader soundSpreader, float maxRange, int fadeIn, int fadeOut) {
+                                ISoundSpreader soundSpreader, int fadeIn, int fadeOut) {
         SpreadingSoundInstance oldInstance = activeInstances.get(oldSoundSource);
 
         // 创建新实例
-        SpreadingSoundInstance newInstance = new SpreadingSoundInstance(newSoundEvent, soundType, soundSpreader, maxRange, fadeIn, fadeOut);
+        SpreadingSoundInstance newInstance = new SpreadingSoundInstance(newSoundEvent, soundType, soundSpreader, fadeIn, fadeOut);
 
         // 如果存在旧实例，复制声源点并开始淡出
         if (oldInstance != null) {

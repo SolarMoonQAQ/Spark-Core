@@ -1,8 +1,12 @@
 package cn.solarmoon.spark_core.sound;
 
+import cn.solarmoon.spark_core.SparkCore;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
@@ -36,7 +40,7 @@ public interface ISoundSpreader {
      *   <li>对于移动声源，建议返回质心或主要发声部位的位置</li>
      * </ul>
      *
-     * @param uuid 声源的UUID
+     * @param uuid  声源的UUID
      * @param event 当前播放的声音事件
      * @return 声源在当前游戏刻的三维世界坐标，单位：方块
      */
@@ -56,12 +60,12 @@ public interface ISoundSpreader {
      *   <li>速度向量应反映声源在当前游戏刻的瞬时速度</li>
      * </ul>
      *
-     * @param uuid 声源的UUID
+     * @param uuid  声源的UUID
      * @param event 当前播放的声音事件
      * @return 声源的运动速度向量，单位：方块/秒（注意：不是每tick）
      */
     @NotNull
-    default Vec3 getSpeed(UUID uuid, SoundEvent event){
+    default Vec3 getSpeed(UUID uuid, SoundEvent event) {
         return Vec3.ZERO;
     }
 
@@ -78,11 +82,11 @@ public interface ISoundSpreader {
      * <p>此音高值会在多普勒效应计算的基础上进一步叠加，允许实现基于
      * 声源状态的音高变化（如引擎转速变化）。</p>
      *
-     * @param uuid 声源的UUID
+     * @param uuid  声源的UUID
      * @param event 当前播放的声音事件
      * @return 音高乘数，有效范围通常为 [0.5, 2.0]
      */
-    default float getPitch(UUID uuid, SoundEvent event){
+    default float getPitch(UUID uuid, SoundEvent event) {
         return 1.0f;
     }
 
@@ -99,12 +103,64 @@ public interface ISoundSpreader {
      *   <li>大于1.0的值可能造成削波失真，不推荐使用</li>
      * </ul>
      *
-     * @param uuid 声源的UUID
+     * @param uuid  声源的UUID
      * @param event 当前播放的声音事件
      * @return 声源原始音量，范围 [0.0, 1.0]
      */
-    default float getVolume(UUID uuid, SoundEvent event){
+    default float getVolume(UUID uuid, SoundEvent event) {
         return 1.0f;
+    }
+
+    /**
+     * 播放带音速延迟和多普勒效果的扩散音效，适用于持续播放且移动的声音，仅在客户端调用时有效
+     *
+     * @param level      播放声音的维度
+     * @param soundEvent 声音事件，随用随建，用于指定声音传播范围和音效路径
+     * @param soundType  声音类型，方块，环境等
+     * @param fadeIn     声音的淡入时间 (tick)
+     * @param fadeOut    声音的淡出时间 (tick)
+     * @return UUID 用于标识该声音的唯一ID
+     */
+    @Nullable
+    default UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, int fadeIn, int fadeOut) {
+        if (level.isClientSide()) {
+            SparkCore.LOGGER.warn("ISoundSpreader.playSpreadingSound() should only be called on the client side!");
+            return null;
+        }
+        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, this, fadeIn, fadeOut);
+    }
+
+    /**
+     * 播放带音速延迟和多普勒效果的扩散音效，适用于持续播放且移动的声音，仅在客户端调用时有效
+     *
+     * @param level      播放声音的维度
+     * @param soundEvent 声音事件，随用随建，用于指定声音传播范围和音效路径
+     * @param soundType  声音类型，方块，环境等
+     * @return UUID 用于标识该声音的唯一ID
+     */
+    @Nullable
+    default UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType) {
+        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, this, 0, 0);
+    }
+
+    /**
+     * 播放带音速延迟和多普勒效果的扩散音效并将其与现有的音效交叉淡入淡出(CrossFadeIn/Out)，适用引擎等音效会发生变化的音源，仅在客户端调用时有效
+     *
+     * @param level          播放声音的维度
+     * @param oldSoundSource 旧声源标识（UUID）
+     * @param newSoundEvent  新音效事件
+     * @param soundType      声音类型
+     * @param fadeIn         淡入时长
+     * @param fadeOut        淡出时长
+     * @return 新实例的UUID
+     */
+    @Nullable
+    default UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType, int fadeIn, int fadeOut) {
+        if (level.isClientSide()) {
+            SparkCore.LOGGER.warn("ISoundSpreader.transitionSound() should only be called on the client side!");
+            return null;
+        }
+        return SpreadingSoundHelper.transitionSound(level, oldSoundSource, newSoundEvent, soundType, this, fadeIn, fadeOut);
     }
 
 }

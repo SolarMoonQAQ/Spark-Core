@@ -20,7 +20,6 @@ public record SpreadingSoundPayload(
         SoundSource soundSource,
         Vec3 position,
         Vec3 velocity,
-        float range,
         float pitch,
         float volume,
         int fadeIn,
@@ -35,12 +34,11 @@ public record SpreadingSoundPayload(
             SoundSource soundSource = buffer.readEnum(SoundSource.class);
             Vec3 position = buffer.readVec3();
             Vec3 velocity = buffer.readVec3();
-            float range = buffer.readFloat();
             float pitch = buffer.readFloat();
             float volume = buffer.readFloat();
             int fadeIn = buffer.readInt();
             int fadeOut = buffer.readInt();
-            return new SpreadingSoundPayload(uuid, soundEvent, soundSource, position, velocity, range, pitch, volume, fadeIn, fadeOut);
+            return new SpreadingSoundPayload(uuid, soundEvent, soundSource, position, velocity, pitch, volume, fadeIn, fadeOut);
         }
 
         @Override
@@ -50,7 +48,6 @@ public record SpreadingSoundPayload(
             buffer.writeEnum(value.soundSource());
             buffer.writeVec3(value.position());
             buffer.writeVec3(value.velocity());
-            buffer.writeFloat(value.range());
             buffer.writeFloat(value.pitch());
             buffer.writeFloat(value.volume());
             buffer.writeInt(value.fadeIn());
@@ -64,15 +61,17 @@ public record SpreadingSoundPayload(
     }
 
     public static void handler(final SpreadingSoundPayload payload, final IPayloadContext context) {
-        SpreadingSoundHelper.playSpreadingSound(
+        SpreadingSoundHelper.playSpreadingSoundFromPacket(
                 context.player().level(),
+                payload.uuid(),
                 payload.soundEvent(),
                 payload.soundSource(),
                 payload.position(),
                 payload.velocity(),
-                payload.range(),
                 payload.pitch(),
-                payload.volume()
+                payload.volume(),
+                payload.fadeIn(),
+                payload.fadeOut()
         );
     }
 }
