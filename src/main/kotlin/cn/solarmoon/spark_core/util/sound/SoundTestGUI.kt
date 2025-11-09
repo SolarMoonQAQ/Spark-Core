@@ -272,14 +272,10 @@ object SoundTestGUI {
                 else -> BrushlessMotorSynthesizer.MotorConfig(polePairs = polePairs)
             }
 
-            val state = BrushlessMotorSynthesizer.MotorState(
-                rpm = rpm,
-                load = load
-            )
-
             val soundData = BrushlessMotorSynthesizer.synthesizeBrushlessMotor(
                 duration = duration,
-                state = state,
+                rpm = rpm,
+                load = load,
                 config = config
             )
 

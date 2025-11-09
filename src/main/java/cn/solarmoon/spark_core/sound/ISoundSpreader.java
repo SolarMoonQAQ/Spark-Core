@@ -112,6 +112,40 @@ public interface ISoundSpreader {
     }
 
     /**
+     * 播放带音速延迟和多普勒效果的扩散音效，适用于定点播放的声音，双端可用
+     *
+     * @param level      播放声音的维度
+     * @param soundEvent 音效事件，包含音效注册名
+     * @param soundType  声音类型，方块，环境等
+     * @param position   声音位置
+     * @param speed      声音发出时的速度
+     * @param pitch      声音的音高
+     * @param volume     声音的音量
+     * @param fadeIn     声音的淡入时间
+     * @param fadeOut    声音的淡出时间
+     * @return UUID 用于标识该声音的唯一ID
+     */
+    static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut) {
+        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
+    }
+
+    /**
+     * 播放带音速延迟和多普勒效果的扩散音效，适用于定点播放的声音，双端可用
+     *
+     * @param level      播放声音的维度
+     * @param soundEvent 音效事件，包含音效注册名
+     * @param soundType  声音类型，方块，环境等
+     * @param position   声音位置
+     * @param speed      声音发出时的速度
+     * @param pitch      声音的音高
+     * @param volume     声音的音量
+     * @return UUID 用于标识该声音的唯一ID
+     */
+    static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume) {
+        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, 0, 0);
+    }
+
+    /**
      * 播放带音速延迟和多普勒效果的扩散音效，适用于持续播放且移动的声音，仅在客户端调用时有效
      *
      * @param level      播放声音的维度
