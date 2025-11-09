@@ -131,6 +131,12 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
         this.spark_core$spreadingSounds.add(sound);
     }
 
+    @Override
+    public void spark_core$ImmediatePlaySpreadingSound(SpreadingSoundInstance sound) {
+        this.spark_core$spreadingSounds.add(sound);
+        this.play(sound);
+    }
+
     @Unique
     public float spark_core$calculateVolume(SpreadingSoundInstance sound) {
         Vec3 sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());

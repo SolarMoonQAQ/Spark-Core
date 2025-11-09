@@ -8,5 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 public interface ISoundEngineMixin {
     void spark_core$queueSpreadingSound(SpreadingSoundInstance sound);
 
+    void spark_core$ImmediatePlaySpreadingSound(SpreadingSoundInstance sound);
+
     SoundBuffer spark_core$getSoundBuffer(ResourceLocation location);
 }

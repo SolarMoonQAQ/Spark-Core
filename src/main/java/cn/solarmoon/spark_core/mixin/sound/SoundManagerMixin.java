@@ -23,6 +23,11 @@ public class SoundManagerMixin implements ISoundManagerMixin {
     }
 
     @Override
+    public void spark_core$playSpreadingImmediately(SpreadingSoundInstance soundInstance) {
+         ((ISoundEngineMixin) soundEngine).spark_core$ImmediatePlaySpreadingSound(soundInstance);
+    }
+
+    @Override
     public SoundBuffer spark_core$getSoundBuffer(ResourceLocation location) {
         return ((ISoundEngineMixin) soundEngine).spark_core$getSoundBuffer(location);
     }

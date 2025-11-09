@@ -174,14 +174,14 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
             // 淡入阶段
             fadeProgress++;
             fadeFactor = (float) fadeProgress / fadeInTicks;
-        } else if (isFadingOut && fadeProgress > -fadeOutTicks) {
-            // 淡出阶段
-            fadeProgress--;
-            fadeFactor = 1.0f - (float) Math.abs(fadeProgress) / fadeOutTicks;
+        } else if (isFadingOut && fadeProgress >= -fadeOutTicks) {
             // 淡出完成且没有活跃波面时停止
             if (fadeProgress <= -fadeOutTicks && soundPoints.isEmpty()) {
                 this.stop();
             }
+            // 淡出阶段
+            fadeProgress--;
+            fadeFactor = 1.0f - (float) Math.abs(fadeProgress) / fadeOutTicks;
         }
     }
 
@@ -191,6 +191,13 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     public void startFadeOut() {
         this.isFadingOut = true;
         this.shouldGenerateNewPoints = false;
+        if (fadeOutTicks <= 0){
+            this.stop();
+            this.fadeProgress = -1; // 从当前进度开始淡出
+            this.fadeFactor = 0.0f;
+            this.volume = 0.0f;
+            return;
+        }
         this.fadeProgress = 0; // 从当前进度开始淡出
     }
 
@@ -201,6 +208,12 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     public void copySoundPointsFrom(SpreadingSoundInstance other) {
         this.soundPoints.clear();
         this.soundPoints.addAll(other.soundPoints);
+        this.x = other.x;
+        this.y = other.y;
+        this.z = other.z;
+        this.pitch = other.pitch;
+        this.volume = other.volume;
+        this.speed = other.speed;
         // 更新AABB
         this.updateAABB();
     }
