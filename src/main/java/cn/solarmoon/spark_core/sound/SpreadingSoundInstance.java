@@ -127,7 +127,8 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     public void tick() {
         // 更新淡入淡出状态
         updateFadeState();
-
+        if(this.isStopped()) return;
+        // 更新声音传播状态
         Iterator<SoundSourcePoint> iterator = this.soundPoints.iterator();
         // 更新传播距离和生成新声源点
         while (iterator.hasNext()) {
@@ -172,16 +173,19 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     private void updateFadeState() {
         if (fadeProgress < fadeInTicks && !isFadingOut) {
             // 淡入阶段
-            fadeProgress++;
-            fadeFactor = (float) fadeProgress / fadeInTicks;
+            this.fadeProgress++;
+            this.fadeFactor = Math.clamp((float) fadeProgress / fadeInTicks, 0.0f, 1.0f);
         } else if (isFadingOut && fadeProgress >= -fadeOutTicks) {
             // 淡出完成且没有活跃波面时停止
             if (fadeProgress <= -fadeOutTicks && soundPoints.isEmpty()) {
+                this.fadeFactor = 0.0f;
+                this.volume = 0.0f;
                 this.stop();
+                return;
             }
             // 淡出阶段
-            fadeProgress--;
-            fadeFactor = 1.0f - (float) Math.abs(fadeProgress) / fadeOutTicks;
+            this.fadeProgress--;
+            this.fadeFactor = Math.clamp(1.0f - (float) Math.abs(fadeProgress) / fadeOutTicks, 0.0f, 1.0f);
         }
     }
 
@@ -192,10 +196,11 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.isFadingOut = true;
         this.shouldGenerateNewPoints = false;
         if (fadeOutTicks <= 0){
-            this.stop();
+            this.soundPoints.clear();
             this.fadeProgress = -1; // 从当前进度开始淡出
             this.fadeFactor = 0.0f;
             this.volume = 0.0f;
+            this.stop();
             return;
         }
         this.fadeProgress = 0; // 从当前进度开始淡出
@@ -211,9 +216,14 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.x = other.x;
         this.y = other.y;
         this.z = other.z;
-        this.pitch = other.pitch;
-        this.volume = other.volume;
         this.speed = other.speed;
+        if(this.ISoundSpreader != null) {
+            this.pitch = this.ISoundSpreader.getPitch(this.uuid, this.soundEvent);
+            this.volume = this.ISoundSpreader.getVolume(this.uuid, this.soundEvent);
+        }else{
+            this.pitch = other.pitch;
+            this.volume = other.volume;
+        }
         // 更新AABB
         this.updateAABB();
     }

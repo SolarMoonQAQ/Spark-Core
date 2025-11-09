@@ -34,12 +34,6 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
         activeInstances.put(soundInstance.getUUID(), soundInstance);
     }
 
-    private static void playSpreadingSoundImmediately(SpreadingSoundInstance soundInstance) {
-        ISoundManagerMixin soundManager = (ISoundManagerMixin) Minecraft.getInstance().getSoundManager();
-        soundManager.spark_core$playSpreadingImmediately(soundInstance);
-        activeInstances.put(soundInstance.getUUID(), soundInstance);
-    }
-
     @Override
     public void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut) {
         var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
@@ -78,12 +72,12 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
 
         // 如果存在旧实例，复制声源点并开始淡出
         if (oldInstance != null) {
-            oldInstance.startFadeOut();
             newInstance.copySoundPointsFrom(oldInstance);
+            oldInstance.startFadeOut();
         }
 
         // 新实例播放
-        ClientSpreadingSoundPlayer.playSpreadingSoundImmediately(newInstance);
+        ClientSpreadingSoundPlayer.playSpreadingSound(newInstance);
         return newInstance.getUUID();
     }
 

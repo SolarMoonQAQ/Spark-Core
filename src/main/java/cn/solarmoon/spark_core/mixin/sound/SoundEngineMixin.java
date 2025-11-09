@@ -24,7 +24,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -63,7 +62,7 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
                 continue;
             }
             // 先检查收听者是否在声音传播范围内
-            if (!instance.isListenerInRange(listenerPos)) {
+            if (!instance.isListenerInRange(listenerPos) || instance.isStopped()) {
                 if (!instance.isPlaying) {
                     // 已开始播放的声音实例存在于SoundEngine的tickingSounds中，由SoundEngine负责更新
                     instance.tick();
@@ -129,12 +128,6 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
     @Unique
     public void spark_core$queueSpreadingSound(SpreadingSoundInstance sound) {
         this.spark_core$spreadingSounds.add(sound);
-    }
-
-    @Override
-    public void spark_core$ImmediatePlaySpreadingSound(SpreadingSoundInstance sound) {
-        this.spark_core$spreadingSounds.add(sound);
-        this.play(sound);
     }
 
     @Unique
