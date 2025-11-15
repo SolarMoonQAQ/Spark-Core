@@ -25,7 +25,7 @@ object SparkPackLoader {
         private set
 
     fun initialize(isClientSide: Boolean) {
-        val readers = mutableMapOf<String, SparkPackModule>()
+        val readers = linkedMapOf<String, SparkPackModule>()
         ModLoader.postEvent(SparkPackageReaderRegisterEvent(readers))
         modules = readers
         modules.values.forEach { it.onInitialize(isClientSide) }

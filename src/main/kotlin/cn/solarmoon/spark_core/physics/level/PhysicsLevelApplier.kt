@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.util.PPhase
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.LevelChunk
+import net.neoforged.bus.api.EventPriority
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.level.ChunkEvent
@@ -14,7 +15,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent
 
 object PhysicsLevelApplier {
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private fun load(event: LevelEvent.Load) {
         val level = event.level
         if (level is Level) {
@@ -25,7 +26,7 @@ object PhysicsLevelApplier {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private fun unLoad(event: LevelEvent.Unload) {
         val level = event.level
         if (level is Level) {
@@ -33,7 +34,7 @@ object PhysicsLevelApplier {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private fun mcLevelTask(event: LevelTickEvent.Pre) {
         val level = event.level
         level.processTasks(PPhase.ALL)
@@ -41,7 +42,7 @@ object PhysicsLevelApplier {
         event.level.physicsLevel.requestStep()
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     private fun mcLevelTask(event: LevelTickEvent.Post) {
         val level = event.level
         level.processTasks(PPhase.ALL)
