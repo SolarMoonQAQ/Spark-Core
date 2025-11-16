@@ -61,7 +61,7 @@ public record SpreadingSoundPayload(
     }
 
     public static void handler(final SpreadingSoundPayload payload, final IPayloadContext context) {
-        SpreadingSoundHelper.playSpreadingSoundFromPacket(
+        context.enqueueWork(() -> SpreadingSoundHelper.playSpreadingSoundFromPacket(
                 context.player().level(),
                 payload.uuid(),
                 payload.soundEvent(),
@@ -72,6 +72,6 @@ public record SpreadingSoundPayload(
                 payload.volume(),
                 payload.fadeIn(),
                 payload.fadeOut()
-        );
+        ));
     }
 }
