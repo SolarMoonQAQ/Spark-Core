@@ -265,7 +265,6 @@ object SoundVisualizationTest {
         testSineWave()
         testSquareWave()
         testWhiteNoise()
-        testComplexSound()
 
         println("测试完成！")
     }
@@ -306,20 +305,5 @@ object SoundVisualizationTest {
         // 应用滤波器测试
         val filtered = SoundSynthesizers.highPassFilter(whiteNoise, 800.0)
         SoundVisualizer.saveWaveformImage(filtered, "filtered_white_noise")
-    }
-
-    private fun testComplexSound() {
-        println("测试复杂声音...")
-        val motorSound = SoundSynthesizers.motorSound(
-            duration = 3.0,
-            baseFrequency = 10.0,
-            roughness = 0.2
-        )
-
-        SoundVisualizer.saveWaveformImage(motorSound, "motor_sound")
-
-        // 应用滤波器测试
-        val filtered = SoundSynthesizers.lowPassFilter(motorSound, 800.0)
-        SoundVisualizer.saveWaveformImage(filtered, "filtered_motor_sound")
     }
 }

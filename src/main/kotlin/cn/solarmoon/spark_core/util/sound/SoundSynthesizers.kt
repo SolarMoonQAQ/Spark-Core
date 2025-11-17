@@ -730,28 +730,4 @@ object SoundSynthesizers {
         outputBuffer.rewind()
         return SoundData(outputBuffer, format)
     }
-
-    /**
-     * 合成基础电机声音
-     */
-    @JvmStatic
-    @JvmOverloads
-    fun motorSound(
-        duration: Double,
-        baseFrequency: Double,
-        roughness: Double = 0.1, // 粗糙度控制
-        amplitude: Double = 0.5,
-        sampleRate: Int = 44100
-    ): SoundData {
-        // 基础频率的方波
-        val baseWave = squareWave(duration, baseFrequency, amplitude * 0.7, 0.5, sampleRate = sampleRate)
-
-        // 高频成分
-        val highFreq = squareWave(duration, baseFrequency * 2.0, amplitude * 0.3, 0.5, sampleRate = sampleRate)
-
-        // 使用高斯噪声（更自然的粗糙度）
-        val noise = gaussianWhiteNoise(duration, amplitude * roughness * 0.05, sampleRate)
-
-        return mixSounds(listOf(baseWave, highFreq, noise))
-    }
 }
