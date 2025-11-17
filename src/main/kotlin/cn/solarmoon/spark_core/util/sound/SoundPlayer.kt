@@ -5,31 +5,16 @@ import java.io.ByteArrayInputStream
 import javax.sound.sampled.*
 
 /**
- * 抽象声音合成器基类
- * 用户可以通过继承此类来创建自定义的声音合成器
+ * 声音播放器工具类
+ * 提供静态方法用于播放SoundData
  */
-abstract class AbstractSoundSynthesizer {
-
-    /**
-     * 合成声音数据的主方法，子类必须实现此方法
-     * @return 合成的声音数据
-     */
-    abstract fun synthesize(): SoundData
-
-    /**
-     * 播放合成的声音
-     * @param loop 是否循环播放，默认false
-     * @param loopCount 循环次数，当loop=true时有效，Clip.LOOP_CONTINUOUSLY表示无限循环
-     */
-    fun playSound() {
-        val soundData = synthesize()
-        playSoundData(soundData)
-    }
+object SoundPlayer {
 
     /**
      * 播放SoundData
+     * @param soundData 要播放的声音数据
      */
-    private fun playSoundData(soundData: SoundData) {
+    fun playSound(soundData: SoundData) {
         try {
             val buffer = soundData.byteBuffer()
             val format = soundData.audioFormat()
@@ -54,10 +39,9 @@ abstract class AbstractSoundSynthesizer {
             )
 
             clip.open(audioInputStream)
-
             clip.start()
 
-            // 等待播放完成（非循环情况下）
+            // 等待播放完成
             Thread.sleep((soundData.byteBuffer().capacity() / (format.sampleSizeInBits / 8) / format.channels / format.sampleRate * 1000).toLong() + 100)
             clip.close()
 
@@ -67,26 +51,34 @@ abstract class AbstractSoundSynthesizer {
         }
     }
 
+    /**
+     * 便捷方法：直接播放合成的声音数据
+     * @param synthesizer 产生声音数据的lambda函数
+     */
+    fun play(synthesizer: () -> SoundData) {
+        playSound(synthesizer())
+    }
 }
 
 // ============================ 测试运行类 ============================
-class MyCustomSynthesizer : AbstractSoundSynthesizer() {
-    override fun synthesize(): SoundData {
-        // 在这里编写你的声音合成逻辑
-        return SoundSynthesizers.sineWave(2.0, 440.0, 0.5)
-    }
-}
+
 /**
- * 声音合成器测试运行器
+ * 声音播放器测试运行器
  */
-object Test {
+object SimpleSoundPlayerTest {
 
     /**
-     * 主函数 - 用于测试示例合成器
+     * 主函数 - 用于测试声音播放
      */
     @JvmStatic
     fun main(args: Array<String>) {
-        val mySynthesizer = MyCustomSynthesizer()
-        mySynthesizer.playSound() // 播放一次
+        // 方式1：直接使用SoundPlayer播放SoundData
+        val soundData = SoundSynthesizers.sineWave(2.0, 440.0, 0.5)
+        SoundPlayer.playSound(soundData)
+
+        // 方式2：使用lambda表达式
+        SoundPlayer.play {
+            SoundSynthesizers.sineWave(2.0, 440.0, 0.5)
+        }
     }
 }
