@@ -52,7 +52,7 @@ class SoundModule : SparkPackModule {
         isClientSide: Boolean
     ) {
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".ogg")) {
-            val nameSpace: String = if (pathSegments.size > 1) {
+            val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
                 SparkCore.MOD_ID

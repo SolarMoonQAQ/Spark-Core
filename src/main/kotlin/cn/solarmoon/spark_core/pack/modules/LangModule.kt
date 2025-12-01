@@ -35,7 +35,7 @@ class LangModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
     ) {
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".json")) {
             val lang = fileName.substringBeforeLast(".")
-            val nameSpace: String = if (pathSegments.size > 1) {
+            val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
                 SparkCore.MOD_ID

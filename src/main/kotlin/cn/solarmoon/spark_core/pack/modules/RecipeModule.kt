@@ -59,7 +59,7 @@ class RecipeModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         isClientSide: Boolean
     ) {
         if (fileName.endsWith(".json")) {
-            val nameSpace: String = if (pathSegments.size > 1) {
+            val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
                 SparkCore.MOD_ID
