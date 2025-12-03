@@ -1,16 +1,13 @@
 package cn.solarmoon.spark_core.util.sound.filter
 
-import cn.solarmoon.spark_core.sound.SoundData
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import kotlin.math.floor
 import kotlin.math.ceil
+import kotlin.math.sin
+import kotlin.math.PI
 
 /**
  * 抖动滤波器 - 为音频添加时间抖动效果
  * 用途：模拟磁带机/留声机的不稳定转速，创造复古、有机的感觉
- *
- * 注意：这是一个离线滤波器，适用于完整音频数据的处理，与实时合成的实现不同
  */
 class JitterFilter {
     /**
@@ -23,28 +20,26 @@ class JitterFilter {
     data class JitterParams(
         val jitterAmount: Double = 0.01,        // 1%的抖动
         val jitterFrequency: Double = 2.0,      // 2Hz的抖动频率
-        val noiseCutoff: Double = 2000.0,         // 2000Hz截止频率
+        val noiseCutoff: Double = 2000.0,       // 2000Hz截止频率
         val randomSeed: Long = System.currentTimeMillis()
     )
 
     /**
-     * 应用抖动效果到声音数据
-     * @param soundData 输入声音数据
+     * 应用抖动效果到样本数组
+     * @param samples 输入样本数组，范围[-1.0, 1.0]
      * @param params 抖动参数
-     * @return 添加抖动效果后的声音数据
+     * @param sampleRate 采样率，默认44100
+     * @return 添加抖动效果后的样本数组
      */
-    fun apply(soundData: SoundData, params: JitterParams = JitterParams()): SoundData {
-        val buffer = soundData.byteBuffer()
-        val format = soundData.audioFormat()
-        val sampleRate = format.sampleRate.toDouble()
-        val totalSamples = buffer.capacity() / (format.sampleSizeInBits / 8)
+    fun apply(samples: DoubleArray, params: JitterParams = JitterParams(), sampleRate: Double = 44100.0): DoubleArray {
+        if (samples.isEmpty()) return DoubleArray(0)
 
-        // 创建输出缓冲区
-        val outputBuffer = ByteBuffer.allocateDirect(buffer.capacity())
-            .order(ByteOrder.LITTLE_ENDIAN)
+        val totalSamples = samples.size
 
         // 生成平滑的抖动信号（使用低通滤波的白噪声）
         val jitterSignal = generateJitterSignal(totalSamples, sampleRate, params)
+
+        val result = DoubleArray(totalSamples)
 
         // 应用抖动效果
         for (i in 0 until totalSamples) {
@@ -53,12 +48,10 @@ class JitterFilter {
             val jitteredIndex = i.toDouble() + jitterOffset
 
             // 使用线性插值获取抖动后的采样值
-            val sample = interpolateSample(buffer, jitteredIndex, totalSamples)
-            outputBuffer.putShort(i * 2, sample)
+            result[i] = interpolateSample(samples, jitteredIndex, totalSamples)
         }
 
-        outputBuffer.rewind()
-        return SoundData(outputBuffer, format)
+        return result
     }
 
     /**
@@ -78,7 +71,7 @@ class JitterFilter {
         if (params.jitterFrequency > 0) {
             for (i in 0 until totalSamples) {
                 val time = i.toDouble() / sampleRate
-                baseJitter[i] = Math.sin(2.0 * Math.PI * params.jitterFrequency * time)
+                baseJitter[i] = sin(2.0 * PI * params.jitterFrequency * time)
             }
         }
 
@@ -136,7 +129,7 @@ class JitterFilter {
 
         val filtered = DoubleArray(signal.size)
         val dt = 1.0 / sampleRate
-        val RC = 1.0 / (2.0 * Math.PI * cutoff)
+        val RC = 1.0 / (2.0 * PI * cutoff)
         val alpha = dt / (RC + dt)
 
         var prevOutput = 0.0
@@ -151,16 +144,16 @@ class JitterFilter {
 
     /**
      * 使用线性插值获取指定位置的采样值
-     * @param buffer 音频缓冲区
+     * @param samples 样本数组
      * @param index 插值位置（可能是小数）
      * @param totalSamples 总采样数
      * @return 插值后的采样值
      */
     private fun interpolateSample(
-        buffer: ByteBuffer,
+        samples: DoubleArray,
         index: Double,
         totalSamples: Int
-    ): Short {
+    ): Double {
         // 确保索引在有效范围内
         val clampedIndex = index.coerceIn(0.0, (totalSamples - 1).toDouble())
 
@@ -170,35 +163,34 @@ class JitterFilter {
 
         // 获取前后采样值
         val floorSample = if (floorIndex < totalSamples) {
-            buffer.getShort(floorIndex * 2).toDouble()
+            samples[floorIndex]
         } else 0.0
 
         val ceilSample = if (ceilIndex < totalSamples && ceilIndex != floorIndex) {
-            buffer.getShort(ceilIndex * 2).toDouble()
+            samples[ceilIndex]
         } else floorSample
 
         // 计算插值权重
         val fraction = clampedIndex - floorIndex
 
         // 线性插值
-        val interpolatedValue = floorSample * (1.0 - fraction) + ceilSample * fraction
-
-        return interpolatedValue.toInt().toShort()
+        return floorSample * (1.0 - fraction) + ceilSample * fraction
     }
 
-    /**
-     * 便捷的静态方法，与现有SoundSynthesizers风格保持一致
-     */
     companion object {
+        /**
+         * 便捷的静态方法
+         */
         @JvmStatic
         @JvmOverloads
         fun applyJitter(
-            soundData: SoundData,
+            samples: DoubleArray,
             jitterAmount: Double = 0.01,
             jitterFrequency: Double = 2.0,
             noiseCutoff: Double = 20.0,
-            randomSeed: Long = System.currentTimeMillis()
-        ): SoundData {
+            randomSeed: Long = System.currentTimeMillis(),
+            sampleRate: Double = 44100.0
+        ): DoubleArray {
             val filter = JitterFilter()
             val params = JitterParams(
                 jitterAmount = jitterAmount,
@@ -206,7 +198,7 @@ class JitterFilter {
                 noiseCutoff = noiseCutoff,
                 randomSeed = randomSeed
             )
-            return filter.apply(soundData, params)
+            return filter.apply(samples, params, sampleRate)
         }
     }
 }

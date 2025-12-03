@@ -1,9 +1,5 @@
 package cn.solarmoon.spark_core.util.sound.filter
 
-import cn.solarmoon.spark_core.sound.SoundData
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-
 /**
  * 卷积滤波器类
  * 用于应用冲激响应实现混响、延迟、回声等效果
@@ -15,24 +11,18 @@ class ConvolutionFilter(private val impulseResponse: DoubleArray) {
     }
 
     /**
-     * 对声音数据进行卷积处理
-     * @param soundData 输入声音数据
-     * @return 卷积后的声音数据
+     * 对样本数组进行卷积处理
+     * @param samples 输入样本数组，范围[-1.0, 1.0]
+     * @return 卷积后的样本数组
      */
-    fun apply(soundData: SoundData): SoundData {
-        val buffer = soundData.byteBuffer()
-        val format = soundData.audioFormat()
-        val inputSamples = buffer.capacity() / 2
+    fun apply(samples: DoubleArray): DoubleArray {
+        if (samples.isEmpty()) return DoubleArray(0)
 
-        // 将输入样本转换为Double数组
-        val input = DoubleArray(inputSamples)
-        for (i in 0 until inputSamples) {
-            input[i] = buffer.getShort(i * 2).toDouble() / Short.MAX_VALUE.toDouble()
-        }
+        val inputSamples = samples.size
 
         // 卷积结果长度
         val outputLength = inputSamples + impulseResponse.size - 1
-        val output = DoubleArray(outputLength)
+        val result = DoubleArray(outputLength)
 
         // 进行卷积运算
         for (n in 0 until outputLength) {
@@ -40,24 +30,13 @@ class ConvolutionFilter(private val impulseResponse: DoubleArray) {
             for (k in 0 until impulseResponse.size) {
                 val inputIndex = n - k
                 if (inputIndex >= 0 && inputIndex < inputSamples) {
-                    sum += impulseResponse[k] * input[inputIndex]
+                    sum += impulseResponse[k] * samples[inputIndex]
                 }
             }
-            output[n] = sum
+            result[n] = sum
         }
 
-        // 创建输出缓冲区
-        val outputBuffer = ByteBuffer.allocateDirect(outputLength * 2)
-            .order(ByteOrder.LITTLE_ENDIAN)
-
-        // 转换回short并写入缓冲区
-        for (i in 0 until outputLength) {
-            val sampleValue = (output[i].coerceIn(-1.0, 1.0) * Short.MAX_VALUE).toInt()
-            outputBuffer.putShort(i * 2, sampleValue.toShort())
-        }
-
-        outputBuffer.rewind()
-        return SoundData(outputBuffer, format)
+        return result
     }
 
     companion object {
