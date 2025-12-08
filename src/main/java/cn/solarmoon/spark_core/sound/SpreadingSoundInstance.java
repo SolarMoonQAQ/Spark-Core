@@ -171,10 +171,14 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
      * 更新淡入淡出进度
      */
     private void updateFadeState() {
-        if (fadeProgress < fadeInTicks && !isFadingOut) {
+        if (fadeProgress <= fadeInTicks && !isFadingOut) {
             // 淡入阶段
             this.fadeProgress++;
-            this.fadeFactor = Math.clamp((float) fadeProgress / fadeInTicks, 0.0f, 1.0f);
+            float t = Math.clamp((float) fadeProgress / fadeInTicks, 0.0f, 1.0f);
+            // 使用平方根曲线实现等功率淡入
+//            this.fadeFactor = (float) Math.sqrt(t);
+//            this.fadeFactor = t;
+            this.fadeFactor = (1.0f - (float) Math.cos(t * Math.PI)) * 0.5f;  // 余弦曲线
         } else if (isFadingOut && fadeProgress >= -fadeOutTicks) {
             // 淡出完成且没有活跃波面时停止
             if (fadeProgress <= -fadeOutTicks && soundPoints.isEmpty()) {
@@ -185,7 +189,11 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
             }
             // 淡出阶段
             this.fadeProgress--;
-            this.fadeFactor = Math.clamp(1.0f - (float) Math.abs(fadeProgress) / fadeOutTicks, 0.0f, 1.0f);
+            float t = Math.clamp(1.0f - (float) fadeProgress / (-fadeOutTicks), 0.0f, 1.0f);
+            // 使用平方根曲线实现等功率淡出
+//            this.fadeFactor = (float) Math.sqrt(t);
+//            this.fadeFactor = t;
+            this.fadeFactor = (1.0f - (float) Math.cos(t * Math.PI)) * 0.5f;  // 余弦曲线
         }
     }
 
@@ -203,7 +211,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
             this.stop();
             return;
         }
-        this.fadeProgress = 0; // 从当前进度开始淡出
+        this.fadeProgress = 1; // 从当前进度开始淡出，晚1tick以等待过渡音效开始播放
     }
 
     /**
