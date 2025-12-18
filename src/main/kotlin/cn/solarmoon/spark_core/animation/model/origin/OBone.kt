@@ -33,17 +33,48 @@ data class OBone(
     fun getParent(): OBone? = parentName?.let { rootModel.getBone(it) }
 
     /**
-     * 应用当前以及所有父类的骨骼的变换到传入的矩阵中
+     * 判断当前骨骼是否是传入的骨骼的子代骨骼
+     * @param bone 传入的骨骼
      */
+    fun isChildOf(bone: OBone?): Boolean {
+        if (bone == null) return false
+        var isChild = false
+        var parent = getParent()
+        while (parent != null) {
+            if (parent == bone) {
+                isChild = true
+                break
+            }
+            parent = parent.getParent()
+        }
+        return isChild
+    }
+
+    /**
+     * 判断当前骨骼是否是传入的骨骼的子代骨骼
+     * @param name 传入的骨骼的名字
+     */
+    fun isChildOf(name: String): Boolean = isChildOf(rootModel.getBone(name))
+
+    /**
+     * 应用当前以及所有父类的骨骼的变换到传入的矩阵中
+     * @param pose 骨骼的变换数据
+     * @param ma 要应用的矩阵
+     * @param partialTick 插值进度
+     * @param until 应用到哪个父骨骼为止，如果为null则应用至根骨骼
+     */
+    @JvmOverloads
     fun applyTransformWithParents(
         pose: ModelPose,
         ma: Matrix4f,
-        partialTick: Float = 1f
+        partialTick: Float = 1f,
+        until: OBone? = null
     ): Matrix4f {
         val l = arrayListOf<OBone>(this)
         var parent = getParent()
         while (parent != null) {
             l.add(parent)
+            if (parent == until) break
             parent = parent.getParent()
         }
 
@@ -84,7 +115,7 @@ data class OBone(
             SerializeHelper.VEC3_STREAM_CODEC, OBone::rotation,
             OLocator.MAP_STREAM_CODEC, OBone::locators,
             OCube.LIST_STREAM_CODEC, OBone::cubes,
-            { a, b, c, d, l, e -> OBone(a, b.orElse(null), c, d, l , e)}
+            { a, b, c, d, l, e -> OBone(a, b.orElse(null), c, d, l, e) }
         )
 
         @JvmStatic
