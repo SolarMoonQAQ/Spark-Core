@@ -26,6 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Mixin(value = SoundEngine.class)
 public abstract class SoundEngineMixin implements ISoundEngineMixin {
@@ -42,6 +43,8 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
      */
     @Unique
     private final List<SpreadingSoundInstance> spark_core$spreadingSounds = new ArrayList<>();
+    @Unique
+    private final CopyOnWriteArrayList<SpreadingSoundInstance> spark_core$spreadingSoundsBuffer = new CopyOnWriteArrayList<>();
 
     @Shadow
     public void play(SoundInstance soundInstance) {
@@ -51,7 +54,8 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
     @Inject(method = "tickNonPaused", at = @At("RETURN"))
     private void spark_core$tickSpreadingSounds(CallbackInfo ci) {
         Vec3 listenerPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-
+        this.spark_core$spreadingSounds.addAll(this.spark_core$spreadingSoundsBuffer);
+        this.spark_core$spreadingSoundsBuffer.clear();
         Iterator<SpreadingSoundInstance> iterator = this.spark_core$spreadingSounds.iterator();
         while (iterator.hasNext()) {
             SpreadingSoundInstance instance = iterator.next();
@@ -127,7 +131,7 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
 
     @Unique
     public void spark_core$queueSpreadingSound(SpreadingSoundInstance sound) {
-        this.spark_core$spreadingSounds.add(sound);
+        this.spark_core$spreadingSoundsBuffer.add(sound);
     }
 
     @Unique
