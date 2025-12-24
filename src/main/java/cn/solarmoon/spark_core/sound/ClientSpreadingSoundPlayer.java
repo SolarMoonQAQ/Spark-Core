@@ -20,13 +20,14 @@ import org.openjdk.nashorn.internal.objects.annotations.Getter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
 
     public static final RandomSource RANDOM = RandomSource.create();
 
-    private static final Map<UUID, SpreadingSoundInstance> activeInstances = new HashMap<>();
+    private static final ConcurrentHashMap<UUID, SpreadingSoundInstance> activeInstances = new ConcurrentHashMap<>();
 
     public static void playSpreadingSound(SpreadingSoundInstance soundInstance) {
         ISoundManagerMixin soundManager = (ISoundManagerMixin) Minecraft.getInstance().getSoundManager();
