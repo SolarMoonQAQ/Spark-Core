@@ -10,6 +10,7 @@ import net.minecraft.core.Direction
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
+import net.minecraft.util.Brightness
 import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
 import net.neoforged.api.distmarker.Dist
@@ -85,6 +86,8 @@ data class OCube(
 
     /**
      * 在客户端渲染各个顶点
+     * @param gui 是否应用相机偏移,gui=true时不应用相机偏移
+     * @param force 是否跳过uv检查强制渲染,force=true时强制渲染
      */
     @OnlyIn(Dist.CLIENT)
     fun renderVertexes(
@@ -94,7 +97,8 @@ data class OCube(
         packedLight: Int,
         packedOverlay: Int,
         color: Int,
-        gui: Boolean = false //控制是否应用相机偏移
+        gui: Boolean = false, //控制是否应用相机偏移
+        force: Boolean = false //控制是否强制渲染
     ) {
         matrix4f.translate(pivot.toVector3f())
         matrix4f.rotateZYX(rotation.toVector3f())
@@ -102,7 +106,7 @@ data class OCube(
 
         for (polygon in polygonSet) {
             val normal = normal3f.transform(polygon.normal, Vector3f())
-            if (listOf(polygon.u1, polygon.u2, polygon.v1, polygon.v2).all { it == 0f }) continue
+            if (!force && listOf(polygon.u1, polygon.u2, polygon.v1, polygon.v2).all { it == 0f }) continue
             fixInvertedFlatCube(normal)
 
             for (vertex in polygon.vertexes) {

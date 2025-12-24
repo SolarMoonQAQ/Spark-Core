@@ -11,6 +11,7 @@ import org.joml.Matrix4f
 object ModelRenderHelper {
 }
 
+@JvmOverloads
 fun OBone.render(
     bones: ModelPose,
     ma: Matrix4f,
@@ -20,14 +21,16 @@ fun OBone.render(
     packedOverlay: Int,
     color: Int,
     partialTick: Float,
-    gui: Boolean = false
+    gui: Boolean = false,
+    force: Boolean = false
 ) {
     applyTransformWithParents(bones, ma, partialTick)
     cubes.forEach {
-        it.renderVertexes(Matrix4f(ma), normal3f, buffer, packedLight, packedOverlay, color, gui)
+        it.renderVertexes(Matrix4f(ma), normal3f, buffer, packedLight, packedOverlay, color, gui, force)
     }
 }
 
+@JvmOverloads
 fun OModel.render(
     iBones: ModelPose,
     matrix4f: Matrix4f,
@@ -37,25 +40,14 @@ fun OModel.render(
     packedOverlay: Int,
     color: Int,
     partialTick: Float,
-    gui: Boolean = false
+    gui: Boolean = false,
+    force: Boolean = false
 ) {
     bones.values.forEach {
-        it.render(iBones, Matrix4f(matrix4f), normal3f, buffer, packedLight, packedOverlay, color, partialTick, gui)
+        it.render(iBones, Matrix4f(matrix4f), normal3f, buffer, packedLight, packedOverlay, color, partialTick, gui, force)
     }
 }
 
-fun OModel.render(
-    iBones: ModelPose,
-    matrix4f: Matrix4f,
-    normal3f: Matrix3f,
-    buffer: VertexConsumer,
-    packedLight: Int,
-    packedOverlay: Int,
-    color: Int,
-    partialTick: Float
-) {
-    this.render(iBones, matrix4f, normal3f, buffer, packedLight, packedOverlay, color, partialTick, false)
-}
 
 fun IAnimatable<*>.render(
     normal: Matrix3f,
