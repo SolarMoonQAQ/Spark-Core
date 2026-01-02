@@ -58,7 +58,7 @@ class ModelModule: SparkPackModule {
             val locators = it.locators.mapValues { (_, value) ->
                 OLocator(
                     value.offset.div(16.0).multiply(-1.0, 1.0, 1.0),
-                    value.rotation.multiply(-1.0, -1.0, 1.0).div(16.0)
+                    value.rotation.multiply(-1.0, -1.0, 1.0).toRadians()
                 )
             }
             OBone(
