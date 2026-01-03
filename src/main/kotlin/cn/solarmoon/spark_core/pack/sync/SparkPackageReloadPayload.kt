@@ -26,7 +26,8 @@ data class SparkPackageReloadPayload(
                 SparkPackLoader.acceptRemote(payload.packs)
                 context.player().sendSystemMessage(Component.translatable("command.${SparkCore.MOD_ID}.package.reload.success.client", payload.packs.size))
                 SparkPackLoader.LOGGER.info("已从服务器重载 ${payload.packs.size} 个拓展包: ${payload.packs.map { it.meta.id }}")
-                SparkPackLoader.readPackageContent(true)
+                SparkPackLoader.readPackageContent(true, true)
+                SparkPackLoader.injectPackageContent(true, true)
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))
                 return@exceptionally null

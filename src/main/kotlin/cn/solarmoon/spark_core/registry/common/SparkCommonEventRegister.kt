@@ -25,10 +25,10 @@ object SparkCommonEventRegister {
         add(CollisionFuncApplier)
         add(EntityPatchApplier)
         add(StateMachineApplier)
-        add(SparkPackLoaderApplier)
+//        add(SparkPackLoaderApplier)
         add(ASCApplier)
 
-        bus.addListener(SparkPackLoaderApplier::clientStart)
+        bus.addListener(SparkPackLoaderApplier::onClientReload)
     }
 
     private fun add(event: Any) {

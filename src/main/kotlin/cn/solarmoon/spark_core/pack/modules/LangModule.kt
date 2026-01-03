@@ -12,15 +12,16 @@ import net.minecraft.util.profiling.ProfilerFiller
 import net.neoforged.fml.loading.FMLEnvironment
 import java.io.ByteArrayInputStream
 
-class LangModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
+class LangModule : SparkPackModule {
 
     override val id: String = "lang"
+    override val mode: ReadMode = ReadMode.CLIENT_LOCAL_ONLY
     var count = 0
     private val totalTable: MutableMap<String, MutableMap<String, String>> = HashMap()
     private val totalComponentTable: MutableMap<String, MutableMap<String, Component>> = HashMap()
 
-    override fun onStart(isClientSide: Boolean) {
-        if (FMLEnvironment.dist.isClient) {
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (FMLEnvironment.dist.isClient && !fromServer) {
             count = 0
             SparkCore.LOGGER.info("开始注入外部包翻译文本…")
         }
@@ -31,8 +32,9 @@ class LangModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
+        if (fromServer) return
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".json")) {
             val lang = fileName.substringBeforeLast(".")
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
@@ -59,18 +61,13 @@ class LangModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         }
     }
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (FMLEnvironment.dist.isClient) {
             SparkCore.LOGGER.info("从外部包注入了{}种，共{}条翻译文本", count, totalTable.values.sumOf { it.size })
             processAndAddTranslations()
         }
     }
 
-    override fun prepare(resourceManager: ResourceManager, profiler: ProfilerFiller) {}
-
-    override fun apply(void: Unit, resourceManager: ResourceManager, profiler: ProfilerFiller) {
-        processAndAddTranslations()
-    }
 
     private fun processAndAddTranslations() {
         if (FMLEnvironment.dist.isClient) {

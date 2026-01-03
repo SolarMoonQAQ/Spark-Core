@@ -30,7 +30,8 @@ data class SparkPackagePayload(
                     appendLine("]")
                     append("包含模块: ${payload.packs.map { it.modules }.distinct().joinToString(", ")}")
                 })
-                SparkPackLoader.readPackageContent(true)
+                SparkPackLoader.readPackageContent(true, true)
+                SparkPackLoader.injectPackageContent(true, true)
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))
                 return@exceptionally null

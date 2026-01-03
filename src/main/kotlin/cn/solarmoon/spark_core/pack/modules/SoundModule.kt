@@ -36,7 +36,8 @@ class SoundModule : SparkPackModule {
         }
     }
 
-    override fun onStart(isClientSide: Boolean) {
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
         if (FMLEnvironment.dist.isClient) {
             sounds.clear()
 //            generatedSounds.clear()
@@ -49,8 +50,9 @@ class SoundModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
+        if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".ogg")) {
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
@@ -65,7 +67,7 @@ class SoundModule : SparkPackModule {
     }
 
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (FMLEnvironment.dist.isClient) {
             SparkCore.LOGGER.info("从外部包注册了{}种自定义音效资源", sounds.size)
         }

@@ -60,7 +60,7 @@ object SparkPackLoader {
     /**
      * 读取当前资源图内的包的具体数据
      */
-    fun readPackageContent(isClientSide: Boolean) {
+    fun readPackageContent(isClientSide: Boolean, fromServer: Boolean) {
         // 验证并排序资源图依赖
         val orderedPacks = try {
             graph.resolveLoadOrder()
@@ -70,7 +70,7 @@ object SparkPackLoader {
         }
 
         // 按顺序加载所有的资源的所有已注册模块
-        modules.forEach { it.value.onStart(isClientSide) }
+        modules.forEach { it.value.onStart(isClientSide, fromServer) }
         orderedPacks.forEach { pack ->
             modules.forEach { (id, module) ->
                 pack.entries[id]?.forEach { (path, content) ->
@@ -78,15 +78,18 @@ object SparkPackLoader {
                     val fileName = parts.last()
                     val pathSegments = if (parts.size > 1) parts.dropLast(1) else emptyList()
                     try {
-                        module.read(pathSegments, fileName, content, pack, isClientSide)
+                        module.read(pathSegments, fileName, content, pack, isClientSide, fromServer)
                     } catch (e: Exception) {
                         LOGGER.error("包 ${pack.meta.id} 读取 ${module.id} 模块失败: $e")
                     }
                 }
             }
-            LOGGER.info("拓展包 ${pack.meta.id} 已加载完毕")
+            LOGGER.info("拓展包 ${pack.meta.id} 已读取完毕")
         }
-        modules.forEach { it.value.onFinish(isClientSide) }
+    }
+
+    fun injectPackageContent(isClientSide: Boolean, fromServer: Boolean) {
+        modules.forEach { it.value.onFinish(isClientSide, fromServer) }
     }
 
     fun getModule(id: String) = modules[id]

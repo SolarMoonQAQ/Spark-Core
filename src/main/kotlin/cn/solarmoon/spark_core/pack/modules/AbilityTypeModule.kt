@@ -9,12 +9,12 @@ import com.mojang.serialization.JsonOps
 import net.minecraft.resources.ResourceLocation
 import java.nio.charset.StandardCharsets
 
-class AbilityTypeModule: SparkPackModule {
+class AbilityTypeModule : SparkPackModule {
 
     override val id: String = "ability"
 
-    override fun onStart(isClientSide: Boolean) {
-        AbilityTypeManager.initialize()
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (fromServer) AbilityTypeManager.initialize()
     }
 
     override fun read(
@@ -22,8 +22,10 @@ class AbilityTypeModule: SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean,
+        fromServer: Boolean
     ) {
+        if (!fromServer) return
         val res = ResourceLocation.fromNamespaceAndPath(pathSegments[0], fileName.removeSuffix(".json"))
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val serializer = AbilityType.Serializer.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
@@ -32,7 +34,7 @@ class AbilityTypeModule: SparkPackModule {
         }
     }
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         SparkCore.logger("技能加载器").info(buildString {
             appendLine("已加载 ${AbilityTypeManager.allAbilityTypes.size} 个技能:")
             appendLine(AbilityTypeManager.allAbilityTypes.keys.joinToString(", "))

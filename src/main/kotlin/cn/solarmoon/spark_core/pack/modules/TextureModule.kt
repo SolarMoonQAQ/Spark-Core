@@ -14,7 +14,8 @@ class TextureModule : SparkPackModule {
     override val mode: ReadMode = ReadMode.LOCAL_ONLY
 
     var count = 0
-    override fun onStart(isClientSide: Boolean) {
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
         if (FMLEnvironment.dist.isClient) {
             count = 0
             SparkCore.LOGGER.info("开始注册外部包贴图资源…")
@@ -26,8 +27,9 @@ class TextureModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
+        if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".png")) {
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
@@ -49,7 +51,7 @@ class TextureModule : SparkPackModule {
     }
 
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (FMLEnvironment.dist.isClient) {
             SparkCore.LOGGER.info("从外部包注册了{}张贴图资源", count)
         }

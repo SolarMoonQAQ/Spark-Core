@@ -22,8 +22,8 @@ class ModelModule: SparkPackModule {
 
     override val id: String = "models"
 
-    override fun onStart(isClientSide: Boolean) {
-        OModel.ORIGINS.clear()
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (fromServer) OModel.ORIGINS.clear()
     }
 
     override fun read(
@@ -31,8 +31,9 @@ class ModelModule: SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
+        if (!fromServer) return
         if (pathSegments.size < 2) throw IllegalArgumentException("模型的文件路径必须指向一个模型父名称（如：models/minecraft/player.json 指向名为 minecraft:player 的模型）")
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val target = json.asJsonObject.getAsJsonArray("minecraft:geometry").first().asJsonObject.getAsJsonArray("bones")
@@ -75,7 +76,7 @@ class ModelModule: SparkPackModule {
         OModel.ORIGINS[ModelIndex(pathSegments[1], id)] = OModel(coord.x, coord.y, LinkedHashMap(bones))
     }
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         SparkCore.logger("模型加载器").info("\n\uD83D\uDEB6已加载模型\uD83D\uDEB6\n✅${OModel.ORIGINS.map { it.key }}\n")
     }
 

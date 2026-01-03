@@ -45,10 +45,12 @@ class RecipeModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         }
     }
 
-    override fun onStart(isClientSide: Boolean) {
-        count = 0
-        recipes.clear()
-        SparkCore.LOGGER.info("开始注入外部包配方…")
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (fromServer) {
+            count = 0
+            recipes.clear()
+            SparkCore.LOGGER.info("开始注入外部包配方…")
+        }
     }
 
     override fun read(
@@ -56,8 +58,9 @@ class RecipeModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
+        if (!fromServer) return
         if (fileName.endsWith(".json")) {
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
@@ -71,11 +74,13 @@ class RecipeModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
         }
     }
 
-    override fun onFinish(isClientSide: Boolean) {
-        SparkCore.LOGGER.info("从外部包注入了{}个配方", count)
-        if (serverResources != null && recipes.isNotEmpty()) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
+        if (!fromServer) return
+        if (serverResources != null && recipes.isNotEmpty() && !isClientSide) {
+            //注入自定义配方
             val recipeManager = serverResources!!.recipeManager
             registerRecipes(recipeManager, recipes)
+            SparkCore.LOGGER.info("从外部包注入了{}个配方", count)
         }
     }
 
@@ -84,11 +89,6 @@ class RecipeModule : SparkPackModule, SimplePreparableReloadListener<Unit>() {
     }
 
     override fun apply(void: Unit, resourceManager: ResourceManager, profiler: ProfilerFiller) {
-        if (serverResources != null && recipes.isNotEmpty()) {
-            //注入自定义配方
-            val recipeManager = serverResources!!.recipeManager
-            registerRecipes(recipeManager, recipes)
-        }
     }
 
     private fun registerRecipes(manager: RecipeManager, recipes: List<Pair<ResourceLocation, JsonElement>>) {

@@ -23,7 +23,6 @@ object SparkPackModuleRegister {
 
     fun regReloadListener(event: RegisterClientReloadListenersEvent) {
         //注册reload监听器以确保原版进行reload时重新注入外部包内容
-        event.registerReloadListener(lang)
         event.registerReloadListener(recipe)
     }
 
