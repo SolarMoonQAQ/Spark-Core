@@ -1,11 +1,13 @@
 package cn.solarmoon.spark_core.pack.modules
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import com.mojang.blaze3d.platform.NativeImage
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.texture.DynamicTexture
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.packs.PackType
 import net.neoforged.fml.loading.FMLEnvironment
 
 class TextureModule : SparkPackModule {
@@ -27,28 +29,29 @@ class TextureModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean, fromServer: Boolean
+        isClientSide: Boolean,
+        fromServer: Boolean
     ) {
-        if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
-        if (FMLEnvironment.dist.isClient && fileName.endsWith(".png")) {
-            val nameSpace: String = if (pathSegments.isNotEmpty()) {
-                pathSegments[0]
-            } else {
-                SparkCore.MOD_ID
-            }
-            val path: String = if (pathSegments.size >= 2) {
-                "$id/${pathSegments.subList(1, pathSegments.size).joinToString("/")}/$fileName"
-            } else {
-                "$id/$fileName"
-            }
-            val image = NativeImage.read(content)
-            val texture = DynamicTexture(image)
-            Minecraft.getInstance().textureManager.register(
-                ResourceLocation.fromNamespaceAndPath(nameSpace, path), texture
-            )
-            count++
-        }
+        if (!FMLEnvironment.dist.isClient) return
+        if (!fileName.endsWith(".png")) return
+
+        val namespace =
+            pathSegments.firstOrNull() ?: SparkCore.MOD_ID
+
+        val path =
+            if (pathSegments.size >= 2)
+                "textures/${pathSegments.drop(1).joinToString("/")}/$fileName"
+            else
+                "textures/$fileName"
+
+        SparkPackLoaderApplier.CLIENT_PACK.put(
+            PackType.CLIENT_RESOURCES,
+            ResourceLocation.fromNamespaceAndPath(namespace, path),
+            content
+        )
+        count++
     }
+
 
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {

@@ -2,10 +2,13 @@ package cn.solarmoon.spark_core.pack.modules
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.mixin_interface.IClientLanguageMixin
+import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import net.minecraft.client.Minecraft
 import net.minecraft.locale.Language
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.packs.PackType
 import net.minecraft.server.packs.resources.ResourceManager
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener
 import net.minecraft.util.profiling.ProfilerFiller
@@ -16,14 +19,14 @@ class LangModule : SparkPackModule {
 
     override val id: String = "lang"
     override val mode: ReadMode = ReadMode.CLIENT_LOCAL_ONLY
-    var count = 0
+    private var count = 0
     private val totalTable: MutableMap<String, MutableMap<String, String>> = HashMap()
     private val totalComponentTable: MutableMap<String, MutableMap<String, Component>> = HashMap()
 
     override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
         if (FMLEnvironment.dist.isClient && !fromServer) {
             count = 0
-            SparkCore.LOGGER.info("开始注入外部包翻译文本…")
+            SparkCore.LOGGER.info("开始加载外部包语言资源…")
         }
     }
 
@@ -32,39 +35,30 @@ class LangModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean, fromServer: Boolean
+        isClientSide: Boolean,
+        fromServer: Boolean
     ) {
         if (fromServer) return
-        if (FMLEnvironment.dist.isClient && fileName.endsWith(".json")) {
-            val lang = fileName.substringBeforeLast(".")
-            val nameSpace: String = if (pathSegments.isNotEmpty()) {
-                pathSegments[0]
-            } else {
-                SparkCore.MOD_ID
-            }
-            val table = HashMap<String, String>()
-            val componentTable = HashMap<String, Component>()
-            val stream = ByteArrayInputStream(content)
-            try {
-                // 读取翻译表
-                Language.loadFromJson(
-                    stream,
-                    { k, v -> table[k] = v },
-                    { k, v -> componentTable[k] = v })
-            } catch (e: Exception) {
-                SparkCore.LOGGER.warn("Skipped language file: {}:{}", nameSpace, fileName, e)
-            }
-            // 将读取到的翻译表按照不同语言分别加入翻译总表
-            totalTable.getOrPut(lang) { HashMap() }.putAll(table)
-            totalComponentTable.getOrPut(lang) { HashMap() }.putAll(componentTable)
-            count++
-        }
+        if (!FMLEnvironment.dist.isClient) return
+        if (!fileName.endsWith(".json")) return
+
+        val langCode = fileName.substringBeforeLast(".json")
+        val namespace = pathSegments.firstOrNull() ?: SparkCore.MOD_ID
+
+        val path = "lang/$langCode.json"
+
+        SparkPackLoaderApplier.CLIENT_PACK.put(
+            PackType.CLIENT_RESOURCES,
+            ResourceLocation.fromNamespaceAndPath(namespace, path),
+            content
+        )
+
+        count++
     }
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
-        if (FMLEnvironment.dist.isClient) {
-            SparkCore.LOGGER.info("从外部包注入了{}种，共{}条翻译文本", count, totalTable.values.sumOf { it.size })
-            processAndAddTranslations()
+        if (FMLEnvironment.dist.isClient && !fromServer) {
+            SparkCore.LOGGER.info("从外部包注册了 {} 个语言文件", count)
         }
     }
 
@@ -86,6 +80,7 @@ class LangModule : SparkPackModule {
                     table = merge.first as MutableMap<String, String>
                     componentTable = merge.second as MutableMap<String, Component>
                 }
+
                 "zh_tw" -> {
                     merge = mergeTranslations(table, componentTable, "zh_hk")
                     table = merge.first as MutableMap<String, String>
@@ -94,6 +89,7 @@ class LangModule : SparkPackModule {
                     table = merge.first as MutableMap<String, String>
                     componentTable = merge.second as MutableMap<String, Component>
                 }
+
                 "zh_hk" -> {
                     merge = mergeTranslations(table, componentTable, "zh_tw")
                     table = merge.first as MutableMap<String, String>

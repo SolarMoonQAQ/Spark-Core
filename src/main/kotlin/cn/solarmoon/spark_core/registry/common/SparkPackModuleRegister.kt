@@ -8,13 +8,13 @@ import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent
 object SparkPackModuleRegister {
 
     val recipe = RecipeModule()
-    val lang = LangModule()
 
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(ModelModule())
         event.register(AnimationModule())
         event.register(recipe)
-        event.register(lang)
+        event.register(LangModule())
+        event.register(FontModule())
         event.register(TextureModule())
         event.register(AnimStateModule())
         event.register(AbilityTypeModule())

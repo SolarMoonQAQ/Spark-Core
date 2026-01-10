@@ -38,9 +38,9 @@ class SoundModule : SparkPackModule {
 
     override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
         if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
-        if (FMLEnvironment.dist.isClient) {
+        if (isClientSide) {
             sounds.clear()
-//            generatedSounds.clear()
+            generatedSounds.clear()
             SparkCore.LOGGER.info("开始注册外部包自定义音效资源…")
         }
     }
