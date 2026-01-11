@@ -86,6 +86,32 @@ data class OBone(
         return ma
     }
 
+    /**
+     * 应用当前以及所有父类的骨骼的变换到传入的矩阵中，不考虑动画影响，仅考虑模型原始姿态
+     * @param ma 要应用的矩阵
+     * @param until 应用到哪个父骨骼为止，如果为null则应用至根骨骼
+     */
+    @JvmOverloads
+    fun applyTransformWithParents(
+        ma: Matrix4f,
+        until: OBone? = null
+    ): Matrix4f {
+        val l = arrayListOf<OBone>(this)
+        var parent = getParent()
+        while (parent != null) {
+            l.add(parent)
+            if (parent == until) break
+            parent = parent.getParent()
+        }
+
+        for (bone in l.asReversed()) {
+            ma.translate(bone.pivot.toVector3f())
+            ma.rotateZYX(bone.rotation.toVector3f())
+            ma.translate(bone.pivot.toVector3f().negate())
+        }
+        return ma
+    }
+
     companion object {
         @JvmStatic
         val CODEC: Codec<OBone> = RecordCodecBuilder.create {
