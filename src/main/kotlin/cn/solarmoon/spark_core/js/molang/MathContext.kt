@@ -8,13 +8,13 @@ class MathContext() {
     val pi = Math.PI
 
     @HostAccess.Export
-    fun sin(value: Double) = Math.sin(Math.toDegrees(value))
+    fun sin(value: Double) = Math.sin(Math.toRadians(value))
 
     @HostAccess.Export
-    fun cos(value: Double) = Math.cos(Math.toDegrees(value))
+    fun cos(value: Double) = Math.cos(Math.toRadians(value))
 
     @HostAccess.Export
-    fun tan(value: Double) = Math.tan(Math.toDegrees(value))
+    fun tan(value: Double) = Math.tan(Math.toRadians(value))
     @HostAccess.Export
     fun asin(value: Double) = Math.toDegrees(Math.asin(value))
 
