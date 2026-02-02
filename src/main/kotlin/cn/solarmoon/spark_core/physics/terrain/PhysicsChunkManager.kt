@@ -70,18 +70,15 @@ class PhysicsChunkManager(
     }
 
     /**
-     * 根据刚体位置更新构建和激活范围
+     * 根据刚体位置更新构建范围
      */
-    fun updateBuildAndActivation(boundingBoxes: List<AABB>) {
+    fun updateBuild(boundingBoxes: List<AABB>) {
 
         // 1. 收集需要构建的区块
         val chunksToBuild = collectChunksToBuild(boundingBoxes)
 
         // 2. 开始构建新区块
         startBuildingChunks(chunksToBuild)
-
-        // 3. 更新激活状态（只激活已构建的区块）
-        updateActivation(boundingBoxes)
 
     }
 
@@ -147,7 +144,7 @@ class PhysicsChunkManager(
      * 根据BoundingBox列表更新区块激活状态
      * 统一激活所有BoundingBox范围内的section，停用范围外的section
      */
-    private fun updateActivation(boundingBoxes: List<AABB>) {
+    fun updateActivation(boundingBoxes: List<AABB>) {
         if (boundingBoxes.isEmpty()) {
             // 如果没有BoundingBox，停用所有section
             loadedChunks.values.forEach { it.deactivateAll() }

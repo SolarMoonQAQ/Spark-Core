@@ -20,6 +20,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.AABB
 import net.neoforged.neoforge.common.NeoForge
@@ -118,6 +119,7 @@ abstract class PhysicsLevel(
         }
 
         // 收集所有需要激活地形的刚体的包围盒
+        val buildBoxes = mutableListOf<AABB>()
         val activationBoxes = mutableListOf<AABB>()
 
         // 遍历所有刚体，更新其状态
@@ -126,22 +128,25 @@ abstract class PhysicsLevel(
             stateOf(it).update()
             // 收集所有需要激活地形的刚体的包围盒
             val owner = it.owner
-            if (!it.isStatic && owner !is PhysicsChunkSection && it.collideWithGroups and CollisionGroups.TERRAIN != 0) {
-                if (owner !is RigidBodyEntity || (owner.isActive)) {
-                    val aabb = stateOf(it).cachedBoundingBox.toAABB()
-                    if (it is PhysicsRigidBody) {
-                        val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / TPS)
-                        if (delta.length() < 5f)
-                            aabb.expandTowards(delta)
+            if (!it.isStatic && owner !is PhysicsChunkSection) {
+                if (it.collideWithGroups and CollisionGroups.TERRAIN != 0 || owner is Player)
+                    if (owner !is RigidBodyEntity || (owner.isActive) || owner is Player) {
+                        val aabb = stateOf(it).cachedBoundingBox.toAABB()
+                        if (it is PhysicsRigidBody) {
+                            val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / TPS)
+                            if (delta.length() < 5f)
+                                aabb.expandTowards(delta)
+                        }
+                        buildBoxes.add(aabb)
+                        if (owner !is Player) activationBoxes.add(aabb) // 预先构建玩家附近地形，但不实际激活
                     }
-                    activationBoxes.add(aabb)
-                }
             }
         }
 
         // 统一更新地形
         terrainManager.updateDirtySections()
-        terrainManager.updateBuildAndActivation(activationBoxes)
+        terrainManager.updateBuild(activationBoxes)
+        terrainManager.updateActivation(activationBoxes)
 //        if (world.pcoList.isNotEmpty()) SparkCore.LOGGER.debug("tick: " + tickCount + ", " + terrainManager.getStats())
         // 发送物理步进请求（异步）
         scope.launch {
