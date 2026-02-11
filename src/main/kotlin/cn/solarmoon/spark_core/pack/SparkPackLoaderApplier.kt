@@ -7,6 +7,7 @@ import net.minecraft.server.packs.PackSelectionConfig
 import net.minecraft.server.packs.PackType
 import net.minecraft.server.packs.repository.Pack
 import net.minecraft.server.packs.repository.PackSource
+import net.minecraft.server.packs.repository.ServerPacksSource
 import net.minecraft.server.packs.resources.ResourceManager
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
@@ -22,19 +23,20 @@ import java.util.Optional
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 object SparkPackLoaderApplier {
-    val SPARK_PACK_LOCATION = PackLocationInfo(
-        "spark_external_resources",
-        Component.literal("Spark External Content"),
-        PackSource.BUILT_IN,
-        Optional.empty()
-    )
-    val CLIENT_PACK = SparkVirtualResourcePack(SPARK_PACK_LOCATION)
+    val CLIENT_PACK = SparkVirtualResourcePack()
+    val DATA_PACK = SparkVirtualDataPack()
 
+    /**
+     * 重载时加载内容包数据
+     */
     @SubscribeEvent
     fun onServerReload(event: AddReloadListenerEvent) {
         event.addListener(server())
     }
 
+    /**
+     * 初次启动而非重载时加载资源与数据
+     */
     @SubscribeEvent
     fun onAddPackFinders(event: AddPackFindersEvent) {
         if (event.packType == PackType.CLIENT_RESOURCES) {
@@ -42,16 +44,35 @@ object SparkPackLoaderApplier {
             SparkPackLoader.apply {
                 initialize(true)
                 readPackageGraph(true)
-                readPackageContent(true, false)
-                injectPackageContent(true, false)
+                readPackageContent(isClientSide = true, fromServer = false)
+                injectPackageContent(isClientSide = true, fromServer = false)
             }
             // 添加为虚拟资源包
             event.addRepositorySource { consumer ->
                 consumer.accept(
                     Pack.readMetaAndCreate(
-                        SPARK_PACK_LOCATION,
+                        CLIENT_PACK.location(),
                         ClientPackSource.fixedResources(CLIENT_PACK),
                         PackType.CLIENT_RESOURCES,
+                        PackSelectionConfig(true, Pack.Position.BOTTOM, true)
+                    )
+                )
+            }
+        } else if (event.packType == PackType.SERVER_DATA) {
+            // 预加载服务端数据包
+            SparkPackLoader.apply {
+                initialize(false)
+                readPackageGraph(false)
+                readPackageContent(isClientSide = false, fromServer = true)
+                injectPackageContent(isClientSide = false, fromServer = true)
+            }
+            // 添加为虚拟数据包
+            event.addRepositorySource { consumer ->
+                consumer.accept(
+                    Pack.readMetaAndCreate(
+                        DATA_PACK.location(),
+                        ServerPacksSource.fixedResources(DATA_PACK),
+                        PackType.SERVER_DATA,
                         PackSelectionConfig(true, Pack.Position.BOTTOM, true)
                     )
                 )

@@ -31,6 +31,7 @@ class LangModule : SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -43,7 +44,6 @@ class LangModule : SparkPackModule {
         if (!fileName.endsWith(".json")) return
 
         val langCode = fileName.substringBeforeLast(".json")
-        val namespace = pathSegments.firstOrNull() ?: SparkCore.MOD_ID
 
         val path = "lang/$langCode.json"
 

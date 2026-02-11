@@ -20,6 +20,7 @@ class AnimStateModule: SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -27,20 +28,10 @@ class AnimStateModule: SparkPackModule {
         isClientSide: Boolean, fromServer: Boolean
     ) {
         if (!fromServer) return
-        if (pathSegments.size < 2) throw IllegalArgumentException("动画状态机的文件路径必须指向一个具体的模型名称（如：animations/minecraft/player/test.json 指向名为 minecraft:player 的模型，test.json为该模型下的动画）")
+        if (pathSegments.size < 2) throw IllegalArgumentException("动画状态机的文件路径必须指向一个具体的模型名称（如：minecraft/animations/entity/player/test.json 指向名为 minecraft:player 的Entity模型，test.json为该模型下的动画）")
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val animationSet = OAnimStateMachineSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-        val nameSpace = if (pathSegments.size > 1) {
-            pathSegments[0]
-        } else {
-            SparkCore.MOD_ID
-        }
-        val path = if (pathSegments.size >= 2) {
-            pathSegments.subList(1, pathSegments.size).joinToString("/")
-        } else {
-            fileName.removeSuffix(".json")
-        }
-        val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
+        val id = ResourceLocation.fromNamespaceAndPath(namespace, pathSegments[1])
         OAnimStateMachineSet.ORIGINS.getOrPut(id) { OAnimStateMachineSet(mutableMapOf()) }.animationControllers.putAll(animationSet.animationControllers)
     }
 

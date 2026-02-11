@@ -7,12 +7,10 @@ import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent
 
 object SparkPackModuleRegister {
 
-    val recipe = RecipeModule()
-
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(ModelModule())
         event.register(AnimationModule())
-        event.register(recipe)
+        event.register(RecipeModule())
         event.register(LangModule())
         event.register(FontModule())
         event.register(TextureModule())
@@ -21,15 +19,9 @@ object SparkPackModuleRegister {
         event.register(SoundModule())
     }
 
-    fun regReloadListener(event: RegisterClientReloadListenersEvent) {
-        //注册reload监听器以确保原版进行reload时重新注入外部包内容
-        event.registerReloadListener(recipe)
-    }
-
     @JvmStatic
     fun register(bus: IEventBus) {
         bus.addListener(::reg)
-        bus.addListener(::regReloadListener)
     }
 
 }

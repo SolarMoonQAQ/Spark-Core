@@ -46,6 +46,7 @@ class SoundModule : SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -53,16 +54,11 @@ class SoundModule : SparkPackModule {
         isClientSide: Boolean, fromServer: Boolean
     ) {
         if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
-        if (FMLEnvironment.dist.isClient && fileName.endsWith(".ogg")) {
-            val nameSpace: String = if (pathSegments.isNotEmpty()) {
-                pathSegments[0]
-            } else {
-                SparkCore.MOD_ID
-            }
+        if (isClientSide && fileName.endsWith(".ogg")) {
             val path = fileName.removeSuffix(".ogg")
             val audioStream = JOrbisAudioStream(ByteArrayInputStream(content))
             val sound = SoundData(audioStream.readAll(), audioStream.getFormat())
-            sounds[ResourceLocation.fromNamespaceAndPath(nameSpace, path)] = sound
+            sounds[ResourceLocation.fromNamespaceAndPath(namespace, path)] = sound
         }
     }
 

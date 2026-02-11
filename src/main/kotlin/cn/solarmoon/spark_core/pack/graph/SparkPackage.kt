@@ -5,18 +5,36 @@ import net.minecraft.network.codec.StreamCodec
 
 data class SparkPackage(
     val meta: SparkPackMetaInfo,
-    val entries: MutableMap<String, MutableMap<String, ByteArray>> // parentKey = 模块名, key = 文件内路径, value = 文件内容
+    /**
+     * parentKey = namespace
+     * subKey    = 模块名
+     * key       = 文件内路径
+     * value     = 文件内容
+     */
+    val entries: MutableMap<String, MutableMap<String, MutableMap<String, ByteArray>>>
 ) {
 
-    val modules get() = entries.keys
+    val namespaces get() = entries.keys
+
+    fun modulesOf(namespace: String): Set<String> =
+        entries[namespace]?.keys ?: emptySet()
 
     companion object {
+
         val STREAM_CODEC = StreamCodec.composite(
             SparkPackMetaInfo.STREAM_CODEC, SparkPackage::meta,
             ByteBufCodecs.map(
                 ::LinkedHashMap,
                 ByteBufCodecs.STRING_UTF8,
-                ByteBufCodecs.map(::LinkedHashMap, ByteBufCodecs.STRING_UTF8, ByteBufCodecs.BYTE_ARRAY)
+                ByteBufCodecs.map(
+                    ::LinkedHashMap,
+                    ByteBufCodecs.STRING_UTF8,
+                    ByteBufCodecs.map(
+                        ::LinkedHashMap,
+                        ByteBufCodecs.STRING_UTF8,
+                        ByteBufCodecs.BYTE_ARRAY
+                    )
+                )
             ), SparkPackage::entries,
             ::SparkPackage
         )

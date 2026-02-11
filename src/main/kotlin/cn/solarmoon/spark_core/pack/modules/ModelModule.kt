@@ -27,6 +27,7 @@ class ModelModule: SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -34,7 +35,7 @@ class ModelModule: SparkPackModule {
         isClientSide: Boolean, fromServer: Boolean
     ) {
         if (!fromServer) return
-        if (pathSegments.size < 2) throw IllegalArgumentException("模型的文件路径必须指向一个模型父名称（如：models/minecraft/player.json 指向名为 minecraft:player 的模型）")
+        if (pathSegments.isEmpty()) throw IllegalArgumentException("模型的文件路径必须指向一个模型父名称（如：minecraft/models/entity/player.json 指向名为 minecraft:player 的entity模型）")
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val target = json.asJsonObject.getAsJsonArray("minecraft:geometry").first().asJsonObject.getAsJsonArray("bones")
         // 单独读取贴图长宽
@@ -71,9 +72,9 @@ class ModelModule: SparkPackModule {
                 ArrayList(cubes)
             )
         }
-        val id = ResourceLocation.fromNamespaceAndPath(pathSegments[0], fileName.removeSuffix(".json"))
+        val id = ResourceLocation.fromNamespaceAndPath(namespace, fileName.removeSuffix(".json"))
 
-        OModel.ORIGINS[ModelIndex(pathSegments[1], id)] = OModel(coord.x, coord.y, LinkedHashMap(bones))
+        OModel.ORIGINS[ModelIndex(pathSegments[0], id)] = OModel(coord.x, coord.y, LinkedHashMap(bones))
     }
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {

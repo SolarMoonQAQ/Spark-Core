@@ -23,6 +23,7 @@ class FontModule : SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -32,8 +33,6 @@ class FontModule : SparkPackModule {
     ) {
         if (fromServer) return
         if (!isClientSide) return
-
-        val namespace = pathSegments.firstOrNull() ?: SparkCore.MOD_ID
 
         when {
             fileName.endsWith(".json") -> {

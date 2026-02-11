@@ -37,18 +37,19 @@ object SparkPackLoader {
      */
     fun readPackageGraph(isClientSide: Boolean) {
         reset()
-        // 如果目录不存在，创建
+
         val sparkModulesDir = FMLPaths.GAMEDIR.get().resolve(MODULE_NAME)
         Files.createDirectories(sparkModulesDir)
 
-        // 读取并注册每个包
         Files.list(sparkModulesDir).use { paths ->
             paths.forEach { path ->
                 try {
                     readablePathTypes.firstOrNull { it.match(path) }?.let {
                         val pack = it.readAsPackage(path, isClientSide)
                         graph.addNode(pack)
-                        LOGGER.info("成功读取拓展包 ${pack.meta.id}, 包含模块: ${pack.modules}")
+                        LOGGER.info(
+                            "成功读取拓展包 ${pack.meta.id}, 命名空间: ${pack.namespaces}"
+                        )
                     }
                 } catch (e: Exception) {
                     LOGGER.error("拓展包读取失败: $path - ${e.message}")
@@ -61,7 +62,6 @@ object SparkPackLoader {
      * 读取当前资源图内的包的具体数据
      */
     fun readPackageContent(isClientSide: Boolean, fromServer: Boolean) {
-        // 验证并排序资源图依赖
         val orderedPacks = try {
             graph.resolveLoadOrder()
         } catch (e: Exception) {
@@ -69,27 +69,46 @@ object SparkPackLoader {
             return
         }
 
-        // 按顺序加载所有的资源的所有已注册模块
-        modules.forEach { it.value.onStart(isClientSide, fromServer) }
-        orderedPacks.forEach { pack ->
-            modules.forEach { (id, module) ->
-                pack.entries[id]?.forEach { (path, content) ->
-                    val parts = path.split("/")
-                    val fileName = parts.last()
-                    val pathSegments = if (parts.size > 1) parts.dropLast(1) else emptyList()
-                    try {
-                        module.read(pathSegments, fileName, content, pack, isClientSide, fromServer)
-                    } catch (e: Exception) {
-                        LOGGER.error("包 ${pack.meta.id} 读取 ${module.id} 模块失败: $e")
+        // 按模块注册顺序调用，避免模块依赖问题
+        modules.values.forEach { it.onStart(isClientSide, fromServer) }
+
+        modules.forEach { (moduleId, module) ->
+            orderedPacks.forEach { pack ->
+                pack.entries.forEach { (namespace, moduleMap) ->
+                    val files = moduleMap[moduleId] ?: return@forEach
+
+                    for ((path, content) in files) {
+                        val parts = path.split("/")
+                        val fileName = parts.last()
+                        val pathSegments =
+                            if (parts.size > 1) parts.dropLast(1) else emptyList()
+
+                        try {
+                            module.read(
+                                namespace,
+                                pathSegments,
+                                fileName,
+                                content,
+                                pack,
+                                isClientSide,
+                                fromServer
+                            )
+                        } catch (e: Exception) {
+                            LOGGER.error("包 ${pack.meta.id} 读取 ${module.id} 模块失败: $e")
+                        }
                     }
                 }
             }
-            LOGGER.info("拓展包 ${pack.meta.id} 已读取完毕")
+        }
+
+        orderedPacks.forEach {
+            LOGGER.info("拓展包 ${it.meta.id} 已读取完毕")
         }
     }
 
+
     fun injectPackageContent(isClientSide: Boolean, fromServer: Boolean) {
-        modules.forEach { it.value.onFinish(isClientSide, fromServer) }
+        modules.values.forEach { it.onFinish(isClientSide, fromServer) }
     }
 
     fun getModule(id: String) = modules[id]
@@ -101,7 +120,12 @@ object SparkPackLoader {
     fun collectRemote(): List<SparkPackage> {
         val results = mutableListOf<SparkPackage>()
         graph.originNodes.values.forEach { oPack ->
-            results.add(SparkPackage(oPack.meta, oPack.entries.filter { getModule(it.key)?.mode?.shouldSend() == true }.toMutableMap()))
+            val filtered = oPack.entries.mapValues { (_, modules) ->
+                modules.filter { getModule(it.key)?.mode?.shouldSend() == true }
+                    .toMutableMap()
+            }.toMutableMap()
+
+            results.add(SparkPackage(oPack.meta, filtered))
         }
         return results.toList()
     }
@@ -114,10 +138,8 @@ object SparkPackLoader {
             val id = newPack.meta.id
             val existing = graph.originNodes[id]
             if (existing != null) {
-                // 已存在 → 用新的 entries 替换
                 existing.entries.putAll(newPack.entries)
             } else {
-                // 不存在 → 直接放进去
                 graph.originNodes[id] = newPack
             }
         }

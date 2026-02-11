@@ -25,24 +25,20 @@ class TextureModule : SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean,
-        fromServer: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (!FMLEnvironment.dist.isClient) return
+        if (!isClientSide) return
         if (!fileName.endsWith(".png")) return
-
-        val namespace =
-            pathSegments.firstOrNull() ?: SparkCore.MOD_ID
-
-        val path =
-            if (pathSegments.size >= 2)
-                "textures/${pathSegments.drop(1).joinToString("/")}/$fileName"
-            else
-                "textures/$fileName"
+        val path = if (pathSegments.isEmpty()) {
+            "textures/$fileName"
+        } else {
+            "textures/${pathSegments.joinToString("/")}/$fileName"
+        }
 
         SparkPackLoaderApplier.CLIENT_PACK.put(
             PackType.CLIENT_RESOURCES,
@@ -51,8 +47,6 @@ class TextureModule : SparkPackModule {
         )
         count++
     }
-
-
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (FMLEnvironment.dist.isClient) {

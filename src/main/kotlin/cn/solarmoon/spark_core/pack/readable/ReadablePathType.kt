@@ -21,28 +21,44 @@ interface ReadablePathType {
         val source = readAllEntries(path)
 
         // 找 META
-        val metaEntry = source.entries.firstOrNull { it.key == SparkPackLoader.META_PATH } ?: throw IllegalArgumentException("缺少 ${SparkPackLoader.META_PATH} 元数据文件")
+        val metaEntry = source.entries.firstOrNull { it.key == SparkPackLoader.META_PATH }
+            ?: throw IllegalArgumentException("缺少 ${SparkPackLoader.META_PATH} 元数据文件")
+
         val metaJson = metaEntry.value.toString(StandardCharsets.UTF_8)
         val meta = SparkPackMetaInfo.CODEC
             .parse(JsonOps.INSTANCE, JsonParser.parseString(metaJson))
             .getOrThrow { throw IllegalArgumentException("元数据解析失败: $it") }
 
-        // 过滤模块文件夹
+        // 过滤非 namespace/模块/文件 结构
         val filtered = source
             .filter { it.key != SparkPackLoader.META_PATH }
-            .filter {
-                val mode = SparkPackLoader.getModule(it.key.substringBefore("/"))?.mode
-                mode?.shouldRead(isClientSide) == true // 只读取指定模块，没有的模块不会读取
+            .filter { path ->
+                val parts = path.key.split("/")
+                if (parts.size < 3) return@filter false
+
+                val moduleId = parts[1]
+                val mode = SparkPackLoader.getModule(moduleId)?.mode
+                mode?.shouldRead(isClientSide) == true
             }
 
-        // 按模块对象分组（保留原始 key）
+        // namespace → module → files
         val grouped = filtered.entries
             .groupBy(
-                keySelector = { it.key.substringBefore("/") }, // 模块名
-                valueTransform = { it.key.substringAfter("/") to it.value } // 去掉模块名前缀，只保留模块内路径
+                keySelector = { it.key.substringBefore("/") }, // namespace
+                valueTransform = { entry ->
+                    val remainder = entry.key.substringAfter("/")
+                    val moduleId = remainder.substringBefore("/")
+                    val innerPath = remainder.substringAfter("/")
+                    moduleId to (innerPath to entry.value)
+                }
             )
-            .mapValues { (_, files) ->
-                files.toMap().toMutableMap()
+            .mapValues { (_, values) ->
+                values
+                    .groupBy({ it.first }) { it.second }
+                    .mapValues { (_, files) ->
+                        files.toMap().toMutableMap()
+                    }
+                    .toMutableMap()
             }
             .toMutableMap()
 

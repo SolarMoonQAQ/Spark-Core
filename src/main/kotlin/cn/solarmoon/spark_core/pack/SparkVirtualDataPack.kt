@@ -14,41 +14,39 @@ import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.util.EnumMap
 import java.util.Optional
-import kotlin.collections.component1
-import kotlin.collections.component2
 
-class SparkVirtualResourcePack() : PackResources {
+class SparkVirtualDataPack : PackResources {
 
-    val SPARK_RESOURCE_PACK_LOCATION = PackLocationInfo(
-        "spark_external_resources",
+    val SPARK_DATA_PACK_LOCATION = PackLocationInfo(
+        "spark_external_data",
         Component.literal("Spark External Content"),
         PackSource.BUILT_IN,
         Optional.empty()
     )
 
-    // PackType -> ResourceLocation -> bytes
-    private val resources = EnumMap<PackType, MutableMap<ResourceLocation, ByteArray>>(PackType::class.java)
+    private val data =
+        EnumMap<PackType, MutableMap<ResourceLocation, ByteArray>>(PackType::class.java)
 
     init {
         PackType.entries.forEach {
-            resources[it] = mutableMapOf()
+            data[it] = HashMap()
         }
     }
 
     fun put(
         type: PackType,
         id: ResourceLocation,
-        bytes: ByteArray
+        data: ByteArray
     ) {
-        this.resources[type]!![id] = bytes
+        this.data[type]!![id] = data
     }
 
     override fun getResource(
         type: PackType,
         location: ResourceLocation
     ): IoSupplier<InputStream>? {
-        val bytes = resources[type]?.get(location) ?: return null
-        return IoSupplier { ByteArrayInputStream(bytes) }
+        val data = data[type]?.get(location) ?: return null
+        return IoSupplier { ByteArrayInputStream(data) }
     }
 
     override fun listResources(
@@ -57,7 +55,7 @@ class SparkVirtualResourcePack() : PackResources {
         path: String,
         output: PackResources.ResourceOutput
     ) {
-        resources[type]!!
+        data[type]!!
             .filter { (id, _) ->
                 id.namespace == namespace && id.path.startsWith(path)
             }
@@ -66,9 +64,8 @@ class SparkVirtualResourcePack() : PackResources {
             }
     }
 
-
     override fun getNamespaces(type: PackType): Set<String> =
-        resources[type]!!.keys.mapTo(HashSet()) { it.namespace }
+        data[type]!!.keys.mapTo(HashSet()) { it.namespace }
 
     override fun <T> getMetadataSection(serializer: MetadataSectionSerializer<T>): T? {
         if (serializer == PackMetadataSection.TYPE) {
@@ -82,8 +79,6 @@ class SparkVirtualResourcePack() : PackResources {
     }
 
     override fun getRootResource(vararg paths: String): IoSupplier<InputStream>? = null
-    override fun location(): PackLocationInfo = SPARK_RESOURCE_PACK_LOCATION
+    override fun location(): PackLocationInfo = SPARK_DATA_PACK_LOCATION
     override fun close() {}
-
 }
-

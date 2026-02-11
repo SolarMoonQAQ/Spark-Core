@@ -18,20 +18,30 @@ data class SparkPackagePayload(
     }
 
     companion object {
+
         @JvmStatic
         fun handleInClient(payload: SparkPackagePayload, context: IPayloadContext) {
             context.enqueueWork {
                 SparkPackLoader.acceptRemote(payload.packs)
+
                 SparkPackLoader.LOGGER.info(buildString {
                     appendLine()
                     appendLine("💻已从服务器接收拓展包💻")
                     append("[")
                     append(payload.packs.map { it.meta.id }.joinToString(", "))
                     appendLine("]")
-                    append("包含模块: ${payload.packs.map { it.modules }.distinct().joinToString(", ")}")
+
+                    val modules = payload.packs
+                        .flatMap { it.entries.values }          // 所有 namespace
+                        .flatMap { it.keys }                     // 所有 moduleId
+                        .distinct()
+
+                    append("包含模块: ${modules.joinToString(", ")}")
                 })
+
                 SparkPackLoader.readPackageContent(true, true)
                 SparkPackLoader.injectPackageContent(true, true)
+
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))
                 return@exceptionally null
@@ -41,7 +51,9 @@ data class SparkPackagePayload(
         }
 
         @JvmStatic
-        val TYPE = CustomPacketPayload.Type<SparkPackagePayload>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "spark_package_graph"))
+        val TYPE = CustomPacketPayload.Type<SparkPackagePayload>(
+            ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "spark_package_graph")
+        )
 
         @JvmStatic
         val STREAM_CODEC = StreamCodec.composite(

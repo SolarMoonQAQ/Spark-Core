@@ -18,6 +18,7 @@ class AnimationModule: SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -26,11 +27,11 @@ class AnimationModule: SparkPackModule {
         fromServer: Boolean
     ) {
         if (!fromServer) return
-        if (pathSegments.size < 2) throw IllegalArgumentException("动画的文件路径必须指向一个具体的模型名称（如：animations/minecraft/player/test.json 指向名为 minecraft:player 的模型，test.json为该模型下的动画）")
+        if (pathSegments.size < 2) throw IllegalArgumentException("动画的文件路径必须指向一个具体的模型名称（如：minecraft/animations/entity/player/test.json 指向名为 minecraft:player 的entity类模型，test.json为该模型下的动画）")
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val animationSet = OAnimationSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-        val id = ResourceLocation.fromNamespaceAndPath(pathSegments[0], pathSegments[2])
-        OAnimationSet.ORIGINS.getOrPut(ModelIndex(pathSegments[1], id)) { OAnimationSet.EMPTY }.animations.putAll(animationSet.animations)
+        val id = ResourceLocation.fromNamespaceAndPath(namespace, pathSegments[1])
+        OAnimationSet.ORIGINS.getOrPut(ModelIndex(pathSegments[0], id)) { OAnimationSet.EMPTY }.animations.putAll(animationSet.animations)
     }
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {

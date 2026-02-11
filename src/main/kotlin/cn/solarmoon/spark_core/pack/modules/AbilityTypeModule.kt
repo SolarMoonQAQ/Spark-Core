@@ -18,6 +18,7 @@ class AbilityTypeModule : SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -26,7 +27,7 @@ class AbilityTypeModule : SparkPackModule {
         fromServer: Boolean
     ) {
         if (!fromServer) return
-        val res = ResourceLocation.fromNamespaceAndPath(pathSegments[0], fileName.removeSuffix(".json"))
+        val res = ResourceLocation.fromNamespaceAndPath(namespace, fileName.removeSuffix(".json"))
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val serializer = AbilityType.Serializer.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
         AbilityTypeManager.apply {
