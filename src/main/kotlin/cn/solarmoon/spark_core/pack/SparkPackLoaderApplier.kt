@@ -59,13 +59,6 @@ object SparkPackLoaderApplier {
                 )
             }
         } else if (event.packType == PackType.SERVER_DATA) {
-            // 预加载服务端数据包
-            SparkPackLoader.apply {
-                initialize(false)
-                readPackageGraph(false)
-                readPackageContent(isClientSide = false, fromServer = true)
-                injectPackageContent(isClientSide = false, fromServer = true)
-            }
             // 添加为虚拟数据包
             event.addRepositorySource { consumer ->
                 consumer.accept(
@@ -95,13 +88,13 @@ object SparkPackLoaderApplier {
                 SparkPackLoader.apply {
                     initialize(false)
                     readPackageGraph(false)
-                    readPackageContent(false, true)
+                    readPackageContent(isClientSide = false, fromServer = true)
                 }
             }
 
             override fun apply(unit: Unit, manager: ResourceManager, profiler: ProfilerFiller) {
                 SparkPackLoader.apply {
-                    injectPackageContent(false, true)
+                    injectPackageContent(isClientSide = false, fromServer = true)
                 }
             }
         }
@@ -113,13 +106,13 @@ object SparkPackLoaderApplier {
                 SparkPackLoader.apply {
                     initialize(true)
                     readPackageGraph(true)
-                    readPackageContent(true, false)
+                    readPackageContent(isClientSide = true, fromServer = false)
                 }
             }
 
             override fun apply(unit: Unit, manager: ResourceManager, profiler: ProfilerFiller) {
                 SparkPackLoader.apply {
-                    injectPackageContent(true, false)
+                    injectPackageContent(isClientSide = true, fromServer = false)
                 }
             }
         }
