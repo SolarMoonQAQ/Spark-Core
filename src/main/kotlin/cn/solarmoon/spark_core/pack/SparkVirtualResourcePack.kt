@@ -17,10 +17,10 @@ import java.util.Optional
 import kotlin.collections.component1
 import kotlin.collections.component2
 
-class SparkVirtualResourcePack() : PackResources {
+class SparkVirtualResourcePack(val type: PackType, val id: String) : PackResources {
 
     val SPARK_RESOURCE_PACK_LOCATION = PackLocationInfo(
-        "spark_external_resources",
+        id,
         Component.literal("Spark External Content"),
         PackSource.BUILT_IN,
         Optional.empty()
@@ -34,6 +34,8 @@ class SparkVirtualResourcePack() : PackResources {
             resources[it] = mutableMapOf()
         }
     }
+
+    fun size(type: PackType) = resources[type]?.size ?: 0
 
     fun put(
         type: PackType,
@@ -75,7 +77,7 @@ class SparkVirtualResourcePack() : PackResources {
             @Suppress("UNCHECKED_CAST")
             return PackMetadataSection(
                 Component.literal("Spark External Content Pack"),
-                SharedConstants.getCurrentVersion().getPackVersion(PackType.CLIENT_RESOURCES)
+                SharedConstants.getCurrentVersion().getPackVersion(type)
             ) as T
         }
         return null

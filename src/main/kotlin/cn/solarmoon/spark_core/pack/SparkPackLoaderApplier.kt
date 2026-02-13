@@ -19,12 +19,13 @@ import net.neoforged.fml.loading.FMLEnvironment
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent
 import net.neoforged.neoforge.event.AddPackFindersEvent
 import net.neoforged.neoforge.event.AddReloadListenerEvent
+import org.jetbrains.kotlin.analysis.decompiler.stub.flags.DATA
 import java.util.Optional
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 object SparkPackLoaderApplier {
-    val CLIENT_PACK = SparkVirtualResourcePack()
-    val DATA_PACK = SparkVirtualDataPack()
+    val CLIENT_PACK = SparkVirtualResourcePack(PackType.CLIENT_RESOURCES, "spark_external_assets")
+    val DATA_PACK = SparkVirtualResourcePack(PackType.SERVER_DATA, "spark_external_data")
 
     /**
      * 重载时加载内容包数据
@@ -40,12 +41,14 @@ object SparkPackLoaderApplier {
     @SubscribeEvent
     fun onAddPackFinders(event: AddPackFindersEvent) {
         if (event.packType == PackType.CLIENT_RESOURCES) {
-            // 预加载客户端资源
-            SparkPackLoader.apply {
-                initialize(true)
-                readPackageGraph(true)
-                readPackageContent(isClientSide = true, fromServer = false)
-                injectPackageContent(isClientSide = true, fromServer = false)
+            if (DATA_PACK.size(PackType.CLIENT_RESOURCES) == 0) {
+                // 首次进入游戏，未触发重载时，预加载客户端资源
+                SparkPackLoader.apply {
+                    initialize(true)
+                    readPackageGraph(true)
+                    readPackageContent(isClientSide = true, fromServer = false)
+                    injectPackageContent(isClientSide = true, fromServer = false)
+                }
             }
             // 添加为虚拟资源包
             event.addRepositorySource { consumer ->
@@ -59,6 +62,15 @@ object SparkPackLoaderApplier {
                 )
             }
         } else if (event.packType == PackType.SERVER_DATA) {
+            if (DATA_PACK.size(PackType.SERVER_DATA) == 0) {
+                // 首次进入世界，未触发重载时，预加载服务器数据
+                SparkPackLoader.apply {
+                    initialize(false)
+                    readPackageGraph(false)
+                    readPackageContent(isClientSide = false, fromServer = true)
+                    injectPackageContent(isClientSide = false, fromServer = true)
+                }
+            }
             // 添加为虚拟数据包
             event.addRepositorySource { consumer ->
                 consumer.accept(
