@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.terrain
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import net.minecraft.core.SectionPos
 import net.minecraft.network.FriendlyByteBuf

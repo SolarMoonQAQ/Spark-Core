@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.visual_effect.shape
 
+import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.physics.body.CollisionGroups
 import cn.solarmoon.spark_core.physics.body.stateOf
 import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel

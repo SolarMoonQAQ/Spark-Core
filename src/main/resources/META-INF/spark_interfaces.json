@@ -1,7 +1,4 @@
 {
-  "net/minecraft/world/level/Level": [
-    "cn/solarmoon/spark_core/LevelPatch"
-  ],
   "net/minecraft/world/entity/Entity": [
     "cn/solarmoon/spark_core/EntityPatch"
   ],

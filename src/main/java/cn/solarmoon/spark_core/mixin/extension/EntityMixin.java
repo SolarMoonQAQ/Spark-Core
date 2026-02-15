@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.mixin.extension;
 
 import cn.solarmoon.spark_core.EntityPatch;
 import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.entity.attack.HurtData;
 import cn.solarmoon.spark_core.gas.*;
 import cn.solarmoon.spark_core.gas.sync.*;
@@ -46,7 +47,7 @@ public class EntityMixin implements EntityPatch {
 
     @Override
     public @NotNull PhysicsLevel getPhysicsLevel() {
-        return level.getPhysicsLevel();
+        return SparkLevel.getPhysicsLevel(level);
     }
 
     @Override

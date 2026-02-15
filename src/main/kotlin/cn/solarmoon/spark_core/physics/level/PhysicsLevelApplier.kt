@@ -1,5 +1,7 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.api.physicsLevel
+import cn.solarmoon.spark_core.api.processTasks
 import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent
 import cn.solarmoon.spark_core.util.PPhase
 import net.minecraft.world.level.ChunkPos

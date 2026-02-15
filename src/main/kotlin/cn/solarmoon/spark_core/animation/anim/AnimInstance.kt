@@ -1,27 +1,19 @@
 package cn.solarmoon.spark_core.animation.anim
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
-import cn.solarmoon.spark_core.js.eval
+import cn.solarmoon.spark_core.api.physicsLevel
+import cn.solarmoon.spark_core.api.submitImmediateTask
 import cn.solarmoon.spark_core.js.molang.JSMolangValue
-import cn.solarmoon.spark_core.js.safeGetOrCreateJSContext
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import kotlinx.serialization.json.Json
 import net.minecraft.nbt.CompoundTag
 import ru.nsk.kstatemachine.event.Event
-import ru.nsk.kstatemachine.serialization.persistence.KStateMachineSerializersModule
-import ru.nsk.kstatemachine.state.activeStates
-import ru.nsk.kstatemachine.state.initialState
-import ru.nsk.kstatemachine.state.onEntry
-import ru.nsk.kstatemachine.state.state
-import ru.nsk.kstatemachine.state.transition
+import ru.nsk.kstatemachine.state.*
 import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
 import ru.nsk.kstatemachine.transition.onTriggered
-import kotlin.collections.getOrPut
 import kotlin.reflect.KClass
 
 class AnimInstance internal constructor(
