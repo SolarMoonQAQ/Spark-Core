@@ -135,12 +135,13 @@ abstract class PhysicsLevel(
             if (!it.isStatic && owner !is PhysicsChunkSection) {
                 if (it.collideWithGroups and CollisionGroups.TERRAIN != 0 || owner is Player)
                     if (owner !is RigidBodyEntity || (owner.isActive)) {
-                        val aabb = stateOf(it).cachedBoundingBox.toAABB()
+                        var aabb = stateOf(it).cachedBoundingBox.toAABB()
                         if (it is PhysicsRigidBody) {
                             val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / TPS)
                             if (delta.length() < 5f)
-                                aabb.expandTowards(delta)
+                                aabb = aabb.expandTowards(delta)
                         }
+                        if (owner is Player) aabb = aabb.expandTowards(0.0, -1.1, 0.0)
                         buildBoxes.add(aabb)
                         activationBoxes.add(aabb)
                     }

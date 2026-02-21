@@ -1,7 +1,16 @@
 package cn.solarmoon.spark_core.physics.terrain
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.physics.body.CollisionGroups
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.util.PPhase
+import cn.solarmoon.spark_core.util.toVec3
+import com.jme3.bullet.collision.PhysicsCollisionEvent
+import com.jme3.bullet.collision.PhysicsCollisionListener
+import com.jme3.bullet.collision.shapes.SphereCollisionShape
+import com.jme3.bullet.objects.PhysicsGhostObject
+import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import io.netty.util.internal.ConcurrentSet
 import kotlinx.coroutines.*
@@ -24,7 +33,9 @@ import java.util.concurrent.Executors
  */
 class PhysicsChunkManager(
     private val physicsLevel: PhysicsLevel
-) {
+): PhysicsCollisionListener {
+    private val activator = PhysicsGhostObject(SphereCollisionShape(2f))
+
     // 已加载的物理区块（包含构建状态）
     private val loadedChunks = mutableMapOf<ChunkPos, PhysicsChunk>()
 
@@ -55,6 +66,10 @@ class PhysicsChunkManager(
         get() = loadedChunks.values.sumOf { it.getTotalSectionCount() }
     private val activeSections: Int
         get() = loadedChunks.values.sumOf { it.getActiveSectionCount() }
+
+    init {
+        activator.addCollideWithGroup(CollisionGroups.PHYSICS_BODY)
+    }
 
     /**
      * 卸载指定区块的物理表示
@@ -266,6 +281,12 @@ class PhysicsChunkManager(
         blockPositions.forEach { blockPos ->
             val sectionPos = SectionPos.of(blockPos)
             dirtySections.add(sectionPos)
+            physicsLevel.submitDeduplicatedTask("terrain_update_activate_${blockPos.toShortString()}", PPhase.ALL) {
+                activator.setPhysicsLocation(
+                    blockPos.toVec3().add(0.5, 0.5, 0.5).toBVector3f()
+                )
+                physicsLevel.world.contactTest(activator, this)
+            }
         }
         markDirtySections(dirtySections)
     }
@@ -334,5 +355,21 @@ class PhysicsChunkManager(
         terrainBuilderScope.cancel()
         (terrainBuilderExecutor.executor as? ExecutorService)?.shutdownNow()
 
+    }
+
+    /**
+     * 激活因地形破坏而受到影响的动态休眠刚体
+     */
+    override fun collision(event: PhysicsCollisionEvent) {
+        val bodyA = event.objectA
+        val bodyB = event.objectB
+        var rigid : PhysicsRigidBody? = null
+        if (bodyA == activator && bodyB is PhysicsRigidBody)
+            rigid = bodyB
+        else if (bodyB == activator && bodyA is PhysicsRigidBody)
+            rigid = bodyA
+        if (rigid == null) return
+        if (rigid.isDynamic && !rigid.isActive)
+            rigid.activate()
     }
 }
