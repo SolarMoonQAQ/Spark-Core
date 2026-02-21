@@ -5,12 +5,11 @@ import cn.solarmoon.spark_core.util.div
 import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.client.Minecraft
+import net.minecraft.client.renderer.RenderType.gui
 import net.minecraft.core.Direction
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
-import net.minecraft.util.Brightness
 import net.minecraft.world.phys.Vec2
 import net.minecraft.world.phys.Vec3
 import net.neoforged.api.distmarker.Dist
@@ -97,7 +96,6 @@ data class OCube(
         packedLight: Int,
         packedOverlay: Int,
         color: Int,
-        gui: Boolean = false, //控制是否应用相机偏移
         force: Boolean = false //控制是否强制渲染
     ) {
         matrix4f.translate(pivot.toVector3f())
@@ -110,9 +108,7 @@ data class OCube(
             fixInvertedFlatCube(normal)
 
             for (vertex in polygon.vertexes) {
-                var cam = Vector3f()
-                if (!gui) cam = Minecraft.getInstance().gameRenderer.mainCamera.position.toVector3f()
-                val vector3f2 = matrix4f.transformPosition(vertex.x, vertex.y, vertex.z, Vector3f()).sub(cam)
+                val vector3f2 = matrix4f.transformPosition(vertex.x, vertex.y, vertex.z, Vector3f())
                 buffer.addVertex(
                     vector3f2.x(), vector3f2.y(), vector3f2.z(), color,
                     vertex.u, vertex.v,

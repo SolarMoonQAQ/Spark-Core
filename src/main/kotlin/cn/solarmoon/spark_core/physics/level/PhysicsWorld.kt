@@ -8,13 +8,10 @@ import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.util.triggerEvent
 import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSoftSpace
-import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.SolverMode
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsBody
-import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Vector3f
-import net.minecraft.world.entity.LivingEntity
 import net.neoforged.neoforge.common.NeoForge
 
 class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(

@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.animation.renderer
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer
-import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
 import net.minecraft.client.model.EntityModel

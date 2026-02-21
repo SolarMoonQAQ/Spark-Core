@@ -40,7 +40,11 @@ abstract class PhysicsLevel(
     }
 
     // 协程配置
-    val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    val dispatcher = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, name).apply {
+            isDaemon = true
+        }
+    }.asCoroutineDispatcher()
     val scope =
         CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
 
@@ -130,7 +134,7 @@ abstract class PhysicsLevel(
             val owner = it.owner
             if (!it.isStatic && owner !is PhysicsChunkSection) {
                 if (it.collideWithGroups and CollisionGroups.TERRAIN != 0 || owner is Player)
-                    if (owner !is RigidBodyEntity || (owner.isActive) || owner is Player) {
+                    if (owner !is RigidBodyEntity || (owner.isActive)) {
                         val aabb = stateOf(it).cachedBoundingBox.toAABB()
                         if (it is PhysicsRigidBody) {
                             val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / TPS)
@@ -138,7 +142,7 @@ abstract class PhysicsLevel(
                                 aabb.expandTowards(delta)
                         }
                         buildBoxes.add(aabb)
-                        if (owner !is Player) activationBoxes.add(aabb) // 预先构建玩家附近地形，但不实际激活
+                        activationBoxes.add(aabb)
                     }
             }
         }

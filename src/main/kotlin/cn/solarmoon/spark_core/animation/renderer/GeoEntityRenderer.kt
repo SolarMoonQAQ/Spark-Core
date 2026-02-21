@@ -2,8 +2,8 @@ package cn.solarmoon.spark_core.animation.renderer
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer
-import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevel
 import com.mojang.blaze3d.vertex.PoseStack
+import com.mojang.math.Axis
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.entity.EntityRenderer
 import net.minecraft.client.renderer.entity.EntityRendererProvider
@@ -23,7 +23,12 @@ open class GeoEntityRenderer<T>(context: EntityRendererProvider.Context): Entity
         packedLight: Int
     ) {
         super<EntityRenderer>.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight)
+        poseStack.pushPose()
+        val pos = entity.getPosition(partialTick)
+        poseStack.translate(-pos.x, -pos.y, -pos.z)
+        poseStack.mulPose(Axis.YN.rotationDegrees(entity.getViewYRot(partialTick)))
         super<IGeoRenderer>.render(entity, partialTick, poseStack, bufferSource, packedLight)
+        poseStack.popPose()
     }
 
     override fun getTextureLocation(entity: T): ResourceLocation {

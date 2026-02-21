@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.animation.renderer
 import cn.solarmoon.spark_core.animation.ICustomModelItem
 import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer
-import cn.solarmoon.spark_core.registry.common.SparkCapabilities
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
@@ -48,8 +47,7 @@ open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstanc
                     Brightness.FULL_BRIGHT.pack(),
                     packedOverlay,
                     customModelItem.getColor(stack, level, displayContext).rgb,
-                    partialTicks,
-                    true
+                    partialTicks
                 )
             }
             poseStack.popPose()

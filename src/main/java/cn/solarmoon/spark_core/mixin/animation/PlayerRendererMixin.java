@@ -35,7 +35,7 @@ public abstract class PlayerRendererMixin extends LivingEntityRenderer<AbstractC
         // 使用SparkResourcePathBuilder检查是否是默认player模型路径
         if (!modelIndex.isPlayer()) {
             var vb = buffer.getBuffer(RenderType.entityTranslucent(animatable.getModelController().getTextureLocation()));
-            ModelRenderHelperKt.render(animatable, poseStack.last().normal(), vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks)), -1, partialTicks);
+            ModelRenderHelperKt.render(animatable, poseStack, vb, packedLight, getOverlayCoords(entity, getWhiteOverlayProgress(entity, partialTicks)), -1, partialTicks);
             ci.cancel();
         }
     }

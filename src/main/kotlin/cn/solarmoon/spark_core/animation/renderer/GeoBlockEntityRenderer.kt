@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.animation.renderer
 
 import cn.solarmoon.spark_core.animation.IBlockEntityAnimatable
-import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer
 import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.renderer.LevelRenderer
@@ -25,7 +24,9 @@ open class GeoBlockEntityRenderer<B>(
         packedOverlay: Int
     ) {
         val light = blockEntity.level?.let { LevelRenderer.getLightColor(it, blockEntity.blockPos.above()) } ?: packedLight
-        super<IGeoRenderer>.render(blockEntity, partialTick, poseStack, bufferSource, light)
+        val pos = blockEntity.blockPos
+        poseStack.translate(-pos.x.toFloat(), -pos.y.toFloat(), -pos.z.toFloat())
+        super.render(blockEntity, partialTick, poseStack, bufferSource, light)
     }
 
 }
