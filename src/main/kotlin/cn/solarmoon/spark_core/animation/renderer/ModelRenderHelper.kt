@@ -12,11 +12,10 @@ import org.joml.Matrix4f
 object ModelRenderHelper {
 }
 
-@JvmOverloads
 fun OBone.render(
-    bones: ModelPose,
-    ma: Matrix4f,
-    normal3f: Matrix3f,
+    pose: ModelPose,
+    poseMatrix: Matrix4f,
+    poseNormal: Matrix3f,
     buffer: VertexConsumer,
     packedLight: Int,
     packedOverlay: Int,
@@ -24,9 +23,21 @@ fun OBone.render(
     partialTick: Float,
     force: Boolean = false
 ) {
-    applyTransformWithParents(bones, ma, partialTick)
-    cubes.forEach {
-        it.renderVertexes(Matrix4f(ma), normal3f, buffer, packedLight, packedOverlay, color, force)
+    // ===== 顶点矩阵 =====
+    applyTransformWithParents(pose, poseMatrix, partialTick)
+
+    // ===== Bone 法线矩阵 =====
+    applyNormalTransformWithParents(pose, poseNormal, partialTick)
+    for (cube in cubes) {
+        cube.renderVertexes(
+            Matrix4f(poseMatrix),
+            Matrix3f(poseNormal),
+            buffer,
+            packedLight,
+            packedOverlay,
+            color,
+            force
+        )
     }
 }
 
@@ -46,7 +57,7 @@ fun OModel.render(
         it.render(
             iBones,
             Matrix4f(matrix4f),
-            normal3f,
+            Matrix3f(normal3f),
             buffer,
             packedLight,
             packedOverlay,

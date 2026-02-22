@@ -7,9 +7,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.phys.Vec3
+import org.joml.Matrix3f
 import org.joml.Matrix4f
-import java.util.Optional
-import kotlin.collections.LinkedHashMap
+import java.util.*
 
 data class OBone(
     val name: String,
@@ -48,6 +48,40 @@ data class OBone(
             parent = parent.getParent()
         }
         return isChild
+    }
+
+    /**
+     * 应用当前以及所有父骨骼的【法线变换】到 Matrix3f
+     * - 不包含平移
+     * - 正确处理旋转 + scale（inverse-transpose）
+     */
+    @JvmOverloads
+    fun applyNormalTransformWithParents(
+        pose: ModelPose,
+        normal: Matrix3f,
+        partialTick: Float = 1f,
+        until: OBone? = null
+    ): Matrix3f {
+        val l = arrayListOf<OBone>(this)
+        var parent = getParent()
+        while (parent != null) {
+            l.add(parent)
+            if (parent == until) break
+            parent = parent.getParent()
+        }
+
+        for (i in l.asReversed()) {
+            val bonePose = pose.getBonePose(i.name)
+
+            // 1. 拿到和 Matrix4f 完全一致的 local transform
+            val m4 = bonePose.getLocalTransformMatrix(partialTick)
+
+            // 2. 提取 normal matrix：inverse-transpose(upper-left 3x3)
+            val n3 = Matrix3f(m4).invert().transpose()
+
+            normal.mul(n3)
+        }
+        return normal
     }
 
     /**
