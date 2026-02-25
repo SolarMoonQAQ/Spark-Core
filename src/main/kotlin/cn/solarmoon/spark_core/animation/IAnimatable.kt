@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation
 import cn.solarmoon.spark_core.animation.anim.AnimController
 import cn.solarmoon.spark_core.animation.model.ModelController
 import cn.solarmoon.spark_core.animation.model.ModelIndex
+import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import net.minecraft.world.level.Level
 import org.joml.Matrix4f
@@ -30,6 +31,20 @@ interface IAnimatable<T> {
     val animController: AnimController
 
     val modelController: ModelController
+
+    /**
+     * ⚠ 仅供读取或物理线程内部修改
+     * ⚠ 非物理线程请使用 putVariable
+     */
+    val variables: MutableMap<String, Any>
+
+    fun putVariable(key: String, value: Any) {
+        animLevel?.physicsLevel?.submitImmediateTask {
+            variables[key] = value
+        } ?: run {
+            variables[key] = value
+        }
+    }
 
     fun getWorldPositionMatrix(partialTicks: Number = 1f): Matrix4f
 

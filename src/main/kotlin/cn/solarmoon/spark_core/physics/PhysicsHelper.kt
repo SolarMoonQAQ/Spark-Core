@@ -12,18 +12,6 @@ import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
 import org.joml.Matrix4f
 
-fun selectLib(): String {
-    val platform = JmeSystem.getPlatform()
-    val libName = when (platform.os) {
-        Windows -> "bulletjme.dll"
-        Linux -> "libbulletjme.so"
-        MacOS -> "libbulletjme.dylib"
-        Android -> "libbulletjme.so"
-        else -> throw ModLoadingException(ModLoadingIssue.error("Bullet 物理库不支持该系统平台: ${platform.os}"))
-    }
-    return libName
-}
-
 fun Vec3.toBVector3f() = Vector3f(x.toFloat(), y.toFloat(), z.toFloat())
 
 fun org.joml.Vector3f.toBVector3f() = Vector3f(x, y ,z)

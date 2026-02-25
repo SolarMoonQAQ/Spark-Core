@@ -2,8 +2,8 @@ package cn.solarmoon.spark_core
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister
 import cn.solarmoon.spark_core.pack.NativeLoader
+import cn.solarmoon.spark_core.pack.NativeLoader.selectPhysicsLib
 import cn.solarmoon.spark_core.pack.SparkPackResourceLoader
-import cn.solarmoon.spark_core.physics.selectLib
 import cn.solarmoon.spark_core.registry.client.SparkClientEventRegister
 import cn.solarmoon.spark_core.registry.client.SparkModelRegister
 import cn.solarmoon.spark_core.registry.client.SparkParticleProviderRegister
@@ -33,7 +33,7 @@ class SparkCore(modEventBus: IEventBus, modContainer: ModContainer) {
     init {
         EVENT_BUS = modEventBus
         SparkPackResourceLoader.loadAllModules()
-        NativeLoader.load("bullet", selectLib())
+        NativeLoader.load(MOD_ID, "bullet", selectPhysicsLib())
         REGISTER.register(modEventBus)
 
         if (FMLEnvironment.dist.isClient) {

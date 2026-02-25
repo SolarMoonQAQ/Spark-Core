@@ -3,8 +3,6 @@ package cn.solarmoon.spark_core.animation
 import cn.solarmoon.spark_core.animation.anim.AnimController
 import cn.solarmoon.spark_core.animation.model.ModelController
 import cn.solarmoon.spark_core.animation.model.ModelIndex
-import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
@@ -21,6 +19,7 @@ open class ItemAnimatable(
     override val defaultModelIndex: ModelIndex get() = ModelIndex.of(itemStack.item)
     override val animController = AnimController(this)
     override val modelController = ModelController(this)
+    override val variables = mutableMapOf<String, Any>()
 
     open fun physicsTick() {
         animController.physTick()

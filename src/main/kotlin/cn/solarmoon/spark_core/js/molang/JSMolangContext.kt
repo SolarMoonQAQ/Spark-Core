@@ -10,8 +10,11 @@ private val extraBindings = ThreadLocal.withInitial {
     // 发布注册事件，让外部可订阅
     val contexts: MutableMap<String, IMolangContext> = LinkedHashMap()
     val queryContext = QueryContext()
+    val variableContext = VariableContext()
     contexts["query"] = queryContext
     contexts["q"] = queryContext
+    contexts["variable"] = variableContext
+    contexts["v"] = variableContext
     NeoForge.EVENT_BUS.post(MolangRegisterEvent(contexts))
     contexts
 }
