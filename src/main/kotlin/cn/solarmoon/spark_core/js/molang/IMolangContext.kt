@@ -1,20 +1,14 @@
 package cn.solarmoon.spark_core.js.molang
 
-import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.Value
 
-class VariableContext: IMolangContext {
-    var animatable: IAnimatable<*>? = null
-    val level get() = animatable?.animLevel
-    override fun update(
+interface IMolangContext {
+    fun update(
         molang: String,
         anim: AnimInstance,
         context: Context,
         bindings: Value
-    ) {
-        this.animatable = anim.holder
-    }
-
+    )
 }

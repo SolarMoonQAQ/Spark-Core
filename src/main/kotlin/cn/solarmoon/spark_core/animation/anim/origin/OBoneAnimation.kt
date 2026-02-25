@@ -34,7 +34,7 @@ data class OBoneAnimation(
             val kTarget = valueMap.entries.elementAtOrElse(index + 1) { kNow }
             val tNow = kNow.key
             val tTarget = kTarget.key
-            if (time >= tNow && time < tTarget) {
+            if (time in tNow..<tTarget) {
                 val timeInternal = tTarget - tNow
                 val progress = (time - tNow) / timeInternal
                 return kTarget.value.interpolation.lerp(progress, valueMap, index, anim)

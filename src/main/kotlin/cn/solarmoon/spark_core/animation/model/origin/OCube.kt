@@ -82,14 +82,24 @@ data class OCube(
         return center
     }
 
+    /** 临时变量，避免大量新建对象 */
+    private val tmpNormalM3 = Matrix3f()
+    private val tmpM4 = Matrix4f()
     fun buildLocalNormalMatrix(): Matrix3f {
-        val m4 = Matrix4f()
-            .translate(pivot.toVector3f())
-            .rotateZYX(rotation.toVector3f())
-            .translate(pivot.div(-1.0).toVector3f())
+        tmpM4.identity()
+            .translate(tmpPivot)
+            .rotateZYX(tmpRotation)
+            .translate(-tmpPivot.x, -tmpPivot.y, -tmpPivot.z)
 
-        return Matrix3f(m4).invert().transpose()
+        return tmpNormalM3.set(tmpM4).invert().transpose()
     }
+
+    /** 用于渲染顶点的临时变量，避免大量新建对象 */
+    private val tmpPivot = Vector3f()
+    private val tmpRotation = Vector3f()
+    private val tmpPos = Vector3f()
+    private val tmpFinalNormalM3 = Matrix3f()
+    private val tmpNormal = Vector3f()
 
     /**
      * 在客户端渲染各个顶点
@@ -105,24 +115,33 @@ data class OCube(
         color: Int,
         force: Boolean = false //控制是否强制渲染
     ) {
-        matrix4f.translate(pivot.toVector3f())
-        matrix4f.rotateZYX(rotation.toVector3f())
-        matrix4f.translate(pivot.div(-1.0).toVector3f())
+        tmpPivot.set(pivot.x, pivot.y, pivot.z)
+        tmpRotation.set(rotation.x, rotation.y, rotation.z)
+        matrix4f.translate(tmpPivot)
+        matrix4f.rotateZYX(tmpRotation)
+        matrix4f.translate(-tmpPivot.x, -tmpPivot.y, -tmpPivot.z)
 
-        val finalNormalMatrix = Matrix3f(normal3f).mul(buildLocalNormalMatrix())
+        tmpFinalNormalM3.set(normal3f)
+        tmpFinalNormalM3.mul(buildLocalNormalMatrix())
 
-        for (polygon in polygonSet) {
-            if (!force && listOf(polygon.u1, polygon.u2, polygon.v1, polygon.v2).all { it == 0f }) continue
-            val normal = finalNormalMatrix.transform(polygon.normal, Vector3f()).normalize()
-            fixInvertedFlatCube(normal)
+        for (i in polygonSet.indices) {
+            val polygon = polygonSet[i]
+            if (!force &&
+                polygon.u1 == 0f &&
+                polygon.u2 == 0f &&
+                polygon.v1 == 0f &&
+                polygon.v2 == 0f
+            ) continue
+            tmpFinalNormalM3.transform(polygon.normal, tmpNormal)
+            fixInvertedFlatCube(tmpNormal)
 
             for (vertex in polygon.vertexes) {
-                val pos = matrix4f.transformPosition(vertex.x, vertex.y, vertex.z, Vector3f())
+                val pos = matrix4f.transformPosition(vertex.x, vertex.y, vertex.z, tmpPos)
                 buffer.addVertex(
                     pos.x(), pos.y(), pos.z(), color,
                     vertex.u, vertex.v,
                     packedOverlay, packedLight,
-                    normal.x, normal.y, normal.z
+                    tmpNormal.x, tmpNormal.y, tmpNormal.z
                 )
             }
         }

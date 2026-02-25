@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.js.molang
 
 import org.graalvm.polyglot.HostAccess
 
-class MathContext() {
+class MathContext {
     @HostAccess.Export
     @JvmField
     val pi = Math.PI

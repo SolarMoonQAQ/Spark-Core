@@ -3,28 +3,37 @@ package cn.solarmoon.spark_core.js.molang
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.util.createParticleByString
 import cn.solarmoon.spark_core.util.toVec3
-import net.minecraft.core.BlockPos
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.sounds.SoundEvent
 import net.minecraft.sounds.SoundSource
+import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.Value
-import org.graalvm.polyglot.proxy.ProxyObject
 import org.joml.Vector3f
 
-class QueryContext(
-    val anim: AnimInstance
-) {
+class QueryContext: IMolangContext {
 
-    val animatable get() = anim.holder
-    val level get() = animatable.animLevel
+    var anim: AnimInstance? = null
+    val animatable get() = anim?.holder
+    val level get() = animatable?.animLevel
+
+    override fun update(molang: String, anim: AnimInstance, context: Context, bindings: Value) {
+        this.anim = anim
+        this.anim?.let { anim_time = it.time }
+    }
 
     @HostAccess.Export
     @JvmField
-    val anim_time = anim.time.toDouble()
+    var anim_time = 0.0f
 
+    private val ZERO = Vector3f()
     @HostAccess.Export
-    fun position() = animatable.getWorldPositionMatrix(1f).transformPosition(Vector3f())
+    fun position() = if (animatable == null) {
+        ZERO
+    } else {
+        animatable!!.getWorldPositionMatrix(1f).transformPosition(Vector3f())
+    }
+
     @HostAccess.Export
     fun playSound(sound: String, source: String) {
         val p = position().toVec3().add(0.0, 1.0, 0.0)
