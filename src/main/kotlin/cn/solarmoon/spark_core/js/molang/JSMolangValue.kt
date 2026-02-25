@@ -9,6 +9,7 @@ import com.mojang.serialization.Codec
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.resources.ResourceLocation
 import org.graalvm.polyglot.Value
+import java.util.concurrent.ConcurrentHashMap
 
 @JvmInline
 value class JSMolangValue(val value: String) {
@@ -46,9 +47,18 @@ value class JSMolangValue(val value: String) {
 /** 空 AnimIndex，用于在无动画的情况下解析Molang表达式 */
 private val animIndex = AnimIndex(ModelIndex("entity", ResourceLocation.withDefaultNamespace("empty")), "empty")
 
+
+private object MolangConstantCache {
+    private val cache = ConcurrentHashMap<String, Double?>()
+
+    operator fun get(expr: String): Double? =
+        cache.computeIfAbsent(expr) { it.toDoubleOrNull() }
+}
+
 // 返回 Double 的扩展函数 - 添加布尔值转换逻辑
 @JvmName("evalAsDouble")
 fun JSMolangValue.evalAsDouble(anim: AnimInstance): Double {
+    MolangConstantCache[value]?.let { return it }
     val value = this.eval(anim)
     return when {
         value.isBoolean -> if (value.asBoolean()) 1.0 else 0.0
@@ -59,6 +69,7 @@ fun JSMolangValue.evalAsDouble(anim: AnimInstance): Double {
 
 @JvmName("evalAsDouble")
 fun JSMolangValue.evalAsDouble(animatable: IAnimatable<*>): Double {
+    MolangConstantCache[value]?.let { return it }
     val value = this.eval(AnimInstance(animatable, animIndex))
     return when {
         value.isBoolean -> if (value.asBoolean()) 1.0 else 0.0
@@ -70,12 +81,14 @@ fun JSMolangValue.evalAsDouble(animatable: IAnimatable<*>): Double {
 // 返回 Boolean 的扩展函数
 @JvmName("evalAsBoolean")
 fun JSMolangValue.evalAsBoolean(anim: AnimInstance): Boolean {
+    MolangConstantCache[value]?.let { return it > 0.0 }
     val value = this.eval(anim)
     return value.isBoolean && value.asBoolean()
 }
 
 @JvmName("evalAsBoolean")
 fun JSMolangValue.evalAsBoolean(animatable: IAnimatable<*>): Boolean {
+    MolangConstantCache[value]?.let { return it > 0.0 }
     val value = this.eval(AnimInstance(animatable, animIndex))
     return value.isBoolean && value.asBoolean()
 }
@@ -83,6 +96,7 @@ fun JSMolangValue.evalAsBoolean(animatable: IAnimatable<*>): Boolean {
 // 返回 String 的扩展函数
 @JvmName("evalAsString")
 fun JSMolangValue.evalAsString(anim: AnimInstance): String {
+    MolangConstantCache[value]?.let { return it.toString() }
     val value = this.eval(anim)
     return when {
         value.isString -> value.asString()
@@ -92,6 +106,7 @@ fun JSMolangValue.evalAsString(anim: AnimInstance): String {
 
 @JvmName("evalAsString")
 fun JSMolangValue.evalAsString(animatable: IAnimatable<*>): String {
+    MolangConstantCache[value]?.let { return it.toString() }
     val animInstance = AnimInstance(animatable, animIndex)
     val value = this.eval(animInstance)
     return when {
