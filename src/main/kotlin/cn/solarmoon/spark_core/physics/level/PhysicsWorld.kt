@@ -11,6 +11,7 @@ import com.jme3.bullet.PhysicsSoftSpace
 import com.jme3.bullet.SolverMode
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsBody
+import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge
 
@@ -19,6 +20,8 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(
     Vector3f(Int.MAX_VALUE.toFloat(), 15_000f, Int.MAX_VALUE.toFloat()),
     BroadphaseType.DBVT, CollisionConfiguration(8192, 0)
 ) {
+
+    val worldSnapshot : WorldSnapshot
 
     init {
         setGravity(Vector3f(0f, -9.81f, 0f))
@@ -33,6 +36,7 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(
                     or SolverMode.ArticulatedWarmStart
                     or SolverMode.Interleave
         )
+        worldSnapshot = WorldSnapshot(this)
     }
 
     /**
@@ -68,7 +72,15 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(
 
     override fun addCollisionObject(pco: PhysicsCollisionObject) {
         super.addCollisionObject(pco)
+        if (pco is PhysicsRigidBody)
+            worldSnapshot.markAdd(pco) // 通知 snapshot
         pco.triggerEvent(PhysicsBodyEvent.AddToWorld())
+    }
+
+    override fun removeCollisionObject(pco: PhysicsCollisionObject) {
+        super.removeCollisionObject(pco)
+        if (pco is PhysicsRigidBody)
+            worldSnapshot.markRemove(pco) // 通知 snapshot
     }
 
 }

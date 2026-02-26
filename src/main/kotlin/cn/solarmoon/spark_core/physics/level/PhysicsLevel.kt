@@ -121,6 +121,11 @@ abstract class PhysicsLevel(
             }
             return
         }
+        // 更新世界刚体状态快照
+            // 1️⃣ 结构同步（极少发生）
+        world.worldSnapshot.syncStructure()
+            // 2️⃣ transform 同步（每 tick）
+        world.worldSnapshot.syncTransform()
 
         // 收集所有需要激活地形的刚体的包围盒
         val buildBoxes = mutableListOf<AABB>()
@@ -166,11 +171,12 @@ abstract class PhysicsLevel(
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
         New6Dof.logger2.setLevel(java.util.logging.Level.WARNING)
         SparkCore.LOGGER.info(
-            "启动物理线程：{}，线程数：{}/{}, threadSafe:{}",
+            "启动物理线程：{}，线程数：{}/{}, threadSafe:{}, Debug:{}",
             name,
             Runtime.getRuntime().availableProcessors(),
             NativeLibrary.countThreads(),
-            NativeLibrary.isThreadSafe()
+            NativeLibrary.isThreadSafe(),
+            NativeLibrary.isDebug()
         )
         scope.launch {
             world = PhysicsWorld(this@PhysicsLevel)
