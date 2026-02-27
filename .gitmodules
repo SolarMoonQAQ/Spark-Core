@@ -1,7 +1,7 @@
 [submodule "api"]
 	path = api
 	url = git@github.com:SolarMoonQAQ/spark-core-api.git
-[submodule "minecraft/neoforge/1.21.1"]
+[submodule "minecraft-neoforge-1.21.1"]
 	path = minecraft/neoforge/1.21.1
 	url = git@github.com:SolarMoonQAQ/spark-core-minecraft.git
 	branch = 1.21.1-neoforge
