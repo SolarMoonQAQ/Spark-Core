@@ -1,0 +1,6 @@
+[submodule "api"]
+	path = api
+	url = git@github.com:SolarMoonQAQ/spark-core-api.git
+[submodule "minecraft"]
+	path = minecraft
+	url = git@github.com:SolarMoonQAQ/spark-core-minecraft.git
