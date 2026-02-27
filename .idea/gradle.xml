@@ -4,6 +4,11 @@
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/api" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/api" />
+          </set>
+        </option>
       </GradleProjectSettings>
     </option>
   </component>
