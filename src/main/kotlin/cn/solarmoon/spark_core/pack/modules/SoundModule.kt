@@ -1,10 +1,12 @@
 package cn.solarmoon.spark_core.pack.modules
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.sound.SoundData
 import net.minecraft.client.sounds.JOrbisAudioStream
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.packs.PackType
 import net.neoforged.fml.loading.FMLEnvironment
 import java.io.ByteArrayInputStream
 import java.util.concurrent.ConcurrentHashMap
@@ -20,6 +22,8 @@ class SoundModule : SparkPackModule {
         val sounds: MutableMap<ResourceLocation, SoundData> = mutableMapOf()
         @JvmStatic
         val generatedSounds: ConcurrentMap<ResourceLocation, SoundData> = ConcurrentHashMap()
+
+        private var oggCount = 0
         @JvmStatic
         fun getSound(location: ResourceLocation): SoundData? {
             return sounds[location]?: generatedSounds[location]
@@ -41,6 +45,7 @@ class SoundModule : SparkPackModule {
         if (isClientSide) {
             sounds.clear()
             generatedSounds.clear()
+            oggCount = 0
             SparkCore.LOGGER.info("开始注册外部包自定义音效资源…")
         }
     }
@@ -53,19 +58,43 @@ class SoundModule : SparkPackModule {
         pack: SparkPackage,
         isClientSide: Boolean, fromServer: Boolean
     ) {
-        if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
-        if (isClientSide && fileName.endsWith(".ogg")) {
-            val path = fileName.removeSuffix(".ogg")
-            val audioStream = JOrbisAudioStream(ByteArrayInputStream(content))
-            val sound = SoundData(audioStream.readAll(), audioStream.getFormat())
-            sounds[ResourceLocation.fromNamespaceAndPath(namespace, path)] = sound
+        if (fromServer || !isClientSide) return
+        when {
+            fileName.endsWith(".ogg") -> {
+                val fullPath = buildString {
+                    append("sounds/")
+                    if (pathSegments.isNotEmpty()) {
+                        append(pathSegments.joinToString("/"))
+                        append("/")
+                    }
+                    append(fileName)
+                }
+                SparkPackLoaderApplier.CLIENT_PACK.put(
+                    PackType.CLIENT_RESOURCES,
+                    ResourceLocation.fromNamespaceAndPath(namespace, fullPath),
+                    content
+                )
+                val audioStream = JOrbisAudioStream(ByteArrayInputStream(content))
+                val sound = SoundData(audioStream.readAll(), audioStream.getFormat())
+                // 单独缓存一份
+                sounds[ResourceLocation.fromNamespaceAndPath(namespace, fileName.removeSuffix(".ogg"))] = sound
+                oggCount++
+            }
+
+            fileName == "sounds.json" -> {
+                SparkPackLoaderApplier.CLIENT_PACK.put(
+                    PackType.CLIENT_RESOURCES,
+                    ResourceLocation.fromNamespaceAndPath(namespace, fileName),
+                    content
+                )
+            }
         }
     }
 
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (FMLEnvironment.dist.isClient) {
-            SparkCore.LOGGER.info("从外部包注册了{}种自定义音效资源", sounds.size)
+            SparkCore.LOGGER.info("从外部包注册了{}种自定义音效资源", oggCount)
         }
     }
 

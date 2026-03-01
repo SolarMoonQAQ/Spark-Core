@@ -36,8 +36,34 @@ abstract class PhysicsLevel(
 ) : AutoCloseable, TaskSubmitOffice, PhysicsTickListener {
 
     companion object {
-        const val TPS = 60
+        // ===== 动态频率调节 =====
+        /** 默认每主线程tick步进次数（100Hz） */
+        const val BASE_STEP = 5
+        /** 默认每秒步进次数（100Hz） */
+        const val TPS = BASE_STEP * 20
+        /** 最小允许步进次数 */
+        const val MIN_STEP = 1
+        /** 最大允许步进次数 */
+        const val MAX_STEP = BASE_STEP
+        /** 主线程tick预算时间（纳秒），MC为20Hz → 50ms，留出一些线程调度和数据同步余量 */
+        const val TICK_BUDGET_NS = 45_000_000L
+        /** 降频阈值：超过预算的比例 */
+        const val OVERLOAD_THRESHOLD_RATIO = 0.8  // 80%预算开始降频
+        /** 升频阈值：低于预算的比例 */
+        const val RECOVER_THRESHOLD_RATIO = 0.4  // 40%预算以下尝试升频
+        /** 快速响应系数：负载上升时极快靠近新值 */
+        private const val ATTACK_ALPHA = 0.95
+        /** 缓慢恢复系数：负载下降时极慢回落 */
+        private const val DECAY_ALPHA = 0.01
     }
+
+    /** 当前动态步进次数 */
+    @Volatile
+    private var dynamicRepeat = BASE_STEP
+    /** 平滑步进时间：过去约n跳的平均值 */
+    private var smoothedStepTime = TICK_BUDGET_NS.toDouble()
+    /** 调整冷却：修改频率后至少等待多少tick才能再次修改 */
+    private var adjustmentCooldown = 0
 
     // 协程配置
     val dispatcher = Executors.newSingleThreadExecutor { runnable ->
@@ -77,21 +103,57 @@ abstract class PhysicsLevel(
 
     suspend fun CoroutineScope.run() {
         val fixedStep = 1f / TPS
-        val repeat = TPS / 20
         while (isActive) {
             physicsTickChannel.receive()
             // 执行物理计算
             val ticker = System.nanoTime()
             stateFlow.value = PhysicsLevelState.RUNNING
-            //TODO:根据负载压力调节步进频率，高负载时减少步进次数
-            repeat(repeat) {
+            // 动态步进次数
+            repeat(dynamicRepeat) {
                 tickCount++
                 world.update(fixedStep, 0, false, true, false)
             }
-            stateFlow.value = PhysicsLevelState.IDLE
-            // 通知主线程计算完成
+            // 统计耗时
             lastStepTickTime = System.nanoTime() - ticker
             lastPhysicsTickTime = System.nanoTime()
+            // ===== 动态调节逻辑 =====
+            val currentMs = lastStepTickTime.toDouble()
+            smoothedStepTime = if (currentMs > smoothedStepTime) {
+                // 负载上升：快速跟随 (Attack)
+                (ATTACK_ALPHA * currentMs) + (1.0 - ATTACK_ALPHA) * smoothedStepTime
+            } else {
+                // 负载下降：缓慢回落 (Decay)
+                (DECAY_ALPHA * currentMs) + (1.0 - DECAY_ALPHA) * smoothedStepTime
+            }
+            if (adjustmentCooldown > 0) {
+                adjustmentCooldown--
+            } else {
+                val overloadThreshold = (TICK_BUDGET_NS * OVERLOAD_THRESHOLD_RATIO).toLong()
+                val recoveryThreshold = (TICK_BUDGET_NS * RECOVER_THRESHOLD_RATIO).toLong()
+                when {
+                    smoothedStepTime > overloadThreshold && dynamicRepeat > MIN_STEP -> {
+                        dynamicRepeat--
+                        adjustmentCooldown = 20 // 降频后观察1秒（20tick）再做决定
+                        SparkCore.LOGGER.warn(
+                            "{} physics overload detected, step reduced to {}",
+                            name,
+                            dynamicRepeat
+                        )
+                    }
+
+                    smoothedStepTime < recoveryThreshold && dynamicRepeat < MAX_STEP -> {
+                        dynamicRepeat++
+                        adjustmentCooldown = 40 // 升频需要更谨慎，多观察一会儿
+                        SparkCore.LOGGER.warn(
+                            "{} physics recovered, step increased to {}",
+                            name,
+                            dynamicRepeat
+                        )
+                    }
+                }
+            }
+            // 通知主线程计算完成
+            stateFlow.value = PhysicsLevelState.IDLE
             stepCompletedChannel.send(Unit)
         }
     }
@@ -110,9 +172,10 @@ abstract class PhysicsLevel(
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
             if (overloadWarnCooldown <= 0) {
                 SparkCore.LOGGER.warn(
-                    "{} overloaded, last tick time: {}ms, rigid body in world: {} with {}, while {} chunks loaded.",
+                    "{} overloaded, last tick time: {}ms, speed: {}%, rigid body in world: {} with {}, while {} chunks loaded.",
                     name,
                     (lastStepTickTime / 1000000).toInt(),
+                    dynamicRepeat * 20,
                     world.pcoList.size,
                     terrainManager.getStats(),
                     mcLevel.chunkSource.loadedChunksCount

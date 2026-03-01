@@ -5,21 +5,19 @@ import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.registry.common.SparkCapabilities
-import net.minecraft.client.player.LocalPlayer
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
 object AnimApplier {
 
-    @SubscribeEvent
-    private fun playerJoin(event: EntityJoinLevelEvent) {
-        val entity = event.entity
-        if (entity is Player && entity.isLocalPlayer && entity is LocalPlayer) {
-            entity.modelController.setTextureLocation(entity.skin.texture)
-        }
-    }
+//    @SubscribeEvent
+//    private fun playerJoin(event: EntityJoinLevelEvent) {
+//        val entity = event.entity
+//        if (entity is Player && entity.isLocalPlayer && entity is LocalPlayer) {
+//            entity.modelController.setTextureLocation(entity.skin.texture)
+//        }
+//    }
 
 
     @SubscribeEvent

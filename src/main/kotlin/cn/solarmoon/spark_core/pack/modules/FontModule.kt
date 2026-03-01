@@ -36,7 +36,14 @@ class FontModule : SparkPackModule {
 
         when {
             fileName.endsWith(".json") -> {
-                val path = "font/$fileName"
+                val path = buildString {
+                    append("font/")
+                    if (pathSegments.isNotEmpty()) {
+                        append(pathSegments.joinToString("/"))
+                        append("/")
+                    }
+                    append(fileName)
+                }
                 SparkPackLoaderApplier.CLIENT_PACK.put(
                     PackType.CLIENT_RESOURCES,
                     ResourceLocation.fromNamespaceAndPath(namespace, path),
@@ -46,7 +53,14 @@ class FontModule : SparkPackModule {
             }
 
             fileName.endsWith(".ttf") -> {
-                val path = "font/$fileName"
+                val path = buildString {
+                    append("font/")
+                    if (pathSegments.isNotEmpty()) {
+                        append(pathSegments.joinToString("/"))
+                        append("/")
+                    }
+                    append(fileName)
+                }
                 SparkPackLoaderApplier.CLIENT_PACK.put(
                     PackType.CLIENT_RESOURCES,
                     ResourceLocation.fromNamespaceAndPath(namespace, path),

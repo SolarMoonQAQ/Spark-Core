@@ -29,7 +29,7 @@ object BoneModifier {
 
 //    @SubscribeEvent
 //    private fun waist(event: BoneUpdateEvent) {
-//        val player = event.animatable
+//        val player = event.model.animatable
 //        if (player !is IEntityAnimatable<*> || player !is LivingEntity) return
 //        val old = event.oldData
 //        if (event.bone.name == "waist") {
