@@ -15,20 +15,19 @@ object SparkCommandRegister {
                 .then(GetTagCommand().create(event.buildContext))
                 .then(IKDebugCommand().create(event.buildContext))
                 .then(ReloadPackageCommand().create(event.buildContext))
+                .then(PhysicsStepCommand().create(event.buildContext))
         )
 
     }
 
-    private fun clientReg(event: RegisterClientCommandsEvent){
+    private fun clientReg(event: RegisterClientCommandsEvent) {
         val dispatcher = event.dispatcher
         dispatcher.register(
             Commands.literal("spark")
                 .then(
                     Commands.literal("client")
-                        .then(
-                            Commands.literal("deps")
-
-                        )
+                        .then(Commands.literal("deps"))
+                        .then(PhysicsStepCommand().create(event.buildContext))
                 )
         )
     }

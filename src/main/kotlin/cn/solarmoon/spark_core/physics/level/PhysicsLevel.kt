@@ -37,9 +37,6 @@ abstract class PhysicsLevel(
 ) : AutoCloseable, TaskSubmitOffice, PhysicsTickListener {
 
     companion object {
-        /** 最小允许步进次数 */
-        const val MIN_STEP = 1
-
         /** 主线程tick预算时间（纳秒），MC为20Hz → 50ms，留出一些线程调度和数据同步余量 */
         const val TICK_BUDGET_NS = 45_000_000L
 
@@ -53,14 +50,34 @@ abstract class PhysicsLevel(
         private const val ATTACK_ALPHA = 0.95
 
         /** 缓慢恢复系数：负载下降时极慢回落 */
-        private const val DECAY_ALPHA = 0.01
+        private const val DECAY_ALPHA = 0.05
     }
 
     val tps = baseStep * 20
 
     /** 当前动态步进次数 */
     @Volatile
-    private var dynamicRepeat = baseStep
+    var dynamicRepeat = baseStep
+
+    /** 允许的最小每tick步进次数（可运行时调整） */
+    @Volatile
+    var minStep: Int = 1
+        set(value) {
+            field = value.coerceAtLeast(1)
+            if (dynamicRepeat < field) dynamicRepeat = field
+        }
+
+    val defaultMinStep : Int = 1
+
+    /** 允许的最大每tick步进次数（可运行时调整） */
+    @Volatile
+    var maxStep: Int = baseStep
+        set(value) {
+            field = value.coerceAtLeast(minStep)
+            if (dynamicRepeat > field) dynamicRepeat = field
+        }
+
+    val defaultMaxStep : Int = baseStep
 
     /** 平滑步进时间：过去约n跳的平均值 */
     private var smoothedStepTime = TICK_BUDGET_NS.toDouble()
@@ -134,7 +151,7 @@ abstract class PhysicsLevel(
                 val overloadThreshold = (TICK_BUDGET_NS * OVERLOAD_THRESHOLD_RATIO).toLong()
                 val recoveryThreshold = (TICK_BUDGET_NS * RECOVER_THRESHOLD_RATIO).toLong()
                 when {
-                    smoothedStepTime > overloadThreshold && dynamicRepeat > MIN_STEP -> {
+                    smoothedStepTime > overloadThreshold && dynamicRepeat > minStep -> {
                         dynamicRepeat--
                         adjustmentCooldown = 20 // 降频后观察1秒（20tick）再做决定
                         SparkCore.LOGGER.warn(
@@ -144,7 +161,7 @@ abstract class PhysicsLevel(
                         )
                     }
 
-                    smoothedStepTime < recoveryThreshold && dynamicRepeat < baseStep -> {
+                    smoothedStepTime < recoveryThreshold && dynamicRepeat < maxStep -> {
                         dynamicRepeat++
                         adjustmentCooldown = 40 // 升频需要更谨慎，多观察一会儿
                         SparkCore.LOGGER.warn(
@@ -192,7 +209,7 @@ abstract class PhysicsLevel(
         world.worldSnapshot.syncStructure()
         // 2️⃣ transform 同步（每 tick）
         world.worldSnapshot.syncTransform()
-
+        world.worldSnapshot.update(1f / tps) // 必须更新一次以重建碰撞空间分区，AABB等
         // 收集所有需要激活地形的刚体的包围盒
         val buildBoxes = mutableListOf<AABB>()
         val activationBoxes = mutableListOf<AABB>()

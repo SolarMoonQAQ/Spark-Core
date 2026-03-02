@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.physics.body.CollisionGroups
 import com.jme3.bullet.PhysicsSpace
+import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import java.util.concurrent.ConcurrentHashMap
@@ -48,8 +50,10 @@ class WorldSnapshot(
      * 标记需要新增一个刚体
      */
     fun markAdd(pco: PhysicsRigidBody) {
-        trackedBodies.add(pco)
-        structureDirty = true
+        if (pco.collisionGroup == CollisionGroups.PHYSICS_BODY) {
+            trackedBodies.add(pco)
+            structureDirty = true
+        }
     }
 
     /**
@@ -95,7 +99,7 @@ class WorldSnapshot(
      */
     fun syncTransform() {
         for ((main, snap) in snapshotMap) {
-            if (!main.isStatic && (main.isActive || main.isKinematic))
+            if (!main.isStatic)
                 snap.setPhysicsTransform(main.getTransform(null))
         }
     }
@@ -110,17 +114,19 @@ class WorldSnapshot(
     private fun createSnapshotObject(main: PhysicsRigidBody): PhysicsRigidBody {
         // 共享 shape（不 clone）
         val snap = PhysicsRigidBody(main.collisionShape)
-
+        snap.isKinematic = true
         // 直接写 userObject，用于查找owner
         snap.userObject = main.userObject
-
         // 同步碰撞组
         snap.collisionGroup = main.collisionGroup
         snap.collideWithGroups = main.collideWithGroups
 
         // 初始 transform
         snap.setPhysicsTransform(main.getTransform(null))
-
         return snap
+    }
+
+    override fun needsCollision(pcoA: PhysicsCollisionObject?, pcoB: PhysicsCollisionObject?): Boolean {
+        return false // 不需要碰撞处理
     }
 }

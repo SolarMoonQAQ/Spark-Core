@@ -18,10 +18,12 @@ import net.neoforged.neoforge.common.NeoForge
 class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -1_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 15_000f, Int.MAX_VALUE.toFloat()),
-    BroadphaseType.DBVT, CollisionConfiguration(8192, 0)
+    BroadphaseType.DBVT, CollisionConfiguration(8192, 1)
 ) {
 
-    val worldSnapshot : WorldSnapshot
+    val worldSnapshot: WorldSnapshot by lazy {
+        WorldSnapshot(this)
+    }
 
     init {
         setGravity(Vector3f(0f, -9.81f, 0f))
@@ -36,7 +38,6 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(
                     or SolverMode.ArticulatedWarmStart
                     or SolverMode.Interleave
         )
-        worldSnapshot = WorldSnapshot(this)
     }
 
     /**
