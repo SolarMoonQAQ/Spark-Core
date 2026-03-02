@@ -6,8 +6,9 @@ import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntitySelector
 
 class ClientPhysicsLevel(
-    override val mcLevel: ClientLevel
-) : PhysicsLevel("Client PhysicsThread", mcLevel) {
+    override val mcLevel: ClientLevel,
+    baseStep: Int
+) : PhysicsLevel("Client PhysicsThread", mcLevel, baseStep) {
 
     override fun requestEntities(): List<Entity> {
         val mc = Minecraft.getInstance()

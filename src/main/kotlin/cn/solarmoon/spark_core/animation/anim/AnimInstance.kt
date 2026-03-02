@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.api.submitImmediateTask
 import cn.solarmoon.spark_core.js.molang.JSMolangValue
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import net.minecraft.nbt.CompoundTag
 import ru.nsk.kstatemachine.event.Event
 import ru.nsk.kstatemachine.state.*
@@ -22,15 +21,16 @@ class AnimInstance internal constructor(
 ) {
 
     private sealed class AnimStateEvent {
-        object Start: Event
-        object TransitionFinish: Event
-        object Stop: Event // 打断
-        object Finish: Event // 完成
+        object Start : Event
+        object TransitionFinish : Event
+        object Stop : Event // 打断
+        object Finish : Event // 完成
     }
 
     val state get() = AnimState.valueOf(lifecycleStateMachine.activeStates().firstOrNull()?.name?.uppercase() ?: "IDLE")
 
-    val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex).getAnimation(animIndex.name) ?: throw IllegalArgumentException("没有找到索引为 $animIndex 的动画")
+    val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex).getAnimation(animIndex.name)
+        ?: throw IllegalArgumentException("没有找到索引为 $animIndex 的动画")
     val tag = CompoundTag()
     var time = 0.0f
     var speed = 1.0f
@@ -44,6 +44,7 @@ class AnimInstance internal constructor(
     val isInTransition get() = state in listOf(AnimState.ENTER, AnimState.EXIT)
     var maxLength = origin.animationLength
     var shouldTurnBody = false
+
     // 锁定ai注视目标
     var shouldTurnHead = true
     var rejectNewAnim: (AnimInstance?) -> Boolean = { false }
@@ -54,16 +55,22 @@ class AnimInstance internal constructor(
     var group = AnimGroups.MAIN
     private val notifies = mutableListOf<AnimNotify>()
 
-    val inTransitionTick get() = (inTransitionTime * PhysicsLevel.TPS).toInt()
-    val outTransitionTick get() = (outTransitionTime * PhysicsLevel.TPS).toInt()
+    val inTransitionTick get() = (inTransitionTime * tps).toInt()
+    val outTransitionTick get() = (outTransitionTime * tps).toInt()
 
-    val step get() = speed / PhysicsLevel.TPS
+    val step get() = speed / tps
 
-    val typedTime get() = when (origin.loop) {
-        Loop.TRUE -> time % origin.animationLength
-        Loop.ONCE -> time
-        Loop.HOLD_ON_LAST_FRAME -> time
-    }
+    val typedTime
+        get() = when (origin.loop) {
+            Loop.TRUE -> time % origin.animationLength
+            Loop.ONCE -> time
+            Loop.HOLD_ON_LAST_FRAME -> time
+        }
+
+    val tps
+        get() = if (holder.animLevel != null) {
+            holder.animLevel!!.physicsLevel.tps
+        } else 60
 
     init {
         origin.timeline.forEach { timeline, script0 ->
@@ -162,7 +169,8 @@ class AnimInstance internal constructor(
         }
     }
 
-    fun getProgress(physPartialTicks: Float = 0f) = ((time + physPartialTicks * step) / (if (paused) time + step else maxLength)).coerceIn(0.0f, 1.0f)
+    fun getProgress(physPartialTicks: Float = 0f) =
+        ((time + physPartialTicks * step) / (if (paused) time + step else maxLength)).coerceIn(0.0f, 1.0f)
 
     fun step(overallSpeed: Float = 1.0f) {
         if (paused || selfDriving) return
@@ -170,7 +178,7 @@ class AnimInstance internal constructor(
     }
 
     fun stepWeight() {
-        when(state) {
+        when (state) {
             AnimState.ENTER -> {
                 val progress = if (inTransitionTick <= 0) 1f else 1.0f - (transitionTick.toFloat() / inTransitionTick)
                 currentWeight = weight * progress
@@ -179,6 +187,7 @@ class AnimInstance internal constructor(
                     lifecycleStateMachine.processEventBlocking(AnimStateEvent.TransitionFinish)
                 }
             }
+
             AnimState.EXIT -> {
                 val progress = if (outTransitionTick <= 0) 0f else transitionTick.toFloat() / outTransitionTick
                 currentWeight = weight * progress
@@ -187,6 +196,7 @@ class AnimInstance internal constructor(
                     lifecycleStateMachine.processEventBlocking(AnimStateEvent.TransitionFinish)
                 }
             }
+
             else -> {}
         }
     }
@@ -196,7 +206,7 @@ class AnimInstance internal constructor(
         eventHandlers.getOrPut(T::class) { mutableListOf() }.add { handler.invoke(this, it as T) }
     }
 
-    inline fun <reified T: AnimEvent> triggerEvent(event: T): T {
+    inline fun <reified T : AnimEvent> triggerEvent(event: T): T {
         eventHandlers[event::class]?.forEach { it(event) }
         return event
     }
@@ -213,16 +223,18 @@ class AnimInstance internal constructor(
     fun physTick(overallSpeed: Float = 1.0f) {
         if (isInTransition) stepWeight()
         else {
-            when(origin.loop) {
+            when (origin.loop) {
                 Loop.TRUE -> {
                     step(overallSpeed)
                 }
+
                 Loop.ONCE -> {
                     if (time <= maxLength) step(overallSpeed)
                     else {
                         lifecycleStateMachine.processEventBlocking(AnimStateEvent.Finish)
                     }
                 }
+
                 Loop.HOLD_ON_LAST_FRAME -> {
                     if (time < maxLength) step(overallSpeed)
                 }
@@ -232,7 +244,7 @@ class AnimInstance internal constructor(
 
     // 关键帧系统方法
 
-    fun <N: AnimNotify> registerNotify(notify: N): N {
+    fun <N : AnimNotify> registerNotify(notify: N): N {
         notifies += notify
         return notify
     }

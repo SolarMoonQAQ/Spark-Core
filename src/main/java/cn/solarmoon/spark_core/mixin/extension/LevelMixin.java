@@ -39,9 +39,9 @@ public abstract class LevelMixin implements LevelPatch {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void init(WritableLevelData levelData, ResourceKey dimension, RegistryAccess registryAccess, Holder dimensionTypeRegistration, Supplier profiler, boolean isClientSide, boolean isDebug, long biomeZoomSeed, int maxChainedNeighborUpdates, CallbackInfo ci) {
         if (level.isClientSide) {
-            physicsLevel = new ClientPhysicsLevel((ClientLevel)level);
+            physicsLevel = new ClientPhysicsLevel((ClientLevel)level, 3); // 客户端60Hz
         } else {
-            physicsLevel = new ServerPhysicsLevel((ServerLevel) level);
+            physicsLevel = new ServerPhysicsLevel((ServerLevel) level, 5); // 服务端100Hz
         }
     }
 

@@ -32,36 +32,39 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class PhysicsLevel(
     val name: String,
-    open val mcLevel: Level
+    open val mcLevel: Level,
+    open val baseStep: Int = 5,
 ) : AutoCloseable, TaskSubmitOffice, PhysicsTickListener {
 
     companion object {
-        // ===== 动态频率调节 =====
-        /** 默认每主线程tick步进次数（100Hz） */
-        const val BASE_STEP = 5
-        /** 默认每秒步进次数（100Hz） */
-        const val TPS = BASE_STEP * 20
         /** 最小允许步进次数 */
         const val MIN_STEP = 1
-        /** 最大允许步进次数 */
-        const val MAX_STEP = BASE_STEP
+
         /** 主线程tick预算时间（纳秒），MC为20Hz → 50ms，留出一些线程调度和数据同步余量 */
         const val TICK_BUDGET_NS = 45_000_000L
+
         /** 降频阈值：超过预算的比例 */
         const val OVERLOAD_THRESHOLD_RATIO = 0.8  // 80%预算开始降频
+
         /** 升频阈值：低于预算的比例 */
         const val RECOVER_THRESHOLD_RATIO = 0.4  // 40%预算以下尝试升频
+
         /** 快速响应系数：负载上升时极快靠近新值 */
         private const val ATTACK_ALPHA = 0.95
+
         /** 缓慢恢复系数：负载下降时极慢回落 */
         private const val DECAY_ALPHA = 0.01
     }
 
+    val tps = baseStep * 20
+
     /** 当前动态步进次数 */
     @Volatile
-    private var dynamicRepeat = BASE_STEP
+    private var dynamicRepeat = baseStep
+
     /** 平滑步进时间：过去约n跳的平均值 */
     private var smoothedStepTime = TICK_BUDGET_NS.toDouble()
+
     /** 调整冷却：修改频率后至少等待多少tick才能再次修改 */
     private var adjustmentCooldown = 0
 
@@ -102,7 +105,7 @@ abstract class PhysicsLevel(
     lateinit var blockShapeManager: BlockShapeManager
 
     suspend fun CoroutineScope.run() {
-        val fixedStep = 1f / TPS
+        val fixedStep = 1f / tps
         while (isActive) {
             physicsTickChannel.receive()
             // 执行物理计算
@@ -141,7 +144,7 @@ abstract class PhysicsLevel(
                         )
                     }
 
-                    smoothedStepTime < recoveryThreshold && dynamicRepeat < MAX_STEP -> {
+                    smoothedStepTime < recoveryThreshold && dynamicRepeat < baseStep -> {
                         dynamicRepeat++
                         adjustmentCooldown = 40 // 升频需要更谨慎，多观察一会儿
                         SparkCore.LOGGER.warn(
@@ -163,31 +166,31 @@ abstract class PhysicsLevel(
      */
     fun requestStep() {
         if (!::world.isInitialized) return
-
-        // 保存当前tick的实体列表
-        entities = requestEntities()
-
-        // 如果物理线程已经在运行，发出警告并等待其完成
-        if (overloadWarnCooldown > 0) overloadWarnCooldown--
+        // 如果物理线程已经在运行，跳过此次同步等待其完成
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
-            if (overloadWarnCooldown <= 0) {
-                SparkCore.LOGGER.warn(
-                    "{} overloaded, last tick time: {}ms, speed: {}%, rigid body in world: {} with {}, while {} chunks loaded.",
-                    name,
-                    (lastStepTickTime / 1000000).toInt(),
-                    dynamicRepeat * 20,
-                    world.pcoList.size,
-                    terrainManager.getStats(),
-                    mcLevel.chunkSource.loadedChunksCount
-                )
-                overloadWarnCooldown = 40
-            }
             return
         }
+        // 警告信息
+        if (overloadWarnCooldown > 0) overloadWarnCooldown--
+        if ((lastStepTickTime / 1000000) >= 50) {
+            SparkCore.LOGGER.warn(
+                "{} tick {} overloaded, last tick time: {}ms, speed: {}%, rigid body in world: {} with {}, while {} chunks loaded.",
+                name,
+                tickCount,
+                (lastStepTickTime / 1000000).toInt(),
+                dynamicRepeat / baseStep * 100,
+                world.pcoList.size,
+                terrainManager.getStats(),
+                mcLevel.chunkSource.loadedChunksCount
+            )
+            overloadWarnCooldown = 40
+        }
+        // 保存当前tick的实体列表
+        entities = requestEntities()
         // 更新世界刚体状态快照
-            // 1️⃣ 结构同步（极少发生）
+        // 1️⃣ 结构同步（极少发生）
         world.worldSnapshot.syncStructure()
-            // 2️⃣ transform 同步（每 tick）
+        // 2️⃣ transform 同步（每 tick）
         world.worldSnapshot.syncTransform()
 
         // 收集所有需要激活地形的刚体的包围盒
@@ -205,7 +208,7 @@ abstract class PhysicsLevel(
                     if (owner !is RigidBodyEntity || (owner.isActive)) {
                         var aabb = stateOf(it).cachedBoundingBox.toAABB()
                         if (it is PhysicsRigidBody) {
-                            val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / TPS)
+                            val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / tps)
                             if (delta.length() < 5f)
                                 aabb = aabb.expandTowards(delta)
                         }
