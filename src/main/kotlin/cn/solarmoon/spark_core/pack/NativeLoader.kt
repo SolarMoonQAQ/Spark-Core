@@ -96,7 +96,14 @@ object NativeLoader {
         }
 
         // 加载最终的库文件
-        System.load(targetFile.toAbsolutePath().toString())
+        try {
+            System.load(targetFile.toAbsolutePath().toString())
+        } catch (e: UnsatisfiedLinkError) {
+            throw ModLoadingException(ModLoadingIssue.error(
+                "Unable to load native library $libName, may be missing system dependencies (e.g. libgomp1). " +
+                        "In Docker, please install: apt-get install libgomp1"
+            ))
+        }
         LOGGER.info("已加载库: ${targetFile.toAbsolutePath()}")
     }
 

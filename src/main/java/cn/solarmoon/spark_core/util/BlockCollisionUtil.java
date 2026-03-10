@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 import java.util.Objects;
-
+//TODO: 改为数据包数据驱动，而不是硬编码
 public class BlockCollisionUtil {
     /**
      * 获取方块的摩擦系数，可在此通过mixin额外扩展逻辑<p>

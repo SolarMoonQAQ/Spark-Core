@@ -16,6 +16,7 @@ class PhysicsStepCommand : BaseCommand("physics", 2) {
                 .then(minCommand())
                 .then(maxCommand())
                 .then(resetCommand())
+                .then(helpCommand())
         )
     }
 
@@ -115,6 +116,16 @@ class PhysicsStepCommand : BaseCommand("physics", 2) {
                 it.source.sendSuccess(
                     { Component.literal("${level.name} Physics step range reset to default") },
                     true
+                )
+                1
+            }
+
+    private fun helpCommand() =
+        Commands.literal("help")
+            .executes {
+                it.source.sendSuccess(
+                    { Component.translatable("command.spark.physics.step.help") },
+                    false
                 )
                 1
             }

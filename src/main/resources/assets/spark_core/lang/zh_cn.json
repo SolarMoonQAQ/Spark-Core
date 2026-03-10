@@ -1,5 +1,3 @@
 {
-
-
-
+  "command.spark.physics.step.help": "=== Spark 物理步进命令 ===\n物理时间推进速度控制命令，用于在负载高时调节性能\n\n/spark physics step get - 获取当前物理步进参数\n  显示当前动态步进次数、最小/最大步进限制\n\n/spark physics step set <min> <max> - 设置物理步进范围\n  min: 最小步进次数 (≥1), max: 最大步进次数 (≥min)\n  示例: /spark physics step set 2 10\n\n/spark physics step min <value> - 设置最小物理步进\n  value: 最小步进次数 (≥1)\n  示例: /spark physics step min 3\n\n/spark physics step max <value> - 设置最大物理步进\n  value: 最大步进次数 (≥当前min值)\n  示例: /spark physics step max 15\n\n/spark physics step reset - 重置物理步进为默认值\n  恢复为默认的最小1步、最大5步\n\n/spark physics step help - 显示此帮助信息\n\n说明:\n• 物理步进控制物理时间倍率（每tick的物理模拟次数）\n• 系统会根据性能负载自动在min-max范围内调整\n• 较高的步进值 = 更快的物理时间，但性能消耗更大\n• 较低的步进值 = 更慢的物理时间，但性能更好"
 }
