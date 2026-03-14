@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
 import net.minecraft.core.Direction
+import org.joml.Vector3f
 
 /**
  * 多边形的面，能够修正传入顶点的正确映射位置，并给出法线方向
@@ -19,6 +20,16 @@ data class OPolygon(
 ) {
 
     val normal get() = direction.step()
+
+    /**
+     * 多边形的尺寸(长度量纲)，根据顶点包围盒粗略估算
+     */
+    val size: Float
+
+    /**
+     * 多边形的中心位置，在初始化时缓存
+     */
+    val center: Vector3f
 
     init {
         // 暂且先分为两个不同的算法吧，能跑就行
@@ -49,6 +60,36 @@ data class OPolygon(
             vertexes[2] = vertexes[2].remap(u2 / textureWidth, v2 / textureHeight)
             vertexes[3] = vertexes[3].remap(u1 / textureWidth, v2 / textureHeight)
         }
+
+        // 计算顶点包围盒，粗略估算多边形尺寸
+        var minX = Float.MAX_VALUE
+        var minY = Float.MAX_VALUE
+        var minZ = Float.MAX_VALUE
+        var maxX = Float.MIN_VALUE
+        var maxY = Float.MIN_VALUE
+        var maxZ = Float.MIN_VALUE
+
+        for (vertex in vertexes) {
+            if (vertex.x < minX) minX = vertex.x
+            if (vertex.y < minY) minY = vertex.y
+            if (vertex.z < minZ) minZ = vertex.z
+            if (vertex.x > maxX) maxX = vertex.x
+            if (vertex.y > maxY) maxY = vertex.y
+            if (vertex.z > maxZ) maxZ = vertex.z
+        }
+
+        val width = maxX - minX
+        val height = maxY - minY
+        val depth = maxZ - minZ
+
+        size = kotlin.math.sqrt(width * width + height * height + depth * depth)
+
+        // 计算多边形中心位置
+        center = Vector3f()
+        for (vertex in vertexes) {
+            center.add(vertex.x, vertex.y, vertex.z)
+        }
+        center.div(vertexes.size.toFloat())
     }
 
     companion object {
@@ -60,14 +101,14 @@ data class OPolygon(
                 val size = cube.size.scale(16.0).toVector3f().floor()
                 val uvSet = arrayOf(
                     uv.x,
-                    uv.x + size.z.toFloat(),
-                    uv.x + size.z.toFloat() + size.x.toFloat(),
-                    uv.x + size.z.toFloat() + size.x.toFloat() + size.x.toFloat(),
-                    uv.x + size.z.toFloat() + size.x.toFloat() + size.z.toFloat(),
-                    uv.x + size.z.toFloat() + size.x.toFloat() + size.z.toFloat() + size.x.toFloat(),
+                    uv.x + size.z,
+                    uv.x + size.z + size.x,
+                    uv.x + size.z + size.x + size.x,
+                    uv.x + size.z + size.x + size.z,
+                    uv.x + size.z + size.x + size.z + size.x,
                     uv.y,
-                    uv.y + size.z.toFloat(),
-                    uv.y + size.z.toFloat() + size.y.toFloat()
+                    uv.y + size.z,
+                    uv.y + size.z + size.y
                 )
                 when (direction) {
                     Direction.WEST -> {

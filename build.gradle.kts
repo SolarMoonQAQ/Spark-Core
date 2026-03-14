@@ -5,7 +5,7 @@ plugins {
     id("maven-publish")
     id("idea")
     id("net.neoforged.moddev") version "2.0.115"
-    kotlin("jvm") version "2.2.20"
+    kotlin("jvm")
     kotlin("plugin.serialization") version "2.2.20"
     id("com.vanniktech.maven.publish") version "0.34.0"
 }
@@ -190,6 +190,7 @@ dependencies {
 
     implementation(fileTree(mapOf("dir" to "extlibs", "includes" to listOf("*.jar"))))?.let { jarJar(it) }
     additionalRuntimeClasspath(fileTree(mapOf("dir" to "extlibs", "includes" to listOf("*.jar"))))
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 repositories {

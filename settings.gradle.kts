@@ -6,6 +6,9 @@ pluginManagement {
         gradlePluginPortal()
         maven { setUrl("https://maven.neoforged.net/releases") }
     }
+    plugins {
+        kotlin("jvm") version "2.2.20"
+    }
 }
 
 plugins {

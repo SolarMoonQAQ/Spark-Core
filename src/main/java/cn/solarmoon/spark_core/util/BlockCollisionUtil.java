@@ -36,7 +36,7 @@ public class BlockCollisionUtil {
      * 获取方块的滑动系数，影响不同速度下摩擦系数的变化规律。可在此通过mixin额外扩展逻辑<p>
      * Get the sliding coefficient of the block, which affects the friction coefficient change under different speeds. It can be extended by additional logic with mixin
      *
-     * @return 方块的滑动系数，0-1之间，0表示完全不影响摩擦系数，1表示摩擦系数将在打滑时归零 <p> The sliding coefficient of the block, ranging from 0 to 1, 0 indicating that the friction coefficient will not be affected at all, and 1 indicating that the friction coefficient will be zeroed out when sliding
+     * @return 方块的滑动系数，0-1之间，0表示完全不影响摩擦系数 <p> The sliding coefficient of the block, ranging from 0 to 1, 0 indicating that the friction coefficient will not be affected at all
      */
     public static float getSlip(ChunkAccess chunk, BlockState state, BlockPos pos) {
         //TODO:细化逻辑
