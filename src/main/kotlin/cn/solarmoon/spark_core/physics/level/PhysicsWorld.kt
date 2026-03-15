@@ -7,18 +7,18 @@ import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
 import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.util.triggerEvent
 import com.jme3.bullet.CollisionConfiguration
-import com.jme3.bullet.PhysicsSoftSpace
+import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.SolverMode
 import com.jme3.bullet.collision.PhysicsCollisionObject
-import com.jme3.bullet.objects.PhysicsBody
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge
 
-class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(
+class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
     Vector3f(-Int.MAX_VALUE.toFloat(), -1_000f, -Int.MAX_VALUE.toFloat()),
     Vector3f(Int.MAX_VALUE.toFloat(), 15_000f, Int.MAX_VALUE.toFloat()),
-    BroadphaseType.DBVT, CollisionConfiguration(8192, 1)
+    BroadphaseType.DBVT, NativeLibrary.countThreads(), CollisionConfiguration(8192, 1)
 ) {
 
     val worldSnapshot: WorldSnapshot by lazy {
@@ -27,7 +27,6 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSoftSpace(
 
     init {
         setGravity(Vector3f(0f, -9.81f, 0f))
-        PhysicsBody.setDeactivationDeadline(3f)
         addTickListener(level)
         isForceUpdateAllAabbs = false
         this.solverInfo.setMode(
