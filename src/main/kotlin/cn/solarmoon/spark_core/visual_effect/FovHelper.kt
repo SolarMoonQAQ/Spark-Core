@@ -12,12 +12,12 @@ import net.neoforged.neoforge.client.event.ClientTickEvent
 @EventBusSubscriber(modid = SparkCore.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = [Dist.CLIENT])
 object FovHelper {
 
-    val mc: Minecraft = Minecraft.getInstance()
     var fov: Double = 70.0
-    var height = mc.window.height
+    var height = 400
 
     @SubscribeEvent
     fun onLevelTick(event: ClientTickEvent.Pre) {
+        val mc = Minecraft.getInstance()
         if (mc.gameRenderer.mainCamera != null)
             fov = mc.gameRenderer.getFov(mc.gameRenderer.mainCamera, 1f, true)
         height = mc.window.height
