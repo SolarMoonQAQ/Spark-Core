@@ -95,7 +95,7 @@ data class OBone(
      * @param pose 骨骼的变换数据
      * @param ma 要应用的矩阵
      * @param partialTick 插值进度
-     * @param until 应用到哪个父骨骼为止，如果为null则应用至根骨骼
+     * @param until 应用到哪个父骨骼为止(包括此父骨骼)，如果为null则应用至根骨骼
      */
     @JvmOverloads
     fun applyTransformWithParents(
@@ -120,16 +120,22 @@ data class OBone(
         return ma
     }
 
+    val tmpM4 = Matrix4f()
+
     /**
-     * 应用当前以及所有父类的骨骼的变换到传入的矩阵中，不考虑动画影响，仅考虑模型原始姿态
-     * @param ma 要应用的矩阵
-     * @param until 应用到哪个父骨骼为止，如果为null则应用至根骨骼
+     * 计算当前骨骼层级变换对某个局部位姿（如 Locator）的最终影响。
+     * * 此方法计算从根骨骼到当前骨骼的【原始静态变换】链，并将其作用于传入的局部矩阵 [ma]。
+     * 通常用于计算一个“长”在骨骼上的点在模型空间中的绝对位置。
+     * * @param ma 局部空间下的位姿矩阵（如 Locator 的相对位姿），执行后将变为模型空间位姿
+     * @param until 停止追溯的父骨骼节点（包含），若为 null 则追溯至根骨骼
+     * @return 返回应用了层级变换后的模型空间矩阵 tmpM4
      */
     @JvmOverloads
-    fun applyTransformWithParents(
+    fun applyTransformToLocal(
         ma: Matrix4f,
         until: OBone? = null
     ): Matrix4f {
+        tmpM4.identity()
         val l = arrayListOf<OBone>(this)
         var parent = getParent()
         while (parent != null) {
@@ -139,11 +145,12 @@ data class OBone(
         }
 
         for (bone in l.asReversed()) {
-            ma.translate(bone.pivot.toVector3f())
-            ma.rotateZYX(bone.rotation.toVector3f())
-            ma.translate(bone.pivot.toVector3f().negate())
+            if (bone.rotation.lengthSqr() < 1e-6) continue
+            tmpM4.translate(bone.pivot.toVector3f())
+            tmpM4.rotateZYX(bone.rotation.toVector3f())
+            tmpM4.translate(bone.pivot.toVector3f().negate())
         }
-        return ma
+        return tmpM4.mul(ma, ma)
     }
 
     companion object {
