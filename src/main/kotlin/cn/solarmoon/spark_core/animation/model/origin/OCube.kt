@@ -145,6 +145,7 @@ data class OCube(
         val lenSqY = m.m01() * m.m01() + m.m11() * m.m11() + m.m21() * m.m21()
         val lenSqZ = m.m02() * m.m02() + m.m12() * m.m12() + m.m22() * m.m22()
         val maxScaleSq = maxOf(lenSqX, lenSqY, lenSqZ)
+        if (maxScaleSq == 0f) return // 不渲染0尺寸的块
         val thresholdSq = getCurrentThresholdSq() // 考虑Fov的像素尺寸阈值
         tmpFinalNormalM3.set(tmpBoneM3)
         tmpFinalNormalM3.mul(buildLocalNormalMatrix())

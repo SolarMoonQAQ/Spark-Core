@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.model.ModelPose
 import cn.solarmoon.spark_core.util.SerializeHelper
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.world.phys.Vec3
@@ -17,13 +18,15 @@ data class OBone(
     val pivot: Vec3,
     val rotation: Vec3,
     val locators: LinkedHashMap<String, OLocator>,
-    val cubes: List<OCube>
+    val cubes: List<OCube>,
+    val mesh: OMesh? // 网格数据（可为null）
 ) {
 
     lateinit var rootModel: OModel
 
     init {
         cubes.forEach { it.rootBone = this }
+        mesh?.rootBone = this // 建立网格与骨骼的关联
         locators.forEach { it.value.bone = this }
     }
 
@@ -163,30 +166,45 @@ data class OBone(
                 Vec3.CODEC.optionalFieldOf("rotation", Vec3.ZERO).forGetter { it.rotation },
                 OLocator.MAP_CODEC.optionalFieldOf("locators", linkedMapOf()).forGetter { it.locators },
                 OCube.LIST_CODEC.optionalFieldOf("cubes", arrayListOf()).forGetter { it.cubes },
-            ).apply(it) { name, parent, pivot, rotation, locators, cubes ->
-                OBone(name, parent.orElse(null), pivot, rotation, LinkedHashMap(locators), ArrayList(cubes))
+                OMesh.CODEC.optionalFieldOf("poly_mesh").forGetter { Optional.ofNullable(it.mesh) } // 网格数据
+            ).apply(it) { name, parent, pivot, rotation, locators, cubes, mesh ->
+                OBone(name, parent.orElse(null), pivot, rotation, LinkedHashMap(locators), ArrayList(cubes), mesh.orElse(null))
             }
         }
 
         @JvmStatic
-        val MAP_CODEC = CODEC.listOf().xmap(
-            { LinkedHashMap(it.associateBy { it.name }) },
+        val MAP_CODEC: Codec<LinkedHashMap<String, OBone>> = CODEC.listOf().xmap(
+            { LinkedHashMap(it.associateBy { it -> it.name }) },
             { it.values.toList() }
         )
 
         @JvmStatic
-        val STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.STRING_UTF8, OBone::name,
-            ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8), { Optional.ofNullable(it.parentName) },
-            SerializeHelper.VEC3_STREAM_CODEC, OBone::pivot,
-            SerializeHelper.VEC3_STREAM_CODEC, OBone::rotation,
-            OLocator.MAP_STREAM_CODEC, OBone::locators,
-            OCube.LIST_STREAM_CODEC, OBone::cubes,
-            { a, b, c, d, l, e -> OBone(a, b.orElse(null), c, d, l, e) }
-        )
+        val STREAM_CODEC = object : StreamCodec<FriendlyByteBuf, OBone> {
+            override fun decode(buffer: FriendlyByteBuf): OBone {
+                val name = ByteBufCodecs.STRING_UTF8.decode(buffer)
+                val parentName = ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8).decode(buffer).orElse(null)
+                val pivot = SerializeHelper.VEC3_STREAM_CODEC.decode(buffer)
+                val rotation = SerializeHelper.VEC3_STREAM_CODEC.decode(buffer)
+                val locators = OLocator.MAP_STREAM_CODEC.decode(buffer)
+                val cubes = OCube.LIST_STREAM_CODEC.decode(buffer)
+                val mesh = ByteBufCodecs.optional(OMesh.STREAM_CODEC).decode(buffer).orElse(null)
+                
+                return OBone(name, parentName, pivot, rotation, locators, cubes, mesh)
+            }
+            
+            override fun encode(buffer: FriendlyByteBuf, bone: OBone) {
+                ByteBufCodecs.STRING_UTF8.encode(buffer, bone.name)
+                ByteBufCodecs.optional(ByteBufCodecs.STRING_UTF8).encode(buffer, Optional.ofNullable(bone.parentName))
+                SerializeHelper.VEC3_STREAM_CODEC.encode(buffer, bone.pivot)
+                SerializeHelper.VEC3_STREAM_CODEC.encode(buffer, bone.rotation)
+                OLocator.MAP_STREAM_CODEC.encode(buffer, bone.locators)
+                OCube.LIST_STREAM_CODEC.encode(buffer, bone.cubes)
+                ByteBufCodecs.optional(OMesh.STREAM_CODEC).encode(buffer, Optional.ofNullable(bone.mesh))
+            }
+        }
 
         @JvmStatic
-        val MAP_STREAM_CODEC = ByteBufCodecs.map(
+        val MAP_STREAM_CODEC: StreamCodec<FriendlyByteBuf, LinkedHashMap<String, OBone>> = ByteBufCodecs.map(
             ::LinkedHashMap,
             ByteBufCodecs.STRING_UTF8,
             STREAM_CODEC

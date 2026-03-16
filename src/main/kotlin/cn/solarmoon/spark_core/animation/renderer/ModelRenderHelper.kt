@@ -34,6 +34,8 @@ fun OBone.render(
 
     // ===== Bone 法线矩阵 =====
     applyNormalTransformWithParents(pose, tmpM3, partialTick)
+    
+    // 渲染所有cubes
     for (cube in cubes) {
         cube.renderVertexes(
             tmpM4,
@@ -45,6 +47,18 @@ fun OBone.render(
             force
         )
     }
+    
+    // 渲染mesh（可为null）
+    mesh?.renderVertexes(
+        tmpM4,
+        tmpM3,
+        buffer,
+        packedLight,
+        packedOverlay,
+        color,
+        partialTick,
+        force
+    )
 }
 
 @JvmOverloads

@@ -78,7 +78,7 @@ object NativeLoader {
         val sourceFile = modFileInfo.file.findResource(relativePath)
             ?: throw ModLoadingException(ModLoadingIssue.error("未找到Native核心文件: $relativePath"))
 
-        // 目标目录：系统临时目录下按模组、模块、平台、架构划分子目录
+        // 目标目录：系统临时目录下按模组、模块、平台、架构划分子目录 TODO: 安卓似乎需要特殊处理路径
         val targetDir = Paths.get(
             System.getProperty("java.io.tmpdir"),
             "spark_core_natives",
