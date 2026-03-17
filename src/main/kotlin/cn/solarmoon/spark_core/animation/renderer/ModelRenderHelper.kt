@@ -18,8 +18,7 @@ val tmpM3 = Matrix3f()
 @JvmOverloads
 fun OBone.render(
     pose: ModelPose,
-    poseMatrix: Matrix4f,
-    poseNormal: Matrix3f,
+    poseStack: PoseStack,
     buffer: VertexConsumer,
     packedLight: Int,
     packedOverlay: Int,
@@ -27,19 +26,15 @@ fun OBone.render(
     partialTick: Float,
     force: Boolean = false
 ) {
-    tmpM4.set(poseMatrix)
-    tmpM3.set(poseNormal)
-    // ===== 顶点矩阵 =====
+    tmpM4.identity()
+    tmpM3.identity()
     applyTransformWithParents(pose, tmpM4, partialTick)
-
-    // ===== Bone 法线矩阵 =====
-    applyNormalTransformWithParents(pose, tmpM3, partialTick)
-    
+    poseStack.pushPose()
+    poseStack.mulPose(tmpM4)
     // 渲染所有cubes
     for (cube in cubes) {
         cube.renderVertexes(
-            tmpM4,
-            tmpM3,
+            poseStack,
             buffer,
             packedLight,
             packedOverlay,
@@ -59,13 +54,13 @@ fun OBone.render(
         partialTick,
         force
     )
+    poseStack.popPose()
 }
 
 @JvmOverloads
 fun OModel.render(
     iBones: ModelPose,
-    matrix4f: Matrix4f,
-    normal3f: Matrix3f,
+    poseStack: PoseStack,
     buffer: VertexConsumer,
     packedLight: Int,
     packedOverlay: Int,
@@ -76,8 +71,7 @@ fun OModel.render(
     bones.values.forEach {
         it.render(
             iBones,
-            Matrix4f(matrix4f),
-            Matrix3f(normal3f),
+            poseStack,
             buffer,
             packedLight,
             packedOverlay,
@@ -100,8 +94,7 @@ fun IAnimatable<*>.render(
     this.modelController.model?.let {
         it.origin.render(
             it.pose,
-            poseStack.last().pose(),
-            poseStack.last().normal(),
+            poseStack,
             buffer,
             packedLight,
             packedOverlay,

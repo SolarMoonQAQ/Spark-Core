@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.compat
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.compat.accelerated_rendering.ARCompat
 import cn.solarmoon.spark_core.compat.first_person_model.FirstPersonModelCompat
 import cn.solarmoon.spark_core.compat.player_animator.PlayerAnimatorCompat
 import cn.solarmoon.spark_core.compat.real_camera.RealCameraCompat
@@ -21,5 +22,6 @@ object CompatDetector {
         RealCameraCompat.init()
         PlayerAnimatorCompat.init()
         FirstPersonModelCompat.init()
+        ARCompat.init()
     }
 }

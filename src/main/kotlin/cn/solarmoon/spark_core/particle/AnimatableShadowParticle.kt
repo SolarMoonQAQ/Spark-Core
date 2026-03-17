@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.sync.Syncer
 import cn.solarmoon.spark_core.sync.SyncerType
 import cn.solarmoon.spark_core.util.SerializeHelper
 import cn.solarmoon.spark_core.util.toEuler
+import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -21,7 +22,6 @@ import net.minecraft.core.particles.ParticleOptions
 import net.minecraft.core.particles.ParticleType
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
-import org.joml.Matrix3f
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import java.awt.Color
@@ -55,12 +55,14 @@ class AnimatableShadowParticle(
         partialTicks: Float
     ) {
         val posMa = Matrix4f().translate(pos.toVector3f()).rotateY(yRot)
+        val poseStack = PoseStack()
+        poseStack.mulPose(posMa)
         val light = getLightColor(partialTicks)
         val overlay = OverlayTexture.NO_OVERLAY
         setAlpha(1 - getProgress(partialTicks))
         val color = Color(rCol, gCol, bCol, alpha).rgb
         if (boneCache == null) return
-        animatable.modelController.originModel.render(boneCache, posMa, Matrix3f(), buffer, light, overlay, color, 1f)
+        animatable.modelController.originModel.render(boneCache, poseStack, buffer, light, overlay, color, 1f)
     }
 
     override fun getRenderType(): ParticleRenderType {

@@ -1,9 +1,11 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
+import cn.solarmoon.spark_core.compat.accelerated_rendering.ARCompat
 import cn.solarmoon.spark_core.util.SerializeHelper
 import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.visual_effect.FovHelper
 import com.mojang.blaze3d.systems.RenderSystem
+import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -50,6 +52,11 @@ data class OCube(
     )
 
     /**
+     * 缓存的局部变换矩阵，因为 pivot 和 rotation 都是 val，所以可以在初始化时计算
+     */
+    private val cachedLocalTransformMatrix: Matrix4f
+
+    /**
      * 缓存的局部法线矩阵，因为 pivot 和 rotation 都是 val，所以可以在初始化时计算
      */
     private val cachedLocalNormalMatrix: Matrix3f
@@ -60,6 +67,7 @@ data class OCube(
             .translate(pivot.toVector3f())
             .rotateZYX(rotation.toVector3f())
             .translate(pivot.toVector3f().negate())
+        cachedLocalTransformMatrix = Matrix4f(tmpM4)
         cachedLocalNormalMatrix = Matrix3f(tmpM4).invert().transpose()
     }
 
@@ -105,9 +113,14 @@ data class OCube(
         return tmpNormalM3.set(cachedLocalNormalMatrix)
     }
 
+    /**
+     * 获取缓存的局部变换矩阵
+     */
+    fun buildLocalTransformMatrix(): Matrix4f {
+        return Matrix4f(cachedLocalTransformMatrix)
+    }
+
     /** 用于渲染顶点的临时变量，避免大量新建对象 */
-    private val tmpPivot = Vector3f()
-    private val tmpRotation = Vector3f()
     private val tmpPos = Vector3f()
     private val tmpFinalNormalM3 = Matrix3f()
     private val tmpNormal = Vector3f()
@@ -117,28 +130,25 @@ data class OCube(
     /**
      * 在客户端渲染各个顶点
      * 面剔除参考自 https://github.com/TartaricAcid/TouhouLittleMaid/blob/cabcd1f3/src/main/java/com/github/tartaricacid/touhoulittlemaid/compat/sodium/SodiumGeoRenderer.java
-     * @param matrix4f 经视图变换、世界变换、骨骼变换后得到的变换矩阵
-     * @param normal3f 法线矩阵，用于计算顶点法线
      * @param force 是否跳过面剔除强制渲染, force=true时强制渲染
      */
     @OnlyIn(Dist.CLIENT)
     fun renderVertexes(
-        matrix4f: Matrix4f,
-        normal3f: Matrix3f,
+        poseStack: PoseStack,
         buffer: VertexConsumer,
         packedLight: Int,
         packedOverlay: Int,
         color: Int,
         force: Boolean = false //控制是否强制渲染
     ) {
-        tmpBoneM4.set(matrix4f)
-        tmpBoneM3.set(normal3f)
-        
-        tmpPivot.set(pivot.x, pivot.y, pivot.z)
-        tmpRotation.set(rotation.x, rotation.y, rotation.z)
-        tmpBoneM4.translate(tmpPivot)
-        tmpBoneM4.rotateZYX(tmpRotation)
-        tmpBoneM4.translate(-tmpPivot.x, -tmpPivot.y, -tmpPivot.z)
+        if (ARCompat.IS_LOADED && ARCompat.renderCubeWithAR(
+                this, poseStack, buffer, packedLight, packedOverlay, color
+            )
+        ) return // 优先使用加速渲染管线绘制
+        tmpBoneM4.set(poseStack.last().pose())
+        tmpBoneM3.set(poseStack.last().normal())
+
+        tmpBoneM4.mul(buildLocalTransformMatrix())
         // 计算矩阵的缩放因子平方用于剔除过小面（最大值）
         val m = tmpBoneM4
         val lenSqX = m.m00() * m.m00() + m.m10() * m.m10() + m.m20() * m.m20()

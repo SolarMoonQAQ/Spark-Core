@@ -33,24 +33,25 @@ open class GeoItemRenderer: BlockEntityWithoutLevelRenderer(Minecraft.getInstanc
             val itemAnimatable: ItemAnimatable =
                 customModelItem.getRenderInstance(stack, level, displayContext)
                     ?: return
-            poseStack.pushPose()
-            if (displayContext == ItemDisplayContext.GUI) poseStack.mulPose(Quaternionf().rotateY(Math.PI.toFloat()))
             itemAnimatable.modelController.model?.let { model ->
+                poseStack.pushPose()
+                val pos = customModelItem.getRenderOffset(stack, level, displayContext)
+                poseStack.translate(pos.x, pos.y, pos.z)
+                val rot = customModelItem.getRenderRotation(stack, level, displayContext)
+                poseStack.mulPose(Quaternionf().rotateZYX(rot.x, rot.y, rot.z))
+                val scale = customModelItem.getRenderScale(stack, level, displayContext)
+                poseStack.scale(scale.x, scale.y, scale.z)
                 model.origin.render(
                     model.pose,
-                    poseStack.last().pose()
-                        .translate(customModelItem.getRenderOffset(stack, level, displayContext))
-                        .rotateZYX(customModelItem.getRenderRotation(stack, level, displayContext))
-                        .scale(customModelItem.getRenderScale(stack, level, displayContext)),
-                    poseStack.last().normal(),
+                    poseStack,
                     buffer.getBuffer(RenderType.entityTranslucent(model.textureLocation)),
                     Brightness.FULL_BRIGHT.pack(),
                     packedOverlay,
                     customModelItem.getColor(stack, level, displayContext).rgb,
                     partialTicks
                 )
+                poseStack.popPose()
             }
-            poseStack.popPose()
         }
     }
 
