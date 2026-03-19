@@ -13,7 +13,7 @@ abstract class PhysicsContactEvent(val manifoldId: Long): Event() {
 
     class Start(manifoldId: Long): PhysicsContactEvent(manifoldId)
 
-    class Process(val o1: PhysicsCollisionObject, val o2: PhysicsCollisionObject, o1Point: ManifoldPoint, o2Point: ManifoldPoint, manifoldId: Long): PhysicsContactEvent(manifoldId)
+    class Process(val o1: PhysicsCollisionObject, val o2: PhysicsCollisionObject, val o1Point: ManifoldPoint, val o2Point: ManifoldPoint, manifoldId: Long): PhysicsContactEvent(manifoldId)
 
     class End(manifoldId: Long): PhysicsContactEvent(manifoldId)
 

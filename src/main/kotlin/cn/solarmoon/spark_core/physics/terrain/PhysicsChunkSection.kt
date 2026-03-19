@@ -20,6 +20,7 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.chunk.LevelChunk
+import kotlin.math.floor
 
 /**
  * 代表一个16x16x16区块section的物理表示
@@ -334,11 +335,11 @@ class PhysicsChunkSection(
      * 根据碰撞点获取方块位置
      */
     fun getBlockPosFromContactPoint(worldContactPoint: Vector3f, normal: Vector3f, distance: Float): BlockPos {
-        var pos = worldContactPoint.add(normal.mult(distance))
+        val pos = worldContactPoint.add(normal.mult(distance))
         return BlockPos(
-            Math.floor(pos.x.toDouble()).toInt(),
-            Math.floor(pos.y.toDouble()).toInt(),
-            Math.floor(pos.z.toDouble()).toInt()
+            floor(pos.x.toDouble()).toInt(),
+            floor(pos.y.toDouble()).toInt(),
+            floor(pos.z.toDouble()).toInt()
         )
     }
 
