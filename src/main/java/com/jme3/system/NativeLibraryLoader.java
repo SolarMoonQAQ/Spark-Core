@@ -31,10 +31,11 @@
  */
 package com.jme3.system;
 
+import jme3utilities.MyString;
+
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.MyString;
 
 /**
  * Utility class to load native libraries.

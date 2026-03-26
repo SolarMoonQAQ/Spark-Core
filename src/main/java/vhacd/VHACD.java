@@ -30,14 +30,15 @@
 package vhacd;
 
 import com.jme3.util.BufferUtils;
+import jme3utilities.Validate;
+import jme3utilities.math.MyVector3f;
+
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
-import jme3utilities.math.MyVector3f;
 
 /**
  * Utility class to perform Volumetric-Hierarchical Approximate Convex

@@ -131,7 +131,7 @@ abstract class PhysicsLevel(
             // 动态步进次数
             repeat(dynamicRepeat) {
                 tickCount++
-                world.update(fixedStep, 0, false, true, false)
+                world.update(fixedStep, 0, false, true, false, true)
             }
             // 统计耗时
             lastStepTickTime = System.nanoTime() - ticker
@@ -237,10 +237,12 @@ abstract class PhysicsLevel(
         }
 
         // 统一更新地形
-        terrainManager.updateDirtySections()
-        terrainManager.updateBuild(activationBoxes)
-        terrainManager.updateActivation(activationBoxes)
-//        if (world.pcoList.isNotEmpty()) SparkCore.LOGGER.debug("tick: " + tickCount + ", " + terrainManager.getStats())
+        if(!mcLevel.isClientSide) {
+            terrainManager.updateDirtySections()
+            terrainManager.updateBuild(buildBoxes)
+            terrainManager.updateActivation(activationBoxes)
+        }
+        if (world.pcoList.isNotEmpty()) SparkCore.LOGGER.debug("tick: " + tickCount + ", " + terrainManager.getStats())
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)

@@ -38,19 +38,15 @@ import com.jme3.math.Plane;
 import com.jme3.math.Triangle;
 import com.jme3.math.Vector3f;
 import com.jme3.util.BufferUtils;
+import jme3utilities.Validate;
+import jme3utilities.math.*;
+import vhacd.VHACDHull;
+import vhacd4.Vhacd4Hull;
+
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
-import jme3utilities.math.MyBuffer;
-import jme3utilities.math.MyMath;
-import jme3utilities.math.MyVector3f;
-import jme3utilities.math.RectangularSolid;
-import jme3utilities.math.VectorSet;
-import jme3utilities.math.VectorSetUsingBuffer;
-import vhacd.VHACDHull;
-import vhacd4.Vhacd4Hull;
 
 /**
  * A convex-hull collision shape based on Bullet's {@code btConvexHullShape}.

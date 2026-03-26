@@ -35,14 +35,11 @@ import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.collision.shapes.EmptyShape;
 import com.jme3.bullet.collision.shapes.HullCollisionShape;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Transform;
-import com.jme3.math.Triangle;
-import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
+import com.jme3.math.*;
 import jme3utilities.Validate;
 import jme3utilities.math.MyMath;
+
+import java.util.logging.Logger;
 
 /**
  * An element in a CompoundCollisionShape, consisting of a (non-compound) base

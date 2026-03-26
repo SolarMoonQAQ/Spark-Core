@@ -66,6 +66,16 @@ fun PhysicsCollisionObject.onCollideEnded(handler: (PhysicsBodyEvent.Collide.End
     }
 }
 
+fun PhysicsCollisionObject.onCollidePre(handler: (PhysicsBodyEvent.Collide.Pre) -> Boolean): Subscription {
+    return onEvent<PhysicsBodyEvent.Collide.Pre> { event ->
+        // 调用处理器，得到返回值（true=继续，false=取消）
+        val shouldCancel = !handler(event)   // 返回 true 表示允许碰撞，false 表示取消
+        if (shouldCancel) {
+            event.canceled = true
+        }
+    }
+}
+
 fun PhysicsCollisionObject.onTick(handler: (PhysicsBodyEvent.Tick) -> Unit): Subscription {
     return onEvent<PhysicsBodyEvent.Tick> { event ->
         handler(event)

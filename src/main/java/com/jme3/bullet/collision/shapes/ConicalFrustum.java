@@ -32,8 +32,9 @@
 package com.jme3.bullet.collision.shapes;
 
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * A collision shape for a conical frustum with uniform density, based on

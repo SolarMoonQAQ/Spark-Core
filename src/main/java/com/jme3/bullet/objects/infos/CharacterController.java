@@ -36,8 +36,9 @@ import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.objects.PhysicsCharacter;
 import com.jme3.math.Vector3f;
 import com.simsilica.mathd.Vec3d;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * The "action" (controller) portion of a PhysicsCharacter, based on Bullet's

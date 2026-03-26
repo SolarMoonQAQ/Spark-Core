@@ -30,15 +30,12 @@
 package vhacd;
 
 import com.jme3.bullet.NativePhysicsObject;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import jme3utilities.Validate;
+
+import java.io.*;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * A set of tuning parameters for convex decomposition, based on classic

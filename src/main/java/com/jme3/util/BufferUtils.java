@@ -32,11 +32,8 @@
 package com.jme3.util;
 
 import com.jme3.math.Vector3f;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
+
+import java.nio.*;
 
 /**
  * <code>BufferUtils</code> is a helper class for generating nio buffers from

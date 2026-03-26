@@ -35,6 +35,7 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.joints.PhysicsJoint;
 import com.jme3.bullet.objects.PhysicsSoftBody;
 import com.jme3.math.Vector3f;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -349,6 +350,11 @@ public class PhysicsSoftSpace extends PhysicsSpace {
         }
     }
 
+    /**
+     * Remove the specified soft body from this space.
+     *
+     * @param softBody the body to remove (not null)
+     */
     private void removeSoftBody(PhysicsSoftBody softBody) {
         long softBodyId = softBody.nativeId();
         if (!softBodyMap.containsKey(softBodyId)) {

@@ -1,14 +1,14 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent
-import cn.solarmoon.spark_core.event.PhysicsContactEvent
-import cn.solarmoon.spark_core.physics.body.ManifoldPoint
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
 import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.util.triggerEvent
 import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.SolverMode
+import com.jme3.bullet.collision.PersistentManifolds
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.bullet.util.NativeLibrary
@@ -50,24 +50,48 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
-    /**
-     * 处理接触点
-     */
+    var pointCount = 0
+    var pointProcessed = 0
+    var pointConceived = 0
     override fun onContactProcessed(
         pcoA: PhysicsCollisionObject,
         pcoB: PhysicsCollisionObject,
         manifoldPointId: Long
     ) {
-        val o1Point = ManifoldPoint(manifoldPointId, 0)
-        val o2Point = ManifoldPoint(manifoldPointId, 1)
+        pointProcessed++
+    }
 
-        pcoA.isColliding = true
-        pcoA.triggerEvent(PhysicsBodyEvent.Collide.Processed(pcoA, pcoB, o1Point, o2Point))
-
-        pcoB.isColliding = true
-        pcoB.triggerEvent(PhysicsBodyEvent.Collide.Processed(pcoB, pcoA, o2Point, o1Point))
-
-        NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(pcoA, pcoB, o1Point, o2Point, manifoldPointId))
+    override fun onContactConceived(
+        manifoldPointId: Long,
+        manifoldId: Long,
+        pcoA: PhysicsCollisionObject,
+        pcoB: PhysicsCollisionObject
+    ): Boolean {
+        pointConceived++
+        return false
+    }
+    override fun update(timeInterval: Float, maxSteps: Int, stepFlags: Int) {
+        pointConceived = 0
+        pointProcessed = 0
+        pointCount = 0
+        val manifolds = listManifoldIds().iterator()
+        while (manifolds.hasNext()) {
+            pointCount += PersistentManifolds.countPoints(manifolds.next())
+        }
+        if (!level.mcLevel.isClientSide && pcoList.isNotEmpty())
+            SparkCore.LOGGER.debug("tick: ${level.tickCount} Point Pre      : $pointCount")
+        super.update(timeInterval, maxSteps, stepFlags)
+        val manifoldsAfterUpdate = listManifoldIds().iterator()
+        pointCount = 0
+        while (manifoldsAfterUpdate.hasNext()) {
+            pointCount += PersistentManifolds.countPoints(manifoldsAfterUpdate.next())
+        }
+        if (!level.mcLevel.isClientSide && pcoList.isNotEmpty()) {
+            SparkCore.LOGGER.debug("tick: ${level.tickCount} Point Conceived: $pointConceived")
+            SparkCore.LOGGER.debug("tick: ${level.tickCount} Point Processed: $pointProcessed")
+            SparkCore.LOGGER.debug("tick: ${level.tickCount} Point Post     : $pointCount")
+            SparkCore.LOGGER.debug("-------------------------------------------------------")
+        }
     }
 
     override fun addCollisionObject(pco: PhysicsCollisionObject) {

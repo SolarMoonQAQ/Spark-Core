@@ -32,8 +32,9 @@
 package com.jme3.bullet.joints.motors;
 
 import com.jme3.bullet.NativePhysicsObject;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * A single-axis motor based on Bullet's btRotationalLimitMotor2, used to

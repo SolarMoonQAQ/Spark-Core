@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.body
 
 import cn.solarmoon.spark_core.physics.PhysicsHost
+import cn.solarmoon.spark_core.util.CancellableEvent
 import cn.solarmoon.spark_core.util.InlineEvent
 import com.jme3.bullet.collision.PhysicsCollisionObject
 
@@ -12,6 +13,14 @@ abstract class PhysicsBodyEvent: InlineEvent {
         val o1Point: ManifoldPoint,
         val o2Point: ManifoldPoint,
     ): PhysicsBodyEvent() {
+        class Pre(
+            o1: PhysicsCollisionObject,
+            o2: PhysicsCollisionObject,
+            o1Point: ManifoldPoint,
+            o2Point: ManifoldPoint,
+            override var canceled: Boolean = false,
+        ): Collide(o1, o2, o1Point, o2Point), CancellableEvent
+
         class Started(
             o1: PhysicsCollisionObject,
             o2: PhysicsCollisionObject,

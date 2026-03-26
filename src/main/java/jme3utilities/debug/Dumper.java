@@ -26,9 +26,10 @@
  */
 package jme3utilities.debug;
 
+import jme3utilities.Validate;
+
 import java.io.PrintStream;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * Dump portions of a Libbulletjme object for debugging.

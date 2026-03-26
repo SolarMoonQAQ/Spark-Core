@@ -47,6 +47,7 @@ import com.jme3.math.Vector3f;
 import com.simsilica.mathd.Matrix3d;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
+import jme3utilities.Validate;
 
 import java.util.*;
 import java.util.logging.Level;

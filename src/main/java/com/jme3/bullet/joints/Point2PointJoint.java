@@ -34,9 +34,10 @@ package com.jme3.bullet.joints;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyMath;
+
+import java.util.logging.Logger;
 
 /**
  * A 3 degree-of-freedom joint based on Bullet's btPoint2PointConstraint.

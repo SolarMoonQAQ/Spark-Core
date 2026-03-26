@@ -36,10 +36,11 @@ import com.jme3.bullet.objects.MultiBodyCollider;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
+import jme3utilities.Validate;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * An articulated rigid body based on Bullet's {@code btMultiBody}. Uses

@@ -34,8 +34,9 @@ package com.jme3.bullet.objects;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.joints.PhysicsJoint;
 import com.jme3.math.Vector3f;
-import java.util.ArrayList;
 import jme3utilities.Validate;
+
+import java.util.ArrayList;
 
 /**
  * The abstract base class for rigid bodies and soft bodies.

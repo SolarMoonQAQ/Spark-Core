@@ -31,11 +31,12 @@
  */
 package com.jme3.bullet;
 
+import jme3utilities.Validate;
+
 import java.lang.ref.ReferenceQueue;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * An abstract class to represent a native (Bullet) physics object.

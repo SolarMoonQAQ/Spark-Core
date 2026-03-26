@@ -34,13 +34,14 @@ package com.jme3.bullet;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.objects.MultiBodyCollider;
 import com.jme3.math.Vector3f;
+import jme3utilities.Validate;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * A PhysicsSpace that supports multibodies, with its own

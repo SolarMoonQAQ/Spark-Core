@@ -32,10 +32,11 @@
 package com.jme3.bullet.collision.shapes;
 
 import com.jme3.math.Vector3f;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyVector3f;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A convex collision shape to represent the Minkowki sum of 2 convex shapes,

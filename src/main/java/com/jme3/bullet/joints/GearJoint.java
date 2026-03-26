@@ -33,9 +33,10 @@ package com.jme3.bullet.joints;
 
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyVector3f;
+
+import java.util.logging.Logger;
 
 /**
  * A joint that couples the angular velocities of two bodies, based on Bullet's

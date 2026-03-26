@@ -34,14 +34,15 @@ package com.jme3.bullet.collision.shapes;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.util.DebugShapeFactory;
 import com.jme3.math.Vector3f;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyMath;
 import jme3utilities.math.MyVolume;
 import jme3utilities.math.RectangularSolid;
+
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * A convex collision shape based on Bullet's {@code btMultiSphereShape}. Unlike

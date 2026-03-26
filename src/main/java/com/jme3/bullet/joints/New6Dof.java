@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2024 jMonkeyEngine
+ * Copyright (c) 2019-2025 jMonkeyEngine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,11 +40,12 @@ import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
 import jme3utilities.math.MyMath;
 import jme3utilities.math.MyVector3f;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A 6 degree-of-freedom Constraint based on Bullet's
@@ -761,6 +762,9 @@ public class New6Dof extends Constraint {
         gatherMotors();
     }
 
+    /**
+     * Allocate and initialize references to all motors, during joint creation.
+     */
     private void gatherMotors() {
         assert rotationMotor == null;
         assert translationMotor == null;

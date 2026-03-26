@@ -21,7 +21,16 @@ inline fun <reified E: InlineEvent> InlineEventHandler<in E>.onEvent(handler: In
 }
 
 inline fun <reified E : InlineEvent> InlineEventHandler<in E>.triggerEvent(event: E): E {
-    eventHandlers[E::class]?.forEach { (it as InlineEventConsumer<E>).invoke(event) }
+    var anyCancelled = false
+    eventHandlers[E::class]?.forEach { handler ->
+        // 调用处理器，如果返回 false 则标记取消
+        (handler as InlineEventConsumer<E>).invoke(event)
+        if (event is CancellableEvent && event.canceled) anyCancelled = true
+    }
+    // 如果事件有 cancel 方法，则应用结果
+    if (event is CancellableEvent) {
+        event.canceled = anyCancelled
+    }
     return event
 }
 
@@ -30,3 +39,7 @@ inline fun <reified E: InlineEvent> InlineEventHandler<in E>.remove(handler: Inl
 }
 
 interface InlineEvent
+
+interface CancellableEvent: InlineEvent {
+    var canceled: Boolean
+}

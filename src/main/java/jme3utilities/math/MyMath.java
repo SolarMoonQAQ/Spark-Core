@@ -26,15 +26,11 @@
  */
 package jme3utilities.math;
 
-import com.jme3.math.FastMath;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Transform;
-import com.jme3.math.Triangle;
-import com.jme3.math.Vector3f;
+import com.jme3.math.*;
 import com.jme3.util.TempVars;
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * Mathematical utility methods.

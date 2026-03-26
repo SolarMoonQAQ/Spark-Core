@@ -37,6 +37,11 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.jme3.util.BufferUtils;
+import jme3utilities.Validate;
+import jme3utilities.lbj.IndexBuffer;
+import jme3utilities.lbj.Mesh;
+import jme3utilities.math.*;
+
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Collection;
@@ -45,14 +50,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
-import jme3utilities.lbj.IndexBuffer;
-import jme3utilities.lbj.Mesh;
-import jme3utilities.math.IntPair;
-import jme3utilities.math.MyBuffer;
-import jme3utilities.math.MyMath;
-import jme3utilities.math.MyQuaternion;
-import jme3utilities.math.MyVector3f;
 
 /**
  * A utility class for interfacing with Native Bullet, specifically for soft

@@ -32,6 +32,7 @@
 package com.jme3.bullet.objects.infos;
 
 import com.jme3.bullet.NativePhysicsObject;
+
 import java.util.logging.Logger;
 
 /**

@@ -30,9 +30,10 @@
 package vhacd;
 
 import com.jme3.util.BufferUtils;
+import jme3utilities.math.MyVector3f;
+
 import java.nio.FloatBuffer;
 import java.util.logging.Logger;
-import jme3utilities.math.MyVector3f;
 
 /**
  * A 3-D convex hull based on a V-HACD ConvexHull. Immutable.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2025 jMonkeyEngine
+ * Copyright (c) 2019-2026 jMonkeyEngine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,7 @@ package com.jme3.bullet.util;
 
 import com.jme3.bullet.NativePhysicsObject;
 import com.jme3.math.Vector3f;
+
 import java.util.logging.Logger;
 
 /**
@@ -52,7 +53,7 @@ final public class NativeLibrary {
     /**
      * expected version string of the native library
      */
-    final public static String expectedVersion = "22.0.3";
+    final public static String expectedVersion = "23.0.0";
     // *************************************************************************
     // constructors
 

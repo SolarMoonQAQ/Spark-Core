@@ -27,8 +27,9 @@
 package jme3utilities.minie;
 
 import com.jme3.bullet.objects.PhysicsRigidBody;
-import java.util.logging.Logger;
 import jme3utilities.MyString;
+
+import java.util.logging.Logger;
 
 /**
  * Utility methods that operate on physics collision objects.
