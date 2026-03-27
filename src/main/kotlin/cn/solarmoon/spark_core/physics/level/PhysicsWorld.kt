@@ -58,7 +58,16 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
         pcoB: PhysicsCollisionObject,
         manifoldPointId: Long
     ) {
-        pointProcessed++
+        val o1Point = ManifoldPoint(manifoldPointId, 0)
+        val o2Point = ManifoldPoint(manifoldPointId, 1)
+
+        pcoA.isColliding = true
+        pcoA.triggerEvent(PhysicsBodyEvent.Collide.Processed(pcoA, pcoB, o1Point, o2Point))
+
+        pcoB.isColliding = true
+        pcoB.triggerEvent(PhysicsBodyEvent.Collide.Processed(pcoB, pcoA, o2Point, o1Point))
+
+        NeoForge.EVENT_BUS.post(PhysicsContactEvent.Process(pcoA, pcoB, o1Point, o2Point, manifoldPointId))
     }
 
     override fun onContactConceived(
@@ -67,31 +76,17 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
         pcoA: PhysicsCollisionObject,
         pcoB: PhysicsCollisionObject
     ): Boolean {
-        pointConceived++
-        return false
-    }
-    override fun update(timeInterval: Float, maxSteps: Int, stepFlags: Int) {
-        pointConceived = 0
-        pointProcessed = 0
-        pointCount = 0
-        val manifolds = listManifoldIds().iterator()
-        while (manifolds.hasNext()) {
-            pointCount += PersistentManifolds.countPoints(manifolds.next())
-        }
-        if (!level.mcLevel.isClientSide && pcoList.isNotEmpty())
-            SparkCore.LOGGER.debug("tick: ${level.tickCount} Point Pre      : $pointCount")
-        super.update(timeInterval, maxSteps, stepFlags)
-        val manifoldsAfterUpdate = listManifoldIds().iterator()
-        pointCount = 0
-        while (manifoldsAfterUpdate.hasNext()) {
-            pointCount += PersistentManifolds.countPoints(manifoldsAfterUpdate.next())
-        }
-        if (!level.mcLevel.isClientSide && pcoList.isNotEmpty()) {
-            SparkCore.LOGGER.debug("tick: ${level.tickCount} Point Conceived: $pointConceived")
-            SparkCore.LOGGER.debug("tick: ${level.tickCount} Point Processed: $pointProcessed")
-            SparkCore.LOGGER.debug("tick: ${level.tickCount} Point Post     : $pointCount")
-            SparkCore.LOGGER.debug("-------------------------------------------------------")
-        }
+        val o1Point = ManifoldPoint(manifoldPointId, 0)
+        val o2Point = ManifoldPoint(manifoldPointId, 1)
+
+        pcoA.isColliding = true
+        val event1 = PhysicsBodyEvent.Collide.Pre(pcoA, pcoB, o1Point, o2Point, false)
+        pcoA.triggerEvent(event1)
+
+        pcoB.isColliding = true
+        val event2 = PhysicsBodyEvent.Collide.Pre(pcoB, pcoA, o2Point, o1Point, false)
+        pcoB.triggerEvent(event2)
+        return !event1.canceled && !event2.canceled
     }
 
     override fun addCollisionObject(pco: PhysicsCollisionObject) {
