@@ -237,12 +237,9 @@ abstract class PhysicsLevel(
         }
 
         // 统一更新地形
-        if(!mcLevel.isClientSide) {
-            terrainManager.updateDirtySections()
-            terrainManager.updateBuild(buildBoxes)
-            terrainManager.updateActivation(activationBoxes)
-        }
-        if (world.pcoList.isNotEmpty()) SparkCore.LOGGER.debug("tick: " + tickCount + ", " + terrainManager.getStats())
+        terrainManager.updateDirtySections()
+        terrainManager.updateBuild(buildBoxes)
+        terrainManager.updateActivation(activationBoxes)
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)

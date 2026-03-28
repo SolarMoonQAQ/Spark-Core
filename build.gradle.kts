@@ -170,8 +170,8 @@ dependencies {
     implementation("software.bernie.geckolib:geckolib-neoforge-${property("minecraft_version")}:${property("geckolib_version")}")
     implementation("mod.azure.azurelib:azurelib-neo-${property("minecraft_version")}:${property("azurelib_version")}")
     implementation("dev.kosmx.player-anim:player-animation-lib-forge:${property("player_animator_version")}")
-    implementation("maven.modrinth:real-camera:0.6.1-beta-1.21")
-    implementation("maven.modrinth:first-person-model:Sx5QD2SF")
+    compileOnly("maven.modrinth:real-camera:0.6.1-beta-1.21")
+    compileOnly("maven.modrinth:first-person-model:Sx5QD2SF")
     implementation("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
 
     // 外部库 ------------------------------------------------------------------------------------------------------------

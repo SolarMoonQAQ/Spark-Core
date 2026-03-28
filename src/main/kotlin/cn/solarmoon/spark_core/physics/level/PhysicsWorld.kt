@@ -1,14 +1,14 @@
 package cn.solarmoon.spark_core.physics.level
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent
+import cn.solarmoon.spark_core.event.PhysicsContactEvent
+import cn.solarmoon.spark_core.physics.body.ManifoldPoint
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent
 import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.util.triggerEvent
 import com.jme3.bullet.CollisionConfiguration
 import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.SolverMode
-import com.jme3.bullet.collision.PersistentManifolds
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.bullet.util.NativeLibrary
@@ -50,9 +50,6 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
         return NeoForge.EVENT_BUS.post(NeedsCollisionEvent(pcoA, pcoB, r)).shouldCollide
     }
 
-    var pointCount = 0
-    var pointProcessed = 0
-    var pointConceived = 0
     override fun onContactProcessed(
         pcoA: PhysicsCollisionObject,
         pcoB: PhysicsCollisionObject,
