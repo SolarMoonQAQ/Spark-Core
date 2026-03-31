@@ -14,6 +14,12 @@ val mod_id: String by project
 val build_name: String by project
 val minecraft_version: String by project
 
+try {
+    tasks.named<Wrapper>("wrapper") {
+        distributionType = Wrapper.DistributionType.ALL
+    }
+} catch (e:Exception ) {}
+
 version = mod_version
 group = "${mod_group_id}.${mod_id}"
 
