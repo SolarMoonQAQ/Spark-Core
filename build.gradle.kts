@@ -2,7 +2,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("idea")
-    id("net.neoforged.moddev") version "2.0.115"
+    id("net.neoforged.moddev") version "1.0.14"
     kotlin("jvm")
     kotlin("plugin.serialization") version "2.2.20"
     id("com.vanniktech.maven.publish") version "0.34.0"
@@ -13,11 +13,6 @@ val mod_group_id: String by project
 val mod_id: String by project
 val build_name: String by project
 val minecraft_version: String by project
-
-
-tasks.named<Wrapper>("wrapper") {
-    distributionType = Wrapper.DistributionType.ALL
-}
 
 version = mod_version
 group = "${mod_group_id}.${mod_id}"
@@ -170,7 +165,7 @@ dependencies {
     implementation("software.bernie.geckolib:geckolib-neoforge-${property("minecraft_version")}:${property("geckolib_version")}")
     implementation("mod.azure.azurelib:azurelib-neo-${property("minecraft_version")}:${property("azurelib_version")}")
     implementation("dev.kosmx.player-anim:player-animation-lib-forge:${property("player_animator_version")}")
-    compileOnly("maven.modrinth:real-camera:0.6.1-beta-1.21")
+    implementation("maven.modrinth:real-camera:0.7.4-beta-1.21.1")
     compileOnly("maven.modrinth:first-person-model:Sx5QD2SF")
     implementation("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
 
