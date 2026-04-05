@@ -40,6 +40,9 @@ abstract class PhysicsLevel(
         /** 主线程tick预算时间（纳秒），MC为20Hz → 50ms，留出一些线程调度和数据同步余量 */
         const val TICK_BUDGET_NS = 45_000_000L
 
+        /** 目标每tick时间（纳秒），MC为20Hz → 50ms，留出一些线程调度和数据同步余量 */
+        const val TICK_TARGET_NS = 45_000_000L
+
         /** 降频阈值：超过预算的比例 */
         const val OVERLOAD_THRESHOLD_RATIO = 0.8  // 80%预算开始降频
 
@@ -67,7 +70,7 @@ abstract class PhysicsLevel(
             if (dynamicRepeat < field) dynamicRepeat = field
         }
 
-    val defaultMinStep : Int = 1
+    val defaultMinStep: Int = 1
 
     /** 允许的最大每tick步进次数（可运行时调整） */
     @Volatile
@@ -77,13 +80,16 @@ abstract class PhysicsLevel(
             if (dynamicRepeat > field) dynamicRepeat = field
         }
 
-    val defaultMaxStep : Int = baseStep
+    val defaultMaxStep: Int = baseStep
 
     /** 平滑步进时间：过去约n跳的平均值 */
     private var smoothedStepTime = TICK_BUDGET_NS.toDouble()
 
     /** 调整冷却：修改频率后至少等待多少tick才能再次修改 */
     private var adjustmentCooldown = 0
+
+    /** 目标步进时间：完成一轮物理计算的目标用时, 设为0以尽可能快速完成，更新之间不插入休眠 */
+    var targetStepTime = 0L
 
     // 协程配置
     val dispatcher = Executors.newSingleThreadExecutor { runnable ->
@@ -128,53 +134,59 @@ abstract class PhysicsLevel(
             // 执行物理计算
             val ticker = System.nanoTime()
             stateFlow.value = PhysicsLevelState.RUNNING
+            val stepSleepTime = ((targetStepTime - smoothedStepTime) / dynamicRepeat).toLong()
             // 动态步进次数
-            repeat(dynamicRepeat) {
+            repeat(dynamicRepeat) { stepIndex ->
                 tickCount++
                 world.update(fixedStep, 0, false, true, false, true)
-            }
-            // 统计耗时
-            lastStepTickTime = System.nanoTime() - ticker
-            lastPhysicsTickTime = System.nanoTime()
-            // ===== 动态调节逻辑 =====
-            val currentMs = lastStepTickTime.toDouble()
-            smoothedStepTime = if (currentMs > smoothedStepTime) {
-                // 负载上升：快速跟随 (Attack)
-                (ATTACK_ALPHA * currentMs) + (1.0 - ATTACK_ALPHA) * smoothedStepTime
-            } else {
-                // 负载下降：缓慢回落 (Decay)
-                (DECAY_ALPHA * currentMs) + (1.0 - DECAY_ALPHA) * smoothedStepTime
-            }
-            if (adjustmentCooldown > 0) {
-                adjustmentCooldown--
-            } else {
-                val overloadThreshold = (TICK_BUDGET_NS * OVERLOAD_THRESHOLD_RATIO).toLong()
-                val recoveryThreshold = (TICK_BUDGET_NS * RECOVER_THRESHOLD_RATIO).toLong()
-                when {
-                    smoothedStepTime > overloadThreshold && dynamicRepeat > minStep -> {
-                        dynamicRepeat--
-                        adjustmentCooldown = 20 // 降频后观察1秒（20tick）再做决定
-                        SparkCore.LOGGER.warn(
-                            "{} physics overload detected, step reduced to {}",
-                            name,
-                            dynamicRepeat
-                        )
-                    }
 
-                    smoothedStepTime < recoveryThreshold && dynamicRepeat < maxStep -> {
-                        dynamicRepeat++
-                        adjustmentCooldown = 40 // 升频需要更谨慎，多观察一会儿
-                        SparkCore.LOGGER.warn(
-                            "{} physics recovered, step increased to {}",
-                            name,
-                            dynamicRepeat
-                        )
+                // 计算当前步的休眠时间（除了最后一步）
+                if (stepSleepTime > 0 && stepIndex < dynamicRepeat - 1) {
+                    delay(stepSleepTime / 1_000_000) // 转换为毫秒
+                }
+                // 统计耗时
+                lastStepTickTime = System.nanoTime() - ticker - stepSleepTime * (dynamicRepeat - 1)
+                lastPhysicsTickTime = System.nanoTime()
+                // ===== 动态调节逻辑 =====
+                val currentMs = lastStepTickTime.toDouble()
+                smoothedStepTime = if (currentMs > smoothedStepTime) {
+                    // 负载上升：快速跟随 (Attack)
+                    (ATTACK_ALPHA * currentMs) + (1.0 - ATTACK_ALPHA) * smoothedStepTime
+                } else {
+                    // 负载下降：缓慢回落 (Decay)
+                    (DECAY_ALPHA * currentMs) + (1.0 - DECAY_ALPHA) * smoothedStepTime
+                }
+                if (adjustmentCooldown > 0) {
+                    adjustmentCooldown--
+                } else {
+                    val overloadThreshold = (TICK_BUDGET_NS * OVERLOAD_THRESHOLD_RATIO).toLong()
+                    val recoveryThreshold = (TICK_BUDGET_NS * RECOVER_THRESHOLD_RATIO).toLong()
+                    when {
+                        smoothedStepTime > overloadThreshold && dynamicRepeat > minStep -> {
+                            dynamicRepeat--
+                            adjustmentCooldown = 20 // 降频后观察1秒（20tick）再做决定
+                            SparkCore.LOGGER.warn(
+                                "{} physics overload detected, step reduced to {}",
+                                name,
+                                dynamicRepeat
+                            )
+                        }
+
+                        smoothedStepTime < recoveryThreshold && dynamicRepeat < maxStep -> {
+                            dynamicRepeat++
+                            adjustmentCooldown = 40 // 升频需要更谨慎，多观察一会儿
+                            SparkCore.LOGGER.warn(
+                                "{} physics recovered, step increased to {}",
+                                name,
+                                dynamicRepeat
+                            )
+                        }
                     }
                 }
+                // 通知主线程计算完成
+                stateFlow.value = PhysicsLevelState.IDLE
+                stepCompletedChannel.send(Unit)
             }
-            // 通知主线程计算完成
-            stateFlow.value = PhysicsLevelState.IDLE
-            stepCompletedChannel.send(Unit)
         }
     }
 

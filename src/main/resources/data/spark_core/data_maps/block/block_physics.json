@@ -1,0 +1,102 @@
+{
+  "values": {
+    "#minecraft:mineable_with_pickaxe": {
+      "friction": 0.9,
+      "rolling_friction": 0.5,
+      "restitution": 0.9,
+      "base_slip": 0.0,
+      "slip_factor": 0.5
+    },
+    "#minecraft:mineable_with_axe": {
+      "friction": 0.8,
+      "rolling_friction": 0.8,
+      "restitution": 0.8,
+      "base_slip": 0.1,
+      "slip_factor": 0.5
+    },
+    "#minecraft:mineable_with_shovel": {
+      "friction": 0.65,
+      "rolling_friction": 5.0,
+      "restitution": 0.3,
+      "base_slip": 0.2,
+      "slip_factor": 0.8
+    },
+    "#minecraft:mineable_with_hoe": {
+      "friction": 0.6,
+      "rolling_friction": 3.0,
+      "restitution": 0.0,
+      "base_slip": 0.3,
+      "slip_factor": 0.7
+    },
+    "minecraft:ice": {
+      "friction": 0.1,
+      "rolling_friction": 0.1,
+      "restitution": 0.2,
+      "base_slip": 0.8,
+      "slip_factor": 0.0
+    },
+    "minecraft:packed_ice": {
+      "friction": 0.15,
+      "rolling_friction": 0.15,
+      "restitution": 0.3,
+      "base_slip": 0.7,
+      "slip_factor": 0.0
+    },
+    "minecraft:blue_ice": {
+      "friction": 0.2,
+      "rolling_friction": 0.2,
+      "restitution": 0.4,
+      "base_slip": 0.6,
+      "slip_factor": 0.0
+    },
+    "minecraft:slime_block": {
+      "friction": 0.8,
+      "rolling_friction": 0.1,
+      "restitution": 5.0,
+      "base_slip": 0.0,
+      "slip_factor": 0.0
+    },
+    "minecraft:honey_block": {
+      "friction": 10.0,
+      "rolling_friction": 9.0,
+      "restitution": 0.0,
+      "base_slip": 0.0,
+      "slip_factor": 0.0
+    },
+    "#minecraft:wool": {
+      "friction": 1.2,
+      "rolling_friction": 2.0,
+      "restitution": 0.1,
+      "base_slip": 0.0,
+      "slip_factor": 0.6
+    },
+    "#minecraft:snow": {
+      "friction": 0.5,
+      "rolling_friction": 7.0,
+      "restitution": 0.1,
+      "base_slip": 0.35,
+      "slip_factor": 0.2
+    },
+    "#minecraft:sand": {
+      "friction": 0.6,
+      "rolling_friction": 4.0,
+      "restitution": 0.2,
+      "base_slip": 0.25,
+      "slip_factor": 0.5
+    },
+    "#minecraft:concrete_powder": {
+      "friction": 0.7,
+      "rolling_friction": 5.0,
+      "restitution": 0.3,
+      "base_slip": 0.35,
+      "slip_factor": 0.5
+    },
+    "#minecraft:concrete": {
+      "friction": 1.0,
+      "rolling_friction": 0.2,
+      "restitution": 0.9,
+      "base_slip": 0.0,
+      "slip_factor": 0.5
+    }
+  }
+}

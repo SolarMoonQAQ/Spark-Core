@@ -60,13 +60,9 @@ class SectionSnapshot private constructor(
                         ) {
                             blockSnapshots[index] = BlockSnapshot(
                                 blockState,
-                                BlockCollisionUtil.getBlockFriction(chunk.level, blockState, getWorldPos(pos, x, y, z)),
-                                BlockCollisionUtil.getBlockRollingFriction(
-                                    chunk.level,
-                                    blockState,
-                                    getWorldPos(pos, x, y, z)
-                                ),
-                                BlockCollisionUtil.getRestitution(chunk, blockState, getWorldPos(pos, x, y, z)),
+                                BlockCollisionUtil.getBlockFriction(blockState),
+                                BlockCollisionUtil.getBlockRollingFriction(blockState),
+                                BlockCollisionUtil.getRestitution(blockState),
                                 BlockCollisionUtil.getSlip(chunk, blockState, getWorldPos(pos, x, y, z))
                             )
                             hasBlocks = true
@@ -118,11 +114,20 @@ class SectionSnapshot private constructor(
      */
     data class BlockSnapshot(
         val state: BlockState,
-        val friction: Float, // 静摩擦系数
-        val rollingFriction: Float, // 滚动摩擦系数
-        val restitution: Float, // 弹性系数，0~1，0表示无弹性，1表示完全弹性
-        var slip: Float // 湿滑系数，0~1，0表示完全干燥，1表示完全浸润
-    )
+        val friction: Float,           // 静摩擦系数
+        val rollingFriction: Float,    // 滚动摩擦系数
+        val restitution: Float,        // 弹性系数，0~1
+        val slip: Float                // 湿滑系数，0~1
+    ) {
+        /**
+         * 返回一个修改了 slip 的新 BlockSnapshot 实例
+         * @param newSlip 新的湿滑系数
+         * @return 新的快照对象，其他属性保持不变
+         */
+        fun withSlip(newSlip: Float): BlockSnapshot {
+            return copy(slip = newSlip)
+        }
+    }
 
     /**
      * 将世界坐标转换为相对坐标
