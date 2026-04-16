@@ -73,7 +73,10 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
 
         // 如果存在旧实例，复制声源点并开始淡出
         if (oldInstance != null) {
-            newInstance.copySoundPointsFrom(oldInstance);
+            // 旧实例没有可用波面时，不覆盖新实例构造时创建的初始波面，避免新实例无法启动播放。
+            if (!oldInstance.soundPoints.isEmpty()) {
+                newInstance.copySoundPointsFrom(oldInstance);
+            }
             oldInstance.startFadeOut();
         }
 

@@ -64,12 +64,13 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
                 iterator.remove();
                 continue;
             }
+            // 仅在“尚未开始播放”阶段由本Mixin推进tick：
+            // 已开始播放后由原版SoundEngine维护tickingSounds并推进tick。
+            if (!instance.isPlaying) {
+                instance.tick();
+            }
             // 先检查收听者是否在声音传播范围内
-            if (!instance.isListenerInRange(listenerPos) || instance.isStopped()) {
-                if (!instance.isPlaying) {
-                    // 已开始播放的声音实例存在于SoundEngine的tickingSounds中，由SoundEngine负责更新
-                    instance.tick();
-                }
+            if (!instance.isListenerInRange(listenerPos)) {
                 // 不在范围内，跳过详细的波面检查
                 continue;
             }
