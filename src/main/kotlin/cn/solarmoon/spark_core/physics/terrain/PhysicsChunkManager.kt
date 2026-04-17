@@ -34,6 +34,10 @@ import java.util.concurrent.Executors
 class PhysicsChunkManager(
     private val physicsLevel: PhysicsLevel
 ): PhysicsCollisionListener {
+    private enum class WeatherPhase {
+        DRY, RAINING
+    }
+
     private val activator = PhysicsGhostObject(SphereCollisionShape(2f))
 
     // 已加载的物理区块（包含构建状态）
@@ -60,6 +64,9 @@ class PhysicsChunkManager(
     // 配置参数
     private val buildRadius = 2 // 构建半径（区块数）
     private val activationRadius = 2 // 激活半径（方块数）
+    @Volatile
+    private var weatherEpoch = 0
+    private var lastWeatherPhase = currentWeatherPhase()
 
     // 性能统计
     private val totalSections: Int
@@ -69,6 +76,44 @@ class PhysicsChunkManager(
 
     init {
         activator.addCollideWithGroup(CollisionGroups.PHYSICS_BODY)
+    }
+
+    /**
+     * 当前天气版本号，用于 section 的湿滑缓存刷新去重
+     */
+    fun currentWeatherEpoch(): Int = weatherEpoch
+
+    /**
+     * 在主线程每 tick 调用：
+     * - 检测天气阶段（晴/雨）是否变化
+     * - 若变化，仅刷新当前已激活 section 的湿滑系数
+     */
+    fun updateWeatherSlipIfNeeded() {
+        val newPhase = currentWeatherPhase()
+        if (newPhase == lastWeatherPhase) return
+        lastWeatherPhase = newPhase
+        weatherEpoch++
+        refreshActiveSectionSlip()
+    }
+
+    private fun currentWeatherPhase(): WeatherPhase {
+        return if (physicsLevel.mcLevel.isRaining) WeatherPhase.RAINING else WeatherPhase.DRY
+    }
+
+    /**
+     * 仅刷新活跃 section，避免走重型重建路径
+     */
+    private fun refreshActiveSectionSlip() {
+        val minSection = physicsLevel.mcLevel.minSection
+        val maxSection = physicsLevel.mcLevel.maxSection
+        loadedChunks.values.forEach { chunk ->
+            for (sectionY in minSection until maxSection) {
+                val section = chunk.getSection(sectionY) ?: continue
+                if (section.isActive) {
+                    section.refreshSlipIfNeeded(weatherEpoch)
+                }
+            }
+        }
     }
 
     /**

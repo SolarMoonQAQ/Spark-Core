@@ -249,6 +249,7 @@ abstract class PhysicsLevel(
         }
 
         // 统一更新地形
+        terrainManager.updateWeatherSlipIfNeeded()
         terrainManager.updateDirtySections()
         terrainManager.updateBuild(buildBoxes)
         terrainManager.updateActivation(activationBoxes)

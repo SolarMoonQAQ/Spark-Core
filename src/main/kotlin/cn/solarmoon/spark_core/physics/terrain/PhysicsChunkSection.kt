@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.physics.body.addPhysicsBody
 import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.physics.body.removePhysicsBody
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import cn.solarmoon.spark_core.util.BlockCollisionUtil
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
@@ -39,6 +40,8 @@ class PhysicsChunkSection(
     // 缓存section内所有方块的BlockState，避免物理线程中的getBlockState调用
     private var snapshotForBuild: SectionSnapshot? = null
     private var snapshotForCollision: SectionSnapshot? = null
+    @Volatile
+    private var lastSlipEpoch: Int = Int.MIN_VALUE
     private var collisionShape: CompoundCollisionShape? = null
     private var physicsBody: PhysicsRigidBody? = null
     override val allPhysicsBodies: MutableMap<String, PhysicsCollisionObject> = mutableMapOf()
@@ -212,7 +215,7 @@ class PhysicsChunkSection(
                     physicsBody?.let { body ->
                         collisionShape?.let { newShape ->
                             physicsLevel.submitImmediateTask {
-                                snapshotForCollision = snapshotForBuild?.copy()
+                                replaceCollisionSnapshot(snapshotForBuild)
                                 body.collisionShape = newShape
                             }
                         }
@@ -242,7 +245,7 @@ class PhysicsChunkSection(
      */
     private fun createPhysicsBody(): Boolean {
         val shape = collisionShape ?: return false
-        snapshotForCollision = snapshotForBuild?.copy()
+        replaceCollisionSnapshot(snapshotForBuild)
         physicsBody = PhysicsRigidBody(shape, 0f).apply {
             name = "section_$sectionPos"
             owner = this@PhysicsChunkSection
@@ -288,6 +291,7 @@ class PhysicsChunkSection(
         if (isActive || physicsBody == null) {
             return
         }
+        refreshSlipIfNeeded(physicsLevel.terrainManager.currentWeatherEpoch())
         if (physicsBody!!.isInWorld) {
             isActive = true
             return
@@ -370,6 +374,7 @@ class PhysicsChunkSection(
         destroyPhysicsBody()
         snapshotForBuild = null
         snapshotForCollision = null
+        lastSlipEpoch = Int.MIN_VALUE
     }
 
     private fun destroyPhysicsBody() {
@@ -382,4 +387,33 @@ class PhysicsChunkSection(
      * 检查section是否为空（没有碰撞体积）
      */
     fun isEmpty(): Boolean = collisionShape == null
+
+    /**
+     * 仅刷新 snapshot 中的 slip，不触发 shape 重建和刚体重建
+     */
+    fun refreshSlipIfNeeded(epoch: Int) {
+        if (lastSlipEpoch == epoch) return
+        val snapshot = snapshotForCollision
+        if (snapshot == null || snapshot.isEmpty()) {
+            lastSlipEpoch = epoch
+            return
+        }
+
+        val snapshots = snapshot.blockSnapshots
+        for (index in snapshots.indices) {
+            val blockSnapshot = snapshots[index] ?: continue
+            val relativePos = SectionSnapshot.getRelativePosFromIndex(index)
+            val worldPos = snapshot.getWorldPos(relativePos)
+            val newSlip = BlockCollisionUtil.getSlip(chunk, blockSnapshot.state, worldPos)
+            if (newSlip != blockSnapshot.slip) {
+                snapshots[index] = blockSnapshot.withSlip(newSlip)
+            }
+        }
+        lastSlipEpoch = epoch
+    }
+
+    private fun replaceCollisionSnapshot(source: SectionSnapshot?) {
+        snapshotForCollision = source?.copy()
+        lastSlipEpoch = Int.MIN_VALUE
+    }
 }
