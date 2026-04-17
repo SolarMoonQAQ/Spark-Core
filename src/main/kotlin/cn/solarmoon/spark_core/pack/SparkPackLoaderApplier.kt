@@ -40,6 +40,9 @@ object SparkPackLoaderApplier {
      */
     @SubscribeEvent
     fun onAddPackFinders(event: AddPackFindersEvent) {
+        if (event.packType != PackType.CLIENT_RESOURCES && event.packType != PackType.SERVER_DATA) return
+        SparkPackResourceLoader.ensureStartupLoaded()
+
         if (event.packType == PackType.CLIENT_RESOURCES) {
             if (DATA_PACK.size(PackType.CLIENT_RESOURCES) == 0) {
                 // 首次进入游戏，未触发重载时，预加载客户端资源

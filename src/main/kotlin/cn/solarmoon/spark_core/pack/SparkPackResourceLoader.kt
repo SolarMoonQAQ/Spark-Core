@@ -5,11 +5,12 @@ import cn.solarmoon.spark_core.event.SparkContentPackAutoPackEvent
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import net.neoforged.fml.ModList
+import net.neoforged.fml.ModLoader
 import net.neoforged.fml.loading.FMLPaths
-import net.neoforged.neoforge.common.NeoForge
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.use
@@ -19,6 +20,7 @@ object SparkPackResourceLoader {
     val LOGGER = SparkCore.logger("拓展包读取器")
 
     val registry = mutableListOf<String>()
+    private val startupLoaded = AtomicBoolean(false)
 
     /**
      * 在当前模组的资源文件中查找核心的同名拓展文件夹，在游戏启动时将其打包为包复制到实际拓展文件夹中
@@ -28,6 +30,13 @@ object SparkPackResourceLoader {
         ModList.get().mods.forEach {
             registry.add(it.modId)
             loadModule(it.modId, SparkContentPackAutoPackEvent.Reason.STARTUP)
+        }
+    }
+
+    @JvmStatic
+    fun ensureStartupLoaded() {
+        if (startupLoaded.compareAndSet(false, true)) {
+            loadAllModules()
         }
     }
 
@@ -45,17 +54,16 @@ object SparkPackResourceLoader {
                     if (Files.exists(metaFile) && Files.isRegularFile(metaFile)) {
                         val (metaShouldPack, metaJson) = readMetaAutoPackEnabled(metaFile)
                         val zipPath = runModulesDir.resolve("${moduleDir.fileName}.zip")
-                        val event = NeoForge.EVENT_BUS.post(
-                            SparkContentPackAutoPackEvent.Pre(
-                                modId = modId,
-                                packName = moduleDir.fileName.toString(),
-                                packDirPath = moduleDir,
-                                targetZipPath = zipPath,
-                                reason = reason,
-                                metaJson = metaJson,
-                                shouldPack = metaShouldPack
-                            )
+                        val event = SparkContentPackAutoPackEvent.Pre(
+                            modId = modId,
+                            packDirName = moduleDir.fileName.toString(),
+                            packDirPath = moduleDir,
+                            targetZipPath = zipPath,
+                            reason = reason,
+                            metaJson = metaJson,
+                            shouldPack = metaShouldPack
                         )
+                        ModLoader.postEvent(event)
 
                         if (!event.shouldPack || event.isCanceled) {
                             val skipReason = when {
