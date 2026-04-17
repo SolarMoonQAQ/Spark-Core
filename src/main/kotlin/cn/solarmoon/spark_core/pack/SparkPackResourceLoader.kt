@@ -1,8 +1,12 @@
 package cn.solarmoon.spark_core.pack
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.event.SparkContentPackAutoPackEvent
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import net.neoforged.fml.ModList
 import net.neoforged.fml.loading.FMLPaths
+import net.neoforged.neoforge.common.NeoForge
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -23,11 +27,11 @@ object SparkPackResourceLoader {
     fun loadAllModules() {
         ModList.get().mods.forEach {
             registry.add(it.modId)
-            loadModule(it.modId)
+            loadModule(it.modId, SparkContentPackAutoPackEvent.Reason.STARTUP)
         }
     }
 
-    fun loadModule(modId: String) {
+    fun loadModule(modId: String, reason: SparkContentPackAutoPackEvent.Reason) {
         val runModulesDir = FMLPaths.GAMEDIR.get().resolve(SparkPackLoader.MODULE_NAME)
         Files.createDirectories(runModulesDir)
         val modFileInfo = ModList.get().getModFileById(modId)
@@ -39,9 +43,43 @@ object SparkPackResourceLoader {
                     // 检查 meta.json 是否存在
                     val metaFile = moduleDir.resolve(SparkPackLoader.META_PATH)
                     if (Files.exists(metaFile) && Files.isRegularFile(metaFile)) {
+                        val (metaShouldPack, metaJson) = readMetaAutoPackEnabled(metaFile)
                         val zipPath = runModulesDir.resolve("${moduleDir.fileName}.zip")
-                        zipModule(moduleDir, zipPath)
-                        LOGGER.info("已打包 Mod $modId 的资源拓展到核心拓展文件夹")
+                        val event = NeoForge.EVENT_BUS.post(
+                            SparkContentPackAutoPackEvent.Pre(
+                                modId = modId,
+                                packName = moduleDir.fileName.toString(),
+                                packDirPath = moduleDir,
+                                targetZipPath = zipPath,
+                                reason = reason,
+                                metaJson = metaJson,
+                                shouldPack = metaShouldPack
+                            )
+                        )
+
+                        if (!event.shouldPack || event.isCanceled) {
+                            val skipReason = when {
+                                event.isCanceled -> "event canceled"
+                                !event.shouldPack && metaShouldPack -> "event shouldPack=false"
+                                else -> "meta enable_auto_pack=false"
+                            }
+                            LOGGER.info(
+                                "跳过自动打包内容包: modId={}, packDir={}, reason={}, detail={}",
+                                modId,
+                                moduleDir.fileName,
+                                reason,
+                                skipReason
+                            )
+                        } else {
+                            zipModule(moduleDir, zipPath)
+                            LOGGER.info(
+                                "已自动打包内容包: modId={}, packDir={}, reason={}, zip={}",
+                                modId,
+                                moduleDir.fileName,
+                                reason,
+                                zipPath
+                            )
+                        }
                     }
 
                     // 复制 .docs 文件夹
@@ -64,7 +102,21 @@ object SparkPackResourceLoader {
      */
     fun reload() {
         registry.forEach {
-            loadModule(it)
+            loadModule(it, SparkContentPackAutoPackEvent.Reason.RELOAD)
+        }
+    }
+
+    private fun readMetaAutoPackEnabled(metaFile: Path): Pair<Boolean, JsonObject?> {
+        return try {
+            val raw = Files.readString(metaFile)
+            val root = JsonParser.parseString(raw).asJsonObject
+            val enabled = if (root.has("enable_auto_pack")) {
+                root.get("enable_auto_pack").asBoolean
+            } else true
+            enabled to root
+        } catch (e: Exception) {
+            LOGGER.warn("读取内容包 meta 失败，使用默认自动打包: file={}, error={}", metaFile, e.message)
+            true to null
         }
     }
 
