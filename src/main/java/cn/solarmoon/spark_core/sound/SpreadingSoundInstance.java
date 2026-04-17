@@ -204,14 +204,21 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.isFadingOut = true;
         this.shouldGenerateNewPoints = false;
         if (fadeOutTicks <= 0){
-            this.soundPoints.clear();
-            this.fadeProgress = -1; // 从当前进度开始淡出
-            this.fadeFactor = 0.0f;
-            this.volume = 0.0f;
-            this.stop();
+            stopImmediately();
             return;
         }
         this.fadeProgress = 1; // 从当前进度开始淡出，晚1tick以等待过渡音效开始播放
+    }
+
+    /**
+     * 立即停止播放
+     */
+    public void stopImmediately() {
+        this.soundPoints.clear();
+        this.fadeProgress = -1; // 从当前进度开始淡出
+        this.fadeFactor = 0.0f;
+        this.volume = 0.0f;
+        this.stop();
     }
 
     /**

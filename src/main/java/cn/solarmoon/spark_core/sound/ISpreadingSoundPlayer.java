@@ -42,6 +42,16 @@ public interface ISpreadingSoundPlayer {
     UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
                          ISoundSpreader soundSpreader, int fadeIn, int fadeOut);
 
+    /**
+     * 开始淡出指定声源
+     */
+    void fadeSound(Level level, UUID soundSource);
+
+    /**
+     * 立即停止指定声源
+     */
+    void stopSound(Level level, UUID soundSource);
+
     @Nullable
     SoundBuffer getSoundBuffer(ResourceLocation location);
 }

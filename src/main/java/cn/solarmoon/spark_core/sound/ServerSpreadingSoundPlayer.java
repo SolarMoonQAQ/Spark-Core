@@ -1,6 +1,8 @@
 package cn.solarmoon.spark_core.sound;
 
+import cn.solarmoon.spark_core.sound.payload.SpreadingSoundFadePayload;
 import cn.solarmoon.spark_core.sound.payload.SpreadingSoundPayload;
+import cn.solarmoon.spark_core.sound.payload.SpreadingSoundStopPayload;
 import com.mojang.blaze3d.audio.SoundBuffer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -56,6 +58,20 @@ public class ServerSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     @Override
     public UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType, ISoundSpreader soundSpreader, int fadeIn, int fadeOut) {
         throw new UnsupportedOperationException("server-side transitionSound is not supported yet");
+    }
+
+    @Override
+    public void fadeSound(Level level, UUID soundSource) {
+        if (level instanceof ServerLevel serverLevel) {
+            PacketDistributor.sendToPlayersInDimension(serverLevel, new SpreadingSoundFadePayload(soundSource));
+        } else throw new IllegalStateException("method was called on a client-side level");
+    }
+
+    @Override
+    public void stopSound(Level level, UUID soundSource) {
+        if (level instanceof ServerLevel serverLevel) {
+            PacketDistributor.sendToPlayersInDimension(serverLevel, new SpreadingSoundStopPayload(soundSource));
+        } else throw new IllegalStateException("method was called on a client-side level");
     }
 
     @Override

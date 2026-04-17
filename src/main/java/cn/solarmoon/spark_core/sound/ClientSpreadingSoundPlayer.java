@@ -86,6 +86,16 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     }
 
     @Override
+    public void fadeSound(Level level, UUID soundSource) {
+        fadeSound(soundSource);
+    }
+
+    @Override
+    public void stopSound(Level level, UUID soundSource) {
+        stopSound(soundSource);
+    }
+
+    @Override
     public @Nullable SoundBuffer getSoundBuffer(ResourceLocation location) {
         ISoundManagerMixin soundManager = (ISoundManagerMixin) Minecraft.getInstance().getSoundManager();
         WeighedSoundEvents weighedSoundEvents = ((SoundManager)soundManager).getSoundEvent(location);
@@ -107,12 +117,23 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     }
 
     /**
-     * 强制停止指定声源的所有实例
+     * 开始淡出指定声源
      */
-    public static void stopAllInstances(UUID soundSource) {
+    public static void fadeSound(UUID soundSource) {
         SpreadingSoundInstance instance = activeInstances.get(soundSource);
         if (instance != null) {
             instance.startFadeOut();
+        }
+        activeInstances.remove(soundSource);
+    }
+
+    /**
+     * 停止指定声源的播放
+     */
+    public static void stopSound(UUID soundSource) {
+        SpreadingSoundInstance instance = activeInstances.get(soundSource);
+        if (instance != null) {
+            instance.stopImmediately();
         }
         activeInstances.remove(soundSource);
     }

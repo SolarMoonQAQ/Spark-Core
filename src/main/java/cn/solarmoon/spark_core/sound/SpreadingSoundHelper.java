@@ -112,6 +112,20 @@ public class SpreadingSoundHelper {
         return INSTANCE.transitionSound(level, oldSoundSource, newSoundEvent, soundType, soundSpreader, fadeIn, fadeOut);
     }
 
+    /**
+     * 开始淡出指定声源
+     */
+    public static void fadeSound(Level level, UUID soundSource) {
+        INSTANCE.fadeSound(level, soundSource);
+    }
+
+    /**
+     * 立即停止指定声源
+     */
+    public static void stopSound(Level level, UUID soundSource) {
+        INSTANCE.stopSound(level, soundSource);
+    }
+
     public static SoundBuffer getSoundBuffer(ResourceLocation location) {
         return INSTANCE.getSoundBuffer(location);
     }

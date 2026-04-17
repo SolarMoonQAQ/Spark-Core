@@ -15,7 +15,9 @@ import cn.solarmoon.spark_core.pack.sync.SparkPackagePayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
 import cn.solarmoon.spark_core.pack.sync.SparkPackageSendingTask
 import cn.solarmoon.spark_core.physics.terrain.TerrainUpdatePayload
+import cn.solarmoon.spark_core.sound.payload.SpreadingSoundFadePayload
 import cn.solarmoon.spark_core.sound.payload.SpreadingSoundPayload
+import cn.solarmoon.spark_core.sound.payload.SpreadingSoundStopPayload
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakePayload
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent
@@ -35,6 +37,8 @@ object SparkPayloadRegister {
 
         val physics = event.registrar("physics")
         physics.playToClient(SpreadingSoundPayload.TYPE, SpreadingSoundPayload.STREAM_CODEC, SpreadingSoundPayload::handler)
+        physics.playToClient(SpreadingSoundFadePayload.TYPE, SpreadingSoundFadePayload.STREAM_CODEC, SpreadingSoundFadePayload::handler)
+        physics.playToClient(SpreadingSoundStopPayload.TYPE, SpreadingSoundStopPayload.STREAM_CODEC, SpreadingSoundStopPayload::handler)
         physics.playToClient(TerrainUpdatePayload.TYPE, TerrainUpdatePayload.STREAM_CODEC, TerrainUpdatePayload::handler)
 
         val pack = event.registrar("package")
