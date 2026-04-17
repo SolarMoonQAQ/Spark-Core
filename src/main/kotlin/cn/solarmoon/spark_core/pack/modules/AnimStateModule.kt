@@ -13,7 +13,7 @@ import kotlin.collections.component2
 
 class AnimStateModule: SparkPackModule {
 
-    override val id: String = "anim_state"
+    override val id: String = "controller"
 
     override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
         if (fromServer) OAnimStateMachineSet.ORIGINS.clear()
@@ -28,7 +28,7 @@ class AnimStateModule: SparkPackModule {
         isClientSide: Boolean, fromServer: Boolean
     ) {
         if (!fromServer) return
-        if (pathSegments.size < 2) throw IllegalArgumentException("动画状态机的文件路径必须指向一个具体的模型名称（如：minecraft/animations/entity/player/test.json 指向名为 minecraft:player 的Entity模型，test.json为该模型下的动画）")
+        if (pathSegments.size < 2) throw IllegalArgumentException("动画控制器的文件路径必须指向一个具体的模型名称（如：minecraft/animations/entity/player/test.json 指向名为 minecraft:player 的Entity模型，test.json为该模型下的动画）")
         val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
         val animationSet = OAnimStateMachineSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
         val id = ResourceLocation.fromNamespaceAndPath(namespace, pathSegments[1])
@@ -44,7 +44,7 @@ class AnimStateModule: SparkPackModule {
                 append("]\n")
             }
         }
-        SparkCore.logger("动画状态机加载器").info(logMsg)
+        SparkCore.logger("动画控制器加载器").info(logMsg)
     }
 
 }

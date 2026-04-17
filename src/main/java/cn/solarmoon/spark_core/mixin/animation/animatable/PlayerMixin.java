@@ -12,6 +12,9 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity implements IEntityAnimatable<Player> {
 
@@ -20,6 +23,7 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     private Player player = (Player) (Object) this;
     private final AnimController animController = new AnimController(player);
     private final ModelController modelController = new ModelController(player);
+    private final Map<String, Object> variables = new ConcurrentHashMap<>();
 
     protected PlayerMixin(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
@@ -45,4 +49,8 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
         return level();
     }
 
+    @Override
+    public @NotNull Map<@NotNull String, @NotNull Object> getVariables() {
+        return variables;
+    }
 }

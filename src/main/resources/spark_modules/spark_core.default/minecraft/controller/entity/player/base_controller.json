@@ -1,0 +1,27 @@
+{
+  "animation_controllers": {
+    "controller.spark_core.player.base_demo": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [],
+          "transitions": [
+            {
+              "move": "q.ground_speed > 0.1"
+            }
+          ],
+          "blend_transition": 0.15
+        },
+        "move": {
+          "animations": [],
+          "transitions": [
+            {
+              "idle": "q.ground_speed <= 0.1"
+            }
+          ],
+          "blend_transition": 0.15
+        }
+      }
+    }
+  }
+}

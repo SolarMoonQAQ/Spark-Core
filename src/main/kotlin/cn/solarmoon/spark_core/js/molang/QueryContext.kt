@@ -1,11 +1,13 @@
 package cn.solarmoon.spark_core.js.molang
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.util.createParticleByString
 import cn.solarmoon.spark_core.util.toVec3
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.sounds.SoundEvent
 import net.minecraft.sounds.SoundSource
+import net.minecraft.world.entity.Entity
 import org.graalvm.polyglot.Context
 import org.graalvm.polyglot.HostAccess
 import org.graalvm.polyglot.Value
@@ -14,25 +16,34 @@ import org.joml.Vector3f
 class QueryContext: IMolangContext {
 
     var anim: AnimInstance? = null
-    val animatable get() = anim?.holder
-    val level get() = animatable?.animLevel
+    val animatable get() = anim!!.holder
+    val level get() = animatable.animLevel
 
     override fun update(molang: String, anim: AnimInstance, context: Context, bindings: Value) {
         this.anim = anim
         this.anim?.let { anim_time = it.time }
+        if (animatable.animatable is Entity) {
+            val delta = (animatable.animatable as Entity).deltaMovement
+            ground_speed = (delta.x * delta.x + delta.z * delta.z) * 400
+            vertical_speed = if ((animatable.animatable as Entity).onGround()) 0.0 else delta.y * 20 + 1.568000030517578
+        }
     }
 
     @HostAccess.Export
     @JvmField
     var anim_time = 0.0f
 
+    @HostAccess.Export
+    @JvmField
+    var ground_speed = 0.0
+
+    @HostAccess.Export
+    @JvmField
+    var vertical_speed = 0.0
+
     private val ZERO = Vector3f()
     @HostAccess.Export
-    fun position() = if (animatable == null) {
-        ZERO
-    } else {
-        animatable!!.getWorldPositionMatrix(1f).transformPosition(Vector3f())
-    }
+    fun position() = animatable.getWorldPositionMatrix(1f).transformPosition(Vector3f())
 
     @HostAccess.Export
     fun playSound(sound: String, source: String) {
