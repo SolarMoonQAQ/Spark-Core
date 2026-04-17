@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.mixin.sound;
 
+import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.mixin_interface.ISoundEngineMixin;
 import cn.solarmoon.spark_core.sound.ClientSpreadingSoundPlayer;
 import cn.solarmoon.spark_core.sound.SoundSourcePoint;
@@ -148,10 +149,15 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
     @Unique
     public float spark_core$calculatePitch(SpreadingSoundInstance sound) {
         Vec3 listenerSpeed;
-        if (Minecraft.getInstance().getCameraEntity() instanceof Entity entity)
-            listenerSpeed = entity.getDeltaMovement().scale(20);
-        else
+        if (Minecraft.getInstance().getCameraEntity() instanceof Entity entity) {
+            if (!entity.isPassenger())
+                listenerSpeed = entity.getDeltaMovement().scale(20);
+            else {
+                listenerSpeed = entity.getRootVehicle().getDeltaMovement().scale(20);
+            }
+        } else {
             listenerSpeed = Vec3.ZERO;
+        }
         Vec3 sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
         Vec3 sourceSpeed = sound.getSpeed();
         Vec3 toListener = listener.getTransform().position().subtract(sourcePos).normalize();
