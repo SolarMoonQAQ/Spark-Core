@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.compat.create
 
 import cn.solarmoon.spark_core.SparkCore
 import net.neoforged.fml.ModList
+import net.neoforged.neoforge.common.NeoForge
 
 /**
  * Create（机械动力）兼容入口。
@@ -24,12 +25,29 @@ object CreateCompat {
      * 仅在 [init] 中写入，其他地方只读使用。
      */
     var IS_LOADED: Boolean = false
+        private set
 
     /**
-     * 初始化兼容状态。
+     * 记录是否已经向游戏事件总线注册过 Create 兼容事件处理器。
+     *
+     * 该标志用于避免在客户端与服务端重复初始化阶段发生重复注册。
+     */
+    private var hooksRegistered = false
+
+    /**
+     * 初始化兼容状态，并在满足条件时注册运行时兼容处理器。
+     *
+     * 线程语义：
+     * - 该方法在模组生命周期线程调用；
+     * - 仅做轻量状态检查与事件注册，不触发耗时逻辑。
      */
     fun init() {
         IS_LOADED = ModList.get().isLoaded(MOD_ID)
+        if (IS_LOADED && !hooksRegistered) {
+            // 仅在确认 Create 已加载后再触发类加载，确保“可选兼容”语义安全。
+            NeoForge.EVENT_BUS.register(CreateContraptionPhysicsApplier)
+            hooksRegistered = true
+        }
     }
 
     /**

@@ -11,6 +11,7 @@
     "event.EntityMixin",
     "event.ItemStackMixin",
     "event.PlayerMixin",
+    "compat.create.ContraptionMixin",
     "extension.DamageSourceMixin",
     "extension.EntityMixin",
     "extension.LevelMixin",

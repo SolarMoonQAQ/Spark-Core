@@ -172,11 +172,11 @@ dependencies {
     implementation("mod.azure.azurelib:azurelib-neo-${property("minecraft_version")}:${property("azurelib_version")}")
     implementation("dev.kosmx.player-anim:player-animation-lib-forge:${property("player_animator_version")}")
     // 机械动力
-    compileOnly("com.simibubi.create:create-${property("minecraft_version")}:${property("create_version")}:slim") { isTransitive = false }
-    compileOnly("net.createmod.ponder:ponder-neoforge:${property("ponder_version")}+mc${property("minecraft_version")}")
-    compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${property("minecraft_version")}:${property("flywheel_version")}")
-    compileOnly("dev.engine-room.flywheel:flywheel-neoforge-${property("minecraft_version")}:${property("flywheel_version")}")
-    compileOnly("com.tterrag.registrate:Registrate:${property("registrate_version")}")
+    implementation("com.simibubi.create:create-${property("minecraft_version")}:${property("create_version")}:slim") { isTransitive = false }
+    implementation("net.createmod.ponder:ponder-neoforge:${property("ponder_version")}+mc${property("minecraft_version")}")
+    implementation("dev.engine-room.flywheel:flywheel-neoforge-api-${property("minecraft_version")}:${property("flywheel_version")}")
+    runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${property("minecraft_version")}:${property("flywheel_version")}")
+    implementation("com.tterrag.registrate:Registrate:${property("registrate_version")}")
     // 第一人称
     compileOnly("maven.modrinth:real-camera:0.7.4-beta-1.21.1")
     compileOnly("maven.modrinth:first-person-model:Sx5QD2SF")

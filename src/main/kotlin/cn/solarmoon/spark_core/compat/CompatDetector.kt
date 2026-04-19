@@ -9,13 +9,24 @@ import cn.solarmoon.spark_core.compat.real_camera.RealCameraCompat
 import cn.solarmoon.spark_core.compat.sodium.SodiumCompat
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
 
 /**
  * 检测意图兼容的Mod是否被加载
  */
-@EventBusSubscriber(modid = SparkCore.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = SparkCore.MOD_ID)
 object CompatDetector {
+
+    /**
+     * 通用初始化阶段（客户端 + 服务端）。
+     *
+     * 这里初始化 Create 兼容，以便双端都能注册装置物理联动逻辑。
+     */
+    @SubscribeEvent
+    fun onCommonSetup(event: FMLCommonSetupEvent) {
+        CreateCompat.init()
+    }
 
     @SubscribeEvent
     fun onClientSetup(event: FMLClientSetupEvent) {
@@ -24,8 +35,5 @@ object CompatDetector {
         PlayerAnimatorCompat.init()
         FirstPersonModelCompat.init()
         ARCompat.init()
-        // 在统一兼容检测阶段初始化 Create 兼容入口。
-        // 这里只做“是否加载”的探测，具体兼容逻辑由各功能模块按需调用 CreateCompat.whenLoaded 执行。
-        CreateCompat.init()
     }
 }
