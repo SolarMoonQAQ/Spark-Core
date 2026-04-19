@@ -54,11 +54,9 @@ class CreateContraptionPhysicsHost(
     val body: PhysicsRigidBody = PhysicsRigidBody(BoxCollisionShape(Vector3f(0.01f, 0.01f, 0.01f))).apply {
         name = "create_contraption_body"
         isKinematic = true
-        friction = 0.8f
-        restitution = 0.0f
         owner = this@CreateContraptionPhysicsHost
         collisionGroup = CollisionGroups.TERRAIN
-        collideWithGroups = CollisionGroups.NONE
+        collideWithGroups = CollisionGroups.PHYSICS_BODY
         shouldShowDebugBoxWhenNonColldeWith = true
     }
 
@@ -143,7 +141,6 @@ class CreateContraptionPhysicsHost(
             rotationState.xRotation.toRadians())
         body.setPhysicsLocation(bodyOrigin.toBVector3f())
         body.setPhysicsRotation(rotation.toBQuaternion())
-        body.activate()
         syncState.updateLastTransform(
             bodyOrigin,
             rotationState.xRotation,

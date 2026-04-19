@@ -1,20 +1,21 @@
 package cn.solarmoon.spark_core.compat.create
 
 import cn.solarmoon.spark_core.api.physicsLevel
-import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.physics.body.addPhysicsBody
 import cn.solarmoon.spark_core.physics.body.removePhysicsBody
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity
 import com.simibubi.create.content.contraptions.Contraption
+import com.simibubi.create.infrastructure.ponder.scenes.fluid.HosePulleyScenes.level
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.ModList
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
 import net.neoforged.neoforge.event.level.LevelEvent
-import java.util.Collections
-import java.util.WeakHashMap
+import net.neoforged.neoforge.event.tick.EntityTickEvent
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -116,26 +117,31 @@ object CreateContraptionPhysicsApplier {
     }
 
     /**
-     * 物理线程同步周期回调。
+     * 主线程同步周期回调
      *
-     * 该事件由 Spark 在物理线程 pre-physics 阶段抛出，
-     * 这里按“实体所在 level 的 physicsLevel 分桶”定位 host，避免跨端误命中。
+     * 该事件由 SparkCore 在主线程 pre-tick 阶段抛出，
+     * 这里按“实体所在 level 的 physicsLevel 分桶”定位 host，避免跨端误命中
      */
     @SubscribeEvent
-    fun onPhysicsEntityTick(event: PhysicsEntityTickEvent) {
+    fun onPhysicsEntityTick(event: EntityTickEvent.Pre) {
         if (!ModList.get().isLoaded(CreateCompat.MOD_ID)) return
         val entity = event.entity as? AbstractContraptionEntity ?: return
+        //移除SparkCore为实体添加的默认碰撞箱刚体
+        val body: PhysicsCollisionObject? = entity.getPhysicsBody("body")
+        if (body != null) {
+            entity.level().removePhysicsBody(body)
+        }
         val physicsLevel = entity.level().physicsLevel
         val host = hostsByLevel[physicsLevel]?.get(entity.id) ?: return
         host.onPhysicsSyncTick(entity)
     }
 
     /**
-     * 世界卸载时清理对应分桶。
+     * 世界卸载时清理对应分桶
      *
      * 说明：
      * - 该清理用于兜底防泄漏（例如异常流程下未触发完整实体离场事件）；
-     * - 只处理当前卸载 level 对应的 physicsLevel，不影响其他维度/端。
+     * - 只处理当前卸载 level 对应的 physicsLevel，不影响其他维度/端
      */
     @SubscribeEvent
     fun onLevelUnload(event: LevelEvent.Unload) {
