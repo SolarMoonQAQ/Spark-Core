@@ -28,7 +28,7 @@ import java.util.*;
  * 声音传播范围的实现参考自https://github.com/MCModderAnchor/TACZ
  */
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     private static final int MAX_SOUND_POINTS = 200; // 单实例最大声源点数量(10秒)
 

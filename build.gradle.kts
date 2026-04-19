@@ -171,8 +171,16 @@ dependencies {
     implementation("software.bernie.geckolib:geckolib-neoforge-${property("minecraft_version")}:${property("geckolib_version")}")
     implementation("mod.azure.azurelib:azurelib-neo-${property("minecraft_version")}:${property("azurelib_version")}")
     implementation("dev.kosmx.player-anim:player-animation-lib-forge:${property("player_animator_version")}")
+    // 机械动力
+    compileOnly("com.simibubi.create:create-${property("minecraft_version")}:${property("create_version")}:slim") { isTransitive = false }
+    compileOnly("net.createmod.ponder:ponder-neoforge:${property("ponder_version")}+mc${property("minecraft_version")}")
+    compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${property("minecraft_version")}:${property("flywheel_version")}")
+    compileOnly("dev.engine-room.flywheel:flywheel-neoforge-${property("minecraft_version")}:${property("flywheel_version")}")
+    compileOnly("com.tterrag.registrate:Registrate:${property("registrate_version")}")
+    // 第一人称
     compileOnly("maven.modrinth:real-camera:0.7.4-beta-1.21.1")
     compileOnly("maven.modrinth:first-person-model:Sx5QD2SF")
+    // 加速渲染
     compileOnly("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
 
     // 外部库 ------------------------------------------------------------------------------------------------------------
@@ -222,6 +230,14 @@ repositories {
     maven {
         name = "tterrag maven"
         url = uri("https://maven.tterrag.com/")
+    }
+    maven {
+        name = "Create Maven"
+        url = uri("https://maven.createmod.net")
+    }
+    maven {
+        name = "IThundxr Snapshots"
+        url = uri("https://maven.ithundxr.dev/snapshots")
     }
     maven {
         url = uri("https://api.modrinth.com/maven")
