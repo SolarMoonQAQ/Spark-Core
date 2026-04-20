@@ -51,7 +51,7 @@ class CreateContraptionPhysicsHost(
     /**
      * 装置主刚体（运动学刚体）
      */
-    val body: PhysicsRigidBody = PhysicsRigidBody(BoxCollisionShape(Vector3f(0.01f, 0.01f, 0.01f))).apply {
+    val body: PhysicsRigidBody = PhysicsRigidBody(BoxCollisionShape(1f), 0f).apply {
         name = "create_contraption_body"
         isKinematic = true
         owner = this@CreateContraptionPhysicsHost

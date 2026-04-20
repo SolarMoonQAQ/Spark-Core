@@ -50,10 +50,10 @@ abstract class PhysicsLevel(
         const val RECOVER_THRESHOLD_RATIO = 0.4  // 40%预算以下尝试升频
 
         /** 快速响应系数：负载上升时极快靠近新值 */
-        private const val ATTACK_ALPHA = 0.95
+        private const val ATTACK_ALPHA = 0.9
 
         /** 缓慢恢复系数：负载下降时极慢回落 */
-        private const val DECAY_ALPHA = 0.05
+        private const val DECAY_ALPHA = 0.1
     }
 
     val tps = baseStep * 20
@@ -174,7 +174,7 @@ abstract class PhysicsLevel(
 
                         smoothedStepTime < recoveryThreshold && dynamicRepeat < maxStep -> {
                             dynamicRepeat++
-                            adjustmentCooldown = 40 // 升频需要更谨慎，多观察一会儿
+                            adjustmentCooldown = 20
                             SparkCore.LOGGER.warn(
                                 "{} physics recovered, step increased to {}",
                                 name,
