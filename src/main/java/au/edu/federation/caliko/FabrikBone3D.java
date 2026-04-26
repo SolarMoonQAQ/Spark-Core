@@ -2,7 +2,7 @@ package au.edu.federation.caliko;
 
 import au.edu.federation.caliko.FabrikJoint3D.JointType;
 import au.edu.federation.utils.Utils;
-import au.edu.federation.utils.Vec3f;
+import org.joml.Vector3f;
 
 import java.io.Serializable;
 
@@ -16,32 +16,30 @@ public class FabrikBone3D implements Serializable
 
 	private FabrikJoint3D mJoint = new FabrikJoint3D();
 
-	private Vec3f mStartLocation = new Vec3f();
+	private Vector3f mStartLocation = new Vector3f();
 
-	private Vec3f mEndLocation = new Vec3f();
+	private Vector3f mEndLocation = new Vector3f();
 
 	private String mName;
 
 	private float mLength;
 
-	// ---------- Constructors ----------
-
 	FabrikBone3D() { }
 
-	public FabrikBone3D(Vec3f startLocation, Vec3f endLocation)
+	public FabrikBone3D(Vector3f startLocation, Vector3f endLocation)
 	{
 		mStartLocation.set(startLocation);
 		mEndLocation.set(endLocation);
-		setLength( Vec3f.distanceBetween(startLocation, endLocation) );
+		setLength( startLocation.distance(endLocation) );
 	}
 
-	public FabrikBone3D(Vec3f startLocation, Vec3f endLocation, String name)
+	public FabrikBone3D(Vector3f startLocation, Vector3f endLocation, String name)
 	{
 		this(startLocation, endLocation);
 		setName(name);
 	}
 
-	public FabrikBone3D(Vec3f startLocation, Vec3f directionUV, float length)
+	public FabrikBone3D(Vector3f startLocation, Vector3f directionUV, float length)
 	{
 		setLength(length);
 		if ( directionUV.length() <= 0.0f ) {
@@ -50,10 +48,10 @@ public class FabrikBone3D implements Serializable
 
 		setLength(length);
 		mStartLocation.set(startLocation);
-		mEndLocation.set( mStartLocation.plus( directionUV.normalised().times(length) ) );
+		mEndLocation.set(mStartLocation).add(new Vector3f(directionUV).normalize().mul(length, new Vector3f()));
 	}
 
-	public FabrikBone3D(Vec3f startLocation, Vec3f directionUV, float length, String name)
+	public FabrikBone3D(Vector3f startLocation, Vector3f directionUV, float length, String name)
 	{
 		this(startLocation, directionUV, length);
 		setName(name);
@@ -70,19 +68,17 @@ public class FabrikBone3D implements Serializable
 		mBoneConnectionPoint = source.mBoneConnectionPoint;
 	}
 
-	// ---------- Methods ----------
-
 	public float length() { return mLength; }
 
-	public float liveLength() { return Vec3f.distanceBetween(mStartLocation, mEndLocation); }
+	public float liveLength() { return mStartLocation.distance(mEndLocation); }
 
 	public void setBoneConnectionPoint(BoneConnectionPoint bcp) { mBoneConnectionPoint = bcp; }
 
 	public BoneConnectionPoint getBoneConnectionPoint() { return mBoneConnectionPoint; }
 
-	public Vec3f getStartLocation() { return mStartLocation; }
+	public Vector3f getStartLocation() { return mStartLocation; }
 
-	public Vec3f getEndLocation() { return mEndLocation; }
+	public Vector3f getEndLocation() { return mEndLocation; }
 
 	public void setJoint(FabrikJoint3D joint) { mJoint.set(joint); }
 
@@ -109,19 +105,19 @@ public class FabrikBone3D implements Serializable
 
 	public float getBallJointConstraintDegs() { return mJoint.getBallJointConstraintDegs(); }
 
-	public Vec3f getDirectionUV()
+	public Vector3f getDirectionUV()
 	{
-		return Vec3f.getDirectionUV(mStartLocation, mEndLocation);
+		return new Vector3f(mEndLocation).sub(mStartLocation).normalize();
 	}
 
 	public float getGlobalPitchDegs()
 	{
-		return Vec3f.getDirectionUV(mStartLocation, mEndLocation).getGlobalPitchDegs();
+		return Utils.getGlobalPitchDegs(getDirectionUV());
 	}
 
 	public float getGlobalYawDegs()
 	{
-		return Vec3f.getDirectionUV(mStartLocation, mEndLocation).getGlobalYawDegs();
+		return Utils.getGlobalYawDegs(getDirectionUV());
 	}
 
 	public void setName(String name) { mName = Utils.getValidatedName(name); }
@@ -138,12 +134,12 @@ public class FabrikBone3D implements Serializable
 		return sb.toString();
 	}
 
-	public void setStartLocation(Vec3f location)
+	public void setStartLocation(Vector3f location)
 	{
 		mStartLocation.set(location);
 	}
 
-	public void setEndLocation(Vec3f location)
+	public void setEndLocation(Vector3f location)
 	{
 		mEndLocation.set(location);
 	}
