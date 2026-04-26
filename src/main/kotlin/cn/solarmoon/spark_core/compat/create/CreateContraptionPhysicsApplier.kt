@@ -1,13 +1,13 @@
 package cn.solarmoon.spark_core.compat.create
 
 import cn.solarmoon.spark_core.api.physicsLevel
+import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.physics.body.addPhysicsBody
 import cn.solarmoon.spark_core.physics.body.removePhysicsBody
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity
 import com.simibubi.create.content.contraptions.Contraption
-import com.simibubi.create.infrastructure.ponder.scenes.fluid.HosePulleyScenes.level
 import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.ModList
@@ -123,7 +123,7 @@ object CreateContraptionPhysicsApplier {
      * 这里按“实体所在 level 的 physicsLevel 分桶”定位 host，避免跨端误命中
      */
     @SubscribeEvent
-    fun onPhysicsEntityTick(event: EntityTickEvent.Pre) {
+    fun onEntityTick(event: EntityTickEvent.Pre) {
         if (!ModList.get().isLoaded(CreateCompat.MOD_ID)) return
         val entity = event.entity as? AbstractContraptionEntity ?: return
         //移除SparkCore为实体添加的默认碰撞箱刚体
@@ -133,7 +133,22 @@ object CreateContraptionPhysicsApplier {
         }
         val physicsLevel = entity.level().physicsLevel
         val host = hostsByLevel[physicsLevel]?.get(entity.id) ?: return
-        host.onPhysicsSyncTick(entity)
+        host.onSyncTick(entity)
+    }
+
+    /**
+     * 主线程同步周期回调
+     *
+     * 该事件由 SparkCore 在主线程 pre-tick 阶段抛出，
+     * 这里按“实体所在 level 的 physicsLevel 分桶”定位 host，避免跨端误命中
+     */
+    @SubscribeEvent
+    fun onPhysicsEntityTick(event: PhysicsEntityTickEvent) {
+        if (!ModList.get().isLoaded(CreateCompat.MOD_ID)) return
+        val entity = event.entity as? AbstractContraptionEntity ?: return
+        val physicsLevel = entity.level().physicsLevel
+        val host = hostsByLevel[physicsLevel]?.get(entity.id) ?: return
+        host.onPhysicsTick(entity)
     }
 
     /**

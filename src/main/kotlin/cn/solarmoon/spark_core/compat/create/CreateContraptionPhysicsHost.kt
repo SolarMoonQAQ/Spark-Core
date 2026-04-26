@@ -10,7 +10,6 @@ import cn.solarmoon.spark_core.util.toRadians
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
-import com.jme3.math.Vector3f
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity
 import com.simibubi.create.content.contraptions.Contraption
 import com.simibubi.create.content.contraptions.ContraptionCollider
@@ -25,8 +24,9 @@ import java.lang.ref.WeakReference
  *
  * 职责：
  * 1) 持有并管理装置对应的运动学刚体；
- * 2) 管理“子形状索引 -> 本地方块坐标”映射；
- * 3) 提供碰撞命中查询方法（按子形状ID / 按碰撞点位置）
+ * 2) 管理"子形状索引 -> 本地方块坐标"映射；
+ * 3) 提供碰撞命中查询方法（按子形状ID / 按碰撞点位置）；
+ * 4) 通过速度外推消除主线程20Hz与物理线程100Hz之间的抖振。
  */
 class CreateContraptionPhysicsHost(
     override val physicsLevel: PhysicsLevel
@@ -90,34 +90,37 @@ class CreateContraptionPhysicsHost(
      */
     private var localBlockStates: Map<BlockPos, BlockState> = emptyMap()
 
-    /**
-     * 将宿主标记为“碰撞形状待重建”
-     */
+    // ========== 物理线程本地外推状态 ==========
+
+    /** 物理线程本地：上次处理的快照引用，用于检测新同步 */
+    private var lastProcessedSnapshot: ContraptionSyncSnapshot? = null
+
+    /** 物理线程本地：从上一次同步开始累计的时间（秒） */
+    private var accumulatedTime: Float = 0f
+
+    /** 物理线程本地：外推起点的位置（即快照中的权威位置） */
+    private var extrapolationOrigin: Vec3 = Vec3.ZERO
+
+    /** 物理线程本地：外推起点的欧拉角（度） */
+    private var extrapolationOriginXRot: Float = 0f
+    private var extrapolationOriginYRot: Float = 0f
+    private var extrapolationOriginZRot: Float = 0f
+
     fun markShapeDirty() {
         syncState.markShapeDirty()
     }
 
-    /**
-     * 绑定（或刷新）当前装置实体弱引用。
-     *
-     * 线程语义：
-     * - 可在主线程事件回调与物理同步回调中重复调用；
-     * - 操作仅涉及引用替换，无重型计算。
-     */
     fun bindEntity(entity: AbstractContraptionEntity) {
         entityRef = WeakReference(entity)
     }
 
     /**
-     * 每次主线程与物理线程同步时，在物理线程中执行一次装置同步
+     * 主线程调用（20Hz）：计算速度并发布同步快照。
      *
-     * 逻辑顺序：
-     * 1) 绑定当前 contraption 引用，必要时触发脏标记；
-     * 2) 按脏标记重建碰撞形状与索引映射；
-     * 3) 更新刚体位姿（每次同步都更新）
+     * 仅在首次同步时（[latestSnapshot] 为 null）直接设置刚体位姿，
+     * 后续所有位姿更新完全由 [onPhysicsTick] 中的速度外推驱动。
      */
-    fun onPhysicsSyncTick(entity: AbstractContraptionEntity) {
-        // 每次物理同步都刷新一次实体弱引用，保证查询接口拿到当前实例。
+    fun onSyncTick(entity: AbstractContraptionEntity) {
         bindEntity(entity)
         val contraption = entity.contraption ?: return
         currentContraption = contraption
@@ -131,16 +134,24 @@ class CreateContraptionPhysicsHost(
             rebuildShape(contraption)
         }
 
-        // 每次同步周期都更新一次位姿
+        // 每次同步周期都立即更新一次位姿
         val anchor = entity.anchorVec
         val bodyOrigin = anchor.add(0.5, 0.5, 0.5)
         val rotationState = entity.rotationState
-        val rotation = Quaternionf().rotateZYX(
-            rotationState.zRotation.toRadians(),
-            rotationState.yRotation.toRadians(),
-            rotationState.xRotation.toRadians())
-        body.setPhysicsLocation(bodyOrigin.toBVector3f())
-        body.setPhysicsRotation(rotation.toBQuaternion())
+
+        // 首次同步：刚体尚未被 onPhysicsTick 初始化过，直接设置正确位姿
+        val isFirstSync = syncState.latestSnapshot == null
+        if (isFirstSync) {
+            val rotation = Quaternionf().rotateZYX(
+                rotationState.zRotation.toRadians(),
+                rotationState.yRotation.toRadians(),
+                rotationState.xRotation.toRadians()
+            )
+            body.setPhysicsLocation(bodyOrigin.toBVector3f())
+            body.setPhysicsRotation(rotation.toBQuaternion())
+        }
+
+        // 计算速度并发布快照（由 updateLastTransform 内部完成）
         syncState.updateLastTransform(
             bodyOrigin,
             rotationState.xRotation,
@@ -151,8 +162,51 @@ class CreateContraptionPhysicsHost(
     }
 
     /**
-     * 根据子形状 ID 查询命中的方块坐标（装置本地坐标）
+     * 物理线程每次 substep 前调用（100Hz）。
+     *
+     * 从最新同步快照出发，使用速度外推当前位置，消除离散跳跃导致的抖振。
+     *
+     * 外推公式：
+     *   position(t) = origin.position + linearVelocity × t
+     *   rotation(t) = origin.rotation + angularVelocity × t
      */
+    fun onPhysicsTick(entity: AbstractContraptionEntity) {
+        val snapshot = syncState.latestSnapshot ?: return
+
+        // 检测新快照 → 重置外推起点
+        if (snapshot !== lastProcessedSnapshot) {
+            lastProcessedSnapshot = snapshot
+            accumulatedTime = 0f
+            extrapolationOrigin = snapshot.position
+            extrapolationOriginXRot = snapshot.xRot
+            extrapolationOriginYRot = snapshot.yRot
+            extrapolationOriginZRot = snapshot.zRot
+        }
+
+        val fixedDt = 1f / physicsLevel.tps
+        accumulatedTime += fixedDt
+
+        // 限幅：最多外推一个主线程 tick 间隔，防止速度突变导致严重偏离
+        val clampedTime = accumulatedTime.coerceAtMost(0.06f)
+
+        // 外推位置
+        val extrapolatedPos = extrapolationOrigin.add(
+            snapshot.linearVelocity.scale(clampedTime.toDouble())
+        )
+        body.setPhysicsLocation(extrapolatedPos.toBVector3f())
+
+        // 外推旋转
+        val extrapolatedXRot = extrapolationOriginXRot + snapshot.angularVelX * clampedTime
+        val extrapolatedYRot = extrapolationOriginYRot + snapshot.angularVelY * clampedTime
+        val extrapolatedZRot = extrapolationOriginZRot + snapshot.angularVelZ * clampedTime
+        val rotation = Quaternionf().rotateZYX(
+            extrapolatedZRot.toRadians(),
+            extrapolatedYRot.toRadians(),
+            extrapolatedXRot.toRadians()
+        )
+        body.setPhysicsRotation(rotation.toBQuaternion())
+    }
+
     fun getContactBlockPosByChildShapeId(childShapeId: Int): BlockPos? {
         return childShapeToLocalBlock[childShapeId]
     }
