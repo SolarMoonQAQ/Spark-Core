@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.util
 
 import cn.solarmoon.spark_core.physics.toBVector3f
 import com.jme3.bounding.BoundingBox
+import com.jme3.math.FastMath
 import com.jme3.math.Matrix4f
 import com.jme3.math.Quaternion
 import com.jme3.math.Transform
@@ -81,10 +82,9 @@ fun Quaterniond.toEuler(): Vector3d {
     val angles = Vector3d()
 
     // roll (x-axis rotation)
-    val sinr_cosp = 2 * (w * x + y * z)
-    val cosr_cosp = 1 - 2 * (x * x + y * y)
-    angles.x = atan2(sinr_cosp, cosr_cosp)
-
+    val sinr_cosp = 2 * (w * x + y * z).toFloat()
+    val cosr_cosp = 1 - 2 * (x * x + y * y).toFloat()
+    angles.x = FastMath.atan2(sinr_cosp, cosr_cosp).toDouble()
     // pitch (y-axis rotation)
     val sinp = 2 * (w * y - z * x)
     angles.y = if (abs(sinp) >= 1)
@@ -93,9 +93,9 @@ fun Quaterniond.toEuler(): Vector3d {
         asin(sinp)
 
     // yaw (z-axis rotation)
-    val siny_cosp = 2 * (w * z + x * y)
-    val cosy_cosp = 1 - 2 * (y * y + z * z)
-    angles.z = atan2(siny_cosp, cosy_cosp)
+    val siny_cosp = 2 * (w * z + x * y).toFloat()
+    val cosy_cosp = 1 - 2 * (y * y + z * z).toFloat()
+    angles.z = FastMath.atan2(siny_cosp, cosy_cosp).toDouble()
 
     return angles
 }

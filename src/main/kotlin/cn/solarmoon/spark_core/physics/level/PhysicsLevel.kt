@@ -44,16 +44,16 @@ abstract class PhysicsLevel(
         const val TICK_TARGET_NS = 45_000_000L
 
         /** 降频阈值：超过预算的比例 */
-        const val OVERLOAD_THRESHOLD_RATIO = 0.8  // 80%预算开始降频
+        const val OVERLOAD_THRESHOLD_RATIO = 0.9  // 90%预算开始降频
 
         /** 升频阈值：低于预算的比例 */
-        const val RECOVER_THRESHOLD_RATIO = 0.4  // 40%预算以下尝试升频
+        const val RECOVER_THRESHOLD_RATIO = 0.5  // 50%预算以下尝试升频
 
-        /** 快速响应系数：负载上升时极快靠近新值 */
+        /** 快速响应系数：负载上升时靠近新值 */
         private const val ATTACK_ALPHA = 0.9
 
-        /** 缓慢恢复系数：负载下降时极慢回落 */
-        private const val DECAY_ALPHA = 0.1
+        /** 缓慢恢复系数：负载下降时回落 */
+        private const val DECAY_ALPHA = 0.5
     }
 
     val tps = baseStep * 20
@@ -64,7 +64,7 @@ abstract class PhysicsLevel(
 
     /** 允许的最小每tick步进次数（可运行时调整） */
     @Volatile
-    var minStep: Int = 1
+    var minStep: Int = 3
         set(value) {
             field = value.coerceAtLeast(1)
             if (dynamicRepeat < field) dynamicRepeat = field
@@ -104,6 +104,7 @@ abstract class PhysicsLevel(
     private val stateFlow = MutableStateFlow(PhysicsLevelState.IDLE)
     val state = stateFlow.asStateFlow()
     private val crashCount = AtomicInteger(0)
+    @Volatile
     var tickCount: Int = 0
 
     // 同步控制
@@ -116,8 +117,10 @@ abstract class PhysicsLevel(
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     override val taskMap = ConcurrentHashMap<PPhase, ConcurrentHashMap<String, () -> Unit>>()
     override val immediateQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>()
-    var lastPhysicsTickTime = System.nanoTime()
+    @Volatile
     var lastStepTickTime = 0L
+    @Volatile
+    var lastPhysicsTickTime = System.nanoTime()
     var overloadWarnCooldown = 0
 
     var entities = listOf<Entity>()
@@ -144,11 +147,9 @@ abstract class PhysicsLevel(
                 if (stepSleepTime > 0 && stepIndex < dynamicRepeat - 1) {
                     delay(stepSleepTime / 1_000_000) // 转换为毫秒
                 }
-                // 统计耗时
-                lastStepTickTime = System.nanoTime() - ticker - stepSleepTime * (dynamicRepeat - 1)
-                lastPhysicsTickTime = System.nanoTime()
                 // ===== 动态调节逻辑 =====
-                val currentMs = lastStepTickTime.toDouble()
+                lastPhysicsTickTime = System.nanoTime()
+                val currentMs = lastStepTickTime.toDouble() - stepSleepTime * (dynamicRepeat - 1)
                 smoothedStepTime = if (currentMs > smoothedStepTime) {
                     // 负载上升：快速跟随 (Attack)
                     (ATTACK_ALPHA * currentMs) + (1.0 - ATTACK_ALPHA) * smoothedStepTime
@@ -183,10 +184,11 @@ abstract class PhysicsLevel(
                         }
                     }
                 }
-                // 通知主线程计算完成
-                stateFlow.value = PhysicsLevelState.IDLE
-                stepCompletedChannel.send(Unit)
             }
+            // 通知主线程计算完成
+            lastStepTickTime = System.nanoTime() - ticker
+            stateFlow.value = PhysicsLevelState.IDLE
+            stepCompletedChannel.send(Unit)
         }
     }
 
@@ -201,7 +203,7 @@ abstract class PhysicsLevel(
         }
         // 警告信息
         if (overloadWarnCooldown > 0) overloadWarnCooldown--
-        if ((lastStepTickTime / 1000000) >= 50) {
+        if ((lastStepTickTime / 1000000) >= 50 && overloadWarnCooldown <= 0) {
             SparkCore.LOGGER.warn(
                 "{} tick {} overloaded, last tick time: {}ms, speed: {}%, rigid body in world: {} with {}, while {} chunks loaded.",
                 name,
@@ -212,7 +214,7 @@ abstract class PhysicsLevel(
                 terrainManager.getStats(),
                 mcLevel.chunkSource.loadedChunksCount
             )
-            overloadWarnCooldown = 40
+            overloadWarnCooldown = 100
         }
         // 保存当前tick的实体列表
         entities = requestEntities()
