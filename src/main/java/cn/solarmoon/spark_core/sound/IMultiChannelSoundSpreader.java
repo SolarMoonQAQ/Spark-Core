@@ -13,7 +13,7 @@ import java.util.UUID;
 /**
  * 多通道动态声源接口。
  *
- * <p>该接口用于描述“一个声源同时驱动多个声音通道”的场景（例如发动机/电机不同工况音轨），
+ * <p>该接口用于描述\u201c一个声源同时驱动多个声音通道\u201d的场景（例如发动机/电机不同工况音轨），
  * 每个通道都维护自己的实例 UUID、权重和定期重播节奏。</p>
  */
 public interface IMultiChannelSoundSpreader extends ISoundSpreader {
@@ -135,9 +135,9 @@ public interface IMultiChannelSoundSpreader extends ISoundSpreader {
             SoundEvent event = channel.getSoundEvent();
             if (event == null) continue;
 
-            // 首次进入时为通道创建实例，满足“多通道同时播放”的基础要求。
+            // 首次进入时为通道创建实例，满足\u201c多通道同时播放\u201d的基础要求。
             if (channel.getUuid() == null) {
-                UUID uuid = playSpreadingSound(level, event, soundType, fadeIn, fadeOut);
+                UUID uuid = playSpreadingSound(level, event, soundType, fadeIn, fadeOut, false);
                 channel.setUuid(uuid);
                 channel.setLastRetriggerTick(currentTick);
                 continue;
@@ -147,7 +147,7 @@ public interface IMultiChannelSoundSpreader extends ISoundSpreader {
             int interval = channel.getRetriggerIntervalTicks();
             if (interval > 0 && channel.getWeight() > 0.0f
                     && currentTick - channel.getLastRetriggerTick() >= interval) {
-                UUID next = transitionSound(level, channel.getUuid(), event, soundType, fadeIn, fadeOut);
+                UUID next = transitionSound(level, channel.getUuid(), event, soundType, fadeIn, fadeOut, false);
                 channel.setUuid(next);
                 channel.setLastRetriggerTick(currentTick);
             }

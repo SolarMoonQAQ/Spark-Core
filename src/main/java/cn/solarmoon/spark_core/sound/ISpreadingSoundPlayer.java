@@ -14,19 +14,19 @@ public interface ISpreadingSoundPlayer {
     /**
      * 通过网络包播放声音，不应被手动调用
      */
-    void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut);
+    void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut, boolean loop);
 
     /**
      * 在定点播放可传播的声音
      * @return UUID 用于标识该声音的唯一ID
      */
-    UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut);
+    UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut, boolean loop);
 
     /**
      * 创建并绑定可传播声音至音源，并播放
      * @return UUID 用于标识该声音的唯一ID
      */
-    UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, int fadeIn, int fadeOut);
+    UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, int fadeIn, int fadeOut, boolean loop);
 
     /**
      * 执行音效接力过渡
@@ -37,10 +37,11 @@ public interface ISpreadingSoundPlayer {
      * @param soundSpreader 动态声源
      * @param fadeIn 淡入时长
      * @param fadeOut 淡出时长
+     * @param loop 是否循环
      * @return 新实例的UUID
      */
     UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
-                         ISoundSpreader soundSpreader, int fadeIn, int fadeOut);
+                         ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop);
 
     /**
      * 开始淡出指定声源

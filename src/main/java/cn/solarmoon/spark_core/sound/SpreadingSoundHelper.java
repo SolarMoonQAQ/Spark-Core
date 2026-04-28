@@ -29,8 +29,8 @@ public class SpreadingSoundHelper {
     /**
      * 通过网络包播放声音，不应被手动调用
      */
-    public static void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut){
-        INSTANCE.playSpreadingSoundFromPacket(level, uuid, soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
+    public static void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut, boolean loop){
+        INSTANCE.playSpreadingSoundFromPacket(level, uuid, soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut, loop);
     }
 
     /**
@@ -45,10 +45,11 @@ public class SpreadingSoundHelper {
      * @param volume     声音的音量
      * @param fadeIn     声音的淡入时间
      * @param fadeOut    声音的淡出时间
+     * @param loop       是否循环播放
      * @return UUID 用于标识该声音的唯一ID
      */
-    public static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut) {
-        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
+    public static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut, boolean loop) {
+        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut, loop);
     }
 
     /**
@@ -64,7 +65,7 @@ public class SpreadingSoundHelper {
      * @return UUID 用于标识该声音的唯一ID
      */
     public static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume) {
-        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, 0, 0);
+        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, 0, 0, false);
     }
 
     /**
@@ -78,8 +79,8 @@ public class SpreadingSoundHelper {
      * @param fadeOut       声音的淡出时间
      * @return UUID 用于标识该声音的唯一ID
      */
-    public static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader, int fadeIn, int fadeOut) {
-        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, soundSpreader, fadeIn, fadeOut);
+    public static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop) {
+        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, soundSpreader, fadeIn, fadeOut, loop);
     }
 
     /**
@@ -92,7 +93,7 @@ public class SpreadingSoundHelper {
      * @return UUID 用于标识该声音的唯一ID
      */
     public static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader) {
-        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, soundSpreader, 0, 0);
+        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, soundSpreader, 0, 0, false);
     }
 
     /**
@@ -108,8 +109,8 @@ public class SpreadingSoundHelper {
      * @return 新实例的UUID
      */
     public static UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
-                                       ISoundSpreader soundSpreader, int fadeIn, int fadeOut) {
-        return INSTANCE.transitionSound(level, oldSoundSource, newSoundEvent, soundType, soundSpreader, fadeIn, fadeOut);
+                                       ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop) {
+        return INSTANCE.transitionSound(level, oldSoundSource, newSoundEvent, soundType, soundSpreader, fadeIn, fadeOut, loop);
     }
 
     /**

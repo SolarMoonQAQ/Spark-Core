@@ -66,7 +66,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
      * @param fadeInTicks   声音淡入的时长，单位：tick
      * @param fadeOutTicks  声音淡出的时长，单位：tick
      */
-    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeInTicks, int fadeOutTicks) {
+    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeInTicks, int fadeOutTicks, boolean loop) {
         super(SparkSounds.getCUSTOM_SOUND().get(), soundType, SoundInstance.createUnseededRandom());
         this.ISoundSpreader = null;
         this.attenuation = Attenuation.NONE;//衰减根据与听者的距离自动调整
@@ -81,7 +81,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.fadeOutTicks = fadeOutTicks;
         this.fadeProgress = (fadeInTicks > 0) ? 0 : 1; // 如果没有淡入，立即完成
         this.fadeFactor = fadeProgress;
-
+        this.looping = loop;
         // 创建初始声音点
         SoundSourcePoint soundPoint = new SoundSourcePoint(position, speed, pitch, volume);
         this.soundPoints.add(soundPoint);
@@ -98,7 +98,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
      * @param fadeInTicks   声音淡入的时长，单位：tick
      * @param fadeOutTicks  声音淡出的时长，单位：tick
      */
-    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader, int fadeInTicks, int fadeOutTicks) {
+    public SpreadingSoundInstance(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader, int fadeInTicks, int fadeOutTicks, boolean loop) {
         super(SparkSounds.getCUSTOM_SOUND().get(), soundType, SoundInstance.createUnseededRandom());
         this.ISoundSpreader = soundSpreader;
         this.attenuation = Attenuation.NONE;//衰减根据与听者的距离自动调整
@@ -115,7 +115,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.fadeOutTicks = fadeOutTicks;
         this.fadeProgress = (fadeInTicks > 0) ? 0 : 1; // 如果没有淡入，立即完成
         this.fadeFactor = fadeProgress;
-
+        this.looping = loop;
         // 创建初始声音点
         SoundSourcePoint soundPoint = new SoundSourcePoint(position, soundSpreader.getSpeed(this.uuid, soundEvent), this.pitch, this.volume);
         this.soundPoints.add(soundPoint);

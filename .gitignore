@@ -25,6 +25,7 @@ build
 plan
 .gradle
 .idea
+.eclipse
 mods
 gradlew
 gradlew.bat

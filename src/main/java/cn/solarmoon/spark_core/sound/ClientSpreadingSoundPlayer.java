@@ -15,7 +15,6 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
-import org.openjdk.nashorn.internal.objects.annotations.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,20 +35,20 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     }
 
     @Override
-    public void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut) {
-        var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
+    public void playSpreadingSoundFromPacket(Level level, UUID uuid, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut, boolean loop) {
+        var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut, loop);
         sound.setUUID(uuid);
         playSpreadingSound(sound);
     }
 
-    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut) {
-        var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
+    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut, boolean loop) {
+        var sound = new SpreadingSoundInstance(soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut, loop);
         playSpreadingSound(sound);
         return sound.getUUID();
     }
 
-    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, int fadeIn, int fadeOut) {
-        var sound = new SpreadingSoundInstance(soundEvent, soundType, ISoundSpreader, fadeIn, fadeOut);
+    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, int fadeIn, int fadeOut, boolean loop) {
+        var sound = new SpreadingSoundInstance(soundEvent, soundType, ISoundSpreader, fadeIn, fadeOut, loop);
         playSpreadingSound(sound);
         return sound.getUUID();
     }
@@ -62,14 +61,15 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
      * @param soundSpreader 动态声源（可为null）
      * @param fadeIn 淡入时长
      * @param fadeOut 淡出时长
+     * @param loop 是否循环
      * @return 新实例的UUID
      */
     public UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
-                                ISoundSpreader soundSpreader, int fadeIn, int fadeOut) {
+                                ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop) {
         SpreadingSoundInstance oldInstance = activeInstances.get(oldSoundSource);
 
         // 创建新实例
-        SpreadingSoundInstance newInstance = new SpreadingSoundInstance(newSoundEvent, soundType, soundSpreader, fadeIn, fadeOut);
+        SpreadingSoundInstance newInstance = new SpreadingSoundInstance(newSoundEvent, soundType, soundSpreader, fadeIn, fadeOut, loop);
 
         // 如果存在旧实例，复制声源点并开始淡出
         if (oldInstance != null) {

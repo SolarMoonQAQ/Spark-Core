@@ -123,10 +123,11 @@ public interface ISoundSpreader {
      * @param volume     声音的音量
      * @param fadeIn     声音的淡入时间
      * @param fadeOut    声音的淡出时间
+     * @param loop       是否循环播放
      * @return UUID 用于标识该声音的唯一ID
      */
-    static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut) {
-        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut);
+    static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut, boolean loop) {
+        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut, loop);
     }
 
     /**
@@ -142,7 +143,7 @@ public interface ISoundSpreader {
      * @return UUID 用于标识该声音的唯一ID
      */
     static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume) {
-        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, 0, 0);
+        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume);
     }
 
     /**
@@ -156,12 +157,12 @@ public interface ISoundSpreader {
      * @return UUID 用于标识该声音的唯一ID
      */
     @Nullable
-    default UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, int fadeIn, int fadeOut) {
+    default UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, int fadeIn, int fadeOut, boolean loop) {
         if (!level.isClientSide()) {
             SparkCore.LOGGER.warn("ISoundSpreader.playSpreadingSound() should only be called on the client side!");
             return null;
         }
-        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, this, fadeIn, fadeOut);
+        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, this, fadeIn, fadeOut, loop);
     }
 
     /**
@@ -174,7 +175,7 @@ public interface ISoundSpreader {
      */
     @Nullable
     default UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType) {
-        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, this, 0, 0);
+        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, this);
     }
 
     /**
@@ -189,12 +190,12 @@ public interface ISoundSpreader {
      * @return 新实例的UUID
      */
     @Nullable
-    default UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType, int fadeIn, int fadeOut) {
+    default UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType, int fadeIn, int fadeOut, boolean loop) {
         if (!level.isClientSide()) {
             SparkCore.LOGGER.warn("ISoundSpreader.transitionSound() should only be called on the client side!");
             return null;
         }
-        return SpreadingSoundHelper.transitionSound(level, oldSoundSource, newSoundEvent, soundType, this, fadeIn, fadeOut);
+        return SpreadingSoundHelper.transitionSound(level, oldSoundSource, newSoundEvent, soundType, this, fadeIn, fadeOut, loop);
     }
 
 }

@@ -23,7 +23,8 @@ public record SpreadingSoundPayload(
         float pitch,
         float volume,
         int fadeIn,
-        int fadeOut
+        int fadeOut,
+        boolean loop
 ) implements CustomPacketPayload {
     public static final Type<SpreadingSoundPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "play_spreading_sound_payload"));
     public static final StreamCodec<FriendlyByteBuf, SpreadingSoundPayload> STREAM_CODEC = new StreamCodec<>() {
@@ -38,7 +39,8 @@ public record SpreadingSoundPayload(
             float volume = buffer.readFloat();
             int fadeIn = buffer.readInt();
             int fadeOut = buffer.readInt();
-            return new SpreadingSoundPayload(uuid, soundEvent, soundSource, position, velocity, pitch, volume, fadeIn, fadeOut);
+            boolean loop = buffer.readBoolean();
+            return new SpreadingSoundPayload(uuid, soundEvent, soundSource, position, velocity, pitch, volume, fadeIn, fadeOut, loop);
         }
 
         @Override
@@ -52,6 +54,7 @@ public record SpreadingSoundPayload(
             buffer.writeFloat(value.volume());
             buffer.writeInt(value.fadeIn());
             buffer.writeInt(value.fadeOut());
+            buffer.writeBoolean(value.loop());
         }
     };
 
@@ -71,7 +74,8 @@ public record SpreadingSoundPayload(
                 payload.pitch(),
                 payload.volume(),
                 payload.fadeIn(),
-                payload.fadeOut()
+                payload.fadeOut(),
+                payload.loop()
         ));
     }
 }
