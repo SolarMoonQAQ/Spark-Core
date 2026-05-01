@@ -3,7 +3,9 @@ package cn.solarmoon.spark_core.physics.level
 import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.api.processTasks
 import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent
+import cn.solarmoon.spark_core.mixin_interface.ILevelMixin
 import cn.solarmoon.spark_core.util.PPhase
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.LevelChunk
@@ -17,18 +19,22 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent
 
 object PhysicsLevelApplier {
 
-    @SubscribeEvent(priority = EventPriority.HIGH)
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     private fun load(event: LevelEvent.Load) {
         val level = event.level
         if (level is Level) {
-            level.physicsLevel.start {
-                // 广播通知物理世界初始化完成
-                NeoForge.EVENT_BUS.post(PhysicsLevelInitEvent(level.physicsLevel))
+            // 初始化物理世界(客户端在客户端监听器进行)
+            if (level is ServerLevel) {
+                (level as ILevelMixin).setPhysicsLevel(ServerPhysicsLevel(level as ServerLevel, 5))
+                level.physicsLevel.start {
+                    // 广播通知物理世界初始化完成
+                    NeoForge.EVENT_BUS.post(PhysicsLevelInitEvent(level.physicsLevel))
+                }
             }
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.HIGH)
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     private fun unLoad(event: LevelEvent.Unload) {
         val level = event.level
         if (level is Level) {
