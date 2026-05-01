@@ -45,3 +45,10 @@ file="META-INF/accesstransformer.cfg"
     versionRange="[6.0,)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="acceleratedrendering"
+    type="optional"
+    versionRange="[1.0.5,)"
+    ordering="AFTER"
+    side="CLIENT"
