@@ -8,10 +8,12 @@ import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.physics.body.removePhysicsBody
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.util.BlockCollisionUtil
+import cn.solarmoon.spark_core.util.PPhase
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.CollisionShape
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Quaternion
 import com.jme3.math.Transform
 import com.jme3.math.Vector3f
@@ -214,9 +216,14 @@ class PhysicsChunkSection(
                     // 重用现有刚体，在物理线程中更新形状
                     physicsBody?.let { body ->
                         collisionShape?.let { newShape ->
-                            physicsLevel.submitImmediateTask {
+                            physicsLevel.submitImmediateTask(PPhase.PRE) {
                                 replaceCollisionSnapshot(snapshotForBuild)
                                 body.collisionShape = newShape
+                                // 改为将物理世界的强制更新AABB设为true
+                                // if (body.isInWorld) { // 重新进出世界，强制更新AABB
+                                //     physicsLevel.world.removeCollisionObject(body)
+                                //     physicsLevel.world.addCollisionObject(body)
+                                // }
                             }
                         }
                     }

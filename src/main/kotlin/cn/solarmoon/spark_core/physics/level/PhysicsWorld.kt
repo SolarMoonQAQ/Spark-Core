@@ -28,7 +28,8 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
     init {
         setGravity(Vector3f(0f, -9.81f, 0f))
         addTickListener(level)
-        isForceUpdateAllAabbs = false
+        // 需要强制更新AABB，否则地形变化时碰撞箱无法正确生效
+//        isForceUpdateAllAabbs = false
         this.solverInfo.setMode(
             SolverMode.SIMD
                     or SolverMode.WarmStart
