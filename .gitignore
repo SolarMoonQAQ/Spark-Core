@@ -30,3 +30,4 @@ mods
 gradlew
 gradlew.bat
 .kotlin
+/bin/

@@ -66,9 +66,16 @@
     "#minecraft:wool": {
       "friction": 1.2,
       "rolling_friction": 2.0,
-      "restitution": 0.1,
+      "restitution": 0.0,
       "base_slip": 0.0,
-      "slip_factor": 0.6
+      "slip_factor": 0.2
+    },
+    "#minecraft:wool_carpets": {
+      "friction": 1.2,
+      "rolling_friction": 2.0,
+      "restitution": 0.0,
+      "base_slip": 0.0,
+      "slip_factor": 0.2
     },
     "#minecraft:snow": {
       "friction": 0.5,
