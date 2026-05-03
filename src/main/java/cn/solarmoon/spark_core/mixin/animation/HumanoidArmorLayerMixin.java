@@ -19,9 +19,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(HumanoidArmorLayer.class)
 public class HumanoidArmorLayerMixin<
-        T extends net. minecraft. world. entity. LivingEntity,
-        M extends net. minecraft. client. model. HumanoidModel<T>,
-        A extends net. minecraft. client. model. HumanoidModel<T>
+        T extends net.minecraft.world.entity.LivingEntity,
+        M extends net.minecraft.client.model.HumanoidModel<T>,
+        A extends net.minecraft.client.model.HumanoidModel<T>
         > {
 
     @Inject(method = "getArmorModelHook", at = @At("RETURN"))
