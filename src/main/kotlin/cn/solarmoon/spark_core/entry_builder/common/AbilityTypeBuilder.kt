@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.gas.AbilityType
 import cn.solarmoon.spark_core.gas.ActivationContext
 import cn.solarmoon.spark_core.gas.InstancingPolicy
 import com.mojang.serialization.Codec
-import com.oracle.truffle.`object`.enterprise.a
 import net.neoforged.neoforge.registries.DeferredHolder
 import net.neoforged.neoforge.registries.DeferredRegister
 import java.util.function.Supplier

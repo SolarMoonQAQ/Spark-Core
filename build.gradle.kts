@@ -155,6 +155,24 @@ fun DependencyHandlerScope.additionalRuntimeClasspath(dep: Any) {
     )
 }
 
+val graaljsVersion = property("graaljs_version").toString()
+val graaljsJarJarVersionRange = "[${property("graaljs_min_version")},${property("graaljs_next_major_version")})"
+val graaljsJarJarModules = listOf(
+    "org.graalvm.polyglot:polyglot",
+    "org.graalvm.js:js-language",
+    "org.graalvm.regex:regex",
+    "org.graalvm.shadowed:icu4j",
+    "org.graalvm.shadowed:xz",
+    "org.graalvm.truffle:truffle-api",
+    "org.graalvm.truffle:truffle-compiler",
+    "org.graalvm.truffle:truffle-runtime",
+    "org.graalvm.sdk:collections",
+    "org.graalvm.sdk:jniutils",
+    "org.graalvm.sdk:nativebridge",
+    "org.graalvm.sdk:nativeimage",
+    "org.graalvm.sdk:word",
+)
+
 dependencies {
     // KotlinForForge
     implementation("thedarkcolour:kotlinforforge-neoforge:${property("kotlinforforge_version")}")
@@ -184,8 +202,18 @@ dependencies {
     compileOnly("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
 
     // 外部库 ------------------------------------------------------------------------------------------------------------
-    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")?.let { jarJar(it) }
-    additionalRuntimeClasspath("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
+    // ModDev's jarJar configuration is non-transitive, so GraalJS runtime jars are listed explicitly.
+    graaljsJarJarModules.forEach { module ->
+        api(module) {
+            version {
+                strictly(graaljsJarJarVersionRange)
+                prefer(graaljsVersion)
+            }
+        }.let { jarJar(it) }
+    }
+    graaljsJarJarModules.forEach { module ->
+        additionalRuntimeClasspath("$module:$graaljsVersion")
+    }
     // 状态机
 //    implementation("io.github.nsk90:kstatemachine-jvm:0.34.2")?.let { jarJar(it) }
 //    additionalRuntimeClasspath("io.github.nsk90:kstatemachine-jvm:0.34.2")
@@ -203,6 +231,14 @@ dependencies {
 
 repositories {
     mavenLocal()
+    exclusiveContent {
+        forRepository {
+            mavenCentral()
+        }
+        filter {
+            includeGroupByRegex("org\\.graalvm(\\..*)?")
+        }
+    }
     mavenCentral()
 
     maven {
