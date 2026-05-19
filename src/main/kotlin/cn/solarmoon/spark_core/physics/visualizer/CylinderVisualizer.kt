@@ -46,7 +46,7 @@ class CylinderVisualizer : ShapeVisualizer {
                 else -> maxOf(halfExtents.y, halfExtents.z)
             }
             val color = if (body.isColliding) Color.RED.rgb else Color.WHITE.rgb
-            renderCylinderWireframe(transform, radius, shape.height, axis, color, camPos, poseStack, bufferSource)
+            renderCylinderWireframe(transform, radius, shape.height, axis, color, poseStack, bufferSource)
         }
     }
 
@@ -57,7 +57,6 @@ class CylinderVisualizer : ShapeVisualizer {
             height: Float,
             axis: Int,
             color: Int,
-            camPos: Vec3,
             poseStack: PoseStack,
             bufferSource: MultiBufferSource,
             segments: Int = 16
@@ -71,7 +70,7 @@ class CylinderVisualizer : ShapeVisualizer {
                 2 -> Vector3f(0f, 0f, height / 2f) // Z轴
                 else -> Vector3f(0f, height / 2f, 0f)
             }
-            SphereVisualizer.renderCircle(transform, radius, axis, topOffset, segments, color, camPos, poseStack, buffer)
+            SphereVisualizer.renderCircle(transform, radius, axis, topOffset, segments, color, poseStack, buffer)
 
             // 底部圆环
             val bottomOffset = when (axis) {
@@ -80,7 +79,7 @@ class CylinderVisualizer : ShapeVisualizer {
                 2 -> Vector3f(0f, 0f, -height / 2f) // Z轴
                 else -> Vector3f(0f, -height / 2f, 0f)
             }
-            SphereVisualizer.renderCircle(transform, radius, axis, bottomOffset, segments, color, camPos, poseStack, buffer)
+            SphereVisualizer.renderCircle(transform, radius, axis, bottomOffset, segments, color, poseStack, buffer)
 
             // 绘制几条竖线连接顶部和底部
             for (i in 0 until segments step segments / 4) {
@@ -102,8 +101,8 @@ class CylinderVisualizer : ShapeVisualizer {
                     else -> Vector3f(radius * cos(angle), -height / 2f, radius * sin(angle))
                 }
 
-                val from = transform.transformPosition(topPoint, Vector3f()).sub(camPos.x.toFloat(), camPos.y.toFloat(), camPos.z.toFloat())
-                val to = transform.transformPosition(bottomPoint, Vector3f()).sub(camPos.x.toFloat(), camPos.y.toFloat(), camPos.z.toFloat())
+                val from = transform.transformPosition(topPoint, Vector3f())
+                val to = transform.transformPosition(bottomPoint, Vector3f())
                 val normal = to.sub(from, Vector3f()).normalize()
 
                 buffer.addVertex(poseMatrix, from.x, from.y, from.z)

@@ -36,7 +36,7 @@ class CapsuleVisualizer : ShapeVisualizer {
             val height = shape.height
             val axis = shape.axis // 0=X, 1=Y, 2=Z
             val color = if (body.isColliding) Color.RED.rgb else Color.WHITE.rgb
-            renderCapsuleWireframe(transform, radius, height, axis, color, camPos, poseStack, bufferSource)
+            renderCapsuleWireframe(transform, radius, height, axis, color, poseStack, bufferSource)
         }
     }
 
@@ -47,7 +47,6 @@ class CapsuleVisualizer : ShapeVisualizer {
             height: Float,
             axis: Int,
             color: Int,
-            camPos: Vec3,
             poseStack: PoseStack,
             bufferSource: MultiBufferSource,
             segments: Int = 16
@@ -62,7 +61,6 @@ class CapsuleVisualizer : ShapeVisualizer {
                     height,
                     axis,
                     color,
-                    camPos,
                     poseStack,
                     bufferSource
                 )
@@ -74,10 +72,10 @@ class CapsuleVisualizer : ShapeVisualizer {
                 1 -> offset.set(0f, height / 2f, 0f) // Y轴
                 else -> offset.set(0f, 0f, height / 2f) // Z轴
             }
-            renderHemisphere(transform, radius, axis, offset, segments, color, camPos, poseStack, buffer, true)
+            renderHemisphere(transform, radius, axis, offset, segments, color, poseStack, buffer, true)
             // 绘制下半球
             offset.negate()
-            renderHemisphere(transform, radius, axis, offset, segments, color, camPos, poseStack, buffer, false)
+            renderHemisphere(transform, radius, axis, offset, segments, color, poseStack, buffer, false)
         }
 
         private fun renderHemisphere(
@@ -87,7 +85,6 @@ class CapsuleVisualizer : ShapeVisualizer {
             offset: Vector3f,
             segments: Int,
             color: Int,
-            camPos: Vec3,
             poseStack: PoseStack,
             buffer: VertexConsumer,
             isTop: Boolean
@@ -102,12 +99,12 @@ class CapsuleVisualizer : ShapeVisualizer {
                 val yOffset = (direction * radius * sin(Math.acos(((i )/ 10f).toDouble())).toFloat())
                 val offset1 = Vector3f(x, y, z).mul(yOffset).add(offset)
                 // 绘制与胶囊体轴向垂直的圆环
-                SphereVisualizer.renderCircle(transform, currentRadius, axis, offset1, segments, color, camPos, poseStack, buffer)
+                SphereVisualizer.renderCircle(transform, currentRadius, axis, offset1, segments, color, poseStack, buffer)
             }
             // 绘制与胶囊体轴向平行的圆环（半球的两侧）
             for (sideAxis in getSideAxes(axis)) {
                 SphereVisualizer.renderCircle(transform, radius, sideAxis,
-                    offset, segments, color, camPos, poseStack, buffer)
+                    offset, segments, color, poseStack, buffer)
             }
         }
 

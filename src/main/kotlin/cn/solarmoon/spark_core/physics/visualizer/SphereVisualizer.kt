@@ -31,7 +31,7 @@ class SphereVisualizer : ShapeVisualizer {
         if (shape is SphereCollisionShape) {
             val radius = shape.radius
             val color = if (body.isColliding) Color.RED.rgb else Color.WHITE.rgb
-            renderSphereWireframe(transform, radius, color, camPos, poseStack, bufferSource)
+            renderSphereWireframe(transform, radius, color, poseStack, bufferSource)
         }
     }
 
@@ -40,7 +40,6 @@ class SphereVisualizer : ShapeVisualizer {
             transform: Matrix4f,
             radius: Float,
             color: Int,
-            camPos: Vec3,
             poseStack: PoseStack,
             bufferSource: MultiBufferSource,
             segments: Int = 16
@@ -48,9 +47,9 @@ class SphereVisualizer : ShapeVisualizer {
             val buffer = bufferSource.getBuffer(RenderType.lines())
 
             // 绘制三个垂直的圆环表示球体
-            renderCircle(transform, radius, 2, Vector3f(), segments, color, camPos, poseStack, buffer) // XY平面
-            renderCircle(transform, radius, 1, Vector3f(), segments, color, camPos, poseStack, buffer) // XZ平面
-            renderCircle(transform, radius, 0, Vector3f(), segments, color, camPos, poseStack, buffer) // YZ平面
+            renderCircle(transform, radius, 2, Vector3f(), segments, color, poseStack, buffer) // XY平面
+            renderCircle(transform, radius, 1, Vector3f(), segments, color, poseStack, buffer) // XZ平面
+            renderCircle(transform, radius, 0, Vector3f(), segments, color, poseStack, buffer) // YZ平面
         }
 
         fun renderCircle(
@@ -60,7 +59,6 @@ class SphereVisualizer : ShapeVisualizer {
             centerOffset: Vector3f,
             segments: Int,
             color: Int,
-            camPos: Vec3,
             poseStack: PoseStack,
             buffer: com.mojang.blaze3d.vertex.VertexConsumer
         ) {
@@ -73,8 +71,8 @@ class SphereVisualizer : ShapeVisualizer {
                 val point1 = createCirclePoint(radius, angle1, normalAxis, centerOffset)
                 val point2 = createCirclePoint(radius, angle2, normalAxis, centerOffset)
 
-                val from = transform.transformPosition(point1, Vector3f()).sub(camPos.x.toFloat(), camPos.y.toFloat(), camPos.z.toFloat())
-                val to = transform.transformPosition(point2, Vector3f()).sub(camPos.x.toFloat(), camPos.y.toFloat(), camPos.z.toFloat())
+                val from = transform.transformPosition(point1, Vector3f())
+                val to = transform.transformPosition(point2, Vector3f())
                 val normal = to.sub(from, Vector3f()).normalize()
                 buffer.addVertex(poseMatrix, from.x, from.y, from.z)
                     .setColor(color)

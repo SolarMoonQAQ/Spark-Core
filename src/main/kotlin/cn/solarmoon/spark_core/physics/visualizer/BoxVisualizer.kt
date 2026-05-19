@@ -34,8 +34,8 @@ class BoxVisualizer: ShapeVisualizer {
             val buffer = bufferSource.getBuffer(RenderType.lines())
             val edges = mesh.edgesOrder
             for (i in edges.indices step 2) {
-                val from = mesh.getWorldVertexPosition(edges[i], transform).sub(camPos.toVector3f(), Vector3f())
-                val to = mesh.getWorldVertexPosition(edges[i+1], transform).sub(camPos.toVector3f(), Vector3f())
+                val from = mesh.getWorldVertexPosition(edges[i], transform)
+                val to = mesh.getWorldVertexPosition(edges[i+1], transform)
                 val normal = to.sub(from, Vector3f()).normalize()
                 val color = if (body.isColliding) Color.RED.rgb else Color.WHITE.rgb
                 buffer.addVertex(poseStack.last().pose(), from.x, from.y, from.z).setColor(color).setNormal(poseStack.last(), normal.x, normal.y, normal.z)
