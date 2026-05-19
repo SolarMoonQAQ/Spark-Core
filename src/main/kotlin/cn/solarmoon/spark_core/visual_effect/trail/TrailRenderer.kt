@@ -41,10 +41,8 @@ class TrailRenderer: VisualEffectRenderer() {
 
     override fun getRenderStage(): RenderLevelStageEvent.Stage = RenderLevelStageEvent.Stage.AFTER_PARTICLES
 
-    override fun render(event: RenderLevelStageEvent, bufferSource: MultiBufferSource) {
-        val camPos = event.camera.position
-        val partialTicks = event.partialTick.gameTimeDeltaTicks
-        doRender(camPos, partialTicks)
+    override fun render(event: RenderLevelStageEvent, bufferSource: MultiBufferSource, partialTicks: Float) {
+        doRender(event.camera.position, partialTicks)
     }
 
     @Deprecated("改用 render()", ReplaceWith("render"))

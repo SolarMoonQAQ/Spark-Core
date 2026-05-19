@@ -28,8 +28,9 @@ abstract class VisualEffectRenderer {
      * 相比旧的 render(mc, camPos, ...)，此方法可从 event 中获取 Camera、Frustum、modelViewMatrix 等完整渲染上下文。
      * @param event     NeoForge 渲染阶段事件，包含相机、视锥体、矩阵栈等
      * @param bufferSource 通过 Minecraft.renderBuffers().bufferSource() 获取的缓冲区源
+     * @param partialTicks 帧间插值因子 (0~1)，由调度方自动从 event 中提取
      */
-    open fun render(event: RenderLevelStageEvent, bufferSource: MultiBufferSource) {}
+    open fun render(event: RenderLevelStageEvent, bufferSource: MultiBufferSource, partialTicks: Float) {}
 
     /**
      * 仅在不使用 RenderLevelStageEvent 时使用此方法。
