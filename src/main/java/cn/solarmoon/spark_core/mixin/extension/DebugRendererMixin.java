@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.mixin.extension;
 
-import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
+import cn.solarmoon.spark_core.visual_effect.CustomDebugRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -24,7 +24,7 @@ public class DebugRendererMixin {
     @Inject(method = "render", at = @At("TAIL"))
     private void render(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, double camX, double camY, double camZ, CallbackInfo ci) {
         var partialTicks = mc.getTimer().getGameTimeDeltaPartialTick(true);
-        VisualEffectRenderer.getALL_VISUAL_EFFECTS().forEach(i -> i.render(mc, new Vec3(camX, camY, camZ), poseStack, bufferSource, partialTicks));
+        CustomDebugRenderer.getALL_DEBUG_RENDERERS().forEach(i -> i.render(mc, new Vec3(camX, camY, camZ), poseStack, bufferSource, partialTicks));
     }
 
 }

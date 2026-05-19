@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.visual_effect.CustomDebugRenderer
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.jme3.bullet.collision.PhysicsRayTestResult
 import com.jme3.math.Vector3f
@@ -13,6 +14,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.RenderType
 import net.minecraft.world.phys.Vec3
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent
 import org.joml.Matrix4f
 import java.util.ArrayList
 
@@ -20,7 +22,7 @@ import java.util.ArrayList
  * Renders debug visualizations for IK components (rays, target points).
  * This runs on the client side and performs its own raycast for visualization purposes.
  */
-class IKDebugRenderer : VisualEffectRenderer() {
+class IKDebugRenderer : CustomDebugRenderer() {
 
     var isEnabled: Boolean = false // Toggle to enable/disable rendering
 
@@ -31,12 +33,6 @@ class IKDebugRenderer : VisualEffectRenderer() {
     private val COLOR_ACTUAL_AIR = ColorRGBA(1f, 0f, 0f, 1f)    // Red for actual target (not grounded)
 
     private val TARGET_BOX_SIZE = 0.05f // Size of the debug box for targets
-
-    override fun tick() {
-    }
-
-    override fun physTick(physLevel: PhysicsLevel) {
-    }
 
     override fun render(
         mc: Minecraft,

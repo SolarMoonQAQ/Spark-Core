@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.phys.Vec3
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent
 import net.neoforged.neoforge.client.event.ViewportEvent
 import net.neoforged.neoforge.network.PacketDistributor
 import kotlin.math.cos
@@ -63,6 +64,7 @@ class CameraShaker: VisualEffectRenderer() {
         }
     }
 
+    @Deprecated("改用 render()", ReplaceWith("render"))
     override fun render(
         mc: Minecraft,
         camPos: Vec3,

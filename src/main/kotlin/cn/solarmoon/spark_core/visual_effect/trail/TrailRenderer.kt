@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.visual_effect.trail
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.registry.client.SparkShaders
-import cn.solarmoon.spark_core.util.RenderTypeUtil
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.vertex.BufferUploader
@@ -18,6 +17,7 @@ import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.phys.Vec3
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent
 import org.joml.Vector3f
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -39,6 +39,15 @@ class TrailRenderer: VisualEffectRenderer() {
         }
     }
 
+    override fun getRenderStage(): RenderLevelStageEvent.Stage = RenderLevelStageEvent.Stage.AFTER_PARTICLES
+
+    override fun render(event: RenderLevelStageEvent, bufferSource: MultiBufferSource) {
+        val camPos = event.camera.position
+        val partialTicks = event.partialTick.gameTimeDeltaTicks
+        doRender(camPos, partialTicks)
+    }
+
+    @Deprecated("改用 render()", ReplaceWith("render"))
     override fun render(
         mc: Minecraft,
         camPos: Vec3,
@@ -46,6 +55,10 @@ class TrailRenderer: VisualEffectRenderer() {
         bufferSource: MultiBufferSource,
         partialTicks: Float
     ) {
+        doRender(camPos, partialTicks)
+    }
+
+    private fun doRender(camPos: Vec3, partialTicks: Float) {
         meshes.forEach { mesh ->
             RenderSystem.enableDepthTest()
             RenderSystem.disableCull()
