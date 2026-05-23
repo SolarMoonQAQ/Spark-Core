@@ -23,7 +23,7 @@ object VisualEffectTicker {
     private fun onRenderStage(event: RenderLevelStageEvent) {
         val stage = event.stage
         val bufferSource = Minecraft.getInstance().renderBuffers().bufferSource()
-        val partialTicks = event.partialTick.gameTimeDeltaTicks
+        val partialTicks = Minecraft.getInstance().timer.getGameTimeDeltaPartialTick(true)
         for (renderer in ALL_VISUAL_EFFECTS) {
             if (renderer.getRenderStage() == stage) {
                 renderer.render(event, bufferSource, partialTicks)
