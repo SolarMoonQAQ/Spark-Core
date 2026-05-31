@@ -1,16 +1,11 @@
 package cn.solarmoon.spark_core.physics.body
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.toBVector3f
 import cn.solarmoon.spark_core.physics.toMatrix3f
 import cn.solarmoon.spark_core.util.getVec3
 import cn.solarmoon.spark_core.util.ifContains
 import cn.solarmoon.spark_core.util.putVec3
 import cn.solarmoon.spark_core.util.toBQuaternion
-import cn.solarmoon.spark_core.util.toDegrees
-import cn.solarmoon.spark_core.util.toEuler
-import cn.solarmoon.spark_core.util.toQuaternionf
-import cn.solarmoon.spark_core.util.toRadians
 import cn.solarmoon.spark_core.util.toVec3
 import com.jme3.bullet.objects.PhysicsRigidBody
 import net.minecraft.nbt.CompoundTag
@@ -19,8 +14,6 @@ import net.minecraft.network.syncher.EntityDataSerializers
 import net.minecraft.network.syncher.SynchedEntityData
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.level.Level
-import net.minecraft.world.phys.Vec3
-import org.joml.Quaternionf
 import org.joml.Vector3f
 
 abstract class RigidBodyEntity(
@@ -64,7 +57,7 @@ abstract class RigidBodyEntity(
 
     override var rotation by syncField(DATA_ROTATION) { body.setPhysicsRotation(it.toBQuaternion()) }
     override var scale by syncField(DATA_SCALE, { it.toVec3() }, { it.toVector3f() }, { body.setPhysicsScale(it.toBVector3f()) })
-    var gravity by syncField(DATA_GRAVITY, { it.toVec3() }, { it.toVector3f() }, { body.setGravity(it.toBVector3f()) })
+    var physicsGravity by syncField(DATA_GRAVITY, { it.toVec3() }, { it.toVector3f() }, { body.setGravity(it.toBVector3f()) })
     var isGravityProtected by syncField(DATA_IS_GRAVITY_PROTECTED) { body.setProtectGravity(it) }
     var angularFactor by syncField(DATA_ANGULAR_FACTOR, { it.toVec3() }, { it.toVector3f() }, { body.setAngularFactor(it.toBVector3f()) })
     var angularVelocity by syncField(DATA_ANGULAR_VELOCITY, { it.toVec3() }, { it.toVector3f() }, { body.setAngularVelocity(it.toBVector3f()) })
@@ -115,7 +108,7 @@ abstract class RigidBodyEntity(
     override fun readAdditionalSaveData(compound: CompoundTag) {
         super.readAdditionalSaveData(compound)
         compound.ifContains("physics_isKinematic") { isKinematic = getBoolean(it) }
-        compound.ifContains("physics_gravity") { gravity = getVec3(it) }
+        compound.ifContains("physics_gravity") { physicsGravity = getVec3(it) }
         compound.ifContains("physics_isGravityProtected") { isGravityProtected = getBoolean(it) }
         compound.ifContains("physics_angularFactor") { angularFactor = getVec3(it) }
         compound.ifContains("physics_angularVelocity") { angularVelocity = getVec3(it) }
@@ -131,7 +124,7 @@ abstract class RigidBodyEntity(
     override fun addAdditionalSaveData(compound: CompoundTag) {
         super.addAdditionalSaveData(compound)
         compound.putBoolean("physics_isKinematic", isKinematic)
-        compound.putVec3("physics_gravity", gravity)
+        compound.putVec3("physics_gravity", physicsGravity)
         compound.putBoolean("physics_isGravityProtected", isGravityProtected)
         compound.putVec3("physics_angularFactor", angularFactor)
         compound.putVec3("physics_angularVelocity", angularVelocity)
