@@ -41,12 +41,16 @@ class PhysicsChunkSection(
     val blockMerger = BlockMerger(physicsLevel)
     // 缓存section内所有方块的BlockState，避免物理线程中的getBlockState调用
     private var snapshotForBuild: SectionSnapshot? = null
+    @Volatile
     private var snapshotForCollision: SectionSnapshot? = null
     @Volatile
     private var lastSlipEpoch: Int = Int.MIN_VALUE
+    @Volatile
     private var collisionShape: CompoundCollisionShape? = null
+    @Volatile
     private var physicsBody: PhysicsRigidBody? = null
     override val allPhysicsBodies: MutableMap<String, PhysicsCollisionObject> = mutableMapOf()
+    @Volatile
     var isActive: Boolean = false
         private set
 
@@ -58,6 +62,7 @@ class PhysicsChunkSection(
         FAILED          // 构建失败
     }
 
+    @Volatile
     private var buildState = BuildState.IDLE
     private var buildJob: Job? = null
 
@@ -191,10 +196,8 @@ class PhysicsChunkSection(
             val buildResult = buildCollisionShapeAsync(this).await()
 
             if (buildResult) {
-                // 形状构建完成，在物理线程中创建刚体
-                physicsLevel.submitImmediateTask {
-                    createPhysicsBody()
-                }
+                // 纯Java部分在构建线程完成（含内部replaceCollisionSnapshot），刚体不加入世界，等待updateActivation激活
+                createPhysicsBody()
             }
         }
     }
@@ -213,31 +216,24 @@ class PhysicsChunkSection(
             val hasCollisionNow = buildCollisionShapeAsync(this).await()
             if (hasCollisionNow) {
                 if (hadBody) {
-                    // 重用现有刚体，在物理线程中更新形状
-                    physicsBody?.let { body ->
-                        collisionShape?.let { newShape ->
-                            physicsLevel.submitImmediateTask(PPhase.PRE) {
-                                replaceCollisionSnapshot(snapshotForBuild)
-                                body.collisionShape = newShape
-                                // 改为将物理世界的强制更新AABB设为true
-                                // if (body.isInWorld) { // 重新进出世界，强制更新AABB
-                                //     physicsLevel.world.removeCollisionObject(body)
-                                //     physicsLevel.world.addCollisionObject(body)
-                                // }
-                            }
-                        }
+                    // 重用现有刚体：纯Java部分在构建线程完成，仅shape替换交给物理线程
+                    replaceCollisionSnapshot(snapshotForBuild)
+                    val newShape = collisionShape!!
+                    physicsLevel.submitImmediateTask(PPhase.PRE) {
+                        physicsBody!!.collisionShape = newShape
                     }
                 } else {
-                    // 没有现有刚体，在物理线程中创建新的
-                    physicsLevel.submitImmediateTask {
-                        createPhysicsBody()
-                        if (wasActive) {
-                            activate()
+                    // 构建新刚体：纯Java部分在构建线程完成（含内部replaceCollisionSnapshot），仅加入世界交给物理线程
+                    createPhysicsBody()
+                    if (wasActive) {
+                        val body = physicsBody!!
+                        physicsLevel.submitImmediateTask {
+                            physicsLevel.world.addCollisionObject(body)
                         }
                     }
                 }
             } else {
-                // 新的形状为空，在物理线程中销毁刚体
+                // 形状为空需销毁刚体：含removeCollisionObject，仍需在物理线程执行
                 if (hadBody) {
                     physicsLevel.submitImmediateTask {
                         destroyPhysicsBody()

@@ -41,7 +41,8 @@ fun Level.removePhysicsBody(body: PhysicsCollisionObject) {
     physicsLevel.apply {
         submitImmediateTask {
             body.owner = null
-            world.removeCollisionObject(body)
+            if (body.isInWorld)
+                world.removeCollisionObject(body)
         }
     }
 }
