@@ -58,12 +58,15 @@ class SectionSnapshot private constructor(
                                 BlockPos.ZERO
                             ).isEmpty
                         ) {
+                            // 一次 DataMap 查找获取全部物理属性数据，避免重复查询
+                            val worldPos = getWorldPos(pos, x, y, z)
+                            val physicsData = BlockCollisionUtil.getPhysicsData(blockState)
                             blockSnapshots[index] = BlockSnapshot(
                                 blockState,
-                                BlockCollisionUtil.getBlockFriction(blockState),
-                                BlockCollisionUtil.getBlockRollingFriction(blockState),
-                                BlockCollisionUtil.getRestitution(blockState),
-                                BlockCollisionUtil.getSlip(chunk, blockState, getWorldPos(pos, x, y, z))
+                                physicsData.friction,
+                                physicsData.rollingFriction,
+                                physicsData.restitution,
+                                BlockCollisionUtil.calcSlip(physicsData, chunk, worldPos)
                             )
                             hasBlocks = true
                             i++
