@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.api.submitImmediateTask
 import cn.solarmoon.spark_core.js.molang.JSMolangValue
+import cn.solarmoon.spark_core.js.molang.evalAsDouble
 import net.minecraft.nbt.CompoundTag
 import ru.nsk.kstatemachine.event.Event
 import ru.nsk.kstatemachine.state.*
@@ -77,7 +78,7 @@ class AnimInstance internal constructor(
             registerNotify(AnimNotify.Point("fromOrigin", timeline)).onEnter {
                 val script = JSMolangValue(script0.joinToString(""))
                 triggerEvent(AnimEvent.Notify(this, script))
-                script.eval(this@AnimInstance)
+                script.evalAsDouble(this@AnimInstance)
             }
         }
     }

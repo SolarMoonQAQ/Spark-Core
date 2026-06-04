@@ -46,7 +46,7 @@ data class OAnimStateMachine(
                             group = AnimGroups.STATE
                             inTransitionTime = animState.blendTransition
                             outTransitionTime = animState.blendTransition
-                            onEvent<AnimEvent.Tick> { weight = animWeight.eval(this).asFloat() }
+                            onEvent<AnimEvent.Tick> { weight = animWeight.evalAsDouble(this).toFloat() }
                         })
                     }
                 }

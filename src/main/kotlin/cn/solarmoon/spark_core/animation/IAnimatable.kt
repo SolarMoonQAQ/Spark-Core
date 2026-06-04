@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.model.ModelController
 import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.event.BoneUpdateEvent
+import cn.solarmoon.spark_core.molang.SparkMolangContext
 import net.minecraft.world.level.Level
 import org.joml.Matrix4f
 
@@ -52,5 +53,19 @@ interface IAnimatable<T> {
      * 当任意骨骼被更新后调用，可以在此基础上对骨骼的位移旋转等参数进行调整
      */
     fun onBoneUpdate(event: BoneUpdateEvent) {}
+
+    /**
+     * 返回此动画体专用的 Molang 求值上下文。
+     * <p>
+     * 实现类可重写以返回带自定义 {@code @QueryBinding} 的上下文子类实例。
+     * 默认返回 {@link SparkMolangContext} 实例。
+     * <p>
+     * 返回的上下文通常应缓存（每个实例一个），避免频繁创建。
+     *
+     * @see cn.solarmoon.spark_core.molang.MolangContextRegistry
+     */
+    fun getMolangContext(): SparkMolangContext<*> {
+        return SparkMolangContext(this)
+    }
 
 }
