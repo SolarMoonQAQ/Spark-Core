@@ -1,0 +1,145 @@
+package cn.solarmoon.spark_core.command
+
+import cn.solarmoon.spark_core.particle.client.ParticleDefinitionLoader
+import cn.solarmoon.spark_core.particle.client.ParticleEmitterManager
+import cn.solarmoon.spark_core.particle.common.ParticleEffects
+import com.mojang.brigadier.Command
+import com.mojang.brigadier.arguments.StringArgumentType
+import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.suggestion.SuggestionProvider
+import net.minecraft.commands.CommandBuildContext
+import net.minecraft.commands.CommandSourceStack
+import net.minecraft.commands.Commands
+import net.minecraft.commands.SharedSuggestionProvider
+import net.minecraft.commands.arguments.ResourceLocationArgument
+import net.minecraft.commands.arguments.coordinates.Vec3Argument
+import net.minecraft.network.chat.Component
+import net.minecraft.world.phys.Vec3
+
+/**
+ * 粒子系统调试指令。
+ * /spark particle spawn <effectId> [x] [y] [z]
+ * /spark particle list [filter]
+ * /spark particle clear
+ */
+class ParticleCommand : BaseCommand("particle", 2) {
+
+    /** 粒子 ID 补全建议 */
+    private val particleSuggestions = SuggestionProvider<CommandSourceStack> { _, builder ->
+        val ids = ParticleDefinitionLoader.getInstance().allDefinitions.keys.map { it.toString() }
+        SharedSuggestionProvider.suggest(ids, builder)
+    }
+
+    override fun putExecution(context: CommandBuildContext) {
+        // spawn <effectId> [x] [y] [z]
+        builder.then(
+            Commands.literal("spawn")
+                .then(
+                    Commands.argument("effectId", ResourceLocationArgument.id())
+                        .suggests(particleSuggestions)
+                        .executes { executeSpawn(it) }
+                        .then(
+                            Commands.argument("pos", Vec3Argument.vec3())
+                                .executes { executeSpawn(it) }
+                        )
+                )
+        )
+
+        // list [filter]
+        builder.then(
+            Commands.literal("list")
+                .executes(::executeList)
+                .then(
+                    Commands.argument("filter", StringArgumentType.word())
+                        .executes(::executeList)
+                )
+        )
+
+        // clear
+        builder.then(
+            Commands.literal("clear")
+                .executes { executeClear(it) }
+        )
+    }
+
+    /**
+     * 在指定位置生成粒子效果。
+     */
+    private fun executeSpawn(context: CommandContext<CommandSourceStack>): Int {
+        val source = context.source
+        val effectId = ResourceLocationArgument.getId(context, "effectId")
+
+        // 获取位置（默认 ~ ~ ~ 即命令执行者位置）
+        val pos = try {
+            Vec3Argument.getVec3(context, "pos")
+        } catch (_: Exception) {
+            source.position ?: return 0
+        }
+
+        ParticleEffects.burst(source.level, effectId, pos, Vec3.ZERO)
+
+        source.sendSuccess(
+            { Component.literal("已触发粒子效果: $effectId  位置: ${pos.x}, ${pos.y}, ${pos.z}") },
+            true
+        )
+        return Command.SINGLE_SUCCESS
+    }
+
+    /**
+     * 列出所有已加载的粒子定义。
+     */
+    private fun executeList(context: CommandContext<CommandSourceStack>): Int {
+        val source = context.source
+
+        val filter = try {
+            StringArgumentType.getString(context, "filter")
+        } catch (_: Exception) {
+            ""
+        }
+
+        val definitions = ParticleDefinitionLoader.getInstance().allDefinitions
+        val filtered = if (filter.isEmpty()) {
+            definitions.keys.toList()
+        } else {
+            definitions.keys.filter { it.toString().contains(filter, ignoreCase = true) }
+        }
+
+        if (filtered.isEmpty()) {
+            source.sendSuccess(
+                { Component.literal("未找到匹配的粒子定义") },
+                false
+            )
+            return 0
+        }
+
+        source.sendSuccess(
+            { Component.literal("已加载 ${definitions.size} 个粒子定义，匹配 ${filtered.size} 个:") },
+            false
+        )
+        filtered.forEach { id ->
+            val def = definitions[id]
+            val tex = def?.description?.texture?.path?.substringAfterLast('/') ?: "?"
+            source.sendSuccess(
+                { Component.literal("  §e$id  §7($tex)") },
+                false
+            )
+        }
+        return Command.SINGLE_SUCCESS
+    }
+
+    /**
+     * 清空所有活跃的发射器。
+     */
+    private fun executeClear(context: CommandContext<CommandSourceStack>): Int {
+        val source = context.source
+
+        val count = ParticleEmitterManager.getInstance().emitterCount
+        ParticleEmitterManager.getInstance().clear()
+
+        source.sendSuccess(
+            { Component.literal("已清空 $count 个粒子发射器") },
+            true
+        )
+        return Command.SINGLE_SUCCESS
+    }
+}

@@ -24,6 +24,7 @@ object SparkCommandRegister {
         val dispatcher = event.dispatcher
         dispatcher.register(
             Commands.literal("spark")
+                .then(ParticleCommand().create(event.buildContext))
                 .then(
                     Commands.literal("client")
                         .then(Commands.literal("deps"))

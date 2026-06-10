@@ -17,6 +17,7 @@ object SparkPackModuleRegister {
         event.register(AnimStateModule())
         event.register(AbilityTypeModule())
         event.register(SoundModule())
+        event.register(ParticleModule())
     }
 
     @JvmStatic
