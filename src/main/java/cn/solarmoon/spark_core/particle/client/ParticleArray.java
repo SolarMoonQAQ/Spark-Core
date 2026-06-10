@@ -328,6 +328,70 @@ public class ParticleArray {
     }
 
     /**
+     * 从源 ParticleArray 深拷贝所有粒子数据到此数组。
+     * <p>
+     * 用于双重缓冲的 startTick() 阶段：将当前渲染缓冲区的完整状态
+     * 复制到 tick 缓冲区，确保每个 tick 在上一次状态基础上递进，
+     * 而非每次从空数组重新开始。
+     * <p>
+     * 线程安全：仅由主线程调用（tick 线程），源 buffer 为 volatile 渲染缓冲区（只读）。
+     *
+     * @param src 源 ParticleArray（渲染缓冲区）
+     */
+    public void copyFrom(ParticleArray src) {
+        int srcCount = src.count;
+        if (srcCount == 0) {
+            this.count = 0;
+            return;
+        }
+        // 确保容量足够
+        while (this.capacity < srcCount) grow();
+
+        System.arraycopy(src.posX, 0, posX, 0, srcCount);
+        System.arraycopy(src.posY, 0, posY, 0, srcCount);
+        System.arraycopy(src.posZ, 0, posZ, 0, srcCount);
+        System.arraycopy(src.prevPosX, 0, prevPosX, 0, srcCount);
+        System.arraycopy(src.prevPosY, 0, prevPosY, 0, srcCount);
+        System.arraycopy(src.prevPosZ, 0, prevPosZ, 0, srcCount);
+
+        System.arraycopy(src.velX, 0, velX, 0, srcCount);
+        System.arraycopy(src.velY, 0, velY, 0, srcCount);
+        System.arraycopy(src.velZ, 0, velZ, 0, srcCount);
+        System.arraycopy(src.accelX, 0, accelX, 0, srcCount);
+        System.arraycopy(src.accelY, 0, accelY, 0, srcCount);
+        System.arraycopy(src.accelZ, 0, accelZ, 0, srcCount);
+        System.arraycopy(src.dragCoeff, 0, dragCoeff, 0, srcCount);
+
+        System.arraycopy(src.rot, 0, rot, 0, srcCount);
+        System.arraycopy(src.rotRate, 0, rotRate, 0, srcCount);
+        System.arraycopy(src.rotAccel, 0, rotAccel, 0, srcCount);
+
+        System.arraycopy(src.width, 0, width, 0, srcCount);
+        System.arraycopy(src.height, 0, height, 0, srcCount);
+        System.arraycopy(src.prevWidth, 0, prevWidth, 0, srcCount);
+        System.arraycopy(src.prevHeight, 0, prevHeight, 0, srcCount);
+        System.arraycopy(src.r, 0, r, 0, srcCount);
+        System.arraycopy(src.g, 0, g, 0, srcCount);
+        System.arraycopy(src.b, 0, b, 0, srcCount);
+        System.arraycopy(src.a, 0, a, 0, srcCount);
+        System.arraycopy(src.u0, 0, u0, 0, srcCount);
+        System.arraycopy(src.v0, 0, v0, 0, srcCount);
+        System.arraycopy(src.u1, 0, u1, 0, srcCount);
+        System.arraycopy(src.v1, 0, v1, 0, srcCount);
+
+        System.arraycopy(src.age, 0, age, 0, srcCount);
+        System.arraycopy(src.maxLifetime, 0, maxLifetime, 0, srcCount);
+        System.arraycopy(src.alive, 0, alive, 0, srcCount);
+
+        System.arraycopy(src.random1, 0, random1, 0, srcCount);
+        System.arraycopy(src.random2, 0, random2, 0, srcCount);
+        System.arraycopy(src.random3, 0, random3, 0, srcCount);
+        System.arraycopy(src.random4, 0, random4, 0, srcCount);
+
+        this.count = srcCount;
+    }
+
+    /**
      * 清空所有粒子。
      */
     public void clear() {

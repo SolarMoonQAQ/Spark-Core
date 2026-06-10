@@ -35,12 +35,16 @@ public class ParticleDoubleBuffer {
 
     /**
      * tick 开始时准备写缓冲区。
-     * 返回的 tickBuffer 与当前 renderBuffer 相同 (swap 后已同步)。
+     * <p>
+     * 先将当前渲染缓冲区的完整状态深拷贝到 tick 缓冲区，
+     * 确保本 tick 在上一次状态基础上递进（而非从空数组重新开始）。
+     * <p>
      * 调用后执行: snapshotPositions() → 逻辑更新 → integrate() → compact()
      *
-     * @return tick 缓冲区，用于写入
+     * @return tick 缓冲区（已包含 renderBuffer 的副本），用于写入
      */
     public ParticleArray startTick() {
+        tickBuffer.copyFrom(renderBuffer);
         return tickBuffer;
     }
 
