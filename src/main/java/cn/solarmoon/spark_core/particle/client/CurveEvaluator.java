@@ -36,8 +36,11 @@ public class CurveEvaluator {
                 inputValue = molang.evaluate(expr);
             }
 
+            // 解析 horizontalRange：先尝试数值，若失败则作为 MoLang 表达式求值
+            float horizontalRange = resolveHorizontalRange(curve.getHorizontalRange());
+
             // 曲线插值
-            float result = curve.evaluate((float) inputValue);
+            float result = curve.evaluate((float) inputValue, horizontalRange);
 
             // 写入变量 (去掉 "variable." 或 "v." 前缀)
             String cleanName = varName.replace("variable.", "").replace("v.", "");
@@ -61,10 +64,25 @@ public class CurveEvaluator {
                 inputValue = molang.evaluate(expr);
             }
 
-            float result = curve.evaluate((float) inputValue);
+            float horizontalRange = resolveHorizontalRange(curve.getHorizontalRange());
+            float result = curve.evaluate((float) inputValue, horizontalRange);
 
             String cleanName = varName.replace("variable.", "").replace("v.", "");
             molang.setVariable(cleanName, result);
+        }
+    }
+
+    /**
+     * 解析 horizontalRange：先尝试作为数值，若失败则作为 MoLang 表达式编译求值。
+     */
+    private float resolveHorizontalRange(String raw) {
+        if (raw == null || raw.isEmpty()) return 0;
+        try {
+            return Float.parseFloat(raw);
+        } catch (NumberFormatException e) {
+            // 可能是 MoLang 表达式（如 "variable.particle_lifetime"）
+            MolangExpression expr = molang.compile(raw);
+            return (float) molang.evaluate(expr);
         }
     }
 }

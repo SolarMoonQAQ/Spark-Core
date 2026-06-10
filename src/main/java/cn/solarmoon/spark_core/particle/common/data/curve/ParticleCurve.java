@@ -9,10 +9,10 @@ import java.util.List;
 public class ParticleCurve {
     private final CurveType type;
     private final String input;          // Molang 表达式字符串
-    private final float horizontalRange;
+    private final String horizontalRange; // 可为数值字符串或 MoLang 表达式（如 "variable.particle_lifetime"）
     private final List<Float> nodes;
 
-    public ParticleCurve(CurveType type, String input, float horizontalRange, List<Float> nodes) {
+    public ParticleCurve(CurveType type, String input, String horizontalRange, List<Float> nodes) {
         this.type = type;
         this.input = input;
         this.horizontalRange = horizontalRange;
@@ -21,7 +21,7 @@ public class ParticleCurve {
 
     public CurveType getType() { return type; }
     public String getInput() { return input; }
-    public float getHorizontalRange() { return horizontalRange; }
+    public String getHorizontalRange() { return horizontalRange; }
     public List<Float> getNodes() { return nodes; }
 
     public enum CurveType {
@@ -31,12 +31,12 @@ public class ParticleCurve {
         BEZIER_CHAIN
     }
 
-    /** 对给定输入值进行曲线求值 */
-    public float evaluate(float inputValue) {
+    /** 对给定输入值进行曲线求值，horizontalRange 为已解析的数值 */
+    public float evaluate(float inputValue, float resolvedHorizontalRange) {
         if (nodes.isEmpty()) return 0;
         if (nodes.size() == 1) return nodes.get(0);
 
-        float t = horizontalRange > 0 ? inputValue / horizontalRange : 0;
+        float t = resolvedHorizontalRange > 0 ? inputValue / resolvedHorizontalRange : 0;
         t = Math.max(0, Math.min(1, t));
 
         return switch (type) {

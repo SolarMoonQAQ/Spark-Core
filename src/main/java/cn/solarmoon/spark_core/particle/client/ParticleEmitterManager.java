@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.particle.client;
 
+import cn.solarmoon.spark_core.SparkCore;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -74,6 +75,15 @@ public class ParticleEmitterManager {
             if (!emitter.isExpired()) {
                 emitter.tick(level, tickDt);
             }
+        }
+
+        // 统计并日志：发射器数 + 粒子总数（仅在 tick 前有活跃发射器时输出）
+        int emitterCount = emitters.size();
+        if (emitterCount > 0) {
+            int totalParticles = emitters.values().stream()
+                    .mapToInt(e -> e.getDoubleBuffer().getActiveCount())
+                    .sum();
+            SparkCore.LOGGER.debug("[粒子] 发射器: {}, 粒子总数: {}", emitterCount, totalParticles);
         }
 
         // 移除已过期的发射器

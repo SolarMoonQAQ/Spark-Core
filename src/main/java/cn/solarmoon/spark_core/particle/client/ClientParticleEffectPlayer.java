@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.particle.client;
 
+import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.particle.common.IParticleEffectPlayer;
 import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
 import net.minecraft.resources.ResourceLocation;
@@ -21,7 +22,14 @@ public class ClientParticleEffectPlayer implements IParticleEffectPlayer {
     public void playEffect(Level level, ResourceLocation effectId,
                            Vec3 position, Vec3 rotation) {
         ParticleEffectDefinition def = ParticleDefinitionLoader.getInstance().getDefinition(effectId);
-        if (def == null) return;
+        if (def == null) {
+            SparkCore.LOGGER.warn("[粒子] 未找到定义: {}，可用定义数: {}",
+                    effectId, ParticleDefinitionLoader.getInstance().getAllDefinitions().size());
+            return;
+        }
+
+        SparkCore.LOGGER.info("[粒子] 触发效果: {}  位置: ({:.1f}, {:.1f}, {:.1f})",
+                effectId, position.x, position.y, position.z);
 
         ParticleEmitterInstance emitter = new ParticleEmitterInstance(def, level);
         emitter.setPosition(position);
@@ -35,7 +43,10 @@ public class ClientParticleEffectPlayer implements IParticleEffectPlayer {
         // TODO: 通过 locator 获取实体变换并触发粒子效果
         // 需要从 level 查找 entityId 对应的实体
         ParticleEffectDefinition def = ParticleDefinitionLoader.getInstance().getDefinition(effectId);
-        if (def == null) return;
+        if (def == null) {
+            SparkCore.LOGGER.warn("[粒子] 未找到定义: {} (locator模式)", effectId);
+            return;
+        }
 
         ParticleEmitterInstance emitter = new ParticleEmitterInstance(def, level);
         emitter.setPosition(Vec3.ZERO);

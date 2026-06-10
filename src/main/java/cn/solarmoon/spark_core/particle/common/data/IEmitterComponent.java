@@ -15,4 +15,6 @@ public interface IEmitterComponent {
     void tick(ParticleArray buf, float tickDt, ParticleMolangEnvironment molang);
     /** 新粒子生成时的回调 */
     default void onSpawn(ParticleArray buf, int particleIndex, ParticleMolangEnvironment molang) {}
+    /** 发射器当前是否处于激活相位（默认 true，Looping 组件覆写以支持 active/sleep 循环） */
+    default boolean isInActivePhase() { return true; }
 }

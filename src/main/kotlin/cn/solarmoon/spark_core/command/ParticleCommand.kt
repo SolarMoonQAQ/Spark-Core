@@ -63,11 +63,14 @@ class ParticleCommand : BaseCommand("particle", 2) {
     }
 
     /**
-     * 在指定位置生成粒子效果。
+     * 在指定位置生成粒子效果（客户端命令，使用 Minecraft.getInstance().level）。
      */
     private fun executeSpawn(context: CommandContext<CommandSourceStack>): Int {
         val source = context.source
         val effectId = ResourceLocationArgument.getId(context, "effectId")
+
+        // 客户端命令的 CommandSourceStack.getLevel() 会抛异常，使用 unsidedLevel 双端通用
+        val level = source.unsidedLevel
 
         // 获取位置（默认 ~ ~ ~ 即命令执行者位置）
         val pos = try {
@@ -76,7 +79,7 @@ class ParticleCommand : BaseCommand("particle", 2) {
             source.position ?: return 0
         }
 
-        ParticleEffects.burst(source.level, effectId, pos, Vec3.ZERO)
+        ParticleEffects.burst(level, effectId, pos, Vec3.ZERO)
 
         source.sendSuccess(
             { Component.literal("已触发粒子效果: $effectId  位置: ${pos.x}, ${pos.y}, ${pos.z}") },

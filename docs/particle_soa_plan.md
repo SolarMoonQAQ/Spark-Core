@@ -1,6 +1,6 @@
 # Spark-Core 粒子系统 SoA 重构实施计划
 
-> **状态**: 编码完成 · **创建**: 2026-06-10 · **修订**: 2026-06-10（B1/B2/B3/B5/B7 已修复）  
+> **状态**: 编码完成 + 运行时调试修复 · **创建**: 2026-06-10 · **修订**: 2026-06-10（B1/B2/B3/B5/B7/B8/B9/B10 已修复）  
 > **阶段状态**: Phase 1✅/2✅/3✅/4✅/5⚠️(部分)/6✅/7⚠️ · **截至 2026-06-10 实现进度**  
 > **目标版本**: Spark-Core 1.x  
 > **参考源**: [SimpleBedrockModel](https://github.com/McModderAnchor/SimpleBedrockModel) (LGPL-3.0, 其中 `molang/` 子模块 MIT) · Bedrock Edition `particle_effect` JSON 规范 v1.10.0
@@ -1455,6 +1455,9 @@ alive[] = [T,   T,   T,   F,   ...]
 | B5 | 🟠 中 | P5 | **`renderBillboard` light 硬编码** — `vertex()` 中 `setLight(FULL_BRIGHT)` 改为 `setLight(light)` | 粒子不受光照影响，始终全亮 | ✅ 已修复 |
 | B6 | 🟡 低 | P5 | **4 种 Billboard 朝向未实现** — `LOOKAT_DIRECTION` 和三种 `EMITTER_TRANSFORM_*` 为 identity 占位 | 使用这些模式的粒子朝向错误 | 📝 未开始（可延期） |
 | B7 | 🟡 低 | P4 | **`pendingDead` 使用 `ArrayList<Integer>`** — 替换为 `IntArrayList` | 高粒子数装箱 GC 压力 | ✅ 已修复 |
+| B8 | 🔴 阻塞 | P1 | **`horizontal_range` 类型错误** — JSON 中可为 MoLang 表达式（如 `"variable.particle_lifetime"`），反序列化用 `float.class` 导致 `NumberFormatException` | 使用表达式 horizontal_range 的粒子 JSON 加载失败 | ✅ 已修复 — `ParticleCurve.horizontalRange` 改为 `String`，`CurveEvaluator` 运行时解析 |
+| B9 | 🔴 阻塞 | P2 | **`EmitterLifetimeLooping` 循环逻辑缺陷** — 运行时组件追踪相位但无人消费；`getSpawnCount()` 不查相位；`instantFired` 永不清零 | 循环发射器仅第一轮发射，之后永远空转 | ✅ 已修复 — `IEmitterComponent.isInActivePhase()` + `checkEmitterLifetime()` 周期重置 |
+| B10 | 🔴 阻塞 | P1 | **`max_particles` 用累积计数器限制** — `totalSpawnedParticles` 只增不减，达到上限后永不再发射 | 粒子寿命结束后发射器停止工作 | ✅ 已修复 — 改用 `buf.getCount()`（当前存活数）做上限
 
 ### 里程碑
 

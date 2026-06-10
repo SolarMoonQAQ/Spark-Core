@@ -128,6 +128,7 @@ public class ParticleEffectDeserializer {
             if (renderParams.has("texture")) {
                 String texStr = renderParams.get("texture").getAsString();
                 // 基岩版路径: "textures/particle/smoke" → Java版: "namespace:textures/particle/smoke.png"
+                // 无冒号时 ResourceLocation.parse() 自动使用默认命名空间 minecraft:
                 if (!texStr.startsWith("textures/")) {
                     texStr = "textures/" + texStr;
                 }
@@ -135,10 +136,6 @@ public class ParticleEffectDeserializer {
                     texStr = texStr + ".png";
                 }
                 texture = ResourceLocation.parse(texStr);
-                // 如果没有命名空间，使用默认命名空间
-                if (!texStr.contains(":")) {
-                    texture = ResourceLocation.withDefaultNamespace(texStr.replace("textures/", ""));
-                }
             }
         }
 
@@ -264,7 +261,9 @@ public class ParticleEffectDeserializer {
 
             String type = GSON.fromJson(curveObj.get("type"), String.class);
             String input = GSON.fromJson(curveObj.get("input"), String.class);
-            float horizontalRange = GSON.fromJson(curveObj.get("horizontal_range"), float.class);
+            // horizontal_range 可为数值或 MoLang 表达式（如 "variable.particle_lifetime"）
+            String horizontalRange = GSON.fromJson(curveObj.get("horizontal_range"), String.class);
+            if (horizontalRange == null) horizontalRange = "1";
             JsonArray nodesArr = curveObj.getAsJsonArray("nodes");
 
             List<Float> nodes = new ArrayList<>();

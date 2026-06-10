@@ -53,9 +53,12 @@ public class ParticleEmitterInstance {
 
     // 发射器发射速率累加器
     private float spawnAccumulator = 0;
-    private int totalSpawnedParticles = 0;
     private boolean instantFired = false; // EmitterRateInstant 是否已触发
     private Level level;
+
+    // EmitterLifetimeLooping 相位追踪（用于睡眠/激活循环 + 周期重置）
+    private final boolean hasLooping;
+    private boolean wasInSleepPhase = false;
 
     // 预编译的速率 Molang 表达式（缓存在构造时编译，避免每 tick 重复编译）
     @Nullable
@@ -99,6 +102,16 @@ public class ParticleEmitterInstance {
 
         // 收集需要 onApply 的粒子组件
         this.allParticleComponents = Arrays.asList(particleComponents);
+
+        // 检测是否存在 EmitterLifetimeLooping（用于相位追踪和循环重置）
+        boolean foundLooping = false;
+        for (IComponentDefinition def : definition.getEmitterPreset().getDefinitions()) {
+            if (def instanceof EmitterLifetimeLooping) {
+                foundLooping = true;
+                break;
+            }
+        }
+        this.hasLooping = foundLooping;
 
         // 初始化发射器随机数
         for (int i = 0; i < 4; i++) {
@@ -194,7 +207,8 @@ public class ParticleEmitterInstance {
      */
     private void emitParticles(ParticleArray buf, float tickDt) {
         int spawnCount = getSpawnCount(tickDt);
-        spawnCount = Math.min(spawnCount, getMaxParticles() - totalSpawnedParticles);
+        // max_particles 限制的是同时存活的粒子数（不是累计）
+        spawnCount = Math.min(spawnCount, getMaxParticles() - buf.getCount());
 
         boolean isLocal = definition.getEmitterPreset().hasLocalPosition();
 
@@ -224,7 +238,6 @@ public class ParticleEmitterInstance {
                         buf.getPosZ(idx) + (float) position.z);
             }
 
-            totalSpawnedParticles++;
         }
     }
 
@@ -237,6 +250,11 @@ public class ParticleEmitterInstance {
      * - EmitterRateManual: 不自发发射（由外部 trigger 控制）
      */
     private int getSpawnCount(float tickDt) {
+        // EmitterLifetimeLooping 睡眠阶段不发射粒子
+        if (hasLooping && !isInActivePhase()) {
+            return 0;
+        }
+
         for (IComponentDefinition def : definition.getEmitterPreset().getDefinitions()) {
             if (def instanceof EmitterRateInstant instant) {
                 if (!instantFired) {
@@ -314,16 +332,27 @@ public class ParticleEmitterInstance {
 
     /**
      * 检查发射器是否应标记为过期。
+     * <p>
+     * EmitterLifetimeLooping 永不过期，但会在 sleep→active 切换时重置周期状态
+     * （instantFired），使下一轮循环可以重新发射粒子。
      */
     private void checkEmitterLifetime() {
+        // 检查相位切换并做周期重置
+        if (hasLooping) {
+            boolean currentlySleeping = !isInActivePhase();
+            // sleep → active 切换：重置周期状态，准备新一轮发射
+            if (wasInSleepPhase && !currentlySleeping) {
+                instantFired = false;
+            }
+            wasInSleepPhase = currentlySleeping;
+            return; // Looping 永不过期
+        }
+
         for (IComponentDefinition def : definition.getEmitterPreset().getDefinitions()) {
             if (def instanceof EmitterLifetimeOnce once) {
                 if (emitterAge >= once.getActiveTime()) {
                     expired = true;
                 }
-                return;
-            }
-            if (def instanceof EmitterLifetimeLooping) {
                 return;
             }
             if (def instanceof EmitterLifetimeExpression) {
@@ -336,6 +365,16 @@ public class ParticleEmitterInstance {
                 return;
             }
         }
+    }
+
+    /**
+     * 查询运行时组件中是否有任意一个处于非激活相位（即睡眠中）。
+     */
+    private boolean isInActivePhase() {
+        for (IEmitterComponent comp : emitterComponents) {
+            if (!comp.isInActivePhase()) return false;
+        }
+        return true;
     }
 
     // ====== Getters/Setters ======
