@@ -122,8 +122,9 @@ public class ParticleEmitterInstance {
 
         ParticleArray buf = doubleBuffer.startTick();
 
-        // 1. 保存上一 tick 位置
+        // 1. 保存上一 tick 位置和尺寸
         buf.snapshotPositions();
+        buf.snapshotSizes();
 
         // 1b. 设置 Molang 环境的 Level 引用（供需要碰撞检测的组件使用）
         molang.setLevel(level);
@@ -203,8 +204,9 @@ public class ParticleEmitterInstance {
                         buf.getPosZ(idx) + (float) position.z);
             }
 
-            // 新粒子立即同步 prevPos = pos，避免渲染时从 (0,0,0) lerp 导致瞬移
+            // 新粒子立即同步 prevPos/prevSize = 当前值，避免渲染时从默认值 lerp 导致瞬移
             buf.initPrevPos(idx);
+            buf.initPrevSize(idx);
 
         }
     }

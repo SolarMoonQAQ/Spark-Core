@@ -11,11 +11,14 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 
 /**
  * 粒子 Billboard 渲染器入口。
  * <p>
  * 遍历所有发射器，对每个存活粒子进行 partialTick lerp 插值后提交 Billboard 顶点。
+ * 使用 PoseStack 管线（push/translate → 朝向旋转 → 四边形 → pop），
+ * 由 PoseStack 的视图变换自动处理世界→屏幕映射。
  * 建议挂在 RenderLevelStageEvent.Stage.AFTER_ENTITIES 阶段。
  */
 public class ParticleRenderer {
@@ -47,23 +50,28 @@ public class ParticleRenderer {
             pose.translate(pos.x, pos.y, pos.z);
         }
 
+        // 快照视图矩阵（用于 DIRECTION_* / LOOKAT_DIRECTION 模式的轴向量计算）
+        Matrix4f viewPose = new Matrix4f(pose.last().pose());
+
         for (int i = 0; i < count; i++) {
             if (!buf.isAlive(i)) continue;
 
-            // lerp 插值位置
+            // lerp 插值位置（世界坐标或发射器局部坐标）
             float rx = buf.getRenderX(i, partialTick);
             float ry = buf.getRenderY(i, partialTick);
             float rz = buf.getRenderZ(i, partialTick);
 
-            // 每粒子 push/translate/pop：PoseStack 自动处理世界→视图→投影变换
+            // 每粒子 push → translate 到粒子位置 → 渲染 → pop
             pose.pushPose();
             pose.translate(rx, ry, rz);
 
-            BillboardHelper.renderBillboard(vc, pose, light,
-                    buf.getWidth(i), buf.getHeight(i),
+            BillboardHelper.renderBillboard(vc, pose, viewPose, camera,
+                    buf.getRenderWidth(i, partialTick), buf.getRenderHeight(i, partialTick),
                     buf.getU0(i), buf.getV0(i), buf.getU1(i), buf.getV1(i),
                     buf.getR(i), buf.getG(i), buf.getB(i), buf.getA(i),
-                    buf.getRot(i), mode, camera);
+                    buf.getRot(i), mode,
+                    buf.getVelX(i), buf.getVelY(i), buf.getVelZ(i),
+                    light);
 
             pose.popPose();
         }

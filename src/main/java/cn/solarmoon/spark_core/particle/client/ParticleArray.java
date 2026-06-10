@@ -38,6 +38,7 @@ public class ParticleArray {
 
     // ====== 外观 ======
     private float[] width, height;
+    private float[] prevWidth, prevHeight; // 上一 tick 的尺寸，用于渲染插值
     private float[] r, g, b, a;
     private float[] u0, v0, u1, v1;
 
@@ -86,6 +87,8 @@ public class ParticleArray {
         // 外观
         width = new float[capacity];
         height = new float[capacity];
+        prevWidth = new float[capacity];
+        prevHeight = new float[capacity];
         r = new float[capacity];
         g = new float[capacity];
         b = new float[capacity];
@@ -136,6 +139,8 @@ public class ParticleArray {
 
         width = growArray(width, newCapacity);
         height = growArray(height, newCapacity);
+        prevWidth = growArray(prevWidth, newCapacity);
+        prevHeight = growArray(prevHeight, newCapacity);
         r = growArray(r, newCapacity);
         g = growArray(g, newCapacity);
         b = growArray(b, newCapacity);
@@ -187,6 +192,7 @@ public class ParticleArray {
         dragCoeff[slot] = 0;
         rot[slot] = 0; rotRate[slot] = 0; rotAccel[slot] = 0;
         width[slot] = 0.25f; height[slot] = 0.25f;
+        prevWidth[slot] = 0.25f; prevHeight[slot] = 0.25f;
         r[slot] = 1; g[slot] = 1; b[slot] = 1; a[slot] = 1;
         u0[slot] = 0; v0[slot] = 0; u1[slot] = 1; v1[slot] = 1;
         age[slot] = 0; maxLifetime[slot] = Float.MAX_VALUE;
@@ -225,6 +231,14 @@ public class ParticleArray {
     }
 
     /**
+     * 在 tick 开始时调用，保存上一 tick 的尺寸供渲染线程 lerp。
+     */
+    public void snapshotSizes() {
+        System.arraycopy(width, 0, prevWidth, 0, count);
+        System.arraycopy(height, 0, prevHeight, 0, count);
+    }
+
+    /**
      * 新粒子生成后调用，将 prevPos 同步为当前 pos。
      * 避免渲染时从 (0,0,0) lerp 到实际位置。
      */
@@ -232,6 +246,15 @@ public class ParticleArray {
         prevPosX[index] = posX[index];
         prevPosY[index] = posY[index];
         prevPosZ[index] = posZ[index];
+    }
+
+    /**
+     * 新粒子生成后调用，将 prevSize 同步为当前 size。
+     * 避免渲染时从默认尺寸 lerp 到实际尺寸。
+     */
+    public void initPrevSize(int index) {
+        prevWidth[index] = width[index];
+        prevHeight[index] = height[index];
     }
 
     /**
@@ -295,6 +318,7 @@ public class ParticleArray {
         dragCoeff[dst] = dragCoeff[src];
         rot[dst] = rot[src];        rotRate[dst] = rotRate[src]; rotAccel[dst] = rotAccel[src];
         width[dst] = width[src];    height[dst] = height[src];
+        prevWidth[dst] = prevWidth[src]; prevHeight[dst] = prevHeight[src];
         r[dst] = r[src]; g[dst] = g[src]; b[dst] = b[src]; a[dst] = a[src];
         u0[dst] = u0[src]; v0[dst] = v0[src]; u1[dst] = u1[src]; v1[dst] = v1[src];
         age[dst] = age[src];        maxLifetime[dst] = maxLifetime[src];
@@ -325,6 +349,16 @@ public class ParticleArray {
     /** 渲染线程调用 — 纯读，无副作用 */
     public float getRenderZ(int index, float partialTick) {
         return prevPosZ[index] + (posZ[index] - prevPosZ[index]) * partialTick;
+    }
+
+    /** 渲染线程调用 — 对 width 做 partialTick lerp */
+    public float getRenderWidth(int index, float partialTick) {
+        return prevWidth[index] + (width[index] - prevWidth[index]) * partialTick;
+    }
+
+    /** 渲染线程调用 — 对 height 做 partialTick lerp */
+    public float getRenderHeight(int index, float partialTick) {
+        return prevHeight[index] + (height[index] - prevHeight[index]) * partialTick;
     }
 
     // ==================== Getter/Setter ====================
