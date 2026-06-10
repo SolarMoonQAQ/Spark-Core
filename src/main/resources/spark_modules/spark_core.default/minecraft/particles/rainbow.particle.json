@@ -44,7 +44,7 @@
 				"linear_acceleration": [0, 1, 0]
 			},
 			"minecraft:particle_appearance_billboard": {
-				"size": ["0.12 * variable.psize", "0.12 * variable.psize"],
+				"size": ["1.12 * variable.psize", "1.12 * variable.psize"],
 				"facing_camera_mode": "rotate_xyz",
 				"uv": {
 					"texture_width": 128,

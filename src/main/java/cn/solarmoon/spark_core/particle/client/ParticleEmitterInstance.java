@@ -6,13 +6,7 @@ import cn.solarmoon.spark_core.particle.common.data.IEmitterComponent;
 import cn.solarmoon.spark_core.particle.common.data.IParticleComponent;
 import cn.solarmoon.spark_core.particle.common.data.EmitterPreset;
 import cn.solarmoon.spark_core.particle.common.data.ParticlePreset;
-import cn.solarmoon.spark_core.particle.common.data.component.rate.EmitterRateInstant;
-import cn.solarmoon.spark_core.particle.common.data.component.rate.EmitterRateSteady;
-import cn.solarmoon.spark_core.particle.common.data.component.rate.EmitterRateManual;
-import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeOnce;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeLooping;
-import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeExpression;
-import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -59,14 +53,6 @@ public class ParticleEmitterInstance {
     // EmitterLifetimeLooping 相位追踪（用于睡眠/激活循环 + 周期重置）
     private final boolean hasLooping;
     private boolean wasInSleepPhase = false;
-
-    // 预编译的速率 Molang 表达式（缓存在构造时编译，避免每 tick 重复编译）
-    @Nullable
-    private MolangExpression cachedSpawnRateExpr;
-    @Nullable
-    private MolangExpression cachedMaxParticlesExpr;
-    @Nullable
-    private MolangExpression cachedExpirationExpr;
 
     // 运行时组件
     private final IEmitterComponent[] emitterComponents;
@@ -118,29 +104,8 @@ public class ParticleEmitterInstance {
             emitterRandoms[i] = random.nextDouble();
         }
 
-        // 预编译速率和过期表达式（从定义组件中读取）
-        precompileExpressions();
-
         // 重新生成随机数，与粒子随机数不同
         resetEmitterRandoms();
-    }
-
-    /**
-     * 遍历定义组件，预编译速率/最大粒子数/过期表达式。
-     */
-    private void precompileExpressions() {
-        for (IComponentDefinition def : definition.getEmitterPreset().getDefinitions()) {
-            if (def instanceof EmitterRateSteady steady) {
-                cachedSpawnRateExpr = molang.compile(steady.getSpawnRate());
-                cachedMaxParticlesExpr = molang.compile(steady.getMaxParticles());
-            } else if (def instanceof EmitterRateManual manual) {
-                cachedMaxParticlesExpr = molang.compile(manual.getMaxParticles());
-            } else if (def instanceof EmitterLifetimeExpression expr) {
-                if (expr.getExpirationExpression() != null && !expr.getExpirationExpression().isEmpty()) {
-                    cachedExpirationExpr = molang.compile(expr.getExpirationExpression());
-                }
-            }
-        }
     }
 
     private void resetEmitterRandoms() {
@@ -238,6 +203,9 @@ public class ParticleEmitterInstance {
                         buf.getPosZ(idx) + (float) position.z);
             }
 
+            // 新粒子立即同步 prevPos = pos，避免渲染时从 (0,0,0) lerp 导致瞬移
+            buf.initPrevPos(idx);
+
         }
     }
 
@@ -255,26 +223,29 @@ public class ParticleEmitterInstance {
             return 0;
         }
 
-        for (IComponentDefinition def : definition.getEmitterPreset().getDefinitions()) {
-            if (def instanceof EmitterRateInstant instant) {
-                if (!instantFired) {
-                    instantFired = true;
-                    float num = (float) molang.evaluate(molang.compile(instant.getNumParticles()));
-                    return Math.max(1, Math.round(num));
-                }
-                return 0;
+        EmitterPreset preset = definition.getEmitterPreset();
+
+        // EmitterRateInstant：仅首次 tick 发射
+        var numExpr = preset.getNumParticlesExpr();
+        if (numExpr != null) {
+            if (!instantFired) {
+                instantFired = true;
+                float num = (float) molang.evaluate(numExpr);
+                return Math.max(1, Math.round(num));
             }
-            if (def instanceof EmitterRateSteady steady) {
-                if (cachedSpawnRateExpr != null) {
-                    float rate = (float) molang.evaluate(cachedSpawnRateExpr);
-                    spawnAccumulator += rate * tickDt;
-                    int count = (int) spawnAccumulator;
-                    spawnAccumulator -= count;
-                    return Math.max(0, count);
-                }
-                return 1;
-            }
+            return 0;
         }
+
+        // EmitterRateSteady：基于速率累加
+        var rateExpr = preset.getSpawnRateExpr();
+        if (rateExpr != null) {
+            float rate = (float) molang.evaluate(rateExpr);
+            spawnAccumulator += rate * tickDt;
+            int count = (int) spawnAccumulator;
+            spawnAccumulator -= count;
+            return Math.max(0, count);
+        }
+
         return 0;
     }
 
@@ -282,16 +253,21 @@ public class ParticleEmitterInstance {
      * 获取最大粒子数上限。
      */
     private int getMaxParticles() {
-        if (cachedMaxParticlesExpr != null) {
-            float val = (float) molang.evaluate(cachedMaxParticlesExpr);
+        EmitterPreset preset = definition.getEmitterPreset();
+
+        var maxExpr = preset.getMaxParticlesExpr();
+        if (maxExpr != null) {
+            float val = (float) molang.evaluate(maxExpr);
             return Math.max(1, Math.round(val));
         }
-        for (IComponentDefinition def : definition.getEmitterPreset().getDefinitions()) {
-            if (def instanceof EmitterRateInstant instant) {
-                float num = (float) molang.evaluate(molang.compile(instant.getNumParticles()));
-                return Math.max(1, Math.round(num));
-            }
+
+        // 无 maxParticles 组件时回退：若为 Instant 则用其 numParticles 作为上限
+        var numExpr = preset.getNumParticlesExpr();
+        if (numExpr != null) {
+            float num = (float) molang.evaluate(numExpr);
+            return Math.max(1, Math.round(num));
         }
+
         return 16384;
     }
 
@@ -300,6 +276,13 @@ public class ParticleEmitterInstance {
 
         for (int i = 0; i < n; i++) {
             if (!buf.isAlive(i)) continue;
+
+            // 过期检查
+            if (buf.getAge(i) >= buf.getMaxLifetime(i)) {
+                eventExecutor.fireExpirationEvents(i, buf);
+                pendingDead.add(i);
+                continue;
+            }
 
             // 绑定粒子 Molang 变量
             float age = buf.getAge(i);
@@ -320,13 +303,6 @@ public class ParticleEmitterInstance {
 
             // 运动积分
             buf.integrateParticle(i, tickDt);
-
-            // 过期检查
-            if (buf.getAge(i) >= buf.getMaxLifetime(i)) {
-                eventExecutor.fireExpirationEvents(i, buf);
-                pendingDead.add(i);
-                continue;
-            }
         }
     }
 
@@ -348,21 +324,22 @@ public class ParticleEmitterInstance {
             return; // Looping 永不过期
         }
 
-        for (IComponentDefinition def : definition.getEmitterPreset().getDefinitions()) {
-            if (def instanceof EmitterLifetimeOnce once) {
-                if (emitterAge >= once.getActiveTime()) {
-                    expired = true;
-                }
-                return;
+        EmitterPreset preset = definition.getEmitterPreset();
+
+        var activeTimeExpr = preset.getActiveTimeExpr();
+        if (activeTimeExpr != null) {
+            float activeTime = (float) molang.evaluate(activeTimeExpr);
+            if (emitterAge >= activeTime) {
+                expired = true;
             }
-            if (def instanceof EmitterLifetimeExpression) {
-                if (cachedExpirationExpr != null) {
-                    double val = molang.evaluate(cachedExpirationExpr);
-                    if (val > 0) {
-                        expired = true;
-                    }
-                }
-                return;
+            return;
+        }
+
+        var expirationExpr = preset.getExpirationExpr();
+        if (expirationExpr != null) {
+            double val = molang.evaluate(expirationExpr);
+            if (val > 0) {
+                expired = true;
             }
         }
     }

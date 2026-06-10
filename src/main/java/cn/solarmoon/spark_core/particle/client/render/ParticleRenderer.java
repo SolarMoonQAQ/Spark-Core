@@ -16,22 +16,12 @@ import net.minecraft.world.phys.Vec3;
  * 粒子 Billboard 渲染器入口。
  * <p>
  * 遍历所有发射器，对每个存活粒子进行 partialTick lerp 插值后提交 Billboard 顶点。
- * 通过 {@link CameraStateCache} 获取摄像机 roll 角度。
  * 建议挂在 RenderLevelStageEvent.Stage.AFTER_ENTITIES 阶段。
  */
 public class ParticleRenderer {
 
-    private final CameraStateCache cameraState = new CameraStateCache();
-
     /**
      * 渲染单个发射器中的所有粒子。
-     *
-     * @param emitter      粒子发射器实例
-     * @param pose         当前 PoseStack
-     * @param buffer       MultiBufferSource
-     * @param camera       摄像机
-     * @param partialTick  部分 tick 值
-     * @param light        光照包
      */
     public void renderEmitter(ParticleEmitterInstance emitter, PoseStack pose,
                               MultiBufferSource buffer, Camera camera,
@@ -50,33 +40,32 @@ public class ParticleRenderer {
         RenderType renderType = ParticleRenderType.fromMaterial(material, texture);
         VertexConsumer vc = buffer.getBuffer(renderType);
 
-        // Local space 模式：粒子坐标是相对于 emitter 的，PoseStack 偏移到 emitter 位置
+        // Local space 模式：粒子坐标相对于 emitter，先偏移 PoseStack
         if (emitter.getDefinition().getEmitterPreset().hasLocalPosition()) {
             Vec3 pos = emitter.getPosition();
             pose.pushPose();
             pose.translate(pos.x, pos.y, pos.z);
         }
 
-        // 摄像机角度
-        float cameraPitch = (float) Math.toRadians(camera.getXRot());
-        float cameraRoll = CameraStateCache.getCameraRollRadians();
-
         for (int i = 0; i < count; i++) {
             if (!buf.isAlive(i)) continue;
 
-            // lerp 插值位置（纯读，无副作用）
+            // lerp 插值位置
             float rx = buf.getRenderX(i, partialTick);
             float ry = buf.getRenderY(i, partialTick);
             float rz = buf.getRenderZ(i, partialTick);
 
-            // 渲染 Billboard 四边形
+            // 每粒子 push/translate/pop：PoseStack 自动处理世界→视图→投影变换
+            pose.pushPose();
+            pose.translate(rx, ry, rz);
+
             BillboardHelper.renderBillboard(vc, pose, light,
-                    rx, ry, rz,
                     buf.getWidth(i), buf.getHeight(i),
                     buf.getU0(i), buf.getV0(i), buf.getU1(i), buf.getV1(i),
                     buf.getR(i), buf.getG(i), buf.getB(i), buf.getA(i),
-                    buf.getRot(i), mode,
-                    cameraPitch, cameraRoll);
+                    buf.getRot(i), mode, camera);
+
+            pose.popPose();
         }
 
         if (emitter.getDefinition().getEmitterPreset().hasLocalPosition()) {
@@ -86,13 +75,6 @@ public class ParticleRenderer {
 
     /**
      * 批量渲染所有发射器的粒子。
-     *
-     * @param emitters    发射器列表
-     * @param pose        当前 PoseStack
-     * @param buffer      MultiBufferSource
-     * @param camera      摄像机
-     * @param partialTick 部分 tick 值
-     * @param light       光照包
      */
     public void renderAll(java.util.List<ParticleEmitterInstance> emitters, PoseStack pose,
                           MultiBufferSource buffer, Camera camera,

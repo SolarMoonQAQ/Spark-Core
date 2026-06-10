@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.particle.client;
 
+import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
 import cn.solarmoon.spark_core.particle.common.data.*;
 import cn.solarmoon.spark_core.particle.common.data.curve.ParticleCurve;
 import cn.solarmoon.spark_core.particle.common.data.event.EventNode;
@@ -71,9 +72,7 @@ public class ParticleEffectDeserializer {
         if (componentsObj != null) {
             for (Map.Entry<String, JsonElement> entry : componentsObj.entrySet()) {
                 String key = entry.getKey();
-                if (!entry.getValue().isJsonObject()) continue;
-
-                IComponentDefinition comp = ParticleComponentRegistry.deserialize(key, entry.getValue().getAsJsonObject());
+                IComponentDefinition comp = ParticleComponentRegistry.deserialize(key, entry.getValue());
                 if (comp instanceof IEmitterComponentDefinition) {
                     emitterComponents.add(comp);
                 } else if (comp instanceof IParticleComponentDefinition) {
@@ -99,7 +98,7 @@ public class ParticleEffectDeserializer {
         ParticlePreset particlePreset = buildParticlePreset(particleComponents, molang);
 
         // 解析 curves
-        Map<String, ParticleCurve> curves = parseCurves(effectObj.getAsJsonObject("curves"));
+        Map<String, ParticleCurve> curves = parseCurves(effectObj.getAsJsonObject("curves"), molang);
 
         // 解析 events
         Map<String, List<EventNode>> events = parseEvents(effectObj.getAsJsonObject("events"));
@@ -142,25 +141,43 @@ public class ParticleEffectDeserializer {
         return new ParticleDescription(id, material, texture);
     }
 
+    /**
+     * 构建 EmitterPreset，同时预编译发射器引擎直接使用的 Molang 表达式。
+     * 这些表达式存储在 EmitterPreset 中，所有发射器实例共享。
+     */
     private static EmitterPreset buildEmitterPreset(List<IComponentDefinition> emitterDefs,
                                                      ParticleMolangEnvironment molang) {
         List<IEmitterComponent> runtimeComponents = new ArrayList<>();
         boolean hasLocalPos = false, hasLocalRot = false, hasLocalVel = false;
 
+        // 预编译的表达式（反序列化时一次性编译，所有实例共享）
+        MolangExpression spawnRateExpr = null;
+        MolangExpression maxParticlesExpr = null;
+        MolangExpression expirationExpr = null;
+        MolangExpression activeTimeExpr = null;
+        MolangExpression numParticlesExpr = null;
+
         for (IComponentDefinition def : emitterDefs) {
-            // 使用 ParticleComponentRuntimes 工厂创建运行时组件
             if (def instanceof EmitterRateInstant rd) {
                 runtimeComponents.add(ParticleComponentRuntimes.createRateInstant(rd, molang));
+                numParticlesExpr = compileIfNotEmpty(rd.getNumParticles(), molang);
             } else if (def instanceof EmitterRateSteady rd) {
                 runtimeComponents.add(ParticleComponentRuntimes.createRateSteady(rd, molang));
+                spawnRateExpr = compileIfNotEmpty(rd.getSpawnRate(), molang);
+                maxParticlesExpr = compileIfNotEmpty(rd.getMaxParticles(), molang);
             } else if (def instanceof EmitterRateManual rd) {
                 runtimeComponents.add(ParticleComponentRuntimes.createRateManual(rd, molang));
+                maxParticlesExpr = compileIfNotEmpty(rd.getMaxParticles(), molang);
             } else if (def instanceof EmitterLifetimeOnce ld) {
-                runtimeComponents.add(ParticleComponentRuntimes.createLifetimeOnce(ld));
+                runtimeComponents.add(ParticleComponentRuntimes.createLifetimeOnce(ld, molang));
+                activeTimeExpr = compileIfNotEmpty(ld.getActiveTime(), molang);
             } else if (def instanceof EmitterLifetimeLooping ld) {
-                runtimeComponents.add(ParticleComponentRuntimes.createLifetimeLooping(ld));
+                runtimeComponents.add(ParticleComponentRuntimes.createLifetimeLooping(ld, molang));
             } else if (def instanceof EmitterLifetimeExpression ld) {
                 runtimeComponents.add(ParticleComponentRuntimes.createLifetimeExpression(ld, molang));
+                if (ld.getExpirationExpression() != null && !ld.getExpirationExpression().isEmpty()) {
+                    expirationExpr = molang.compile(ld.getExpirationExpression());
+                }
             } else if (def instanceof EmitterInitialization ed) {
                 runtimeComponents.add(ParticleComponentRuntimes.createEmitterInit(ed, molang));
             } else if (def instanceof EmitterLocalSpace els) {
@@ -183,7 +200,17 @@ public class ParticleEffectDeserializer {
             }
         }
 
-        return new EmitterPreset(runtimeComponents, emitterDefs, hasLocalPos, hasLocalRot, hasLocalVel);
+        return new EmitterPreset(runtimeComponents, emitterDefs,
+                hasLocalPos, hasLocalRot, hasLocalVel,
+                spawnRateExpr, maxParticlesExpr, expirationExpr,
+                activeTimeExpr, numParticlesExpr);
+    }
+
+    /** 编译非空表达式，空或 null 返回 null */
+    @Nullable
+    private static MolangExpression compileIfNotEmpty(@Nullable String expr, ParticleMolangEnvironment molang) {
+        if (expr == null || expr.isEmpty()) return null;
+        return molang.compile(expr);
     }
 
     private static ParticlePreset buildParticlePreset(List<IComponentDefinition> particleDefs,
@@ -251,9 +278,13 @@ public class ParticleEffectDeserializer {
         };
     }
 
-    private static Map<String, ParticleCurve> parseCurves(@Nullable JsonObject curvesObj) {
+    private static Map<String, ParticleCurve> parseCurves(@Nullable JsonObject curvesObj,
+                                                           ParticleMolangEnvironment molang) {
         Map<String, ParticleCurve> curves = new HashMap<>();
         if (curvesObj == null) return curves;
+
+        // 使用 molang 环境的方法引用作为编译器
+        ParticleCurve.MolangCompiler compiler = molang::compile;
 
         for (Map.Entry<String, JsonElement> entry : curvesObj.entrySet()) {
             String varName = entry.getKey(); // e.g. "variable.curve_size"
@@ -283,7 +314,9 @@ public class ParticleEffectDeserializer {
                 };
             }
 
-            curves.put(varName, new ParticleCurve(curveType, input != null ? input : "", horizontalRange, nodes));
+            // 构造时预编译 Molang 表达式
+            curves.put(varName, new ParticleCurve(curveType, input != null ? input : "",
+                    horizontalRange, nodes, compiler));
         }
 
         return curves;

@@ -225,6 +225,16 @@ public class ParticleArray {
     }
 
     /**
+     * 新粒子生成后调用，将 prevPos 同步为当前 pos。
+     * 避免渲染时从 (0,0,0) lerp 到实际位置。
+     */
+    public void initPrevPos(int index) {
+        prevPosX[index] = posX[index];
+        prevPosY[index] = posY[index];
+        prevPosZ[index] = posZ[index];
+    }
+
+    /**
      * 对单个粒子执行运动积分（在主线程 tick 内调用）。
      */
     public void integrateParticle(int index, float tickDt) {

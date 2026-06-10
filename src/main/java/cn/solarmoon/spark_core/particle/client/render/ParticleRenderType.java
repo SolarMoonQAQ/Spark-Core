@@ -45,8 +45,7 @@ public abstract class ParticleRenderType extends RenderType {
      */
     public static RenderType fromMaterial(String material, ResourceLocation texture) {
         return switch (material) {
-            case "particles_opaque" -> RenderType.entityCutout(texture);
-            case "particles_alpha" -> RenderType.entityCutout(texture);
+            case "particles_opaque", "particles_alpha" -> RenderType.entityCutout(texture);
             case "particles_add" -> additiveParticle(texture);
             default -> RenderType.entityTranslucent(texture);
         };

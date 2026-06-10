@@ -1457,7 +1457,8 @@ alive[] = [T,   T,   T,   F,   ...]
 | B7 | 🟡 低 | P4 | **`pendingDead` 使用 `ArrayList<Integer>`** — 替换为 `IntArrayList` | 高粒子数装箱 GC 压力 | ✅ 已修复 |
 | B8 | 🔴 阻塞 | P1 | **`horizontal_range` 类型错误** — JSON 中可为 MoLang 表达式（如 `"variable.particle_lifetime"`），反序列化用 `float.class` 导致 `NumberFormatException` | 使用表达式 horizontal_range 的粒子 JSON 加载失败 | ✅ 已修复 — `ParticleCurve.horizontalRange` 改为 `String`，`CurveEvaluator` 运行时解析 |
 | B9 | 🔴 阻塞 | P2 | **`EmitterLifetimeLooping` 循环逻辑缺陷** — 运行时组件追踪相位但无人消费；`getSpawnCount()` 不查相位；`instantFired` 永不清零 | 循环发射器仅第一轮发射，之后永远空转 | ✅ 已修复 — `IEmitterComponent.isInActivePhase()` + `checkEmitterLifetime()` 周期重置 |
-| B10 | 🔴 阻塞 | P1 | **`max_particles` 用累积计数器限制** — `totalSpawnedParticles` 只增不减，达到上限后永不再发射 | 粒子寿命结束后发射器停止工作 | ✅ 已修复 — 改用 `buf.getCount()`（当前存活数）做上限
+| B10 | 🔴 阻塞 | P1 | **`max_particles` 用累积计数器限制** — `totalSpawnedParticles` 只增不减，达到上限后永不再发射 | 粒子寿命结束后发射器停止工作 | ✅ 已修复 — 改用 `buf.getCount()`（当前存活数）做上限 |
+| B11 | 🟡 低 | P2 | **UV/Flipbook MoLang 运行时未求值** — 定义已存为字符串，但 `createAppearanceBillboard()` 未编译求值；`uv_mode` 未解析 | UV 和翻页书动画所有表达式形同虚设，`fb.getFps()` 等返回 String 直接参与运算会出错 | 📝 见 [§14.5 UV/Flipbook MoLang 待办](#145-uvflipbook-molang-待办) |
 
 ### 里程碑
 
@@ -1470,3 +1471,50 @@ alive[] = [T,   T,   T,   F,   ...]
 | **M5: 性能达标** | 全部完成 + 基准测试 | 8000 粒子 × 5 表达式，每 tick < 2ms | ❌ |
 
 ---
+
+## 14.5 UV/Flipbook MoLang 待办
+
+> **状态**: 设计已完成，运行时待实现 · **优先级**: P2（当前不影响基本粒子可渲染，但 UV 动画/翻页书不可用）
+
+### 背景
+
+`minecraft:particle_appearance_billboard` 组件的 `uv` 和 `flipbook` 子对象的**所有数值字段均支持 MoLang 表达式**，允许每粒子动态 UV 和翻页书动画。当前实现中：
+
+- ✅ **反序列化**：`ParticleAppearanceBillboard.fromJson()` 已将 UV/Flipbook 字段正确存储为 MoLang 表达式字符串（`readStringArray()` + `jsonElementToString()`）
+- ❌ **运行时**：`ParticleComponentRuntimes.createAppearanceBillboard()` 未编译/求值这些字符串，直接当作原始值使用
+- ❌ **`uv_mode`**：未解析（基岩版支持 `static`/`entire_texture`/`animated` 三种模式）
+
+### 受影响字段
+
+| 字段 | JSON 路径 | 类型 | 当前行为 | 预期行为 |
+|---|---|---|---|---|
+| UV 偏移 | `uv.uv[0], uv.uv[1]` | MoLang → 像素坐标 | 读到 `String` 但运行时当作数值用（编译错误） | 每 tick 编译求值 → 归一化 UV |
+| UV 尺寸 | `uv.uv_size[0], uv.uv_size[1]` | MoLang → 像素尺寸 | 同上 | 同上 |
+| 纹理宽高 | `uv.texture_width, uv.texture_height` | Float（可 MoLang） | 硬编码 Float | 支持 MoLang 表达式 |
+| 翻页书基础 UV | `flipbook.base_uv` | MoLang → 归一化 UV | 读到 `String[]` 但未求值 | 每 tick 编译求值 |
+| 翻页书帧尺寸 | `flipbook.size_uv` | MoLang → 归一化 UV | 同上 | 同上 |
+| 翻页书帧步进 | `flipbook.step_uv` | MoLang → 归一化 UV | 同上 | 同上 |
+| FPS | `flipbook.fps` | MoLang → float | `String` 直接参与乘除运算 | 编译求值 |
+| 最大帧数 | `flipbook.max_frame` | MoLang → int | `String` 直接参与 `>` 比较 | 编译求值 |
+| UV 模式 | `uv.uv_mode` | enum（未解析） | 完全忽略 | 支持 `static`/`entire_texture`/`animated` |
+
+### 实现要点
+
+1. **`UV` 内部类改造**：`uvOffset`/`uvSize` 字段不变（已是 `String[]`），`textureWidth`/`textureHeight` 改为 `String`（支持 MoLang）
+2. **`Flipbook` 内部类**：字段已为 `String`/`String[]`，无需改变
+3. **运行时 `createAppearanceBillboard()`**：
+   - 构造时编译所有 UV/Flipbook MoLang 表达式为 `MolangExpression`
+   - `onApply`：求值 UV 表达式、归一化到 `[0,1]`、写入 buffer
+   - `tick`：求值 Flipbook 表达式、根据 `fps` / `stretch_to_lifetime` / `max_frame` / `loop` 计算当前帧、更新 UV
+4. **`uv_mode`**：新增枚举，解析 JSON；`animated` 模式下逐帧推进，`entire_texture` 模式下忽略 UV 子矩形直接用全图，`static` 为当前行为
+
+### 影响范围
+
+- `ParticleAppearanceBillboard.java`（UV/Flipbook 内部类字段类型微调 + uv_mode 新增）
+- `ParticleComponentRuntimes.java`（`createAppearanceBillboard` 运行时大改）
+- 文档同步更新
+
+> **当前运行时编译状态**：`ParticleComponentRuntimes.java` 第 513 行 `uv.getU0()` 等方法已不存在（UV 类已改为 MoLang 字符串存储）；第 531-539 行 `fb.getFps()`/`getMaxFrame()` 等返回 `String`，无法直接参与浮点/整数运算。UV 静态初始化在 `onApply` 中暂时跳过，翻页书动画 tick 逻辑已禁用。
+
+---
+

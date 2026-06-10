@@ -51,11 +51,16 @@ public class ParticleVisualEffectRenderer extends VisualEffectRenderer {
 
     /**
      * 在 AFTER_ENTITIES 阶段渲染所有活跃粒子的 Billboard。
+     * <p>
+     * AFTER_ENTITIES 阶段的 PoseStack 不含摄像机平移，仅含摄像机旋转。
+     * 因此需手动 translate(-camPos) 将渲染偏移到摄像机相对空间，
+     * 与 {@code PartAssemblyRenderer} 等 MM 渲染器保持一致。
      */
     @Override
     public void render(RenderLevelStageEvent event, MultiBufferSource bufferSource, float partialTicks) {
         var pose = event.getPoseStack();
         var camera = event.getCamera();
+        var camPos = camera.getPosition();
 
         // 获取完整光照数据（打包的天空+方块光照）
         Minecraft mc = Minecraft.getInstance();
@@ -64,6 +69,12 @@ public class ParticleVisualEffectRenderer extends VisualEffectRenderer {
         int light = LevelRenderer.getLightColor(mc.level, camera.getBlockPosition());
         List<ParticleEmitterInstance> emitters = ParticleEmitterManager.getInstance().getActiveEmitters();
 
+        // PoseStack 偏移到摄像机相对空间（AFTER_ENTITIES 阶段需手动处理摄像机平移）
+        pose.pushPose();
+        pose.translate(-camPos.x, -camPos.y, -camPos.z);
+
         renderer.renderAll(emitters, pose, bufferSource, camera, partialTicks, light);
+
+        pose.popPose();
     }
 }

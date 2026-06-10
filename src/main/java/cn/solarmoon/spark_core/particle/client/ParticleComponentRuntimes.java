@@ -22,6 +22,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * 粒子组件运行时工厂。
@@ -90,8 +91,12 @@ public class ParticleComponentRuntimes {
 
     /**
      * EmitterLifetimeOnce: 单次发射——在 activeTime 秒后标记发射器过期。
+     * activeTime 为 Molang 表达式，每 tick 求值以支持动态变量引用。
      */
-    public static IEmitterComponent createLifetimeOnce(EmitterLifetimeOnce def) {
+    public static IEmitterComponent createLifetimeOnce(EmitterLifetimeOnce def, ParticleMolangEnvironment molang) {
+        // 预编译 activeTime 表达式
+        MolangExpression activeTimeExpr = compileIfNotEmpty(def.getActiveTime(), molang);
+
         return new IEmitterComponent() {
             private float elapsed = 0;
 
@@ -105,29 +110,39 @@ public class ParticleComponentRuntimes {
              * 由发射器引擎在 checkEmitterLifetime 中调用。
              */
             public boolean isExpired() {
-                return elapsed >= def.getActiveTime();
+                if (activeTimeExpr != null) {
+                    return elapsed >= (float) molang.evaluate(activeTimeExpr);
+                }
+                return false;
             }
         };
     }
 
     /**
      * EmitterLifetimeLooping: 循环发射——activeTime / sleepTime 交替循环。
+     * activeTime / sleepTime 为 Molang 表达式，每 tick 求值以支持动态变量引用。
      */
-    public static IEmitterComponent createLifetimeLooping(EmitterLifetimeLooping def) {
+    public static IEmitterComponent createLifetimeLooping(EmitterLifetimeLooping def, ParticleMolangEnvironment molang) {
+        MolangExpression activeTimeExpr = compileIfNotEmpty(def.getActiveTime(), molang);
+        MolangExpression sleepTimeExpr = compileIfNotEmpty(def.getSleepTime(), molang);
+
         return new IEmitterComponent() {
             private float phaseTimer = 0;
             private boolean inActivePhase = true;
 
             @Override
             public void tick(ParticleArray buf, float tickDt, ParticleMolangEnvironment molang) {
+                float activeTime = activeTimeExpr != null ? (float) molang.evaluate(activeTimeExpr) : 10f;
+                float sleepTime = sleepTimeExpr != null ? (float) molang.evaluate(sleepTimeExpr) : 0f;
+
                 phaseTimer += tickDt;
                 if (inActivePhase) {
-                    if (phaseTimer >= def.getActiveTime()) {
+                    if (phaseTimer >= activeTime) {
                         inActivePhase = false;
                         phaseTimer = 0;
                     }
                 } else {
-                    if (phaseTimer >= def.getSleepTime()) {
+                    if (phaseTimer >= sleepTime) {
                         inActivePhase = true;
                         phaseTimer = 0;
                     }
@@ -424,8 +439,8 @@ public class ParticleComponentRuntimes {
     }
 
     /**
-     * ParticleMotionParametric: 参数化运动——直接用 Molang 表达式控制粒子每 tick 的位置。
-     * 会清零速度和加速度以阻止常规运动积分干扰。
+     * ParticleMotionParametric: 参数化运动——直接用 Molang 表达式控制粒子每 tick 的位置和朝向。
+     * 对标 SBM：relative_position 控制位置，direction 控制朝向，均覆盖速度/加速度。
      */
     public static IParticleComponent createMotionParametric(ParticleMotionParametric def, ParticleMolangEnvironment molang) {
         return new IParticleComponent() {
@@ -433,6 +448,9 @@ public class ParticleComponentRuntimes {
             private final MolangExpression posY = molang.compile(def.getRelativePosition()[1]);
             private final MolangExpression posZ = molang.compile(def.getRelativePosition()[2]);
             private final MolangExpression rot = molang.compile(def.getRotation());
+            private final MolangExpression dirX = molang.compile(def.getDirection()[0]);
+            private final MolangExpression dirY = molang.compile(def.getDirection()[1]);
+            private final MolangExpression dirZ = molang.compile(def.getDirection()[2]);
 
             @Override
             public void tick(ParticleArray buf, int index, float tickDt, ParticleMolangEnvironment molang) {
@@ -441,8 +459,12 @@ public class ParticleComponentRuntimes {
                         (float) molang.evaluate(posY),
                         (float) molang.evaluate(posZ));
                 buf.setRot(index, (float) molang.evaluate(rot));
-                // 参数化运动覆盖位置，清零速度和加速度防止运动积分干扰
-                buf.setVel(index, 0, 0, 0);
+                // direction 表达式设置朝向速度方向
+                buf.setVel(index,
+                        (float) molang.evaluate(dirX),
+                        (float) molang.evaluate(dirY),
+                        (float) molang.evaluate(dirZ));
+                // 参数化运动覆盖位置/速度，清零加速度防止运动积分干扰
                 buf.setAccel(index, 0, 0, 0);
             }
         };
@@ -450,10 +472,11 @@ public class ParticleComponentRuntimes {
 
     /**
      * ParticleMotionCollision: 碰撞运动——检测粒子与方块的碰撞并反弹。
-     * 需要 Level 访问权限进行方块碰撞检测。
+     * 对标 SBM：enabled 为 Molang 表达式，每 tick 求值判断是否启用碰撞。
      */
     public static IParticleComponent createMotionCollision(ParticleMotionCollision def, ParticleMolangEnvironment molang) {
         return new IParticleComponent() {
+            private final MolangExpression enabledExpr = molang.compile(def.getEnabled());
             private final float drag = def.getCollisionDrag();
             private final float restitution = def.getCoefficientOfRestitution();
             private final float radius = def.getCollisionRadius();
@@ -462,6 +485,8 @@ public class ParticleComponentRuntimes {
             @Override
             public void tick(ParticleArray buf, int index, float tickDt, ParticleMolangEnvironment ctx) {
                 if (!buf.isAlive(index)) return;
+                // enabled 表达式为 0 时跳过碰撞检测
+                if (molang.evaluate(enabledExpr) == 0) return;
 
                 Level level = ctx.getLevel();
                 if (level == null) return; // 服务端或 Level 不可用时跳过
@@ -509,18 +534,8 @@ public class ParticleComponentRuntimes {
 
                 if (hasUv) {
                     var uv = def.getUv();
-                    float u0 = uv.getU0();
-                    float v0 = uv.getV0();
-                    float u1 = uv.getU1();
-                    float v1 = uv.getV1();
-                    // 如果 UV 指定了纹理尺寸，转换到归一化坐标
-                    if (uv.getTextureSizeX() != null && uv.getTextureSizeY() != null) {
-                        float texW = uv.getTextureSizeX();
-                        float texH = uv.getTextureSizeY();
-                        buf.setUV(index, u0 / texW, v0 / texH, u1 / texW, v1 / texH);
-                    } else {
-                        buf.setUV(index, u0, v0, u1, v1);
-                    }
+                    // UV 已在反序列化时归一化到 [0,1]，直接使用
+                    buf.setUV(index, uv.getU0(), uv.getV0(), uv.getU1(), uv.getV1());
                 }
             }
 
@@ -745,14 +760,13 @@ public class ParticleComponentRuntimes {
     }
 
     /**
-     * ParticleLifetimeKillPlane: 杀戮平面——粒子穿过指定平面时过期。
+     * ParticleLifetimeKillPlane: 杀戮平面——粒子穿过任一平面时过期。
      * 每个平面由 4 个系数 (a, b, c, d) 定义：ax + by + cz + d = 0。
+     * 对标 SBM/Bedrock：裸数组 [a,b,c,d] 格式，可多平面。
      */
     public static IParticleComponent createKillPlane(ParticleLifetimeKillPlane def) {
         return new IParticleComponent() {
-            private final float[] px = def.getPlaneX();
-            private final float[] py = def.getPlaneY();
-            private final float[] pz = def.getPlaneZ();
+            private final List<float[]> planes = def.getPlanes();
 
             @Override
             public void tick(ParticleArray buf, int index, float tickDt, ParticleMolangEnvironment molang) {
@@ -760,25 +774,11 @@ public class ParticleComponentRuntimes {
                 float y = buf.getPosY(index);
                 float z = buf.getPosZ(index);
 
-                // 检查三个平面方向上的符号变化（从正到负 = 穿过平面）
-                if (px.length >= 4) {
-                    float val = px[0] * x + px[1] * y + px[2] * z + px[3];
+                for (float[] p : planes) {
+                    float val = p[0] * x + p[1] * y + p[2] * z + p[3];
                     if (val <= 0) {
                         buf.markDead(index);
                         return;
-                    }
-                }
-                if (py.length >= 4) {
-                    float val = py[0] * x + py[1] * y + py[2] * z + py[3];
-                    if (val <= 0) {
-                        buf.markDead(index);
-                        return;
-                    }
-                }
-                if (pz.length >= 4) {
-                    float val = pz[0] * x + pz[1] * y + pz[2] * z + pz[3];
-                    if (val <= 0) {
-                        buf.markDead(index);
                     }
                 }
             }
@@ -792,7 +792,7 @@ public class ParticleComponentRuntimes {
      */
     public static IParticleComponent createExpireIfInBlocks(ParticleExpireIfInBlocks def, ParticleMolangEnvironment molang) {
         return new IParticleComponent() {
-            private final List<String> blockIds = def.getBlocks();
+            private final Set<String> blockIds = def.getBlocks();
 
             @Override
             public void tick(ParticleArray buf, int index, float tickDt, ParticleMolangEnvironment ctx) {
@@ -815,7 +815,7 @@ public class ParticleComponentRuntimes {
      */
     public static IParticleComponent createExpireIfNotInBlocks(ParticleExpireIfNotInBlocks def, ParticleMolangEnvironment molang) {
         return new IParticleComponent() {
-            private final List<String> blockIds = def.getBlocks();
+            private final Set<String> blockIds = def.getBlocks();
 
             @Override
             public void tick(ParticleArray buf, int index, float tickDt, ParticleMolangEnvironment ctx) {

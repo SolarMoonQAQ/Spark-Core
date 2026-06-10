@@ -33,6 +33,7 @@ public class ParticleMotionCollision implements IParticleComponentDefinition {
 
     /**
      * 从 JSON 对象反序列化。
+     * 对标 SBM：enabled 存储为 Molang 表达式字符串。
      */
     public static ParticleMotionCollision fromJson(JsonObject json) {
         String enabled = json.has("enabled") ? json.get("enabled").getAsString() : "1";

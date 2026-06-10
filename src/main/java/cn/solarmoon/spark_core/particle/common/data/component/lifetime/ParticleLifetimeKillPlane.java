@@ -2,58 +2,50 @@ package cn.solarmoon.spark_core.particle.common.data.component.lifetime;
 
 import cn.solarmoon.spark_core.particle.common.data.IParticleComponentDefinition;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 粒子生命周期杀戮平面组件。
- * 定义三个平面的系数，粒子穿过任一平面时过期。
- * 对应 JSON key: minecraft:particle_lifetime_kill_plane
+ * 粒子生命周期杀戮平面组件。对应 JSON key: minecraft:particle_lifetime_kill_plane
+ * <p>
+ * 对标 SBM/Bedrock 格式：裸数组 {@code [a, b, c, d]}（4 个系数定义一个平面 ax+by+cz+d=0），
+ * 可重复多个平面（长度 8/12/...）。
  */
 public class ParticleLifetimeKillPlane implements IParticleComponentDefinition {
 
-    private final float[] planeX;
-    private final float[] planeY;
-    private final float[] planeZ;
+    /** 平面列表，每组 4 个 float 定义 ax+by+cz+d=0 */
+    private final List<float[]> planes;
 
-    public ParticleLifetimeKillPlane(float[] planeX, float[] planeY, float[] planeZ) {
-        this.planeX = planeX;
-        this.planeY = planeY;
-        this.planeZ = planeZ;
+    public ParticleLifetimeKillPlane(List<float[]> planes) {
+        this.planes = planes;
     }
 
     /**
-     * 从 JSON 对象反序列化。
+     * 从裸 JSON 数组反序列化。长度必须为 4 的倍数。
      */
-    public static ParticleLifetimeKillPlane fromJson(JsonObject json) {
-        float[] px = new float[]{0, 0, 0, 0};
-        float[] py = new float[]{0, 0, 0, 0};
-        float[] pz = new float[]{0, 0, 0, 0};
-
-        if (json.has("kill_plane")) {
-            JsonObject kp = json.getAsJsonObject("kill_plane");
-            if (kp.has("x")) {
-                JsonArray arr = kp.getAsJsonArray("x");
-                for (int i = 0; i < Math.min(arr.size(), 4); i++) {
-                    px[i] = arr.get(i).getAsFloat();
-                }
-            }
-            if (kp.has("y")) {
-                JsonArray arr = kp.getAsJsonArray("y");
-                for (int i = 0; i < Math.min(arr.size(), 4); i++) {
-                    py[i] = arr.get(i).getAsFloat();
-                }
-            }
-            if (kp.has("z")) {
-                JsonArray arr = kp.getAsJsonArray("z");
-                for (int i = 0; i < Math.min(arr.size(), 4); i++) {
-                    pz[i] = arr.get(i).getAsFloat();
-                }
-            }
+    public static ParticleLifetimeKillPlane fromJson(JsonElement value) {
+        if (!value.isJsonArray()) {
+            throw new JsonParseException("minecraft:particle_lifetime_kill_plane 必须是 JSON 数组 [a,b,c,d, ...]");
+        }
+        JsonArray arr = value.getAsJsonArray();
+        if (arr.size() % 4 != 0) {
+            throw new JsonParseException("minecraft:particle_lifetime_kill_plane 数组长度必须为 4 的倍数，实际: " + arr.size());
         }
 
-        return new ParticleLifetimeKillPlane(px, py, pz);
+        List<float[]> planes = new ArrayList<>();
+        for (int i = 0; i < arr.size(); i += 4) {
+            float[] plane = new float[]{
+                    arr.get(i).getAsFloat(),
+                    arr.get(i + 1).getAsFloat(),
+                    arr.get(i + 2).getAsFloat(),
+                    arr.get(i + 3).getAsFloat()
+            };
+            planes.add(plane);
+        }
+        return new ParticleLifetimeKillPlane(planes);
     }
 
     @Override
@@ -61,7 +53,5 @@ public class ParticleLifetimeKillPlane implements IParticleComponentDefinition {
         return 320;
     }
 
-    public float[] getPlaneX() { return planeX; }
-    public float[] getPlaneY() { return planeY; }
-    public float[] getPlaneZ() { return planeZ; }
+    public List<float[]> getPlanes() { return planes; }
 }

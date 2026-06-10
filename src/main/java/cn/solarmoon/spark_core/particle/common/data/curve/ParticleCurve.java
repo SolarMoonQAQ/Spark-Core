@@ -1,22 +1,66 @@
 package cn.solarmoon.spark_core.particle.common.data.curve;
 
+import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 
 /**
  * 粒子曲线定义。对应基岩版 JSON 中的 curves 对象。
  * 支持 4 种插值类型: linear, bezier, catmull_rom, bezier_chain。
+ * <p>
+ * Molang 表达式字段（{@code input}、{@code horizontalRange}）在构造时即预编译为
+ * {@link MolangExpression}，避免每 tick 重复调用 {@code computeIfAbsent} 缓存查找。
  */
 public class ParticleCurve {
     private final CurveType type;
-    private final String input;          // Molang 表达式字符串
-    private final String horizontalRange; // 可为数值字符串或 MoLang 表达式（如 "variable.particle_lifetime"）
+    private final String input;                 // Molang 表达式原始字符串
+    private final String horizontalRange;       // 可为数值字符串或 MoLang 表达式
     private final List<Float> nodes;
 
-    public ParticleCurve(CurveType type, String input, String horizontalRange, List<Float> nodes) {
+    /** input 表达式预编译结果。空 input 时使用 ZERO。 */
+    private final MolangExpression compiledInput;
+    /**
+     * horizontalRange 表达式预编译结果。
+     * 为 null 时表示 horizontalRange 是纯数字，直接 parse 即可。
+     */
+    @Nullable
+    private final MolangExpression compiledHorizontalRange;
+
+    /**
+     * 构造曲线并预编译 Molang 表达式。
+     *
+     * @param type            插值类型
+     * @param input           Molang 表达式字符串（如 "v.particle_age / v.particle_lifetime"）
+     * @param horizontalRange 数值字符串或 MoLang 表达式（如 "variable.particle_lifetime"）
+     * @param nodes           控制点数组
+     * @param compiler         表达式编译器（函数式接口，避免 common 包依赖 client 包）
+     */
+    public ParticleCurve(CurveType type, String input, String horizontalRange,
+                         List<Float> nodes, MolangCompiler compiler) {
         this.type = type;
         this.input = input;
         this.horizontalRange = horizontalRange;
         this.nodes = nodes;
+
+        // 预编译 input 表达式
+        if (input != null && !input.isEmpty()) {
+            this.compiledInput = compiler.compile(input);
+        } else {
+            this.compiledInput = MolangExpression.zero();
+        }
+
+        // 预编译 horizontalRange（若为非纯数字）
+        MolangExpression compiledRange = null;
+        if (horizontalRange != null && !horizontalRange.isEmpty()) {
+            try {
+                Float.parseFloat(horizontalRange);
+                // 纯数字 → 保持 null，运行时直接 parse
+            } catch (NumberFormatException e) {
+                compiledRange = compiler.compile(horizontalRange);
+            }
+        }
+        this.compiledHorizontalRange = compiledRange;
     }
 
     public CurveType getType() { return type; }
@@ -24,11 +68,23 @@ public class ParticleCurve {
     public String getHorizontalRange() { return horizontalRange; }
     public List<Float> getNodes() { return nodes; }
 
+    /** 获取预编译的 input 表达式（永不为 null，空 input 时为 ZERO） */
+    public MolangExpression getCompiledInput() { return compiledInput; }
+    /** 获取预编译的 horizontalRange 表达式。null 表示值为纯数字。 */
+    @Nullable
+    public MolangExpression getCompiledHorizontalRange() { return compiledHorizontalRange; }
+
     public enum CurveType {
         LINEAR,
         BEZIER,
         CATMULL_ROM,
         BEZIER_CHAIN
+    }
+
+    /** 表达式编译器抽象。由调用方（client 包）注入实现，避免 common 包依赖 MolangContextRegistry。 */
+    @FunctionalInterface
+    public interface MolangCompiler {
+        MolangExpression compile(String expression);
     }
 
     /** 对给定输入值进行曲线求值，horizontalRange 为已解析的数值 */
@@ -56,7 +112,6 @@ public class ParticleCurve {
     }
 
     private float evaluateBezier(float t) {
-        // 三次贝塞尔: 需要 4 个控制点 (P0, P1, P2, P3)，实际 P0=0, P3=1
         if (nodes.size() < 4) return evaluateLinear(t);
         float u = 1 - t;
         float p0 = nodes.get(0), p1 = nodes.get(1), p2 = nodes.get(2), p3 = nodes.get(3);
@@ -65,8 +120,7 @@ public class ParticleCurve {
 
     private float evaluateCatmullRom(float t) {
         if (nodes.size() < 4) return evaluateLinear(t);
-        // 将 t 映射到分段 catmull-rom
-        float pos = t * (nodes.size() - 3); // 有 n-3 段（每段 4 控制点）
+        float pos = t * (nodes.size() - 3);
         int i = Math.min((int) pos, nodes.size() - 4);
         float frac = pos - i;
         float p0 = nodes.get(Math.max(0, i - 1));
@@ -79,7 +133,6 @@ public class ParticleCurve {
     }
 
     private float evaluateBezierChain(float t) {
-        // Bezier chain: 每 3 个节点一组 (P1, P2, P3)，P0 是上一组的 P3
         if (nodes.size() < 3) return evaluateLinear(t);
         int segments = (nodes.size() - 1) / 3;
         if (segments < 1) return evaluateLinear(t);

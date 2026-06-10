@@ -14,77 +14,86 @@ import cn.solarmoon.spark_core.particle.common.data.component.lifetime.*;
 import cn.solarmoon.spark_core.particle.common.data.component.motion.*;
 import cn.solarmoon.spark_core.particle.common.data.component.rate.*;
 import cn.solarmoon.spark_core.particle.common.data.component.shape.*;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * 粒子组件注册表。JSON key → 反序列化工厂。
+ * <p>
+ * 对标 SBM 模式，反序列化接口接收原始 {@link JsonElement}（可为对象、数组、字符串、数字），
+ * 各组件的 {@code fromJson} 自行判断类型并解析。
  */
 public class ParticleComponentRegistry {
 
-    private static final Map<String, Function<JsonObject, IComponentDefinition>> DESERIALIZERS = new HashMap<>();
+    @FunctionalInterface
+    public interface ComponentDeserializer {
+        /** 从原始 JsonElement 反序列化组件定义 */
+        @Nullable
+        IComponentDefinition deserialize(String key, JsonElement value);
+    }
+
+    private static final Map<String, ComponentDeserializer> DESERIALIZERS = new HashMap<>();
 
     static {
         // 发射器速率
-        register("minecraft:emitter_rate_instant", EmitterRateInstant::fromJson);
-        register("minecraft:emitter_rate_steady", EmitterRateSteady::fromJson);
-        register("minecraft:emitter_rate_manual", EmitterRateManual::fromJson);
+        register("minecraft:emitter_rate_instant", (k, v) -> EmitterRateInstant.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_rate_steady", (k, v) -> EmitterRateSteady.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_rate_manual", (k, v) -> EmitterRateManual.fromJson(v.getAsJsonObject()));
 
         // 发射器生命周期
-        register("minecraft:emitter_lifetime_once", EmitterLifetimeOnce::fromJson);
-        register("minecraft:emitter_lifetime_looping", EmitterLifetimeLooping::fromJson);
-        register("minecraft:emitter_lifetime_expression", EmitterLifetimeExpression::fromJson);
-        register("minecraft:emitter_lifetime_events", EmitterLifetimeEvents::fromJson);
+        register("minecraft:emitter_lifetime_once", (k, v) -> EmitterLifetimeOnce.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_lifetime_looping", (k, v) -> EmitterLifetimeLooping.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_lifetime_expression", (k, v) -> EmitterLifetimeExpression.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_lifetime_events", (k, v) -> EmitterLifetimeEvents.fromJson(v.getAsJsonObject()));
 
         // 发射器初始化
-        register("minecraft:emitter_initialization", EmitterInitialization::fromJson);
-        register("minecraft:emitter_local_space", EmitterLocalSpace::fromJson);
+        register("minecraft:emitter_initialization", (k, v) -> EmitterInitialization.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_local_space", (k, v) -> EmitterLocalSpace.fromJson(v.getAsJsonObject()));
 
         // 发射器形状
-        register("minecraft:emitter_shape_point", EmitterShapePoint::fromJson);
-        register("minecraft:emitter_shape_sphere", EmitterShapeSphere::fromJson);
-        register("minecraft:emitter_shape_box", EmitterShapeBox::fromJson);
-        register("minecraft:emitter_shape_disc", EmitterShapeDisc::fromJson);
-        register("minecraft:emitter_shape_entity_aabb", EmitterShapeEntityAABB::fromJson);
+        register("minecraft:emitter_shape_point", (k, v) -> EmitterShapePoint.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_shape_sphere", (k, v) -> EmitterShapeSphere.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_shape_box", (k, v) -> EmitterShapeBox.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_shape_disc", (k, v) -> EmitterShapeDisc.fromJson(v.getAsJsonObject()));
+        register("minecraft:emitter_shape_entity_aabb", (k, v) -> EmitterShapeEntityAABB.fromJson(v.getAsJsonObject()));
 
         // 粒子生命周期
-        register("minecraft:particle_lifetime_expression", ParticleLifetimeExpression::fromJson);
-        register("minecraft:particle_lifetime_kill_plane", ParticleLifetimeKillPlane::fromJson);
-        register("minecraft:particle_lifetime_events", ParticleLifetimeEvents::fromJson);
+        register("minecraft:particle_lifetime_expression", (k, v) -> ParticleLifetimeExpression.fromJson(v.getAsJsonObject()));
+        register("minecraft:particle_lifetime_kill_plane", (k, v) -> ParticleLifetimeKillPlane.fromJson(v)); // 裸数组
+        register("minecraft:particle_lifetime_events", (k, v) -> ParticleLifetimeEvents.fromJson(v.getAsJsonObject()));
 
         // 粒子初始化
-        register("minecraft:particle_initial_speed", ParticleInitialSpeed::fromJson);
-        register("minecraft:particle_initial_spin", ParticleInitialSpin::fromJson);
-        register("minecraft:particle_initialization", ParticleInitialization::fromJson);
+        register("minecraft:particle_initial_speed", (k, v) -> ParticleInitialSpeed.fromJson(v)); // 可为裸数字/字符串
+        register("minecraft:particle_initial_spin", (k, v) -> ParticleInitialSpin.fromJson(v.getAsJsonObject()));
+        register("minecraft:particle_initialization", (k, v) -> ParticleInitialization.fromJson(v.getAsJsonObject()));
 
         // 粒子运动
-        register("minecraft:particle_motion_dynamic", ParticleMotionDynamic::fromJson);
-        register("minecraft:particle_motion_parametric", ParticleMotionParametric::fromJson);
-        register("minecraft:particle_motion_collision", ParticleMotionCollision::fromJson);
+        register("minecraft:particle_motion_dynamic", (k, v) -> ParticleMotionDynamic.fromJson(v.getAsJsonObject()));
+        register("minecraft:particle_motion_parametric", (k, v) -> ParticleMotionParametric.fromJson(v.getAsJsonObject()));
+        register("minecraft:particle_motion_collision", (k, v) -> ParticleMotionCollision.fromJson(v.getAsJsonObject()));
 
         // 粒子外观
-        register("minecraft:particle_appearance_billboard", ParticleAppearanceBillboard::fromJson);
-        register("minecraft:particle_appearance_tinting", ParticleAppearanceTinting::fromJson);
-        register("minecraft:particle_appearance_lighting", ParticleAppearanceLighting::fromJson);
+        register("minecraft:particle_appearance_billboard", (k, v) -> ParticleAppearanceBillboard.fromJson(v.getAsJsonObject()));
+        register("minecraft:particle_appearance_tinting", (k, v) -> ParticleAppearanceTinting.fromJson(v.getAsJsonObject()));
+        register("minecraft:particle_appearance_lighting", (k, v) -> ParticleAppearanceLighting.fromJson(v.getAsJsonObject()));
 
-        // 粒子过期条件
-        register("minecraft:particle_expire_if_in_blocks", ParticleExpireIfInBlocks::fromJson);
-        register("minecraft:particle_expire_if_not_in_blocks", ParticleExpireIfNotInBlocks::fromJson);
+        // 粒子过期条件 — 裸数组格式
+        register("minecraft:particle_expire_if_in_blocks", (k, v) -> ParticleExpireIfInBlocks.fromJson(v));
+        register("minecraft:particle_expire_if_not_in_blocks", (k, v) -> ParticleExpireIfNotInBlocks.fromJson(v));
     }
 
-    private static void register(String key, Function<JsonObject, IComponentDefinition> deserializer) {
+    private static void register(String key, ComponentDeserializer deserializer) {
         DESERIALIZERS.put(key, deserializer);
     }
 
     @Nullable
-    public static IComponentDefinition deserialize(String key, JsonObject json) {
-        Function<JsonObject, IComponentDefinition> fn = DESERIALIZERS.get(key);
+    public static IComponentDefinition deserialize(String key, JsonElement value) {
+        ComponentDeserializer fn = DESERIALIZERS.get(key);
         if (fn == null) return null;
-        return fn.apply(json);
+        return fn.deserialize(key, value);
     }
 
     public static boolean isRegistered(String key) {
