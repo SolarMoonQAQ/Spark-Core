@@ -28,7 +28,7 @@
 			},
 			"minecraft:emitter_rate_steady": {
 				"spawn_rate": 250,
-				"max_particles": 500
+				"max_particles": 1500
 			},
 			"minecraft:emitter_lifetime_looping": {
 				"active_time": 2

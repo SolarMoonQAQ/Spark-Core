@@ -472,14 +472,14 @@ public class ParticleComponentRuntimes {
 
     /**
      * ParticleMotionCollision: 碰撞运动——检测粒子与方块的碰撞并反弹。
-     * 对标 SBM：enabled 为 Molang 表达式，每 tick 求值判断是否启用碰撞。
+     * 对标 SBM：所有数值字段均为 MoLang 表达式，每 tick 求值后使用。
      */
     public static IParticleComponent createMotionCollision(ParticleMotionCollision def, ParticleMolangEnvironment molang) {
         return new IParticleComponent() {
             private final MolangExpression enabledExpr = molang.compile(def.getEnabled());
-            private final float drag = def.getCollisionDrag();
-            private final float restitution = def.getCoefficientOfRestitution();
-            private final float radius = def.getCollisionRadius();
+            private final MolangExpression dragExpr = molang.compile(def.getCollisionDrag());
+            private final MolangExpression restitutionExpr = molang.compile(def.getCoefficientOfRestitution());
+            private final MolangExpression radiusExpr = molang.compile(def.getCollisionRadius());
             private final boolean expireOnContact = def.isExpireOnContact();
 
             @Override
@@ -507,8 +507,13 @@ public class ParticleComponentRuntimes {
                         buf.markDead(index);
                         return;
                     }
-                    // 反转速度并施加阻力
-                    buf.setVel(index, -vx * (1 - drag), -vy * (1 - drag), -vz * (1 - drag));
+                    // 反转速度并施加阻力和弹性系数（均为运行时 Molang 求值）
+                    float drag = (float) ctx.evaluate(dragExpr);
+                    float restitution = (float) ctx.evaluate(restitutionExpr);
+                    buf.setVel(index,
+                            -vx * restitution * (1 - drag),
+                            -vy * restitution * (1 - drag),
+                            -vz * restitution * (1 - drag));
                 }
             }
         };
@@ -519,6 +524,7 @@ public class ParticleComponentRuntimes {
     /**
      * ParticleAppearanceBillboard: 公告板外观——设置粒子的尺寸和 UV 坐标。
      * 翻页书动画根据粒子年龄/生命周期计算当前帧。
+     * 所有 Flipbook 数值字段均编译为 MoLang 表达式，每 tick 求值（对齐 SBM）。
      */
     public static IParticleComponent createAppearanceBillboard(ParticleAppearanceBillboard def, ParticleMolangEnvironment molang) {
         return new IParticleComponent() {
@@ -526,6 +532,16 @@ public class ParticleComponentRuntimes {
             private final MolangExpression sizeH = molang.compile(def.getSize()[1]);
             private final boolean hasUv = def.getUv() != null;
             private final boolean hasFlipbook = def.getFlipbook() != null;
+
+            // Flipbook MoLang 表达式（仅在 hasFlipbook 时使用）
+            private final MolangExpression fbBaseU = hasFlipbook ? molang.compile(def.getFlipbook().getBaseU()) : null;
+            private final MolangExpression fbBaseV = hasFlipbook ? molang.compile(def.getFlipbook().getBaseV()) : null;
+            private final MolangExpression fbSizeX = hasFlipbook ? molang.compile(def.getFlipbook().getSizeX()) : null;
+            private final MolangExpression fbSizeY = hasFlipbook ? molang.compile(def.getFlipbook().getSizeY()) : null;
+            private final MolangExpression fbStepX = hasFlipbook ? molang.compile(def.getFlipbook().getStepX()) : null;
+            private final MolangExpression fbStepY = hasFlipbook ? molang.compile(def.getFlipbook().getStepY()) : null;
+            private final MolangExpression fbFps = hasFlipbook ? molang.compile(def.getFlipbook().getFps()) : null;
+            private final MolangExpression fbMaxFrame = hasFlipbook ? molang.compile(def.getFlipbook().getMaxFrame()) : null;
 
             @Override
             public void onApply(ParticleArray buf, int index, ParticleMolangEnvironment molang) {
@@ -546,22 +562,32 @@ public class ParticleComponentRuntimes {
                 buf.setHeight(index, (float) molang.evaluate(sizeH));
 
                 if (hasFlipbook) {
-                    var fb = def.getFlipbook();
                     float age = buf.getAge(index);
                     float maxLife = buf.getMaxLifetime(index);
+
+                    // 运行时求值所有 Flipbook Molang 表达式
+                    float baseU = (float) molang.evaluate(fbBaseU);
+                    float baseV = (float) molang.evaluate(fbBaseV);
+                    float sizeX = (float) molang.evaluate(fbSizeX);
+                    float sizeY = (float) molang.evaluate(fbSizeY);
+                    float stepX = (float) molang.evaluate(fbStepX);
+                    float stepY = (float) molang.evaluate(fbStepY);
+                    float fps = (float) molang.evaluate(fbFps);
+                    int maxFrame = Math.round((float) molang.evaluate(fbMaxFrame));
+
                     float progress;
-                    if (fb.isStretchToLifetime() && maxLife > 0) {
+                    if (def.getFlipbook().isStretchToLifetime() && maxLife > 0) {
                         progress = age / maxLife;
                     } else {
-                        progress = age * fb.getFps();
+                        progress = age * fps;
                     }
                     int frame = (int) progress;
-                    if (fb.getMaxFrame() > 0) {
-                        frame = fb.isLoop() ? frame % fb.getMaxFrame() : Math.min(frame, fb.getMaxFrame() - 1);
+                    if (maxFrame > 0) {
+                        frame = def.getFlipbook().isLoop() ? frame % maxFrame : Math.min(frame, maxFrame - 1);
                     }
-                    float u = fb.getBaseU() + fb.getStepX() * frame;
-                    float v = fb.getBaseV() + fb.getStepY() * frame;
-                    buf.setUV(index, u, v, u + fb.getSizeX(), v + fb.getSizeY());
+                    float u = baseU + stepX * frame;
+                    float v = baseV + stepY * frame;
+                    buf.setUV(index, u, v, u + sizeX, v + sizeY);
                 }
             }
         };
@@ -601,9 +627,9 @@ public class ParticleComponentRuntimes {
                             (float) molang.evaluate(solidB),
                             (float) molang.evaluate(solidA));
                 } else if (isGradient && gradientStops != null && !gradientStops.isEmpty()) {
-                    // 渐变模式：默认使用起始颜色
+                    // 渐变模式：默认使用起始颜色（含 alpha）
                     float[] rgb = parseHexColor(gradientStops.get(0).getColor());
-                    buf.setColor(index, rgb[0], rgb[1], rgb[2], 1);
+                    buf.setColor(index, rgb[0], rgb[1], rgb[2], rgb[3]);
                 }
             }
 
@@ -621,7 +647,8 @@ public class ParticleComponentRuntimes {
                 } else if (isGradient && gradientStops != null && gradientStops.size() >= 2) {
                     float progress = (float) molang.evaluate(interpolant);
                     float[] rgb = interpolateColorStops(gradientStops, progress);
-                    buf.setColor(index, rgb[0], rgb[1], rgb[2], buf.getA(index));
+                    // 使用插值计算出的 alpha（含渐变梯度中不同 stop 的 alpha 过渡）
+                    buf.setColor(index, rgb[0], rgb[1], rgb[2], rgb[3]);
                 }
             }
         };
@@ -836,8 +863,8 @@ public class ParticleComponentRuntimes {
     // ==================== 颜色工具方法 ====================
 
     /**
-     * 解析十六进制颜色字符串为 RGB float 数组 [0, 1]。
-     * 支持 #RGB、#RRGGBB 和 #RRGGBBAA 格式。
+     * 解析十六进制颜色字符串为 RGBA float 数组 [0, 1]。
+     * 支持 #RGB、#RRGGBB 和 #AARRGGBB（基岩版标准，Alpha 在前）。
      */
     private static float[] parseHexColor(String hex) {
         try {
@@ -854,9 +881,9 @@ public class ParticleComponentRuntimes {
                     rgb = Integer.parseInt(sb.toString(), 16);
                 }
                 case 8 -> {
-                    // #RRGGBBAA
-                    rgb = (int) Long.parseLong(clean.substring(0, 6), 16);
-                    alpha = Integer.parseInt(clean.substring(6, 8), 16) / 255f;
+                    // #AARRGGBB — 前2位 AA，后6位 RRGGBB（基岩版标准）
+                    alpha = Integer.parseInt(clean.substring(0, 2), 16) / 255f;
+                    rgb = (int) Long.parseLong(clean.substring(2, 8), 16);
                 }
                 default -> rgb = Integer.parseInt(clean.substring(0, 6), 16);
             }
@@ -872,13 +899,17 @@ public class ParticleComponentRuntimes {
     }
 
     /**
-     * 在渐变色标列表中进行线性插值，返回指定进度 t ∈ [0, 1] 处的颜色。
+     * 在渐变色标列表中进行线性插值，返回指定进度 t 处的颜色。
+     * 将 t 钳制到 [stops[0], stops[last]] 范围内（对齐 SBM/ParticleTintingGradient）。
      */
     private static float[] interpolateColorStops(List<ParticleAppearanceTinting.ColorStop> stops, float t) {
         if (stops == null || stops.isEmpty()) return new float[]{1, 1, 1, 1};
         if (stops.size() == 1) return parseHexColor(stops.get(0).getColor());
-        if (t <= 0) return parseHexColor(stops.get(0).getColor());
-        if (t >= 1) return parseHexColor(stops.get(stops.size() - 1).getColor());
+
+        float firstPos = stops.get(0).getPosition();
+        float lastPos = stops.get(stops.size() - 1).getPosition();
+        // 将 t 钳制到 stops 的有效范围 [firstPos, lastPos]
+        t = Math.max(firstPos, Math.min(lastPos, t));
 
         for (int i = 0; i < stops.size() - 1; i++) {
             float p0 = stops.get(i).getPosition();
@@ -895,6 +926,7 @@ public class ParticleComponentRuntimes {
                 };
             }
         }
+        // 理论上不会执行到这里（t 已被钳制到范围内），回退到最后一个 stop
         return parseHexColor(stops.get(stops.size() - 1).getColor());
     }
 

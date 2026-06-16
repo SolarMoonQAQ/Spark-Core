@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.particle.common.IParticleEffectPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 import java.util.UUID;
 
@@ -14,16 +15,27 @@ import java.util.UUID;
 public class ServerParticleEffectPlayer implements IParticleEffectPlayer {
 
     @Override
-    public void playEffect(Level level, ResourceLocation effectId,
-                           Vec3 position, Vec3 rotation) {
-        // TODO: 发送 ParticleEffectTriggerPacket 给附近玩家
-        // PacketDistributor.sendToPlayersNear(...)
+    public UUID playEffect(Level level, ResourceLocation effectId,
+                           Vec3 position) {
+        return null;
     }
 
     @Override
-    public void playEffect(Level level, ResourceLocation effectId,
+    public UUID playEffect(Level level, ResourceLocation effectId,
+                           Vec3 position, Quaternionf rotation) {
+        return null;
+    }
+
+    @Override
+    public UUID playEffect(Level level, ResourceLocation effectId,
+                           Vec3 position, Quaternionf rotation, Vec3 scale) {
+        return null;
+    }
+
+    @Override
+    public UUID playEffect(Level level, ResourceLocation effectId,
                            String locator, UUID entityId) {
-        // TODO: 客户端侧将 locator 变换求值后渲染
+        return null;
     }
 
     @Override

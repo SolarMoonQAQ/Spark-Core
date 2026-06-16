@@ -9,6 +9,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.Map;
@@ -91,14 +92,13 @@ public class FirstPersonParticleSystem {
      */
     private static class FirstPersonEmitter extends ParticleEmitterInstance {
         private final Vec3 fpPosition;
-        private final Vec3 fpRotation;
 
         public FirstPersonEmitter(ParticleEffectDefinition def, Vec3 position, Vec3 rotation) {
             super(def, null);
             this.fpPosition = position;
-            this.fpRotation = rotation;
             setPosition(position);
-            setRotation(rotation);
+            setRotation(new Quaternionf().rotationXYZ(
+                    (float) rotation.x, (float) rotation.y, (float) rotation.z));
         }
 
         @Override
@@ -109,6 +109,8 @@ public class FirstPersonParticleSystem {
                 Vec3 camPos = mc.gameRenderer.getMainCamera().getPosition();
                 setPosition(camPos.add(fpPosition));
             }
+            // TODO: 当 emitter_local_space.velocity=true 时，设置发射器速度为摄像机运动速度
+            //   setVelocity(new Vec3(cameraVx, cameraVy, cameraVz));
             super.tick(level, tickDt);
         }
     }

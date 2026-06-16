@@ -1,8 +1,11 @@
 package cn.solarmoon.spark_core.particle.client;
 
+import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
 import cn.solarmoon.spark_core.particle.common.data.event.EventNode;
 import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -45,10 +48,22 @@ public class EventExecutor {
         switch (event.getType()) {
             case PARTICLE_EFFECT -> {
                 EventNode.ParticleEffectEvent e = (EventNode.ParticleEffectEvent) event;
-                // TODO: 触发子粒子效果
-                // preEffectExpression 求值后创建子发射器
-                if (e.getEffect() != null && !e.getEffect().isEmpty()) {
-                    // ParticleEffects.burst(level, ResourceLocation.parse(e.getEffect()), ...);
+                // 执行前置 Molang 表达式（pre_effect_expression）
+                if (e.getPreEffectExpression() != null && !e.getPreEffectExpression().isEmpty()) {
+                    MolangExpression expr = molang.compile(e.getPreEffectExpression());
+                    molang.evaluate(expr);
+                }
+                // 在粒子当前位置创建子发射器，创建后独立存在不跟随父发射器
+                String effectStr = e.getEffect();
+                if (effectStr != null && !effectStr.isEmpty() && level != null) {
+                    ResourceLocation effectId = ResourceLocation.parse(effectStr);
+                    ParticleEffectDefinition childDef = ParticleDefinitionLoader.getInstance().getDefinition(effectId);
+                    if (childDef != null) {
+                        Vec3 pos = new Vec3(buf.getPosX(particleIndex), buf.getPosY(particleIndex), buf.getPosZ(particleIndex));
+                        ParticleEmitterInstance child = new ParticleEmitterInstance(childDef, level);
+                        child.setPosition(pos);
+                        ParticleEmitterManager.getInstance().add(child);
+                    }
                 }
             }
             case SOUND_EFFECT -> {
@@ -86,8 +101,7 @@ public class EventExecutor {
                 }
             }
             case LOG -> {
-                EventNode.LogEvent e = (EventNode.LogEvent) event;
-                System.out.println("[ParticleEvent] " + e.getMessage());
+                // LOG 事件暂不处理（调试用途）
             }
         }
     }

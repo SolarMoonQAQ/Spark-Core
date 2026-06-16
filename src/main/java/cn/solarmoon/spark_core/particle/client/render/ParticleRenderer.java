@@ -10,7 +10,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
@@ -43,11 +42,11 @@ public class ParticleRenderer {
         RenderType renderType = ParticleRenderType.fromMaterial(material, texture);
         VertexConsumer vc = buffer.getBuffer(renderType);
 
-        // Local space 模式：粒子坐标相对于 emitter，先偏移 PoseStack
+        // Local space 模式：粒子坐标相对于 emitter，先通过变换矩阵偏移 PoseStack
         if (emitter.getDefinition().getEmitterPreset().hasLocalPosition()) {
-            Vec3 pos = emitter.getPosition();
             pose.pushPose();
-            pose.translate(pos.x, pos.y, pos.z);
+            Matrix4f transform = emitter.getTransform();
+            pose.last().pose().mul(transform);
         }
 
         // 快照视图矩阵（用于 DIRECTION_* / LOOKAT_DIRECTION 模式的轴向量计算）

@@ -120,13 +120,15 @@ public class ParticleCurve {
 
     private float evaluateCatmullRom(float t) {
         if (nodes.size() < 4) return evaluateLinear(t);
+        // Catmull-Rom: 首尾节点是切线控制点(phantom)，曲线穿过中段节点 nodes[1]..nodes[n-2]
+        // 线段数 = nodes.size() - 3，线段索引 i 映射到 p1=nodes[i+1], p2=nodes[i+2]
         float pos = t * (nodes.size() - 3);
         int i = Math.min((int) pos, nodes.size() - 4);
         float frac = pos - i;
-        float p0 = nodes.get(Math.max(0, i - 1));
-        float p1 = nodes.get(i);
-        float p2 = nodes.get(i + 1);
-        float p3 = nodes.get(Math.min(nodes.size() - 1, i + 2));
+        float p0 = nodes.get(i);
+        float p1 = nodes.get(i + 1);
+        float p2 = nodes.get(i + 2);
+        float p3 = nodes.get(Math.min(nodes.size() - 1, i + 3));
         float t2 = frac * frac;
         float t3 = t2 * frac;
         return 0.5f * ((2 * p1) + (-p0 + p2) * frac + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);

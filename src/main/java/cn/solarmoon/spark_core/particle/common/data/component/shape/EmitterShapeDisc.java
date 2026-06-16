@@ -57,6 +57,7 @@ public class EmitterShapeDisc extends EmitterShapeAdapter {
 
     /**
      * 从 JSON 对象中读取字符串数组字段。
+     * TODO: direction 字段支持 "outwards" 字符串格式（当前 getAsJsonArray 在字符串值时抛 ClassCastException）
      */
     private static String[] parseStringArray(JsonObject json, String key, String defX, String defY, String defZ) {
         JsonArray arr = json.getAsJsonArray(key);

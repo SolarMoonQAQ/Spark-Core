@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.api.distmarker.Dist;
+import org.joml.Quaternionf;
 
 import java.util.UUID;
 
@@ -19,39 +20,62 @@ import java.util.UUID;
 public class ClientParticleEffectPlayer implements IParticleEffectPlayer {
 
     @Override
-    public void playEffect(Level level, ResourceLocation effectId,
-                           Vec3 position, Vec3 rotation) {
+    public UUID playEffect(Level level, ResourceLocation effectId,
+                           Vec3 position) {
+        return playEffect(level, effectId, position, new Quaternionf(), new Vec3(1, 1, 1));
+    }
+
+    @Override
+    public UUID playEffect(Level level, ResourceLocation effectId,
+                           Vec3 position, Quaternionf rotation) {
         ParticleEffectDefinition def = ParticleDefinitionLoader.getInstance().getDefinition(effectId);
         if (def == null) {
             SparkCore.LOGGER.warn("[粒子] 未找到定义: {}，可用定义数: {}",
                     effectId, ParticleDefinitionLoader.getInstance().getAllDefinitions().size());
-            return;
+            return null;
         }
-
-        SparkCore.LOGGER.info("[粒子] 触发效果: {}  位置: ({:.1f}, {:.1f}, {:.1f})",
-                effectId, position.x, position.y, position.z);
 
         ParticleEmitterInstance emitter = new ParticleEmitterInstance(def, level);
         emitter.setPosition(position);
         emitter.setRotation(rotation);
         ParticleEmitterManager.getInstance().add(emitter);
+        return emitter.getInstanceId();
     }
 
     @Override
-    public void playEffect(Level level, ResourceLocation effectId,
+    public UUID playEffect(Level level, ResourceLocation effectId,
+                           Vec3 position, Quaternionf rotation, Vec3 scale) {
+        ParticleEffectDefinition def = ParticleDefinitionLoader.getInstance().getDefinition(effectId);
+        if (def == null) {
+            SparkCore.LOGGER.warn("[粒子] 未找到定义: {}，可用定义数: {}",
+                    effectId, ParticleDefinitionLoader.getInstance().getAllDefinitions().size());
+            return null;
+        }
+
+        ParticleEmitterInstance emitter = new ParticleEmitterInstance(def, level);
+        emitter.setPosition(position);
+        emitter.setRotation(rotation);
+        emitter.setScale(scale);
+        ParticleEmitterManager.getInstance().add(emitter);
+        return emitter.getInstanceId();
+    }
+
+    @Override
+    public UUID playEffect(Level level, ResourceLocation effectId,
                            String locator, UUID entityId) {
         // TODO: 通过 locator 获取实体变换并触发粒子效果
         // 需要从 level 查找 entityId 对应的实体
         ParticleEffectDefinition def = ParticleDefinitionLoader.getInstance().getDefinition(effectId);
         if (def == null) {
             SparkCore.LOGGER.warn("[粒子] 未找到定义: {} (locator模式)", effectId);
-            return;
+            return null;
         }
 
         ParticleEmitterInstance emitter = new ParticleEmitterInstance(def, level);
         emitter.setPosition(Vec3.ZERO);
         emitter.setBindToActor(true);
         ParticleEmitterManager.getInstance().add(emitter);
+        return emitter.getInstanceId();
     }
 
     @Override

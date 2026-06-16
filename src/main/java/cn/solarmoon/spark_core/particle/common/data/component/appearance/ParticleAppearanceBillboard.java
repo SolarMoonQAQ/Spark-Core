@@ -51,11 +51,21 @@ public class ParticleAppearanceBillboard implements IParticleComponentDefinition
         Flipbook flipbook = null;
         if (json.has("flipbook")) {
             JsonObject fb = json.getAsJsonObject("flipbook");
-            float[] baseUV = fb.has("base_uv") ? readFloatArray(fb, "base_uv", new float[]{0, 0}) : new float[]{0, 0};
-            float[] sizeUV = fb.has("size_uv") ? readFloatArray(fb, "size_uv", new float[]{1, 1}) : new float[]{1, 1};
-            float[] stepUV = fb.has("step_uv") ? readFloatArray(fb, "step_uv", new float[]{0, 0}) : new float[]{0, 0};
-            float fps = fb.has("fps") ? fb.get("fps").getAsFloat() : 1f;
-            int maxFrame = fb.has("max_frame") ? fb.get("max_frame").getAsInt() : 0;
+            // 所有数值字段均读为字符串，同时支持数字字面量和 MoLang 表达式
+            String[] baseUV = fb.has("base_uv")
+                    ? new String[]{fb.get("base_uv").getAsJsonArray().get(0).getAsString(),
+                                   fb.get("base_uv").getAsJsonArray().get(1).getAsString()}
+                    : new String[]{"0", "0"};
+            String[] sizeUV = fb.has("size_uv")
+                    ? new String[]{fb.get("size_uv").getAsJsonArray().get(0).getAsString(),
+                                   fb.get("size_uv").getAsJsonArray().get(1).getAsString()}
+                    : new String[]{"1", "1"};
+            String[] stepUV = fb.has("step_uv")
+                    ? new String[]{fb.get("step_uv").getAsJsonArray().get(0).getAsString(),
+                                   fb.get("step_uv").getAsJsonArray().get(1).getAsString()}
+                    : new String[]{"0", "0"};
+            String fps = fb.has("fps") ? fb.get("fps").getAsString() : "1";
+            String maxFrame = fb.has("max_frame") ? fb.get("max_frame").getAsString() : "0";
             boolean stretch = fb.has("stretch_to_lifetime") && fb.get("stretch_to_lifetime").getAsBoolean();
             boolean loop = fb.has("loop") && fb.get("loop").getAsBoolean();
             flipbook = new Flipbook(baseUV, sizeUV, stepUV, fps, maxFrame, stretch, loop);
@@ -72,6 +82,7 @@ public class ParticleAppearanceBillboard implements IParticleComponentDefinition
     }
 
     /** 读取 JSON 数组为 float 数组 */
+    // TODO: 支持数组元素为 Molang 表达式字符串（如 "math.floor(v.particle_random_2*8)*8"），当前 getAsFloat 会抛 NumberFormatException
     private static float[] readFloatArray(JsonObject json, String key, float[] def) {
         JsonArray arr = json.getAsJsonArray(key);
         if (arr == null || arr.size() < 2) return def;
@@ -102,19 +113,22 @@ public class ParticleAppearanceBillboard implements IParticleComponentDefinition
     }
 
     /**
-     * 翻页书动画定义（静态数值，归一化纹理坐标）。
+     * 翻页书动画定义。
+     * <p>
+     * 所有数值字段均存储为 MoLang 表达式字符串（对齐 SBM），
+     * 运行时编译求值，支持每粒子动态帧率和帧数。
      */
     public static class Flipbook {
-        private final float baseU, baseV;
-        private final float sizeX, sizeY;
-        private final float stepX, stepY;
-        private final float fps;
-        private final int maxFrame;
+        private final String baseU, baseV;
+        private final String sizeX, sizeY;
+        private final String stepX, stepY;
+        private final String fps;
+        private final String maxFrame;
         private final boolean stretchToLifetime;
         private final boolean loop;
 
-        public Flipbook(float[] baseUV, float[] sizeUV, float[] stepUV,
-                        float fps, int maxFrame,
+        public Flipbook(String[] baseUV, String[] sizeUV, String[] stepUV,
+                        String fps, String maxFrame,
                         boolean stretchToLifetime, boolean loop) {
             this.baseU = baseUV[0]; this.baseV = baseUV[1];
             this.sizeX = sizeUV[0]; this.sizeY = sizeUV[1];
@@ -123,14 +137,14 @@ public class ParticleAppearanceBillboard implements IParticleComponentDefinition
             this.stretchToLifetime = stretchToLifetime; this.loop = loop;
         }
 
-        public float getBaseU() { return baseU; }
-        public float getBaseV() { return baseV; }
-        public float getSizeX() { return sizeX; }
-        public float getSizeY() { return sizeY; }
-        public float getStepX() { return stepX; }
-        public float getStepY() { return stepY; }
-        public float getFps() { return fps; }
-        public int getMaxFrame() { return maxFrame; }
+        public String getBaseU() { return baseU; }
+        public String getBaseV() { return baseV; }
+        public String getSizeX() { return sizeX; }
+        public String getSizeY() { return sizeY; }
+        public String getStepX() { return stepX; }
+        public String getStepY() { return stepY; }
+        public String getFps() { return fps; }
+        public String getMaxFrame() { return maxFrame; }
         public boolean isStretchToLifetime() { return stretchToLifetime; }
         public boolean isLoop() { return loop; }
     }

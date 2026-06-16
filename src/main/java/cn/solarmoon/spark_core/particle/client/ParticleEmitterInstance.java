@@ -10,6 +10,9 @@ import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLi
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector4f;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.*;
@@ -41,8 +44,7 @@ public class ParticleEmitterInstance {
     private float emitterLifetime = 0;
     private boolean active = true;
     private boolean expired = false;
-    private Vec3 position = Vec3.ZERO;
-    private Vec3 rotation = Vec3.ZERO;
+    private final Matrix4f transform = new Matrix4f();
     private boolean bindToActor = false;
 
     // 发射器发射速率累加器
@@ -64,6 +66,9 @@ public class ParticleEmitterInstance {
     // 发射器随机数
     private final double[] emitterRandoms = new double[4];
     private final Random random = new Random();
+
+    // 发射器速度（方块/秒），用于 emitter_local_space.velocity 继承
+    private Vec3 velocity = Vec3.ZERO;
 
     // 粒子组件列表（含 onApply 组件）
     private final List<IParticleComponent> allParticleComponents;
@@ -181,6 +186,13 @@ public class ParticleEmitterInstance {
         for (int s = 0; s < spawnCount; s++) {
             int idx = buf.allocate();
 
+            // 立即绑定新粒子的 Molang 变量（age=0, lifetime=1.0 为默认占位值，
+            // 后续 setMaxLifetime 和 onApply 会更新，此处主要是让随机数等变量可用）
+            molang.bindParticle(0, 1.0f, new double[]{
+                    buf.getRandom1(idx), buf.getRandom2(idx),
+                    buf.getRandom3(idx), buf.getRandom4(idx)
+            });
+
             // 调用所有发射器组件的 onSpawn（形状设置位置/速度+方向，初始化设置变量等）
             for (IEmitterComponent comp : emitterComponents) {
                 comp.onSpawn(buf, idx, molang);
@@ -195,13 +207,22 @@ public class ParticleEmitterInstance {
                 comp.onApply(buf, idx, molang);
             }
 
-            // World 模式：叠加 emitter 位置到世界坐标
+            // World 模式：用完整变换矩阵将局部偏移转为世界坐标（含旋转和缩放）
             // Local 模式：粒子存相对坐标，不做偏移
             if (!isLocal) {
-                buf.setPos(idx,
-                        buf.getPosX(idx) + (float) position.x,
-                        buf.getPosY(idx) + (float) position.y,
-                        buf.getPosZ(idx) + (float) position.z);
+                float ox = buf.getPosX(idx);
+                float oy = buf.getPosY(idx);
+                float oz = buf.getPosZ(idx);
+                Vector4f worldPos = transform.transform(new Vector4f(ox, oy, oz, 1.0f));
+                buf.setPos(idx, worldPos.x, worldPos.y, worldPos.z);
+            }
+
+            // emitter_local_space.velocity：将发射器速度叠加到粒子初始速度
+            if (definition.getEmitterPreset().hasLocalVelocity() && !velocity.equals(Vec3.ZERO)) {
+                buf.setVel(idx,
+                        buf.getVelX(idx) + (float) velocity.x,
+                        buf.getVelY(idx) + (float) velocity.y,
+                        buf.getVelZ(idx) + (float) velocity.z);
             }
 
             // 新粒子立即同步 prevPos/prevSize = 当前值，避免渲染时从默认值 lerp 导致瞬移
@@ -365,10 +386,65 @@ public class ParticleEmitterInstance {
     public boolean isExpired() { return expired; }
     public void setExpired(boolean expired) { this.expired = expired; }
     public float getEmitterAge() { return emitterAge; }
-    public Vec3 getPosition() { return position; }
 
-    public void setPosition(Vec3 pos) { this.position = pos; }
-    public void setRotation(Vec3 rot) { this.rotation = rot; }
+    /** 获取发射器位置（从变换矩阵提取平移分量）。 */
+    public Vec3 getPosition() {
+        return new Vec3(transform.m30(), transform.m31(), transform.m32());
+    }
+
+    /** 设置发射器位置（仅平移，保持旋转和缩放不变）。 */
+    public void setPosition(Vec3 pos) {
+        transform.m30((float) pos.x);
+        transform.m31((float) pos.y);
+        transform.m32((float) pos.z);
+    }
+
+    /** 获取发射器旋转（从变换矩阵分解出标准化四元数）。 */
+    public Quaternionf getRotation() {
+        Quaternionf q = new Quaternionf();
+        transform.getNormalizedRotation(q);
+        return q;
+    }
+
+    /** 设置发射器旋转（保持位置和缩放不变）。 */
+    public void setRotation(Quaternionf quat) {
+        Vec3 pos = getPosition();
+        Vec3 scale = getScale();
+        transform.identity();
+        transform.translate((float) pos.x, (float) pos.y, (float) pos.z);
+        transform.rotate(quat);
+        transform.scale((float) scale.x, (float) scale.y, (float) scale.z);
+    }
+
+    /** 获取发射器缩放（从变换矩阵分解出各轴缩放）。 */
+    public Vec3 getScale() {
+        org.joml.Vector3f s = new org.joml.Vector3f();
+        transform.getScale(s);
+        return new Vec3(s.x(), s.y(), s.z());
+    }
+
+    /** 设置发射器缩放（非均匀，保持位置和旋转不变）。 */
+    public void setScale(Vec3 scale) {
+        Vec3 pos = getPosition();
+        Quaternionf quat = getRotation();
+        transform.identity();
+        transform.translate((float) pos.x, (float) pos.y, (float) pos.z);
+        transform.rotate(quat);
+        transform.scale((float) scale.x, (float) scale.y, (float) scale.z);
+    }
+
+    /** 获取完整变换矩阵。 */
+    public Matrix4f getTransform() { return transform; }
+
+    /** 设置完整变换矩阵（深拷贝）。 */
+    public void setTransform(Matrix4f mat) { transform.set(mat); }
+
     public void setBindToActor(boolean bind) { this.bindToActor = bind; }
     public boolean isBindToActor() { return bindToActor; }
+
+    /** 获取发射器速度（方块/秒）。*/
+    public Vec3 getVelocity() { return velocity; }
+
+    /** 设置发射器速度（方块/秒），用于 emitter_local_space.velocity 粒子继承发射器速度。*/
+    public void setVelocity(Vec3 velocity) { this.velocity = velocity; }
 }

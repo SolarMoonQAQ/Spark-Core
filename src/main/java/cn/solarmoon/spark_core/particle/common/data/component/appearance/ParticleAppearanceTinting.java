@@ -273,6 +273,7 @@ public class ParticleAppearanceTinting implements IParticleComponentDefinition {
                     int gi = Math.round(jsonElementToFloat(arr.get(1), 1f) * 255);
                     int bi = Math.round(jsonElementToFloat(arr.get(2), 1f) * 255);
                     int ai = arr.size() >= 4 ? Math.round(jsonElementToFloat(arr.get(3), 1f) * 255) : 255;
+                    // 基岩版标准 #AARRGGBB 格式（Alpha 在前）
                     return String.format("#%02X%02X%02X%02X", ai, ri, gi, bi);
                 }
             }

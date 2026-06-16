@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.particle.client.ParticleDefinitionLoader
 import cn.solarmoon.spark_core.particle.client.ParticleEmitterManager
 import cn.solarmoon.spark_core.particle.common.ParticleEffects
 import com.mojang.brigadier.Command
+import com.mojang.brigadier.arguments.FloatArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
@@ -15,10 +16,11 @@ import net.minecraft.commands.arguments.ResourceLocationArgument
 import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.network.chat.Component
 import net.minecraft.world.phys.Vec3
+import org.joml.Quaternionf
 
 /**
  * 粒子系统调试指令。
- * /spark particle spawn <effectId> [x] [y] [z]
+ * /spark particle spawn <effectId> [x] [y] [z] [rotX] [rotY] [rotZ] [scale]
  * /spark particle list [filter]
  * /spark particle clear
  */
@@ -31,16 +33,46 @@ class ParticleCommand : BaseCommand("particle", 2) {
     }
 
     override fun putExecution(context: CommandBuildContext) {
-        // spawn <effectId> [x] [y] [z]
+        // spawn <effectId> [pos] [rotX] [rotY] [rotZ] [scale]
         builder.then(
             Commands.literal("spawn")
                 .then(
                     Commands.argument("effectId", ResourceLocationArgument.id())
                         .suggests(particleSuggestions)
-                        .executes { executeSpawn(it) }
+                        .executes { executeSpawn(it, null, 0f, 0f, 0f, 1f) }
                         .then(
                             Commands.argument("pos", Vec3Argument.vec3())
-                                .executes { executeSpawn(it) }
+                                .executes { executeSpawn(it, Vec3Argument.getVec3(it, "pos"), 0f, 0f, 0f, 1f) }
+                                .then(
+                                    Commands.argument("rotX", FloatArgumentType.floatArg(-180f, 180f))
+                                        .then(
+                                            Commands.argument("rotY", FloatArgumentType.floatArg(-180f, 180f))
+                                                .then(
+                                                    Commands.argument("rotZ", FloatArgumentType.floatArg(-180f, 180f))
+                                                        .executes {
+                                                            executeSpawn(
+                                                                it, Vec3Argument.getVec3(it, "pos"),
+                                                                FloatArgumentType.getFloat(it, "rotX"),
+                                                                FloatArgumentType.getFloat(it, "rotY"),
+                                                                FloatArgumentType.getFloat(it, "rotZ"),
+                                                                1f
+                                                            )
+                                                        }
+                                                        .then(
+                                                            Commands.argument("scale", FloatArgumentType.floatArg(0f, 100f))
+                                                                .executes {
+                                                                    executeSpawn(
+                                                                        it, Vec3Argument.getVec3(it, "pos"),
+                                                                        FloatArgumentType.getFloat(it, "rotX"),
+                                                                        FloatArgumentType.getFloat(it, "rotY"),
+                                                                        FloatArgumentType.getFloat(it, "rotZ"),
+                                                                        FloatArgumentType.getFloat(it, "scale")
+                                                                    )
+                                                                }
+                                                        )
+                                                )
+                                        )
+                                )
                         )
                 )
         )
@@ -63,26 +95,35 @@ class ParticleCommand : BaseCommand("particle", 2) {
     }
 
     /**
-     * 在指定位置生成粒子效果（客户端命令，使用 Minecraft.getInstance().level）。
+     * 在指定位置生成粒子效果（客户端命令，使用 unsidedLevel 双端通用）。
+     *
+     * @param pos   位置，null 时使用命令源位置
+     * @param rotX  X 轴旋转（度），与 rotY/rotZ 按 YXZ 顺序组合为四元数
+     * @param rotY  Y 轴旋转（度）
+     * @param rotZ  Z 轴旋转（度）
+     * @param scale 统一缩放
      */
-    private fun executeSpawn(context: CommandContext<CommandSourceStack>): Int {
+    private fun executeSpawn(context: CommandContext<CommandSourceStack>,
+                             pos: Vec3?,
+                             rotX: Float, rotY: Float, rotZ: Float,
+                             scale: Float): Int {
         val source = context.source
         val effectId = ResourceLocationArgument.getId(context, "effectId")
-
-        // 客户端命令的 CommandSourceStack.getLevel() 会抛异常，使用 unsidedLevel 双端通用
         val level = source.unsidedLevel
+        val position = pos ?: (source.position ?: return 0)
 
-        // 获取位置（默认 ~ ~ ~ 即命令执行者位置）
-        val pos = try {
-            Vec3Argument.getVec3(context, "pos")
-        } catch (_: Exception) {
-            source.position ?: return 0
-        }
+        // 将 YXZ 欧拉角（度）转为四元数
+        val rotation = Quaternionf().rotationYXZ(
+            Math.toRadians(rotY.toDouble()).toFloat(),
+            Math.toRadians(rotX.toDouble()).toFloat(),
+            Math.toRadians(rotZ.toDouble()).toFloat()
+        )
+        val scaleVec = Vec3(scale.toDouble(), scale.toDouble(), scale.toDouble())
 
-        ParticleEffects.burst(level, effectId, pos, Vec3.ZERO)
+        ParticleEffects.burst(level, effectId, position, rotation, scaleVec)
 
         source.sendSuccess(
-            { Component.literal("已触发粒子效果: $effectId  位置: ${pos.x}, ${pos.y}, ${pos.z}") },
+            { Component.literal("已触发粒子效果: $effectId  位置: ${position.x}, ${position.y}, ${position.z}") },
             true
         )
         return Command.SINGLE_SUCCESS
