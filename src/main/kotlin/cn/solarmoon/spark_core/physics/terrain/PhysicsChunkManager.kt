@@ -226,8 +226,12 @@ class PhysicsChunkManager(
      */
     fun updateActivation(boundingBoxes: List<AABB>) {
         if (boundingBoxes.isEmpty()) {
-            // 如果没有BoundingBox，停用所有section
-            loadedChunks.values.forEach { it.deactivateAll() }
+            // 如果没有 BoundingBox，停用所有未被预约调度保护的 section
+            loadedChunks.values.forEach { chunk ->
+                if (chunk.chunkPos !in chunkExpireTicks) {
+                    chunk.deactivateAll()
+                }
+            }
             return
         }
 
@@ -262,6 +266,11 @@ class PhysicsChunkManager(
 
         loadedChunks.values.forEach { chunk ->
             val chunkPos = chunk.chunkPos
+
+            // 被 terrain 预约调度管理的 chunk，激活状态由 scheduleTerrain/loadAndActivateChunkTerrain 单独维护
+            // 跳过载具驱动的激活逻辑，避免 activateSectionsInRanges（替换模式）覆盖 terrain 调度的激活范围
+            if (chunkPos in chunkExpireTicks) return@forEach
+
             val activationRanges = activationMap[chunkPos]
 
             if (!activationRanges.isNullOrEmpty()) {
@@ -270,7 +279,7 @@ class PhysicsChunkManager(
                 // 激活合并后的范围
                 chunk.activateSectionsInRanges(mergedRanges)
             } else {
-                // 停用不在激活范围内的区块
+                // 不在载具范围内，停用
                 chunk.deactivateAll()
             }
         }
@@ -428,7 +437,7 @@ class PhysicsChunkManager(
         // 2. 添加 MC ticket 强制加载该 chunk
         val serverLevel = physicsLevel.mcLevel as? ServerLevel ?: return
         serverLevel.chunkSource.addRegionTicket(
-            SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos
+            SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos, true
         )
 
         // 3. 立即构建 PhysicsChunk 并激活指定 section 范围
