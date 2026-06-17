@@ -19,11 +19,13 @@ import kotlinx.coroutines.*
 import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.TicketType
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.LevelChunk
 import net.minecraft.world.phys.AABB
 import net.neoforged.neoforge.network.PacketDistributor
+import java.util.Comparator
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -77,7 +79,16 @@ class PhysicsChunkManager(
     /** 区块高程索引，内存常驻，供物理线程查询未加载区块的地形信息。 */
     val chunkHeightIndex = ChunkHeightIndex()
 
-    // ===== 预约调度系统（Phase 2.7） =====
+    // ===== 预约调度系统（Phase 2.7，基于 MC Ticket） =====
+
+    /**
+     * 每个 chunk 的所有活跃调度请求的过期 tick 列表。
+     * 用于 cancelAllSchedules 时正确重算最晚过期时间。
+     * 多个投射物可同时调度同一 chunk，各自独立追踪。
+     *
+     * key: ChunkPos，value: 该 chunk 所有活跃请求的 expireTick
+     */
+    private val chunkActiveRequests = ConcurrentHashMap<ChunkPos, MutableList<Int>>()
 
     /**
      * 每个 chunk 的最晚过期 tick（合并后的值）。
@@ -404,29 +415,40 @@ class PhysicsChunkManager(
         }
     }
 
-    // ========== 预约调度实现（Phase 2.7） ==========
+    // ========== 预约调度实现（基于 MC Ticket 系统） ==========
 
     /**
      * 预约在指定延迟后加载指定区块的指定 Y 范围地形，并在保持一定 tick 后自动释放。
      *
      * 多次调度同一 chunk 会取所有调度中最晚的 expire（自动合并）。
-     * 系统在到期后自动释放，调用方无需手动 release。
+     * 内部通过 MC Ticket 系统（addRegionTicket）强制保持区块加载，
+     * 到期后由 updateScheduledChunks 移除 ticket 并卸载地形。
      *
      * @param chunkPos 目标区块
      * @param yRange 需要加载的 section Y 范围（section 坐标）
-     * @param delayTicks 延迟多少 tick 后开始加载（0 = 立即）
-     * @param holdTicks 加载就绪后保持多少 tick。逾时自动释放
+     * @param delayTicks 延迟多少 tick 后开始激活 terrain（0 = 立即）
+     * @param holdTicks terrain 激活后保持多少 tick。逾时自动释放
      *
-     * 调用线程：任意线程（内部自动投递到主线程处理 chunk 加载）
+     * 调用线程：任意线程（addRegionTicket 内部已线程安全）
      */
     fun scheduleTerrain(chunkPos: ChunkPos, yRange: IntRange, delayTicks: Int, holdTicks: Int) {
         val currentTick = physicsLevel.tickCount
         val expireTick = currentTick + delayTicks + holdTicks
 
-        // 合并最晚过期时间
+        // 1. 记录此调度请求的过期时间（供 cancelAllSchedules 重算最晚过期）
+        chunkActiveRequests.getOrPut(chunkPos, ::mutableListOf).add(expireTick)
+
+        // 2. 合并最晚过期时间
         chunkExpireTicks.merge(chunkPos, expireTick) { old, new -> maxOf(old, new) }
 
-        // 提交去重延迟加载任务（同 chunk 最多一个触发任务）
+        // 3. 立即添加 MC ticket 强制加载该 chunk（不等 delay，让 MC 提前准备）
+        //    radius=2：地形构建可能依赖邻接 chunk 的方块数据
+        val serverLevel = physicsLevel.mcLevel as? ServerLevel ?: return
+        serverLevel.chunkSource.addRegionTicket(
+            SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos
+        )
+
+        // 4. 提交去重延迟任务——到 delayTicks 时构建 PhysicsChunk 并激活
         val key = TERRAIN_LOAD_KEY_PREFIX + chunkPos
         physicsLevel.mcLevel.submitDelayedTask(key, PPhase.ALL, delayTicks) {
             loadAndActivateChunkTerrain(chunkPos, yRange)
@@ -434,13 +456,35 @@ class PhysicsChunkManager(
     }
 
     /**
-     * 取消对某区块的自动释放调度。
-     * 从过期追踪中移除该 chunk，后续由 MC 自身的区块卸载机制处理。
+     * 取消对某区块的全部调度请求，立即移除 MC ticket 并释放物理区块。
      *
-     * 注意：此方法不会立即释放物理区块（已在物理世界的 section 不受影响），
-     * 仅取消到期自动卸载的定时器。
+     * 调用方：SparkLevel.cancelChunkLoad（Level 公开 API）。
+     * 语义：取消该 chunk 的所有预约，立刻释放——投射物离开后立刻卸载。
+     *
+     * 调用线程：任意线程
      */
-    fun cancelSchedule(chunkPos: ChunkPos) {
+    fun cancelAllSchedules(chunkPos: ChunkPos) {
+        chunkActiveRequests.remove(chunkPos)
+        releaseChunkTerrain(chunkPos)
+    }
+
+    /**
+     * 统一释放指定 chunk 的地形资源：
+     * 1. 移除 MC ticket（告知 MC 可卸载该 chunk）
+     * 2. 卸载物理区块（从物理世界移除）
+     * 3. 清理过期追踪
+     */
+    private fun releaseChunkTerrain(chunkPos: ChunkPos) {
+        // 1. 移除 MC ticket
+        val serverLevel = physicsLevel.mcLevel as? ServerLevel
+        serverLevel?.chunkSource?.removeRegionTicket(
+            SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos
+        )
+
+        // 2. 卸载物理区块
+        unloadPhysicsChunk(chunkPos)
+
+        // 3. 清理追踪状态
         chunkExpireTicks.remove(chunkPos)
     }
 
@@ -462,26 +506,27 @@ class PhysicsChunkManager(
      * 每 tick 清理过期的调度请求。
      * 在 [updateActivation] 之后调用。
      *
-     * 释放逻辑：对已到期的 chunk，卸载其物理区块。
-     * 注意：不删除 mcLoadedChunks 中的条目（MC 自行管理）。
+     * 释放逻辑：对已到期的 chunk，移除 MC ticket 并卸载物理区块。
      */
     fun updateScheduledChunks() {
         if (chunkExpireTicks.isEmpty()) return
         val now = physicsLevel.tickCount
         val toRelease = chunkExpireTicks.filter { (_, expire) -> now >= expire }.keys.toSet()
         for (chunkPos in toRelease) {
-            unloadPhysicsChunk(chunkPos)
-            chunkExpireTicks.remove(chunkPos)
+            releaseChunkTerrain(chunkPos)
         }
     }
 
     /**
-     * 实际执行区块的地形加载和激活（在延迟任务回调中调用）。
-     * 确保 MC 区块已加载 → 构建 PhysicsChunk → 激活指定 section 范围。
+     * 实际执行区块的地形构建和激活（在延迟任务回调中调用）。
+     *
+     * 此时 MC ticket 已提前添加，chunk 由 MC ticket 系统保证已加载。
+     * 仅需构建 PhysicsChunk 并激活指定 section 范围。
      */
     private fun loadAndActivateChunkTerrain(chunkPos: ChunkPos, yRange: IntRange) {
         val serverLevel = physicsLevel.mcLevel as? ServerLevel ?: return
-        // 确保 MC 区块已加载
+
+        // MC ticket 已确保 chunk 加载，直接从缓存获取
         val mcChunk = serverLevel.getChunk(chunkPos.x, chunkPos.z) as? LevelChunk ?: return
 
         // 确保 mcLoadedChunks 中有记录
@@ -562,6 +607,14 @@ class PhysicsChunkManager(
      * 清理所有资源
      */
     fun destroy() {
+        // 先释放所有 MC ticket
+        val serverLevel = physicsLevel.mcLevel as? ServerLevel
+        chunkExpireTicks.keys.forEach { chunkPos ->
+            serverLevel?.chunkSource?.removeRegionTicket(
+                SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos
+            )
+        }
+
         loadedChunks.values.forEach { it.unload() }
         loadedChunks.clear()
 
@@ -570,6 +623,7 @@ class PhysicsChunkManager(
         (terrainBuilderExecutor.executor as? ExecutorService)?.shutdownNow()
 
         // 清空调度状态
+        chunkActiveRequests.clear()
         chunkExpireTicks.clear()
     }
 
@@ -587,5 +641,20 @@ class PhysicsChunkManager(
         if (rigid == null) return
         if (rigid.isDynamic && !rigid.isActive)
             rigid.activate()
+    }
+
+    companion object {
+        /**
+         * Spark-Core 自定义地形强制加载 Ticket 类型。
+         *
+         * lifespan = 1200 一分钟长时间，完全由 scheduleTerrain / cancelAllSchedules 手动控制生命周期。
+         * 不使用 TicketType.FORCED，因其会随 ForcedChunksSavedData 持久化到存档。
+         */
+        @JvmStatic
+        val SPARK_TERRAIN_TICKET: TicketType<ChunkPos> = TicketType.create(
+            "spark_terrain",
+            Comparator.comparingLong(ChunkPos::toLong),
+            1200  // 1分钟（20tps × 60s），ticket 最长存活时间。实际由 scheduleTerrain 的 holdTicks 提前释放
+        )
     }
 }

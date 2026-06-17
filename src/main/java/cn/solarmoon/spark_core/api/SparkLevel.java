@@ -304,16 +304,16 @@ public final class SparkLevel {
     }
 
     /**
-     * <p>取消对某区块的自动释放调度。</p>
-     * <p>Cancel scheduled auto-release for a chunk.</p>
+     * <p>取消对某区块的全部调度请求，立即释放 MC ticket 和物理区块。</p>
+     * <p>Cancel all scheduled loads for a chunk and immediately release MC ticket and terrain.</p>
      *
-     * <p>此方法仅取消到期自动卸载的定时器，不立即释放物理区块。</p>
-     * <p>This only cancels the auto-release timer, does not immediately release the terrain.</p>
+     * <p>语义：投射物离开后立刻卸载。</p>
+     * <p>Semantics: unload immediately when projectile leaves.</p>
      */
     public static void cancelChunkLoad(
             @NotNull Level level,
             @NotNull ChunkPos chunkPos
     ) {
-        terrainManager(level).cancelSchedule(chunkPos);
+        terrainManager(level).cancelAllSchedules(chunkPos);
     }
 }
