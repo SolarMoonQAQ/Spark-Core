@@ -7,6 +7,8 @@ import net.minecraft.world.level.EmptyBlockGetter
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.chunk.LevelChunk
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * 区块section的快照，用于在后台线程安全地构建碰撞形状
@@ -136,7 +138,10 @@ class SectionSnapshot private constructor(
      * 将世界坐标转换为相对坐标
      */
     fun getRelativePos(blockPos: BlockPos): BlockPos {
-        return blockPos.subtract(pos.origin())
+        val x = max(min(blockPos.x - pos.origin().x, 15), 0)
+        val y = max(min(blockPos.y - pos.origin().y, 15), 0)
+        val z = max(min(blockPos.z - pos.origin().z, 15), 0)
+        return BlockPos(x, y, z)
     }
 
     /**

@@ -457,7 +457,8 @@ class PhysicsChunkManager(
     }
 
     /**
-     * 取消对某区块的全部调度请求，立即移除 MC ticket 并释放物理区块。
+     * 取消对某区块的全部调度请求，移除 MC ticket。
+     * PhysicsChunk 由 MC 自然卸载时通过 onChunkUnloaded 自动清理。
      *
      * 调用方：SparkLevel.cancelChunkLoad（Level 公开 API）。
      * 语义：取消该 chunk 的所有预约，立刻释放——投射物离开后立刻卸载。
@@ -470,22 +471,18 @@ class PhysicsChunkManager(
     }
 
     /**
-     * 统一释放指定 chunk 的地形资源（仅主线程调用）：
-     * 1. 移除 MC ticket（告知 MC 可卸载该 chunk）
-     * 2. 卸载物理区块（从物理世界移除）
-     * 3. 清理过期追踪
+     * 移除 MC ticket，让该 chunk 随 MC 自然卸载机制处理。
+     * PhysicsChunk 的卸载由 onChunkUnloaded 在 MC 卸载时自动触发，
+     * 无需手动调用 unloadPhysicsChunk（避免误卸载载具正在使用的 chunk）。
      */
     private fun releaseChunkTerrain(chunkPos: ChunkPos) {
-        // 1. 移除 MC ticket
+        // 移除 MC ticket——之后 MC 根据玩家距离等条件自行决定是否卸载该 chunk
         val serverLevel = physicsLevel.mcLevel as? ServerLevel
         serverLevel?.chunkSource?.removeRegionTicket(
             SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos
         )
 
-        // 2. 卸载物理区块
-        unloadPhysicsChunk(chunkPos)
-
-        // 3. 清理追踪状态
+        // 清理追踪状态（激活范围由下一帧 updateActivation 接管，要么载具续上要么自然停用）
         chunkExpireTicks.remove(chunkPos)
         terrainActivationRanges.remove(chunkPos)
     }
@@ -508,7 +505,8 @@ class PhysicsChunkManager(
      * 每 tick 清理过期的调度请求。
      * 在 [updateActivation] 之后调用。
      *
-     * 释放逻辑：对已到期的 chunk，移除 MC ticket 并卸载物理区块。
+     * 仅移除 MC ticket + 清理追踪状态，不手动卸载 PhysicsChunk。
+     * PhysicsChunk 由 onChunkUnloaded 在 MC 自然卸载时自动清理。
      */
     fun updateScheduledChunks() {
         if (chunkExpireTicks.isEmpty()) return
