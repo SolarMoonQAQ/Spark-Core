@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.physics.terrain
 
 import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.api.*
 import cn.solarmoon.spark_core.physics.body.CollisionGroups
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBVector3f
@@ -87,6 +86,12 @@ class PhysicsChunkManager(
      * 多次调度同一 chunk 时取最晚值。
      */
     private val chunkExpireTicks = ConcurrentHashMap<ChunkPos, Int>()
+
+    /**
+     * terrain 调度为每个 chunk 激活的 section Y 范围（多来源取并集）。
+     * 供 updateActivation 与载具激活范围合并，避免载具覆盖 terrain 调度。
+     */
+    private val terrainActivationRanges = ConcurrentHashMap<ChunkPos, MutableSet<IntRange>>()
 
     // 性能统计
     private val totalSections: Int
@@ -226,10 +231,13 @@ class PhysicsChunkManager(
      */
     fun updateActivation(boundingBoxes: List<AABB>) {
         if (boundingBoxes.isEmpty()) {
-            // 如果没有 BoundingBox，停用所有未被预约调度保护的 section
+            // 如果没有 BoundingBox：有 terrain 调度的 chunk 保持 terrain 范围激活，其余全部停用
             loadedChunks.values.forEach { chunk ->
-                if (chunk.chunkPos !in chunkExpireTicks) {
+                val terrainRanges = terrainActivationRanges[chunk.chunkPos]
+                if (terrainRanges.isNullOrEmpty()) {
                     chunk.deactivateAll()
+                } else {
+                    chunk.activateSectionsInRanges(mergeRanges(terrainRanges))
                 }
             }
             return
@@ -267,20 +275,21 @@ class PhysicsChunkManager(
         loadedChunks.values.forEach { chunk ->
             val chunkPos = chunk.chunkPos
 
-            // 被 terrain 预约调度管理的 chunk，激活状态由 scheduleTerrain/loadAndActivateChunkTerrain 单独维护
-            // 跳过载具驱动的激活逻辑，避免 activateSectionsInRanges（替换模式）覆盖 terrain 调度的激活范围
-            if (chunkPos in chunkExpireTicks) return@forEach
+            // terrain 调度为该 chunk 激活的 Y 范围（若有）
+            val terrainRanges = terrainActivationRanges[chunkPos]
+            // 载具为该 chunk 需要的 Y 范围（若有）
+            val vehicleRanges = activationMap[chunkPos]
 
-            val activationRanges = activationMap[chunkPos]
-
-            if (!activationRanges.isNullOrEmpty()) {
-                // 合并该区块的所有激活范围
-                val mergedRanges = mergeRanges(activationRanges)
-                // 激活合并后的范围
-                chunk.activateSectionsInRanges(mergedRanges)
-            } else {
-                // 不在载具范围内，停用
+            if (vehicleRanges.isNullOrEmpty() && terrainRanges.isNullOrEmpty()) {
+                // 既无载具需要也无 terrain 调度，停用
                 chunk.deactivateAll()
+            } else {
+                // 合并载具范围 ∪ terrain 调度范围
+                val allRanges = mutableSetOf<IntRange>()
+                vehicleRanges?.let { allRanges.addAll(it) }
+                terrainRanges?.let { allRanges.addAll(it) }
+                val mergedRanges = mergeRanges(allRanges)
+                chunk.activateSectionsInRanges(mergedRanges)
             }
         }
     }
@@ -434,6 +443,9 @@ class PhysicsChunkManager(
         // 1. 合并最晚过期时间
         chunkExpireTicks.merge(chunkPos, expireTick) { old, new -> maxOf(old, new) }
 
+        // 1b. 记录 terrain 激活范围（多来源取并集，供 updateActivation 合并）
+        terrainActivationRanges.getOrPut(chunkPos, ::mutableSetOf).add(yRange)
+
         // 2. 添加 MC ticket 强制加载该 chunk
         val serverLevel = physicsLevel.mcLevel as? ServerLevel ?: return
         serverLevel.chunkSource.addRegionTicket(
@@ -475,6 +487,7 @@ class PhysicsChunkManager(
 
         // 3. 清理追踪状态
         chunkExpireTicks.remove(chunkPos)
+        terrainActivationRanges.remove(chunkPos)
     }
 
     /**
@@ -613,6 +626,7 @@ class PhysicsChunkManager(
 
         // 清空调度状态
         chunkExpireTicks.clear()
+        terrainActivationRanges.clear()
     }
 
     /**
