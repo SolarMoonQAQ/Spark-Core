@@ -117,6 +117,8 @@ abstract class PhysicsLevel(
     val hostManager = ConcurrentHashMap<PhysicsHost, MutableMap<String, PhysicsCollisionObject>>()
     override val taskMap = ConcurrentHashMap<PPhase, ConcurrentHashMap<String, () -> Unit>>()
     override val immediateQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<() -> Unit>>()
+    override val delayedTaskMap = ConcurrentHashMap<PPhase, ConcurrentHashMap<String, DelayedTask>>()
+    override val delayedTaskQueue = ConcurrentHashMap<PPhase, ConcurrentLinkedDeque<DelayedTask>>()
     @Volatile
     var lastStepTickTime = 0L
     @Volatile

@@ -103,6 +103,56 @@ public final class SparkLevel {
     }
 
     /**
+     * <p>提交一个去重延迟任务，将在 processTasks(phase) 被调用 delayTicks 次后执行。</p>
+     * <p>Submit a deduplicated delayed task that executes after N processTasks(phase) calls.</p>
+     *
+     * <p>同一 phase + key 会覆盖旧的延迟任务（去重）。</p>
+     * <p>Same phase + key will overwrite the previous delayed task (dedup).</p>
+     *
+     * @param key       任务唯一标识 / task unique key for dedup
+     * @param phase     任务执行阶段 / task execution phase
+     * @param delayTicks 延迟 tick 数 / delay in ticks (processTasks calls)
+     * @param task      要执行的任务 / task to run
+     */
+    public static void submitDelayedTask(
+            @NotNull Level level,
+            @NotNull String key,
+            @NotNull PPhase phase,
+            int delayTicks,
+            @NotNull Runnable task
+    ) {
+        ((TaskSubmitOffice) level).submitDelayedTask(
+                key, phase, delayTicks, () -> {
+                    task.run();
+                    return null;
+                }
+        );
+    }
+
+    /**
+     * <p>提交一个非去重延迟任务，每次调用均新增，互不覆盖。</p>
+     * <p>Submit a non-deduplicated delayed task; each call adds a new independent task.</p>
+     *
+     * @param level     目标 Level / target level
+     * @param phase     任务执行阶段 / task execution phase
+     * @param delayTicks 延迟 tick 数 / delay in ticks (processTasks calls)
+     * @param task      要执行的任务 / task to run
+     */
+    public static void submitDelayedTask(
+            @NotNull Level level,
+            @NotNull PPhase phase,
+            int delayTicks,
+            @NotNull Runnable task
+    ) {
+        ((TaskSubmitOffice) level).submitDelayedTask(
+                phase, delayTicks, () -> {
+                    task.run();
+                    return null;
+                }
+        );
+    }
+
+    /**
      * <p>处理指定阶段的所有任务。</p>
      * <p>Process all tasks registered for the given phase.</p>
      */
