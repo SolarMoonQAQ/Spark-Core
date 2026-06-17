@@ -264,6 +264,9 @@ public final class SparkLevel {
      * <p>多次调度同一 chunk 取最晚过期（自动合并）。</p>
      * <p>Multiple schedules for the same chunk merge to the latest expiry.</p>
      *
+     * <p>任意线程可调用，内部通过 submitImmediateTask 投递到主线程执行。</p>
+     * <p>Thread-safe — defers to main thread via submitImmediateTask.</p>
+     *
      * @param level      目标 Level / target level
      * @param chunkPos   目标区块 / target chunk
      * @param yMin       Y 下界 / lower Y bound
@@ -282,7 +285,18 @@ public final class SparkLevel {
         PhysicsChunkManager mgr = terrainManager(level);
         int minSecY = SectionPos.blockToSectionCoord((int) yMin);
         int maxSecY = SectionPos.blockToSectionCoord((int) yMax);
-        mgr.scheduleTerrain(chunkPos, new kotlin.ranges.IntRange(minSecY, maxSecY), delayTicks, holdTicks);
+        var yRange = new kotlin.ranges.IntRange(minSecY, maxSecY);
+        // 延迟由 API 层处理，scheduleTerrain 内部只负责立即添加 ticket + 构建激活
+        if (delayTicks <= 0) {
+            submitImmediateTask(level, PPhase.ALL, () ->
+                mgr.scheduleTerrain(chunkPos, yRange, holdTicks)
+            );
+        } else {
+            ((TaskSubmitOffice) level).submitDelayedTask(
+                "terrain_api_" + chunkPos, PPhase.ALL, delayTicks,
+                () -> { mgr.scheduleTerrain(chunkPos, yRange, holdTicks); return null; }
+            );
+        }
     }
 
     /**
@@ -309,11 +323,16 @@ public final class SparkLevel {
      *
      * <p>语义：投射物离开后立刻卸载。</p>
      * <p>Semantics: unload immediately when projectile leaves.</p>
+     *
+     * <p>任意线程可调用，内部通过 submitImmediateTask 投递到主线程执行。</p>
+     * <p>Thread-safe — defers to main thread via submitImmediateTask.</p>
      */
     public static void cancelChunkLoad(
             @NotNull Level level,
             @NotNull ChunkPos chunkPos
     ) {
-        terrainManager(level).cancelAllSchedules(chunkPos);
+        submitImmediateTask(level, PPhase.ALL, () ->
+            terrainManager(level).cancelAllSchedules(chunkPos)
+        );
     }
 }
