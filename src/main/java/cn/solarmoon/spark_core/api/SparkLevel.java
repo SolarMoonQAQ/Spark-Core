@@ -3,8 +3,13 @@ package cn.solarmoon.spark_core.api;
 import cn.solarmoon.spark_core.LevelPatch;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.physics.terrain.ChunkHeightIndex;
+import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkManager;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -173,5 +178,142 @@ public final class SparkLevel {
      */
     public static boolean isSparkLevel(@NotNull Level level) {
         return level instanceof LevelPatch;
+    }
+
+    /* ------------------------------------------------------------ */
+    /* ChunkHeightIndex — 区块实体方块高程索引                        */
+    /* ------------------------------------------------------------ */
+
+    /**
+     * <p>获取用于管理此 Level 地形刚体的 PhysicsChunkManager。</p>
+     * <p>Get the PhysicsChunkManager that manages terrain rigid bodies for this Level.</p>
+     *
+     * @param level 目标 Level / target level
+     * @return PhysicsChunkManager 实例，不会为 null（服务端 Level 已初始化物理世界）
+     */
+    private static @NotNull PhysicsChunkManager terrainManager(@NotNull Level level) {
+        return getPhysicsLevel(level).getTerrainManager();
+    }
+
+    /**
+     * <p>获取此 Level 的区块固体高度索引。</p>
+     * <p>Get the chunk height index for this Level.</p>
+     *
+     * @param level 目标 Level / target level
+     * @return 索引对象，客户端始终返回 null（索引仅服务端维护）
+     */
+    public static @Nullable ChunkHeightIndex getChunkHeightIndex(@NotNull Level level) {
+        if (level.isClientSide) return null;
+        return terrainManager(level).getChunkHeightIndex();
+    }
+
+    /**
+     * <p>查询指定区块位置在指定 Y 区间内是否存在实体方块。</p>
+     * <p>Query whether there are solid blocks in the given Y range at the given chunk position.</p>
+     *
+     * @param level 目标 Level / target level
+     * @param pos   任意方块坐标（自动转换为 ChunkPos） / any block position, auto-converted to ChunkPos
+     * @param yMin  查询 Y 下界 / lower bound Y (MC coordinates)
+     * @param yMax  查询 Y 上界 / upper bound Y (MC coordinates)
+     * @return true = 存在实体方块；false = 无数据或不存在
+     */
+    public static boolean hasSolidInRange(
+            @NotNull Level level,
+            @NotNull BlockPos pos,
+            double yMin,
+            double yMax
+    ) {
+        ChunkHeightIndex index = getChunkHeightIndex(level);
+        if (index == null) return false;
+        return index.hasSolidInRange(new ChunkPos(pos), (short) yMin, (short) yMax);
+    }
+
+    /**
+     * <p>查询指定区块的完整固体区间列表。</p>
+     * <p>Get all solid intervals for the given chunk.</p>
+     *
+     * @param level    目标 Level / target level
+     * @param chunkPos 区块坐标 / chunk position
+     * @return 区间数组 [min1,max1, min2,max2, ...]，无数据返回 null；调用方不得修改返回的数组
+     */
+    public static short @Nullable [] getSolidIntervals(
+            @NotNull Level level,
+            @NotNull ChunkPos chunkPos
+    ) {
+        ChunkHeightIndex index = getChunkHeightIndex(level);
+        return index != null ? index.getIntervals(chunkPos) : null;
+    }
+
+    /**
+     * <p>检查指定区块是否已建立索引（即曾被加载过）。</p>
+     * <p>Check whether the given chunk has been indexed (i.e. was loaded at least once).</p>
+     */
+    public static boolean hasChunkIndex(
+            @NotNull Level level,
+            @NotNull ChunkPos chunkPos
+    ) {
+        ChunkHeightIndex index = getChunkHeightIndex(level);
+        return index != null && index.hasChunk(chunkPos);
+    }
+
+    /**
+     * <p>预约在指定延迟后加载指定区块的指定 Y 范围地形，并保持一定 tick 后自动释放。</p>
+     * <p>Schedule loading of terrain for the given chunk and Y range after a delay,
+     * holding it for a given duration before auto-release.</p>
+     *
+     * <p>多次调度同一 chunk 取最晚过期（自动合并）。</p>
+     * <p>Multiple schedules for the same chunk merge to the latest expiry.</p>
+     *
+     * @param level      目标 Level / target level
+     * @param chunkPos   目标区块 / target chunk
+     * @param yMin       Y 下界 / lower Y bound
+     * @param yMax       Y 上界 / upper Y bound
+     * @param delayTicks 延迟 tick 数（0 = 立即）
+     * @param holdTicks  加载就绪后保持 tick 数
+     */
+    public static void scheduleChunkLoad(
+            @NotNull Level level,
+            @NotNull ChunkPos chunkPos,
+            double yMin,
+            double yMax,
+            int delayTicks,
+            int holdTicks
+    ) {
+        PhysicsChunkManager mgr = terrainManager(level);
+        int minSecY = SectionPos.blockToSectionCoord((int) yMin);
+        int maxSecY = SectionPos.blockToSectionCoord((int) yMax);
+        mgr.scheduleTerrain(chunkPos, new kotlin.ranges.IntRange(minSecY, maxSecY), delayTicks, holdTicks);
+    }
+
+    /**
+     * <p>检查指定区块的指定 Y 范围地形是否已就绪。</p>
+     * <p>Check whether terrain for the given chunk and Y range is ready.</p>
+     *
+     * @return true = 地形刚体已在物理世界中可用（已加载 + 已构建 + 已激活）
+     */
+    public static boolean isChunkTerrainReady(
+            @NotNull Level level,
+            @NotNull ChunkPos chunkPos,
+            double yMin,
+            double yMax
+    ) {
+        PhysicsChunkManager mgr = terrainManager(level);
+        int minSecY = SectionPos.blockToSectionCoord((int) yMin);
+        int maxSecY = SectionPos.blockToSectionCoord((int) yMax);
+        return mgr.isTerrainReady(chunkPos, new kotlin.ranges.IntRange(minSecY, maxSecY));
+    }
+
+    /**
+     * <p>取消对某区块的自动释放调度。</p>
+     * <p>Cancel scheduled auto-release for a chunk.</p>
+     *
+     * <p>此方法仅取消到期自动卸载的定时器，不立即释放物理区块。</p>
+     * <p>This only cancels the auto-release timer, does not immediately release the terrain.</p>
+     */
+    public static void cancelChunkLoad(
+            @NotNull Level level,
+            @NotNull ChunkPos chunkPos
+    ) {
+        terrainManager(level).cancelSchedule(chunkPos);
     }
 }

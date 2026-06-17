@@ -16,12 +16,34 @@ public class BlockCollisionUtil {
     // Block 级别的物理数据缓存：利用运行时不变性避免重复 DataMap 查询
     private static final ConcurrentHashMap<Block, BlockPhysicsData> PHYSICS_CACHE = new ConcurrentHashMap<>();
 
+    // Block 级别的 hasCollision 结果缓存：Block.hasCollision 为运行时不变属性
+    private static final ConcurrentHashMap<Block, Boolean> COLLISION_CACHE = new ConcurrentHashMap<>();
+
     /**
      * 清空物理数据缓存，强制下次查询重新走 DataMap。
      * 数据包热重载（/reload）后调用，确保新数据生效。
      */
     public static void invalidatePhysicsCache() {
         PHYSICS_CACHE.clear();
+        COLLISION_CACHE.clear();
+    }
+
+    /**
+     * 判断 BlockState 是否有碰撞体积（实体方块）。
+     * <p>
+     * 使用 Block 级别缓存避免重复查询。底层读取 {@code Block.hasCollision} 字段，
+     * 自动排除空气、水、熔岩等无碰撞体积的方块。
+     * <p>
+     * 与 {@code state.getCollisionShape(...).isEmpty()} 不同，此方法不构建 VoxelShape，
+     * 因此对 fence / wall 等依赖上下文的方块也能安全判定（Block.hasCollision 为属性标志，
+     * 而非当前形状是否为空）。
+     *
+     * @param state 方块状态
+     * @return true = 方块有碰撞体积
+     */
+    public static boolean hasCollision(BlockState state) {
+        Block block = state.getBlock();
+        return COLLISION_CACHE.computeIfAbsent(block, b -> b.hasCollision);
     }
 
     /**

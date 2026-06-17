@@ -27,6 +27,8 @@ object PhysicsLevelApplier {
             if (level is ServerLevel) {
                 (level as ILevelMixin).setPhysicsLevel(ServerPhysicsLevel(level as ServerLevel, 5))
                 level.physicsLevel.start {
+                    // 从 Attachment 恢复区块高程索引（投影片加载前恢复索引数据）
+                    level.physicsLevel.terrainManager.loadFromAttachment(level)
                     // 广播通知物理世界初始化完成
                     NeoForge.EVENT_BUS.post(PhysicsLevelInitEvent(level.physicsLevel))
                 }
@@ -39,6 +41,17 @@ object PhysicsLevelApplier {
         val level = event.level
         if (level is Level) {
             level.physicsLevel.close()
+        }
+    }
+
+    /**
+     * 世界保存时持久化区块高程索引到 Attachment。
+     */
+    @SubscribeEvent
+    private fun save(event: LevelEvent.Save) {
+        val level = event.level
+        if (level is ServerLevel) {
+            level.physicsLevel.terrainManager.saveToAttachment(level)
         }
     }
 

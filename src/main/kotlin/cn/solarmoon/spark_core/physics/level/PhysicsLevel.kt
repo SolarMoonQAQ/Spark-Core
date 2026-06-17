@@ -257,6 +257,8 @@ abstract class PhysicsLevel(
         terrainManager.updateDirtySections()
         terrainManager.updateBuild(buildBoxes)
         terrainManager.updateActivation(activationBoxes)
+        // 清理过期的预约调度（投射物区块加载释放）
+        terrainManager.updateScheduledChunks()
         // 发送物理步进请求（异步）
         scope.launch {
             physicsTickChannel.send(Unit)

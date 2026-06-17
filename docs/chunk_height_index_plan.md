@@ -580,62 +580,56 @@ fun isTerrainReadyForProjectile(level: Level, pos: Vector3f): Boolean {
 
 #### 实现思路
 
-**内部调度模型**：
+**加载**: 用 `SparkLevel.submitDelayedTask` + 去重 key 触发。  
+**释放**: 用简单的 `ConcurrentHashMap<ChunkPos, Int>` 追踪每个 chunk 的最晚过期 tick。
 
 ```
-PhysicsChunkManager 维护一个调度表:
-  Map<ChunkPos, ChunkSchedule>
+PhysicsChunkManager 内部:
+  chunkExpireTicks: ConcurrentHashMap<ChunkPos, Int>  // 每个chunk的最晚过期tick
 
-其中 ChunkSchedule 是合并后的结果:
-  - delayStartTick: 所有请求中最早的开始时间
-  - expireTick: 所有请求中最晚的过期时间
-  - yRange: 所有请求 yRange 的并集
+scheduleChunkLoad(chunk, yMin, yMax, delayTicks, holdTicks):
+  1. 计算过期时间: newExpire = currentTick + delayTicks + holdTicks
+  2. 合并过期: chunkExpireTicks.merge(chunk, newExpire, ::max)  ← 取最晚
+  3. 提交加载任务（去重 key = "terrain_load_" + chunk）:
+     SparkLevel.submitDelayedTask(level, "terrain_load_" + chunk, delayTicks) {
+         serverLevel.getChunk(x,z,FULL,true)
+         PhysicsChunk.load()
+         activateSectionsInRanges(yRange)
+     }
 
-主线程每 tick 检查:
-  for (schedule in schedules):
-    if (currentTick >= schedule.delayStartTick && !已加载):
-        → serverLevel.getChunk() + PhysicsChunk.load() + activateSections(yRange)
-    if (currentTick >= schedule.expireTick):
-        → 移除调度 → 若没有其他调度引用此chunk → removeTicket
+每 tick (在 PhysicsChunkManager 的某个 tick 钩子中):
+  val now = tickCount
+  val toRelease = chunkExpireTicks.filter { now >= it.value }.keys
+  for (chunk in toRelease):
+      removeTicket(chunk)
+      chunkExpireTicks.remove(chunk)
+
+cancelChunkLoad(chunk):
+  从内部请求列表中移除该请求 → 重新计算 chunkExpireTicks[chunk] = 剩余请求中最晚的expire
 ```
 
-**自动合并示例**：
+**自动合并：**
 
 ```
-投射物A: scheduleChunkLoad(C, yMin=50, yMax=60, delay=0, hold=10)
-  → C: delayStart=T+0, expire=T+10, yRange=[50..60]
+投射物A: scheduleChunkLoad(C, delay=0, hold=10)
+  → chunkExpireTicks[C] = T+10
+  → submitDelayedTask("terrain_load_C", delay=0)  // T+0加载
 
-投射物B: scheduleChunkLoad(C, yMin=80, yMax=90, delay=3, hold=5)
-  → C: delayStart=T+0, expire=MAX(T+10,T+8)=T+10, yRange=[50..60]∪[80..90]
+投射物B: scheduleChunkLoad(C, delay=3, hold=5)
+  → chunkExpireTicks[C] = max(T+10,T+8) = T+10  ← 不延长
+  → submitDelayedTask("terrain_load_C", delay=3) → 同key去重，不重复提交
 
 投射物A destroy → cancelChunkLoad(C)
-  → 内部标记移除A的请求 → 重新合并
-  → C: delayStart=T+3, expire=T+8, yRange=[80..90]
+  → 重新计算: chunkExpireTicks[C] = T+8  ← B的过期时间
   → 仍未过期，继续持有
 ```
 
 **关键约束**：
 
-- MC 区块加载（`getChunk`）必须在主线程；调度表的 tick 检查也在主线程
-- 地形异步构建完成后通过 `BuildState` 轮询确认就绪
-- 自动合并 = 调用方零心智负担；重叠窗口无需手动协调
-- `cancelChunkLoad()` 是可选的——系统到期自动释放，手动取消用于节省资源
-
-### 7.7 响应式 API（可选扩展）
-
-对于需要在方块变更时得到通知的场景，可以提供监听器：
-
-```kotlin
-/**
- * 注册索引变更监听器（仅 Spark-Core 内部使用）。
- * 当某 chunk 的区间发生变化时回调（主线程）。
- */
-@ApiStatus.Internal
-fun ChunkHeightIndex.addListener(chunkPos: ChunkPos, listener: (ShortArray) -> Unit)
-```
-
-此项为可选扩展，Phase 1\~4 不实现，仅供未来使用方（如动态结构生成器）参考。
-
+- `chunkExpireTicks` 仅追踪过期时间，无需存 yRange（由加载任务的闭包捕获）
+- 加载任务用去重 key 自动合并（同 chunk 最多一个加载触发）
+- 释放检查在 `PhysicsChunkManager` 的 tick 中执行（如 `updateBuild` 之前），O(active chunks) 遍历开销极小
+- `cancelChunkLoad` 需要保留足够的请求信息以重新计算最晚过期——维护 `Map<ChunkPos, List<Int>>` 记录所有活跃请求的 expire tick
 ***
 
 ## 8. 弹道预测与区块加载流程
@@ -687,18 +681,31 @@ ProjectileManager.addProjectileInternal()
 
 ### 8.2 弹道 → 途经chunk 提取
 
-输入为 `TrajectoryResult`（`List<TrajectorySample>`），对相邻采样点做 3D DDA 网格遍历（chunk 分辨率 = 16 格步长）：
+输入为 BallisticsFramework `forwardSolve()` 返回的 `TrajectoryResult`（`List<TrajectorySample>`，每个采样点包含 `time`、`position: Vec3`、`velocity: Vec3`）。
 
+**简化处理**：不构建中间结构，直接遍历采样点，对每个点判定并预约：
+
+```kotlin
+fun scheduleFromTrajectory(level: Level, result: TrajectoryResult, currentTick: Int) {
+    val seen = mutableSetOf<ChunkPos>()  // 去重：同一chunk只预约一次
+    for (sample in result.samples()) {
+        val chunkPos = ChunkPos(BlockPos.containing(sample.position().x, sample.position().y, sample.position().z))
+        if (chunkPos in seen) continue
+        seen.add(chunkPos)
+
+        val y = sample.position().y
+        if (level.hasSolidInRange(BlockPos.containing(sample.position()), y - 3.0, y + 3.0)) {
+            val delayTicks = ((sample.time() * 20).toInt() - currentTick).coerceAtLeast(0)
+            level.scheduleChunkLoad(chunkPos, y - 3.0, y + 3.0, delayTicks, holdTicks = 5)
+        }
+    }
+}
 ```
-对每对相邻采样点 (s[i], s[i+1])：
-  构造方向向量 d = s[i+1].pos - s[i].pos
-  射线步进，步长为 chunk 边界跨度
-  对每步进入的新 chunk：
-    更新 ChunkVisitInfo:
-      firstEnterTime = min(已有, s[i].time)
-      yMin = min(已有, s[i].pos.y, s[i+1].pos.y)
-      yMax = max(已有, s[i].pos.y, s[i+1].pos.y)
-```
+
+**为什么不需要 3D DDA 遍历**：
+- `TrajectorySample` 采样密度足够（默认每 tick 一个点 → 每 0.05s → 投射物在 500m/s 下步进 25m），跨 chunk 边界不会漏
+- `scheduleChunkLoad` 自带去重合并，即使同一 chunk 被多次命中也无害
+- 省去 chunk 边界计算、`ChunkVisitInfo` 中间结构，代码量大幅减少
 
 ### 8.3 调度窗口生命周期
 
@@ -746,7 +753,7 @@ ProjectileManager.addProjectileInternal()
 | 2.4 | `physics/terrain/PhysicsChunkManager.kt` | `onBlockUpdated()` 中增量重算受影响 section 的区间                                                                                                                      |
 | 2.5 | `physics/terrain/PhysicsChunkManager.kt` | 新增只读访问器 `fun getChunkHeightIndex(): ChunkHeightIndex`，供 Machine-Max 查询                                                                                       |
 | 2.6 | `api/SparkLevelKt.kt`                    | 新增跨模组外观方法：`Level.hasSolidInRange()`、`Level.getSolidIntervals()`、`Level.hasChunkIndex()`、`Level.chunkHeightIndex`                                             |
-| 2.7 | `physics/terrain/PhysicsChunkManager.kt` | 新增预约调度：`scheduleTerrain(chunkPos, yRange, delayTicks, holdTicks)` 和 `cancelSchedule(chunkPos)`。维护 `Map<ChunkPos, ChunkSchedule>` 调度表，每 tick 检查：到 delayStartTick 时触发 `getChunk` + `load()` + `activateSectionsInRanges()`；到 expireTick 时自动 `removeTicket`；支持多次调度的自动合并（取最早开始、最晚过期、Y范围并集） |
+| 2.7 | `physics/terrain/PhysicsChunkManager.kt` | 预约调度实现：加载侧用 `SparkLevel.submitDelayedTask`（去重key）触发 `getChunk`+`load`+`activate`；释放侧用 `ConcurrentHashMap<ChunkPos, Int>` 追踪最晚过期 tick，在 tick 钩子中清理到期 chunk。`cancelChunkLoad` 需维护 `Map<ChunkPos, List<Int>>` 以正确重算最晚过期 |
 | 2.8 | `api/SparkLevelKt.kt` | 新增主动构建外观：`Level.scheduleChunkLoad(chunkPos, yMin, yMax, delayTicks, holdTicks)`、`Level.isChunkTerrainReady(chunkPos, yMin, yMax)`、`Level.cancelChunkLoad(chunkPos)` |
 
 ### Phase 3: Spark-Core — Attachment 持久化【1 日】

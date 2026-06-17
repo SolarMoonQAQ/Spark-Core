@@ -1,7 +1,10 @@
 package cn.solarmoon.spark_core.api
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
+import cn.solarmoon.spark_core.physics.terrain.ChunkHeightIndex
 import cn.solarmoon.spark_core.util.PPhase
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 
 /**
@@ -76,4 +79,67 @@ fun Level.submitDelayedTask(
  */
 fun Level.processTasks(phase: PPhase) {
     SparkLevel.processTasks(this, phase)
+}
+
+// ========== 区块实体方块高程索引公开 API ==========
+// 所有实现委托到 SparkLevel.java 的 static 方法，确保 Java 端同样可用
+
+/**
+ * 获取此 Level 的区块固体高度索引（若不存在则返回 null）。
+ * 客户端始终返回 null（索引仅服务端维护）。
+ */
+val Level.chunkHeightIndex: ChunkHeightIndex?
+    get() = SparkLevel.getChunkHeightIndex(this)
+
+/**
+ * 查询指定区块位置的指定 Y 区间内是否存在实体方块。
+ *
+ * 线程安全：可在任意线程调用（不访问 MC 世界状态）
+ */
+fun Level.hasSolidInRange(pos: BlockPos, yMin: Double, yMax: Double): Boolean =
+    SparkLevel.hasSolidInRange(this, pos, yMin, yMax)
+
+/**
+ * 查询指定区块的完整固体区间列表。
+ * 调用方不得修改返回的数组（共享引用，线程安全）。
+ */
+fun Level.getSolidIntervals(chunkPos: ChunkPos): ShortArray? =
+    SparkLevel.getSolidIntervals(this, chunkPos)
+
+/**
+ * 检查指定区块是否已建立索引（即曾被加载过）。
+ */
+fun Level.hasChunkIndex(chunkPos: ChunkPos): Boolean =
+    SparkLevel.hasChunkIndex(this, chunkPos)
+
+/**
+ * 预约在指定延迟后加载指定区块的指定 Y 范围地形，并在保持一定 tick 后自动释放。
+ *
+ * 多次调度同一 chunk 取最晚过期（自动合并）。
+ * 调用方无需手动 release，系统在到期后自动释放。
+ *
+ * 调用线程：任意线程（内部自动投递到主线程处理 chunk 加载）
+ */
+fun Level.scheduleChunkLoad(
+    chunkPos: ChunkPos,
+    yMin: Double,
+    yMax: Double,
+    delayTicks: Int,
+    holdTicks: Int
+) {
+    SparkLevel.scheduleChunkLoad(this, chunkPos, yMin, yMax, delayTicks, holdTicks)
+}
+
+/**
+ * 检查指定区块的指定 Y 范围地形是否已就绪（已加载 + 已构建 + 已激活）。
+ */
+fun Level.isChunkTerrainReady(chunkPos: ChunkPos, yMin: Double, yMax: Double): Boolean =
+    SparkLevel.isChunkTerrainReady(this, chunkPos, yMin, yMax)
+
+/**
+ * 取消对某区块的自动释放调度（投射物销毁时可选调用）。
+ * 仅取消到期自动卸载的定时器，不立即释放物理区块。
+ */
+fun Level.cancelChunkLoad(chunkPos: ChunkPos) {
+    SparkLevel.cancelChunkLoad(this, chunkPos)
 }

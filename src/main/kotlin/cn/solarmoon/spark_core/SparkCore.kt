@@ -41,6 +41,7 @@ class SparkCore(modEventBus: IEventBus, modContainer: ModContainer) {
         }
 
         SparkRegistries.register()
+        SparkAttachments.register()
         SparkVisualEffects.register()
         SparkCommonEventRegister.register(modEventBus)
         SparkPayloadRegister.register(modEventBus)

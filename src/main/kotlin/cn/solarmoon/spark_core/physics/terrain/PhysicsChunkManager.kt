@@ -1,9 +1,11 @@
 package cn.solarmoon.spark_core.physics.terrain
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.api.*
 import cn.solarmoon.spark_core.physics.body.CollisionGroups
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.toVec3
 import com.jme3.bullet.collision.PhysicsCollisionEvent
@@ -18,9 +20,11 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.SectionPos
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.ChunkPos
+import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.LevelChunk
 import net.minecraft.world.phys.AABB
 import net.neoforged.neoforge.network.PacketDistributor
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -67,6 +71,23 @@ class PhysicsChunkManager(
     @Volatile
     private var weatherEpoch = 0
     private var lastWeatherPhase = currentWeatherPhase()
+
+    // ===== 区块实体方块高程索引（Phase 1） =====
+
+    /** 区块高程索引，内存常驻，供物理线程查询未加载区块的地形信息。 */
+    val chunkHeightIndex = ChunkHeightIndex()
+
+    // ===== 预约调度系统（Phase 2.7） =====
+
+    /**
+     * 每个 chunk 的最晚过期 tick（合并后的值）。
+     * 用于每 tick 扫表判断哪些 chunk 需要自动释放。
+     * 多次调度同一 chunk 时取最晚值。
+     */
+    private val chunkExpireTicks = ConcurrentHashMap<ChunkPos, Int>()
+
+    // ===== 预约调度：加载任务去重 key 前缀 =====
+    private val TERRAIN_LOAD_KEY_PREFIX = "terrain_load_"
 
     // 性能统计
     private val totalSections: Int
@@ -304,14 +325,21 @@ class PhysicsChunkManager(
 
     /**
      * 处理区块加载事件（主线程调用）
+     *
+     * 除了存入 mcLoadedChunks，还计算并写入区块高程索引。
      */
     fun onChunkLoaded(chunkPos: ChunkPos, chunk: LevelChunk) {
         if (chunkPos in mcLoadedChunks) return
         mcLoadedChunks[chunkPos] = chunk
+        // 计算并写入区块实体方块高程索引
+        chunkHeightIndex.computeAndPut(chunk, physicsLevel.mcLevel)
     }
 
     /**
-     * 处理区块卸载事件（主线程调用）
+     * 处理区块卸载事件（主线程调用）。
+     *
+     * 注意：不删除 chunkHeightIndex 中的索引条目。
+     * 区块卸载后内存索引仍然保留，供物理线程查询未加载区块的地形信息（空间换时间）。
      */
     fun onChunkUnloaded(chunkPos: ChunkPos) {
         mcLoadedChunks.remove(chunkPos)
@@ -323,9 +351,15 @@ class PhysicsChunkManager(
      */
     fun onBlockUpdated(blockPositions: Set<BlockPos>) {
         val dirtySections = mutableSetOf<SectionPos>()
+        // 收集受影响的 section，并按 chunk 分组以更新高程索引
+        val chunkAffectedSections = mutableMapOf<ChunkPos, MutableSet<Int>>()
         blockPositions.forEach { blockPos ->
             val sectionPos = SectionPos.of(blockPos)
             dirtySections.add(sectionPos)
+            // 记录该 chunk 中受影响的 sectionY
+            val chunkPos = ChunkPos(blockPos)
+            chunkAffectedSections.getOrPut(chunkPos) { mutableSetOf() }.add(sectionPos.y())
+
             physicsLevel.submitDeduplicatedTask("terrain_update_activate_${blockPos.toShortString()}", PPhase.ALL) {
                 activator.setPhysicsLocation(
                     blockPos.toVec3().add(0.5, 0.5, 0.5).toBVector3f()
@@ -334,6 +368,141 @@ class PhysicsChunkManager(
             }
         }
         markDirtySections(dirtySections)
+
+        // 增量更新受影响的 chunk 的高程索引
+        for ((chunkPos, sectionYs) in chunkAffectedSections) {
+            val mcChunk = mcLoadedChunks[chunkPos] ?: continue
+            for (sectionY in sectionYs) {
+                chunkHeightIndex.updateSection(chunkPos, mcChunk, physicsLevel.mcLevel, sectionY)
+            }
+        }
+    }
+
+    // ========== Attachment 持久化 ==========
+
+    /**
+     * 将区块高程索引持久化到 ServerLevel 的 Attachment 中。
+     * 在 LevelEvent.Save 时调用。
+     */
+    fun saveToAttachment(serverLevel: ServerLevel) {
+        serverLevel.setData(
+            SparkAttachments.CHUNK_SOLID_INTERVALS,
+            chunkHeightIndex.toPersistentMap()
+        )
+    }
+
+    /**
+     * 从 ServerLevel 的 Attachment 中恢复区块高程索引。
+     * 在 PhysicsLevelInitEvent 时调用。
+     */
+    fun loadFromAttachment(level: Level) {
+        val data = level.getData(
+            SparkAttachments.CHUNK_SOLID_INTERVALS
+        )
+        if (data.isNotEmpty()) {
+            chunkHeightIndex.loadFromPersistentMap(data)
+        }
+    }
+
+    // ========== 预约调度实现（Phase 2.7） ==========
+
+    /**
+     * 预约在指定延迟后加载指定区块的指定 Y 范围地形，并在保持一定 tick 后自动释放。
+     *
+     * 多次调度同一 chunk 会取所有调度中最晚的 expire（自动合并）。
+     * 系统在到期后自动释放，调用方无需手动 release。
+     *
+     * @param chunkPos 目标区块
+     * @param yRange 需要加载的 section Y 范围（section 坐标）
+     * @param delayTicks 延迟多少 tick 后开始加载（0 = 立即）
+     * @param holdTicks 加载就绪后保持多少 tick。逾时自动释放
+     *
+     * 调用线程：任意线程（内部自动投递到主线程处理 chunk 加载）
+     */
+    fun scheduleTerrain(chunkPos: ChunkPos, yRange: IntRange, delayTicks: Int, holdTicks: Int) {
+        val currentTick = physicsLevel.tickCount
+        val expireTick = currentTick + delayTicks + holdTicks
+
+        // 合并最晚过期时间
+        chunkExpireTicks.merge(chunkPos, expireTick) { old, new -> maxOf(old, new) }
+
+        // 提交去重延迟加载任务（同 chunk 最多一个触发任务）
+        val key = TERRAIN_LOAD_KEY_PREFIX + chunkPos
+        physicsLevel.mcLevel.submitDelayedTask(key, PPhase.ALL, delayTicks) {
+            loadAndActivateChunkTerrain(chunkPos, yRange)
+        }
+    }
+
+    /**
+     * 取消对某区块的自动释放调度。
+     * 从过期追踪中移除该 chunk，后续由 MC 自身的区块卸载机制处理。
+     *
+     * 注意：此方法不会立即释放物理区块（已在物理世界的 section 不受影响），
+     * 仅取消到期自动卸载的定时器。
+     */
+    fun cancelSchedule(chunkPos: ChunkPos) {
+        chunkExpireTicks.remove(chunkPos)
+    }
+
+    /**
+     * 检查指定区块的指定 Y 范围地形是否已就绪。
+     *
+     * @return true = 地形刚体已在物理世界中可用（已加载 + 已构建 + 已激活）
+     */
+    fun isTerrainReady(chunkPos: ChunkPos, yRange: IntRange): Boolean {
+        val physicsChunk = loadedChunks[chunkPos] ?: return false
+        for (sectionY in yRange) {
+            val section = physicsChunk.getSection(sectionY) ?: continue
+            if (!section.isActive || !section.isBuilt()) return false
+        }
+        return true
+    }
+
+    /**
+     * 每 tick 清理过期的调度请求。
+     * 在 [updateActivation] 之后调用。
+     *
+     * 释放逻辑：对已到期的 chunk，卸载其物理区块。
+     * 注意：不删除 mcLoadedChunks 中的条目（MC 自行管理）。
+     */
+    fun updateScheduledChunks() {
+        if (chunkExpireTicks.isEmpty()) return
+        val now = physicsLevel.tickCount
+        val toRelease = chunkExpireTicks.filter { (_, expire) -> now >= expire }.keys.toSet()
+        for (chunkPos in toRelease) {
+            unloadPhysicsChunk(chunkPos)
+            chunkExpireTicks.remove(chunkPos)
+        }
+    }
+
+    /**
+     * 实际执行区块的地形加载和激活（在延迟任务回调中调用）。
+     * 确保 MC 区块已加载 → 构建 PhysicsChunk → 激活指定 section 范围。
+     */
+    private fun loadAndActivateChunkTerrain(chunkPos: ChunkPos, yRange: IntRange) {
+        val serverLevel = physicsLevel.mcLevel as? ServerLevel ?: return
+        // 确保 MC 区块已加载
+        val mcChunk = serverLevel.getChunk(chunkPos.x, chunkPos.z) as? LevelChunk ?: return
+
+        // 确保 mcLoadedChunks 中有记录
+        if (chunkPos !in mcLoadedChunks) {
+            mcLoadedChunks[chunkPos] = mcChunk
+            // 同时计算高程索引（如果还没有）
+            if (!chunkHeightIndex.hasChunk(chunkPos)) {
+                chunkHeightIndex.computeAndPut(mcChunk, physicsLevel.mcLevel)
+            }
+        }
+
+        // 如果物理区块尚未构建，则构建
+        if (chunkPos !in loadedChunks) {
+            val physicsChunk = PhysicsChunk(chunkPos, physicsLevel, mcChunk)
+            physicsChunk.load()
+            loadedChunks[chunkPos] = physicsChunk
+        }
+
+        // 激活指定 section 范围
+        val physicsChunk = loadedChunks[chunkPos] ?: return
+        physicsChunk.activateSectionsInRanges(listOf(yRange))
     }
 
     /**
@@ -386,7 +555,7 @@ class PhysicsChunkManager(
      */
     fun getStats(): String {
         return "物理区块: ${loadedChunks.size}, Section总数: $totalSections, " +
-                "活跃Section: $activeSections"
+                "活跃Section: $activeSections, 索引Chunk数: ${chunkHeightIndex.size}"
     }
 
     /**
@@ -400,6 +569,8 @@ class PhysicsChunkManager(
         terrainBuilderScope.cancel()
         (terrainBuilderExecutor.executor as? ExecutorService)?.shutdownNow()
 
+        // 清空调度状态
+        chunkExpireTicks.clear()
     }
 
     /**
