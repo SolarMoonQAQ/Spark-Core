@@ -4,6 +4,8 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.sound.SoundData
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import net.minecraft.client.sounds.JOrbisAudioStream
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.packs.PackType
@@ -24,6 +26,8 @@ class SoundModule : SparkPackModule {
         val generatedSounds: ConcurrentMap<ResourceLocation, SoundData> = ConcurrentHashMap()
 
         private var oggCount = 0
+        private var soundsJsonCount = 0
+
         @JvmStatic
         fun getSound(location: ResourceLocation): SoundData? {
             return sounds[location]?: generatedSounds[location]
@@ -40,12 +44,17 @@ class SoundModule : SparkPackModule {
         }
     }
 
+    /** 收集阶段暂存：namespace:sounds.json -> 多个内容包提供的原始字节（按依赖顺序排列） */
+    private val collectedSoundsJson: MutableMap<ResourceLocation, MutableList<ByteArray>> = HashMap()
+
     override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
         if ((fromServer && isClientSide) || (!fromServer && !isClientSide)) return
         if (isClientSide) {
             sounds.clear()
             generatedSounds.clear()
             oggCount = 0
+            soundsJsonCount = 0
+            collectedSoundsJson.clear()
             SparkCore.LOGGER.info("开始注册外部包自定义音效资源…")
         }
     }
@@ -82,11 +91,11 @@ class SoundModule : SparkPackModule {
             }
 
             fileName == "sounds.json" -> {
-                SparkPackLoaderApplier.CLIENT_PACK.put(
-                    PackType.CLIENT_RESOURCES,
-                    ResourceLocation.fromNamespaceAndPath(namespace, fileName),
-                    content
-                )
+                val location = ResourceLocation.fromNamespaceAndPath(namespace, fileName)
+                // 先收集所有原始内容，在 onFinish 中跨包合并后统一注入
+                // 避免不同内容包使用相同 namespace 时直接覆盖整个文件
+                collectedSoundsJson.getOrPut(location) { ArrayList() }.add(content)
+                soundsJsonCount++
             }
         }
     }
@@ -94,7 +103,23 @@ class SoundModule : SparkPackModule {
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (FMLEnvironment.dist.isClient) {
-            SparkCore.LOGGER.info("从外部包注册了{}种自定义音效资源", oggCount)
+            // 合并同 namespace:sounds.json 的多个内容包贡献
+            // 合并策略：同名音效事件键后者覆盖前者，不同名键全部保留
+            for ((location, contents) in collectedSoundsJson) {
+                val merged = JsonObject()
+                for (content in contents) {
+                    val json = JsonParser.parseString(content.decodeToString()).asJsonObject
+                    for ((key, value) in json.entrySet()) {
+                        merged.add(key, value)
+                    }
+                }
+                SparkPackLoaderApplier.CLIENT_PACK.put(
+                    PackType.CLIENT_RESOURCES,
+                    location,
+                    merged.toString().toByteArray()
+                )
+            }
+            SparkCore.LOGGER.info("从外部包注册了{}种自定义音效资源，{}个sounds.json", oggCount, soundsJsonCount)
         }
     }
 
