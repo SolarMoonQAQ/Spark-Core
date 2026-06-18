@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.AABB;
@@ -332,9 +333,34 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
 
     @Nullable
     public SoundBuffer getSoundBuffer() {
-        SoundData soundData = SoundModule.getSound(getSoundEvent().getLocation());
+        ResourceLocation location = getSoundEvent().getLocation();
+        SoundData soundData = null;
+
+        // ★ 车内/车外音效差异化：依次查找 _interior 后缀变体
+        if (ISoundSpreader != null) {
+            var cameraEntity = Minecraft.getInstance().getCameraEntity();
+            boolean isFirstPerson = Minecraft.getInstance().options.getCameraType().isFirstPerson();
+            if (ISoundSpreader.shouldApplyInteriorEffect(cameraEntity, getSoundEvent(), isFirstPerson)) {
+                ResourceLocation interiorLoc = ResourceLocation.fromNamespaceAndPath(
+                        location.getNamespace(), location.getPath() + "_interior");
+                // 1. 先查 SoundModule 内的车内变体
+                soundData = SoundModule.getSound(interiorLoc);
+                // 2. 回退到原版 SoundManager 的车内变体
+                if (soundData == null) {
+                    SoundBuffer interiorBuffer = SpreadingSoundHelper.INSTANCE.getSoundBuffer(interiorLoc);
+                    if (interiorBuffer != null) return interiorBuffer;
+                }
+            }
+        }
+
+        // 3. 回退到 SoundModule 内的通用版本
         if (soundData == null) {
-            return SpreadingSoundHelper.INSTANCE.getSoundBuffer(getSoundEvent().getLocation());
+            soundData = SoundModule.getSound(location);
+        }
+
+        // 4. 最终回退：原版 SoundManager 的通用版本
+        if (soundData == null) {
+            return SpreadingSoundHelper.INSTANCE.getSoundBuffer(location);
         }
 
         AudioFormat rawFormat = soundData.audioFormat();

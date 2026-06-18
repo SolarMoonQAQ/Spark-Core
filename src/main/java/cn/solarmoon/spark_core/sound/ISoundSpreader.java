@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.sound;
 import cn.solarmoon.spark_core.SparkCore;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -109,6 +110,28 @@ public interface ISoundSpreader {
      */
     default float getVolume(UUID uuid, SoundEvent event) {
         return 1.0f;
+    }
+
+    /**
+     * 判断是否应对当前收听者应用"内部"音效变体。
+     *
+     * <p>由 {@link SpreadingSoundInstance#getSoundBuffer()} 在解析音频 buffer 前调用，
+     * 传入当前收听者实体和摄像机模式。若返回 true，音效系统会优先查找
+     * 带 {@code _interior} 后缀的音效变体（如 {@code engine_idle_interior}），
+     * 找不到时回退为通用版本。</p>
+     *
+     * <p>典型用途：车辆模组中，第一人称且玩家在载具内时返回 true，
+     * 第三人称或玩家在车外时返回 false。</p>
+     *
+     * <p>所有参数均为两端共有类型或原语，避免跨模组类加载问题。</p>
+     *
+     * @param listener      当前收听者实体（客户端摄像机附着实体），可能为 null
+     * @param event         当前播放的声音事件
+     * @param isFirstPerson 摄像机是否处于第一人称模式
+     * @return true 表示应尝试使用 _interior 音效变体
+     */
+    default boolean shouldApplyInteriorEffect(@Nullable Entity listener, SoundEvent event, boolean isFirstPerson) {
+        return false;
     }
 
     /**
