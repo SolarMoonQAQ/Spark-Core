@@ -6,7 +6,12 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.serialization") version "2.2.20"
     id("com.vanniktech.maven.publish") version "0.34.0"
+    // ★ Shadow：将 GraalJS 的 org.graalvm 包重定位，避免与 GraalVM JDK 内置模块冲突
+    // 使用 8.3.x 以兼容 Gradle 8.9（9.x 要求 Gradle 9.0+）
+    id("com.gradleup.shadow") version "8.3.11"
 }
+
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 val mod_version: String by project
 val mod_group_id: String by project
@@ -138,8 +143,54 @@ kotlin {
     }
 }
 
-tasks.jar {
+// ==========================================
+// ShadowJar：将 GraalJS 包名重定位以解决与 GraalVM JDK 的模块冲突
+// 当玩家使用 GraalVM 作为运行 JVM 时，JDK 自带的 org.graalvm.* 模块会与
+// 内嵌的 GraalJS jar 发生模块名冲突。通过 Shadow relocate 将所有 org.graalvm
+// 包移至 cn.solarmoon.spark_core.shadow.org.graalvm 下彻底消除冲突。
+// ==========================================
+val shadowPrefix = "cn.solarmoon.spark_core.shadow"
+val graaljsForShadow by configurations.creating {
+    isTransitive = false
+}
+
+tasks.named<Jar>("jar") {
+    archiveClassifier.set("slim")          // 原始 jar 改名为 slim（无 GraalJS 依赖）
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.named<ShadowJar>("shadowJar") {
+    archiveClassifier.set("")              // shadowJar 作为最终分发的 mod jar
+    dependsOn(tasks.jar)                   // 先等 slim jar 构建完成
+
+    // 以 slim jar 为基底（包含主源码 + jarJar 依赖如 extlibs），再合并 GraalJS
+    from(zipTree(tasks.jar.get().archiveFile))
+    configurations = listOf(graaljsForShadow)
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // 去除签名文件、module-info（含多版本 jar 中的），避免模块层冲突
+    exclude(
+        "META-INF/INDEX.LIST",
+        "META-INF/*.SF",
+        "META-INF/*.DSA",
+        "META-INF/*.RSA",
+        "module-info.class",
+        "META-INF/versions/*/module-info.class"
+    )
+    mergeServiceFiles()
+
+    // ★ 核心：将所有 GraalVM 相关包重定位到内部命名空间
+    // org.graalvm.* — GraalVM SDK / Polyglot / Truffle 主包
+    relocate("org.graalvm", "$shadowPrefix.org.graalvm")
+    // com.oracle.svm.* — nativeimage 模块（与 GraalVM JDK 的 org.graalvm.nativeimage 冲突）
+    relocate("com.oracle.svm", "$shadowPrefix.com.oracle.svm")
+    // com.oracle.truffle.* — Truffle 语言框架内部包（与 GraalVM JDK 的 org.graalvm.truffle 冲突）
+    relocate("com.oracle.truffle", "$shadowPrefix.com.oracle.truffle")
+}
+
+tasks.named("assemble") {
+    dependsOn("shadowJar")
 }
 
 tasks.register<JavaExec>("generateJSDocs") {
@@ -202,14 +253,18 @@ dependencies {
     compileOnly("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
 
     // 外部库 ------------------------------------------------------------------------------------------------------------
-    // ModDev's jarJar configuration is non-transitive, so GraalJS runtime jars are listed explicitly.
+    // GraalJS：编译期用原始坐标；ShadowJar 通过 graaljsForShadow 配置合并并重定位；
+    // 开发环境仍通过 additionalRuntimeClasspath 使用原始模块（classpath 不触发模块检核）。
     graaljsJarJarModules.forEach { module ->
-        api(module) {
+        implementation(module) {
             version {
                 strictly(graaljsJarJarVersionRange)
                 prefer(graaljsVersion)
             }
-        }.let { jarJar(it) }
+        }
+    }
+    graaljsJarJarModules.forEach { module ->
+        graaljsForShadow("$module:$graaljsVersion")
     }
     graaljsJarJarModules.forEach { module ->
         additionalRuntimeClasspath("$module:$graaljsVersion")

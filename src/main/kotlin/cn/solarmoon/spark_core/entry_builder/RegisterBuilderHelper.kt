@@ -16,7 +16,11 @@ import net.neoforged.neoforge.registries.DeferredRegister
 
 fun <M, N: M> DeferredRegister<M>.toCommonBuilder() = CommonRegisterBuilder<M, N>(this)
 
-fun <O: ParticleOptions> RegisterBuilder<ParticleType<*>, ParticleType<O>>.createWithCodec(ignoreDistance: Boolean, codec: (ParticleType<O>) -> MapCodec<O>, streamCodec: (ParticleType<O>) -> StreamCodec<in RegistryFriendlyByteBuf, O>) =
+fun <O: ParticleOptions> createWithCodec(
+    ignoreDistance: Boolean,
+    codec: (ParticleType<O>) -> MapCodec<O>,
+    streamCodec: (ParticleType<O>) -> StreamCodec<in RegistryFriendlyByteBuf, O>
+) =
     object: ParticleType<O>(ignoreDistance) {
         override fun codec(): MapCodec<O> = codec(this)
 
@@ -25,8 +29,8 @@ fun <O: ParticleOptions> RegisterBuilder<ParticleType<*>, ParticleType<O>>.creat
 
 fun <R: Recipe<*>> RegisterBuilder<RecipeType<*>, RecipeType<R>>.simpleType() = RecipeType.simple<R>(ResourceLocation.fromNamespaceAndPath(modId, id))
 
-fun <D> RegisterBuilder<DataComponentType<*>, DataComponentType<D>>.dataComponentBuilder(builder: DataComponentType.Builder<D>.() -> Unit) =
-    { DataComponentType.Builder<D>().also { builder(it) }.build() }
+fun <D> dataComponentBuilder(builder: DataComponentType.Builder<D>.() -> Unit) =
+    { -> DataComponentType.Builder<D>().also { builder(it) }.build() }
 
 fun <E: Entity> RegisterBuilder<EntityType<*>, EntityType<E>>.entityTypeBuilder(factory: EntityType.EntityFactory<E>, category: MobCategory, builder: EntityType.Builder<E>.() -> Unit = {}) =
-    { EntityType.Builder.of(factory, category).also { builder(it) }.build(id) }
+    { -> EntityType.Builder.of(factory, category).also { builder(it) }.build(id) }

@@ -81,6 +81,11 @@ object SoundHelper {
         }
     }
 
+    @JvmStatic
+    fun toSoundData(doubleArray: DoubleArray): SoundData {
+        return doubleArray.toSoundData()
+    }
+
 }
 
 /**
