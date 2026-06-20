@@ -42,4 +42,9 @@ public class ServerParticleEffectPlayer implements IParticleEffectPlayer {
     public void stopEffect(Level level, UUID effectInstanceId) {
         // TODO: 发送 ParticleEffectStopPacket
     }
+
+    @Override
+    public void setTexture(Level level, UUID effectInstanceId, ResourceLocation texture) {
+        // 服务端暂不支持动态换贴图，后续可通过网络包同步到客户端
+    }
 }

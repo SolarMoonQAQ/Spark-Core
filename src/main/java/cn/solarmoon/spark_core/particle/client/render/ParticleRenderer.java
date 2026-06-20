@@ -35,7 +35,7 @@ public class ParticleRenderer {
         int count = buf.getCount();
         if (count == 0) return;
 
-        ResourceLocation texture = emitter.getDefinition().getDescription().getTexture();
+        ResourceLocation texture = emitter.getTexture();
         String material = emitter.getDefinition().getDescription().getMaterial();
         BillboardMode mode = emitter.getDefinition().getParticlePreset().getFaceCameraMode();
 

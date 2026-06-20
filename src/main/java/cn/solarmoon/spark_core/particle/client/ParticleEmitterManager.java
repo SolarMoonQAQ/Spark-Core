@@ -1,7 +1,9 @@
 package cn.solarmoon.spark_core.particle.client;
 
 import cn.solarmoon.spark_core.SparkCore;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,30 @@ public class ParticleEmitterManager {
      */
     public void remove(UUID instanceId) {
         pendingRemove.offer(instanceId);
+    }
+
+    /**
+     * 按 UUID 查找活跃发射器。
+     *
+     * @return 发射器实例，未找到时返回 null
+     */
+    @Nullable
+    public ParticleEmitterInstance getEmitter(UUID instanceId) {
+        return emitters.get(instanceId);
+    }
+
+    /**
+     * 动态修改指定发射器的运行时贴图。
+     * 在发射器存活期间可多次调用切换贴图。
+     *
+     * @param instanceId 发射器实例 UUID
+     * @param texture    新的贴图路径
+     */
+    public void setTexture(UUID instanceId, ResourceLocation texture) {
+        ParticleEmitterInstance emitter = emitters.get(instanceId);
+        if (emitter != null) {
+            emitter.setTexture(texture);
+        }
     }
 
     /**

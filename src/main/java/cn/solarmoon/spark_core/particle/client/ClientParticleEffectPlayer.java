@@ -82,4 +82,9 @@ public class ClientParticleEffectPlayer implements IParticleEffectPlayer {
     public void stopEffect(Level level, UUID effectInstanceId) {
         ParticleEmitterManager.getInstance().remove(effectInstanceId);
     }
+
+    @Override
+    public void setTexture(Level level, UUID effectInstanceId, ResourceLocation texture) {
+        ParticleEmitterManager.getInstance().setTexture(effectInstanceId, texture);
+    }
 }

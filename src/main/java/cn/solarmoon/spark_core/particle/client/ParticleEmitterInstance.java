@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.particle.common.data.IParticleComponent;
 import cn.solarmoon.spark_core.particle.common.data.EmitterPreset;
 import cn.solarmoon.spark_core.particle.common.data.ParticlePreset;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeLooping;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -47,6 +48,9 @@ public class ParticleEmitterInstance {
     private final Matrix4f transform = new Matrix4f();
     private boolean bindToActor = false;
 
+    /** 运行时贴图，构造时默认取 JSON 定义中的贴图，外部可随时修改实现动态换贴图 */
+    private ResourceLocation texture;
+
     // 发射器发射速率累加器
     private float spawnAccumulator = 0;
     private boolean instantFired = false; // EmitterRateInstant 是否已触发
@@ -84,6 +88,7 @@ public class ParticleEmitterInstance {
         this.molang = new ParticleMolangEnvironment();
         this.curveEvaluator = new CurveEvaluator(definition.getCurves(), molang);
         this.eventExecutor = new EventExecutor(molang, this, level);
+        this.texture = definition.getDescription().getTexture(); // 默认取 JSON 定义的贴图
 
         // 创建运行时组件
         EmitterPreset emitterPreset = definition.getEmitterPreset();
@@ -441,6 +446,21 @@ public class ParticleEmitterInstance {
 
     public void setBindToActor(boolean bind) { this.bindToActor = bind; }
     public boolean isBindToActor() { return bindToActor; }
+
+    // ====== 运行时贴图 ======
+
+    /**
+     * 设置运行时贴图，后续所有粒子将使用此贴图渲染。
+     * 可用于实现动态换贴图（如将粒子贴图改为命中方块的贴图）。
+     */
+    public void setTexture(ResourceLocation texture) {
+        this.texture = texture;
+    }
+
+    /** 获取当前运行时贴图。 */
+    public ResourceLocation getTexture() {
+        return texture;
+    }
 
     /** 获取发射器速度（方块/秒）。*/
     public Vec3 getVelocity() { return velocity; }

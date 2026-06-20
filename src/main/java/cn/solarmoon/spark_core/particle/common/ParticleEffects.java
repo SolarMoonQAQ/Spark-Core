@@ -71,4 +71,12 @@ public class ParticleEffects {
     public static void stop(Level level, UUID effectInstanceId) {
         INSTANCE.stopEffect(level, effectInstanceId);
     }
+
+    /**
+     * 动态修改指定发射器实例的运行时贴图，双端可用。
+     * 在发射器存活期间可多次调用切换贴图，下一帧生效。
+     */
+    public static void setTexture(Level level, UUID effectInstanceId, ResourceLocation texture) {
+        INSTANCE.setTexture(level, effectInstanceId, texture);
+    }
 }

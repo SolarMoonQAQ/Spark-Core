@@ -59,4 +59,15 @@ public interface IParticleEffectPlayer {
      * @param effectInstanceId 效果实例 UUID
      */
     void stopEffect(Level level, UUID effectInstanceId);
+
+    /**
+     * 动态修改指定发射器实例的运行时贴图。
+     * 在发射器存活期间可多次调用切换贴图。
+     * 服务端当前为无操作实现。
+     *
+     * @param level            维度
+     * @param effectInstanceId 效果实例 UUID
+     * @param texture          新的贴图路径
+     */
+    void setTexture(Level level, UUID effectInstanceId, ResourceLocation texture);
 }
