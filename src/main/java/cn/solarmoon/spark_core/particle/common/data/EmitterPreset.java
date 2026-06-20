@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.particle.common.data;
 
+import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeEvents;
 import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
 import org.jetbrains.annotations.Nullable;
 
@@ -67,4 +68,15 @@ public class EmitterPreset {
     @Nullable public MolangExpression getActiveTimeExpr() { return activeTimeExpr; }
     /** 瞬时发射粒子数表达式（EmitterRateInstant） */
     @Nullable public MolangExpression getNumParticlesExpr() { return numParticlesExpr; }
+
+    /**
+     * 从原始定义中查找发射器生命周期事件组件。
+     */
+    @Nullable
+    public EmitterLifetimeEvents findLifetimeEvents() {
+        for (IComponentDefinition def : definitions) {
+            if (def instanceof EmitterLifetimeEvents evts) return evts;
+        }
+        return null;
+    }
 }

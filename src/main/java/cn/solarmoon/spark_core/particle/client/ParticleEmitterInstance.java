@@ -5,8 +5,12 @@ import cn.solarmoon.spark_core.particle.common.data.IComponentDefinition;
 import cn.solarmoon.spark_core.particle.common.data.IEmitterComponent;
 import cn.solarmoon.spark_core.particle.common.data.IParticleComponent;
 import cn.solarmoon.spark_core.particle.common.data.EmitterPreset;
+import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
 import cn.solarmoon.spark_core.particle.common.data.ParticlePreset;
+import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeEvents;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeLooping;
+import cn.solarmoon.spark_core.particle.common.data.component.lifetime.ParticleLifetimeEvents;
+import cn.solarmoon.spark_core.particle.common.data.event.EventNode;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -15,6 +19,7 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector4f;
 
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,6 +81,12 @@ public class ParticleEmitterInstance {
 
     // 粒子组件列表（含 onApply 组件）
     private final List<IParticleComponent> allParticleComponents;
+
+    // ====== 事件系统追踪状态 ======
+    /** 每个粒子的时间线触发索引，key=粒子在 buf 中的 index，value=已触发到的 timeline 条目索引 */
+    private final Int2IntOpenHashMap particleTimelineTracker = new Int2IntOpenHashMap();
+    /** 发射器时间线已触发到的条目索引 */
+    private int emitterTimelineLastIndex = 0;
 
     public ParticleEmitterInstance(ParticleEffectDefinition definition) {
         this(definition, null);
@@ -168,10 +179,13 @@ public class ParticleEmitterInstance {
         // 9. swap
         doubleBuffer.swap();
 
-        // 10. 更新发射器年龄
+        // 10. 触发发射器时间线事件
+        fireEmitterTimeline();
+
+        // 11. 更新发射器年龄
         emitterAge += tickDt;
 
-        // 11. 检查发射器过期
+        // 12. 检查发射器过期
         checkEmitterLifetime();
     }
 
@@ -233,6 +247,24 @@ public class ParticleEmitterInstance {
             // 新粒子立即同步 prevPos/prevSize = 当前值，避免渲染时从默认值 lerp 导致瞬移
             buf.initPrevPos(idx);
             buf.initPrevSize(idx);
+
+            // 触发粒子创建事件
+            ParticleLifetimeEvents particleEvents = definition.getParticlePreset().findLifetimeEvents();
+            if (particleEvents != null && !particleEvents.getCreationEvent().isEmpty()) {
+                // creationEvent 可以是单个事件名或逗号分隔的多个名称
+                String[] names = particleEvents.getCreationEvent().split(",");
+                for (String name : names) {
+                    String trimmed = name.trim();
+                    if (!trimmed.isEmpty()) {
+                        // 查找 events map 中对应的事件列表并执行
+                        List<EventNode> creationNodes = definition.getEvents() != null
+                                ? definition.getEvents().get(trimmed) : null;
+                        if (creationNodes != null) {
+                            eventExecutor.execute(creationNodes, buf, idx);
+                        }
+                    }
+                }
+            }
 
         }
     }
@@ -329,9 +361,23 @@ public class ParticleEmitterInstance {
                 comp.tick(buf, i, tickDt, molang);
             }
 
+            // 触发粒子时间线事件
+            ParticleLifetimeEvents particleEvents = definition.getParticlePreset().findLifetimeEvents();
+            if (particleEvents != null && !particleEvents.getTimeline().isEmpty()) {
+                float particleAge = buf.getAge(i);
+                int lastIdx = particleTimelineTracker.getOrDefault(i, -1);
+                int newLastIdx = fireParticleTimeline(particleEvents, particleAge, lastIdx, buf, i);
+                if (newLastIdx != lastIdx) {
+                    particleTimelineTracker.put(i, newLastIdx);
+                }
+            }
+
             // 运动积分
             buf.integrateParticle(i, tickDt);
         }
+
+        // 清理已过期粒子的 timeline 追踪记录
+        particleTimelineTracker.int2IntEntrySet().removeIf(entry -> !buf.isAlive(entry.getIntKey()));
     }
 
     /**
@@ -358,6 +404,19 @@ public class ParticleEmitterInstance {
         if (activeTimeExpr != null) {
             float activeTime = (float) molang.evaluate(activeTimeExpr);
             if (emitterAge >= activeTime) {
+                // 触发发射器过期事件
+                EmitterLifetimeEvents emitterEvents = preset.findLifetimeEvents();
+                if (emitterEvents != null && !emitterEvents.getExpirationEvent().isEmpty()) {
+                    String[] names = emitterEvents.getExpirationEvent().split(",");
+                    for (String name : names) {
+                        String trimmed = name.trim();
+                        if (!trimmed.isEmpty()) {
+                            List<EventNode> nodes = definition.getEvents() != null
+                                    ? definition.getEvents().get(trimmed) : null;
+                            if (nodes != null) eventExecutor.execute(nodes);
+                        }
+                    }
+                }
                 expired = true;
             }
             return;
@@ -367,6 +426,19 @@ public class ParticleEmitterInstance {
         if (expirationExpr != null) {
             double val = molang.evaluate(expirationExpr);
             if (val > 0) {
+                // 触发发射器过期事件
+                EmitterLifetimeEvents emitterEvents = preset.findLifetimeEvents();
+                if (emitterEvents != null && !emitterEvents.getExpirationEvent().isEmpty()) {
+                    String[] names = emitterEvents.getExpirationEvent().split(",");
+                    for (String name : names) {
+                        String trimmed = name.trim();
+                        if (!trimmed.isEmpty()) {
+                            List<EventNode> nodes = definition.getEvents() != null
+                                    ? definition.getEvents().get(trimmed) : null;
+                            if (nodes != null) eventExecutor.execute(nodes);
+                        }
+                    }
+                }
                 expired = true;
             }
         }
@@ -391,6 +463,84 @@ public class ParticleEmitterInstance {
     public boolean isExpired() { return expired; }
     public void setExpired(boolean expired) { this.expired = expired; }
     public float getEmitterAge() { return emitterAge; }
+
+    // ====== 事件系统辅助方法 ======
+
+    /**
+     * 触发发射器时间线事件（在 tick 末尾调用）。
+     */
+    private void fireEmitterTimeline() {
+        EmitterLifetimeEvents emitterEvents = definition.getEmitterPreset().findLifetimeEvents();
+        if (emitterEvents == null) return;
+
+        // 触发 timeline 事件
+        if (!emitterEvents.getTimeline().isEmpty()) {
+            int idx = 0;
+            for (Map.Entry<Float, String> entry : emitterEvents.getTimeline().entrySet()) {
+                if (idx < emitterTimelineLastIndex) { idx++; continue; }
+                if (emitterAge >= entry.getKey()) {
+                    String[] names = entry.getValue().split(",");
+                    for (String name : names) {
+                        String trimmed = name.trim();
+                        if (!trimmed.isEmpty()) {
+                            List<EventNode> nodes = definition.getEvents() != null
+                                    ? definition.getEvents().get(trimmed) : null;
+                            if (nodes != null) {
+                                eventExecutor.execute(nodes);
+                            }
+                        }
+                    }
+                    emitterTimelineLastIndex = idx + 1;
+                }
+                idx++;
+            }
+        }
+
+        // 触发 travel_distance_events
+        if (!emitterEvents.getTravelDistanceEvents().isEmpty()) {
+            // travel distance events 需要追踪发射器移动距离，暂仅处理 timeline
+        }
+
+        // 触发 looping_travel_distance_events
+        if (!emitterEvents.getLoopingTravelDistanceEvents().isEmpty()) {
+            // 暂未实现循环移动距离事件
+        }
+    }
+
+    /**
+     * 触发粒子时间线事件。
+     *
+     * @param particleEvents 粒子生命周期事件定义
+     * @param particleAge    粒子当前年龄
+     * @param lastIndex      上次触发到的索引
+     * @param buf            粒子数组
+     * @param particleIndex  粒子索引
+     * @return 更新后的 lastIndex
+     */
+    private int fireParticleTimeline(ParticleLifetimeEvents particleEvents, float particleAge,
+                                     int lastIndex, ParticleArray buf, int particleIndex) {
+        if (particleEvents.getTimeline().isEmpty()) return lastIndex;
+        int idx = 0;
+        for (Map.Entry<Float, String> entry : particleEvents.getTimeline().entrySet()) {
+            if (idx <= lastIndex) { idx++; continue; }
+            if (particleAge >= entry.getKey()) {
+                String[] names = entry.getValue().split(",");
+                for (String name : names) {
+                    String trimmed = name.trim();
+                    if (!trimmed.isEmpty()) {
+                        List<EventNode> nodes = definition.getEvents() != null
+                                ? definition.getEvents().get(trimmed) : null;
+                        if (nodes != null) {
+                            eventExecutor.execute(nodes, buf, particleIndex);
+                        }
+                    }
+                }
+                lastIndex = idx;
+            }
+            idx++;
+        }
+        return lastIndex;
+    }
 
     /** 获取发射器位置（从变换矩阵提取平移分量）。 */
     public Vec3 getPosition() {

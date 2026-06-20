@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.particle.common.data.ParticlePreset.BillboardMode
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
@@ -87,6 +88,8 @@ public class ParticleRenderer {
                           MultiBufferSource buffer, Camera camera,
                           float partialTick, int light) {
         for (ParticleEmitterInstance emitter : emitters) {
+            if (!emitter.getDefinition().getParticlePreset().hasLighting()) // 不受环境光照影响则满亮度
+                light = LightTexture.FULL_BRIGHT;
             renderEmitter(emitter, pose, buffer, camera, partialTick, light);
         }
     }

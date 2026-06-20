@@ -100,8 +100,8 @@ public class ParticleEffectDeserializer {
         // 解析 curves
         Map<String, ParticleCurve> curves = parseCurves(effectObj.getAsJsonObject("curves"), molang);
 
-        // 解析 events
-        Map<String, List<EventNode>> events = parseEvents(effectObj.getAsJsonObject("events"));
+        // 解析 events（传入 molang 以预编译表达式）
+        Map<String, List<EventNode>> events = parseEvents(effectObj.getAsJsonObject("events"), molang);
 
         return new ParticleEffectDefinition(id, description, emitterPreset, particlePreset, curves, events);
     }
@@ -254,7 +254,7 @@ public class ParticleEffectDeserializer {
             }
         }
 
-        return new ParticlePreset(runtimeComponents, faceCameraMode, hasLighting);
+        return new ParticlePreset(runtimeComponents, particleDefs, faceCameraMode, hasLighting);
     }
 
     /**
@@ -322,30 +322,30 @@ public class ParticleEffectDeserializer {
         return curves;
     }
 
-    private static Map<String, List<EventNode>> parseEvents(@Nullable JsonObject eventsObj) {
+    private static Map<String, List<EventNode>> parseEvents(@Nullable JsonObject eventsObj, ParticleMolangEnvironment molang) {
         Map<String, List<EventNode>> events = new HashMap<>();
         if (eventsObj == null) return events;
 
         for (Map.Entry<String, JsonElement> entry : eventsObj.entrySet()) {
             String key = entry.getKey();
-            List<EventNode> nodes = parseEventList(entry.getValue());
+            List<EventNode> nodes = parseEventList(entry.getValue(), molang);
             events.put(key, nodes);
         }
 
         return events;
     }
 
-    private static List<EventNode> parseEventList(JsonElement element) {
+    private static List<EventNode> parseEventList(JsonElement element, ParticleMolangEnvironment molang) {
         List<EventNode> result = new ArrayList<>();
         if (element == null) return result;
 
         if (element.isJsonArray()) {
             for (JsonElement e : element.getAsJsonArray()) {
-                EventNode node = parseSingleEvent(e);
+                EventNode node = parseSingleEvent(e, molang);
                 if (node != null) result.add(node);
             }
         } else if (element.isJsonObject()) {
-            EventNode node = parseSingleEvent(element);
+            EventNode node = parseSingleEvent(element, molang);
             if (node != null) result.add(node);
         }
 
@@ -353,15 +353,22 @@ public class ParticleEffectDeserializer {
     }
 
     @Nullable
-    private static EventNode parseSingleEvent(JsonElement element) {
+    private static EventNode parseSingleEvent(JsonElement element, ParticleMolangEnvironment molang) {
         if (!element.isJsonObject()) return null;
         JsonObject obj = element.getAsJsonObject();
 
         if (obj.has("particle_effect")) {
             JsonObject pe = obj.getAsJsonObject("particle_effect");
             String effect = GSON.fromJson(pe.get("effect"), String.class);
+            EventNode.ParticleEffectType type = EventNode.ParticleEffectType.EMITTER;
+            if (pe.has("type")) {
+                type = EventNode.ParticleEffectType.fromString(pe.get("type").getAsString());
+            }
             String preEffectExpr = GSON.fromJson(pe.get("pre_effect_expression"), String.class);
-            return new EventNode.ParticleEffectEvent(effect, preEffectExpr);
+            // 预编译前置表达式
+            var compiledPreEffect = (preEffectExpr != null && !preEffectExpr.isEmpty())
+                    ? molang.compile(preEffectExpr) : null;
+            return new EventNode.ParticleEffectEvent(effect, type, preEffectExpr, compiledPreEffect);
         }
 
         if (obj.has("sound_effect")) {
@@ -372,7 +379,7 @@ public class ParticleEffectDeserializer {
 
         if (obj.has("sequence")) {
             JsonArray seqArr = obj.getAsJsonArray("sequence");
-            List<EventNode> seq = parseEventList(seqArr);
+            List<EventNode> seq = parseEventList(seqArr, molang);
             return new EventNode.SequenceEvent(seq);
         }
 
@@ -383,7 +390,7 @@ public class ParticleEffectDeserializer {
             for (JsonElement re : randArr) {
                 if (re.isJsonObject()) {
                     JsonObject reObj = re.getAsJsonObject();
-                    EventNode node = parseSingleEvent(reObj);
+                    EventNode node = parseSingleEvent(reObj, molang);
                     if (node != null) {
                         randEvents.add(node);
                         float weight = GSON.fromJson(reObj.get("weight"), float.class);
@@ -396,7 +403,9 @@ public class ParticleEffectDeserializer {
 
         if (obj.has("expression")) {
             String expr = GSON.fromJson(obj.get("expression"), String.class);
-            return new EventNode.ExpressionEvent(expr);
+            // 预编译表达式事件
+            var compiled = (expr != null && !expr.isEmpty()) ? molang.compile(expr) : null;
+            return new EventNode.ExpressionEvent(expr, compiled);
         }
 
         if (obj.has("log")) {
