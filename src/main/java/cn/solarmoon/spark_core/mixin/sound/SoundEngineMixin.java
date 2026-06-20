@@ -124,7 +124,8 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
     public SoundBuffer spark_core$getSoundBuffer(ResourceLocation location) {
         var sound = soundBuffers.getCompleteBuffer(location);
         try {
-            return sound.getNow(null);
+            // 使用 join() 阻塞等待而非 getNow(null)，确保首次播放时异步加载的音效缓冲区已就绪
+            return sound.join();
         } catch (Exception ignored) {
             return null;
         }
