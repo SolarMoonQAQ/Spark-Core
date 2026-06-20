@@ -40,13 +40,12 @@ public class ParticleVisualEffectRenderer extends VisualEffectRenderer {
     }
 
     /**
-     * 指定渲染阶段为 AFTER_ENTITIES。
-     * 粒子是实体级别的特效，应在所有实体渲染完成后、透明粒子/拖尾之前渲染。
+     * 指定渲染阶段为 AFTER_PARTICLES。
      */
     @Nullable
     @Override
     public RenderLevelStageEvent.Stage getRenderStage() {
-        return RenderLevelStageEvent.Stage.AFTER_ENTITIES;
+        return RenderLevelStageEvent.Stage.AFTER_PARTICLES;
     }
 
     /**
@@ -76,5 +75,11 @@ public class ParticleVisualEffectRenderer extends VisualEffectRenderer {
         renderer.renderAll(emitters, pose, bufferSource, camera, partialTicks, light);
 
         pose.popPose();
+
+        // 显式提交缓冲区。
+        // ADDITIVE_TRANSPARENCY 在 BufferSource 中属于非 translucent 阶段的 phase，
+        // 若不手动 endBatch，渲染会推迟到 LevelRenderer 后续步骤（天气/云）之后才提交，
+        // 届时 GL 状态已被修改，导致深度测试行为异常，粒子永远被实体遮挡。
+        ((MultiBufferSource.BufferSource)bufferSource).endBatch();
     }
 }
