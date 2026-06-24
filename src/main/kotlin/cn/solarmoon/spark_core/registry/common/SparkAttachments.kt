@@ -21,12 +21,16 @@ object SparkAttachments {
         id = "chunk_solid_intervals"
         factory = { mutableMapOf<Long, ShortArray>() }
         // 使用自定义 Codec（委托给 MapCodec 包装为 field-of）
-        serializer = Codec.unboundedMap<Long, ShortArray>(Codec.LONG, Codec.SHORT.listOf().xmap(
-            { list -> ShortArray(list.size) { i -> list[i] } },
-            { arr -> arr.toList() }
-        )).xmap(
-            { it.toMutableMap() },
-            { it.toMap() }
+        // 使用 String 作为中间 key 类型，因为 NBT 序列化要求 key 必须是字符串
+        serializer = Codec.unboundedMap<String, ShortArray>(
+            Codec.STRING,
+            Codec.SHORT.listOf().xmap(
+                { list -> ShortArray(list.size) { i -> list[i] } },
+                { arr -> arr.toList() }
+            )
+        ).xmap(
+            { it.mapKeys { entry -> entry.key.toLong() }.toMutableMap() },
+            { it.mapKeys { entry -> entry.key.toString() } }
         )
         // 仅在非空时才序列化
         shouldSerialize = { it.isNotEmpty() }
