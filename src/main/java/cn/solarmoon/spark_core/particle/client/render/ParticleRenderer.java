@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.particle.client.render;
 
 import cn.solarmoon.spark_core.particle.client.ParticleArray;
 import cn.solarmoon.spark_core.particle.client.ParticleDoubleBuffer;
-import cn.solarmoon.spark_core.particle.client.ParticleEmitterInstance;
+import cn.solarmoon.spark_core.particle.common.ParticleEmitterInstance;
 import cn.solarmoon.spark_core.particle.common.data.ParticlePreset.BillboardMode;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

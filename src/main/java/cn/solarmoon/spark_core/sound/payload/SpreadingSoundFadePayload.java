@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.sound.payload;
 
 import cn.solarmoon.spark_core.SparkCore;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

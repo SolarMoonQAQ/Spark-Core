@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.particle.client;
 
+import cn.solarmoon.spark_core.particle.common.ParticleEmitterInstance;
 import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
 import cn.solarmoon.spark_core.particle.common.data.event.EventNode;
 import cn.solarmoon.spark_core.molang.runtime.MolangExpression;

@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.sound;
 
 import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.pack.modules.SoundModule;
 import cn.solarmoon.spark_core.registry.common.SparkSounds;
 import com.mojang.blaze3d.audio.SoundBuffer;

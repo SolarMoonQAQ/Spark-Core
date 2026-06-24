@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.particle.client;
 
-import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.particle.common.ParticleEmitterInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;

@@ -1,6 +1,6 @@
 package cn.solarmoon.spark_core.particle.client.render;
 
-import cn.solarmoon.spark_core.particle.client.ParticleEmitterInstance;
+import cn.solarmoon.spark_core.particle.common.ParticleEmitterInstance;
 import cn.solarmoon.spark_core.particle.client.ParticleEmitterManager;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;

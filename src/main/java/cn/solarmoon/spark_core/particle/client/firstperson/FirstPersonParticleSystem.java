@@ -1,16 +1,12 @@
 package cn.solarmoon.spark_core.particle.client.firstperson;
 
-import cn.solarmoon.spark_core.particle.client.ParticleArray;
-import cn.solarmoon.spark_core.particle.client.ParticleDoubleBuffer;
-import cn.solarmoon.spark_core.particle.client.ParticleEmitterInstance;
-import cn.solarmoon.spark_core.particle.client.ParticleEmitterManager;
+import cn.solarmoon.spark_core.particle.common.ParticleEmitterInstance;
 import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.util.Map;
 import java.util.UUID;

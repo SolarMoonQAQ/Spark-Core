@@ -68,7 +68,7 @@
   - `cn.solarmoon.spark_core.sound.SpreadingSoundInstance` — 传播音效实例（SoundInstance 实现）
   - `cn.solarmoon.spark_core.sound.SoundData` — 音效数据封装
   - `cn.solarmoon.spark_core.sound.SoundSourcePoint` — 声源点数据（位置、速度、音高、音量、传播距离）
-  - `cn.solarmoon.spark_core.sound.SpreadingSoundHelper` — 传播音效工具类
+  - `cn.solarmoon.spark_core.api.SpreadingSoundHelper` — 传播音效工具类
   - `cn.solarmoon.spark_core.sound.ClientSpreadingSoundPlayer` — 客户端传播音效播放器
   - `cn.solarmoon.spark_core.sound.ServerSpreadingSoundPlayer` — 服务端传播音效播放器
   - `cn.solarmoon.spark_core.sound.payload.SpreadingSoundPayload` — 传播音效网络包

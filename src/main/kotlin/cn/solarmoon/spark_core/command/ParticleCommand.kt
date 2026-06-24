@@ -2,7 +2,7 @@ package cn.solarmoon.spark_core.command
 
 import cn.solarmoon.spark_core.particle.client.ParticleDefinitionLoader
 import cn.solarmoon.spark_core.particle.client.ParticleEmitterManager
-import cn.solarmoon.spark_core.particle.common.ParticleEffects
+import cn.solarmoon.spark_core.api.ParticleEffects
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.FloatArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType

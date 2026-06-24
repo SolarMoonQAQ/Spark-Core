@@ -1,7 +1,8 @@
-package cn.solarmoon.spark_core.particle.common;
+package cn.solarmoon.spark_core.api;
 
 import cn.solarmoon.spark_core.particle.client.ClientParticleEffectPlayer;
 import cn.solarmoon.spark_core.particle.client.ServerParticleEffectPlayer;
+import cn.solarmoon.spark_core.particle.common.IParticleEffectPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;

@@ -1,11 +1,11 @@
-package cn.solarmoon.spark_core.particle.client;
+package cn.solarmoon.spark_core.particle.common;
 
+import cn.solarmoon.spark_core.particle.client.*;
 import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
 import cn.solarmoon.spark_core.particle.common.data.IComponentDefinition;
 import cn.solarmoon.spark_core.particle.common.data.IEmitterComponent;
 import cn.solarmoon.spark_core.particle.common.data.IParticleComponent;
 import cn.solarmoon.spark_core.particle.common.data.EmitterPreset;
-import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
 import cn.solarmoon.spark_core.particle.common.data.ParticlePreset;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeEvents;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeLooping;

@@ -1,5 +1,9 @@
-package cn.solarmoon.spark_core.sound;
+package cn.solarmoon.spark_core.api;
 
+import cn.solarmoon.spark_core.sound.ClientSpreadingSoundPlayer;
+import cn.solarmoon.spark_core.sound.ISoundSpreader;
+import cn.solarmoon.spark_core.sound.ISpreadingSoundPlayer;
+import cn.solarmoon.spark_core.sound.ServerSpreadingSoundPlayer;
 import com.mojang.blaze3d.audio.SoundBuffer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
