@@ -114,10 +114,10 @@ public final class SparkLevel {
      * <p>同一 phase + key 会覆盖旧的延迟任务（去重）。</p>
      * <p>Same phase + key will overwrite the previous delayed task (dedup).</p>
      *
-     * @param key       任务唯一标识 / task unique key for dedup
-     * @param phase     任务执行阶段 / task execution phase
+     * @param key        任务唯一标识 / task unique key for dedup
+     * @param phase      任务执行阶段 / task execution phase
      * @param delayTicks 延迟 tick 数 / delay in ticks (processTasks calls)
-     * @param task      要执行的任务 / task to run
+     * @param task       要执行的任务 / task to run
      */
     public static void submitDelayedTask(
             @NotNull Level level,
@@ -138,10 +138,10 @@ public final class SparkLevel {
      * <p>提交一个非去重延迟任务，每次调用均新增，互不覆盖。</p>
      * <p>Submit a non-deduplicated delayed task; each call adds a new independent task.</p>
      *
-     * @param level     目标 Level / target level
-     * @param phase     任务执行阶段 / task execution phase
+     * @param level      目标 Level / target level
+     * @param phase      任务执行阶段 / task execution phase
      * @param delayTicks 延迟 tick 数 / delay in ticks (processTasks calls)
-     * @param task      要执行的任务 / task to run
+     * @param task       要执行的任务 / task to run
      */
     public static void submitDelayedTask(
             @NotNull Level level,
@@ -286,15 +286,15 @@ public final class SparkLevel {
         int minSecY = SectionPos.blockToSectionCoord((int) yMin);
         int maxSecY = SectionPos.blockToSectionCoord((int) yMax);
         var yRange = new kotlin.ranges.IntRange(minSecY, maxSecY);
-        // 延迟由 API 层处理，scheduleTerrain 内部只负责立即添加 ticket + 构建激活
+        // ★ 使用 PPhase.POST 而非 PPhase.ALL，确保 addRegionTicket 在 ChunkMap.tick() 之后执行
+        // 避免在 ChunkMap.tick() 迭代 entityMap 时因内部数据结构被修改而导致 NPE
         if (delayTicks <= 0) {
-            submitImmediateTask(level, PPhase.ALL, () ->
-                mgr.scheduleTerrain(chunkPos, yRange, holdTicks)
+            submitImmediateTask(level, PPhase.POST, () ->
+                    mgr.scheduleTerrain(chunkPos, yRange, holdTicks)
             );
         } else {
-            ((TaskSubmitOffice) level).submitDelayedTask(
-                "terrain_api_" + chunkPos, PPhase.ALL, delayTicks,
-                () -> { mgr.scheduleTerrain(chunkPos, yRange, holdTicks); return null; }
+            submitDelayedTask(level, "terrain_api_" + chunkPos, PPhase.POST, delayTicks, () ->
+                    mgr.scheduleTerrain(chunkPos, yRange, holdTicks)
             );
         }
     }

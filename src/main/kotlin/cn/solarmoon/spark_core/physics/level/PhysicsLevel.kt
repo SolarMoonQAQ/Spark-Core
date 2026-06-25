@@ -253,6 +253,7 @@ abstract class PhysicsLevel(
         }
 
         // 统一更新地形
+        terrainManager.processPendingBuildRequests() // ★ API 预约请求先消费（确保物理线程 IDLE 时构建）
         terrainManager.updateWeatherSlipIfNeeded()
         terrainManager.updateDirtySections()
         terrainManager.updateBuild(buildBoxes)

@@ -93,6 +93,14 @@ class PhysicsChunkManager(
      */
     private val terrainActivationRanges = ConcurrentHashMap<ChunkPos, MutableSet<IntRange>>()
 
+    /**
+     * API 强制路径缓存的地形构建请求。
+     * scheduleTerrain 不再立即执行 loadAndActivateChunkTerrain，
+     * 而是缓存到此处，等待 requestStep() 统一在主线程、物理线程 IDLE 时消费。
+     * Key: ChunkPos, Value: 需要激活的 section Y 范围集合
+     */
+    private val pendingBuildRequests = ConcurrentHashMap<ChunkPos, MutableSet<IntRange>>()
+
     // 性能统计
     private val totalSections: Int
         get() = loadedChunks.values.sumOf { it.getTotalSectionCount() }
@@ -452,8 +460,8 @@ class PhysicsChunkManager(
             SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos, true
         )
 
-        // 3. 立即构建 PhysicsChunk 并激活指定 section 范围
-        loadAndActivateChunkTerrain(chunkPos, yRange)
+        // 3. 不立即构建，缓存构建请求，等待 requestStep() 统一处理（确保物理线程 IDLE）
+        pendingBuildRequests.getOrPut(chunkPos, ::mutableSetOf).add(yRange)
     }
 
     /**
@@ -485,6 +493,7 @@ class PhysicsChunkManager(
         // 清理追踪状态（激活范围由下一帧 updateActivation 接管，要么载具续上要么自然停用）
         chunkExpireTicks.remove(chunkPos)
         terrainActivationRanges.remove(chunkPos)
+        pendingBuildRequests.remove(chunkPos)
     }
 
     /**
@@ -499,6 +508,21 @@ class PhysicsChunkManager(
             if (!section.isActive || !section.isBuilt()) return false
         }
         return true
+    }
+
+    /**
+     * 消费缓存的地形构建请求，仅主线程在 {@code requestStep()} 中调用。
+     * 在 updateBuild/updateActivation 之前执行，确保物理线程 IDLE 时才构建。
+     */
+    fun processPendingBuildRequests() {
+        if (pendingBuildRequests.isEmpty()) return
+        val requests = HashMap(pendingBuildRequests)
+        pendingBuildRequests.clear()
+        for ((chunkPos, ranges) in requests) {
+            for (yRange in ranges) {
+                loadAndActivateChunkTerrain(chunkPos, yRange)
+            }
+        }
     }
 
     /**
@@ -625,6 +649,7 @@ class PhysicsChunkManager(
         // 清空调度状态
         chunkExpireTicks.clear()
         terrainActivationRanges.clear()
+        pendingBuildRequests.clear()
     }
 
     /**
