@@ -48,7 +48,7 @@ class PhysicsChunkSection(
     @Volatile
     private var collisionShape: CompoundCollisionShape? = null
     @Volatile
-    private var physicsBody: PhysicsRigidBody? = null
+    var physicsBody: PhysicsRigidBody? = null  // 公开以支持 Java 端 DDA 补充命中条目时获取刚体引用
     override val allPhysicsBodies: MutableMap<String, PhysicsCollisionObject> = mutableMapOf()
     @Volatile
     var isActive: Boolean = false
