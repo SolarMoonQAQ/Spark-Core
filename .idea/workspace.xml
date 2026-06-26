@@ -1,0 +1,507 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/api/rust/Cargo.toml">
+      <package file="$PROJECT_DIR$/api/rust/crates/spark-core-geometry">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/api/rust/crates/spark-core-geometry-bedrock">
+        <feature name="default" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/api/rust/crates/spark-core-geometry-ffi">
+        <feature name="default" enabled="true" />
+        <feature name="headers" enabled="true" />
+      </package>
+      <package file="$PROJECT_DIR$/api/rust/crates/splines">
+        <feature name="default" enabled="true" />
+      </package>
+    </cargoProject>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="07dd1a24-3f70-4ee1-b9c3-4d7b481e5c2d" name="更改" comment="新增rust作为底层高性能库">
+      <change afterPath="$PROJECT_DIR$/api/jvm/gradle.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/api/jvm/gradlew" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/api/jvm/gradlew.bat" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/api/jvm/settings.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api" beforeDir="false" afterPath="$PROJECT_DIR$/api" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/jvm/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/api/jvm/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/jvm/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/api/jvm/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/animation/animation_file.rs" beforeDir="false" afterPath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/animation/animation_file.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/animation/bone_animation.rs" beforeDir="false" afterPath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/animation/bone_animation.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/model/bedrock.rs" beforeDir="false" afterPath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/model/bedrock.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/model/bone.rs" beforeDir="false" afterPath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/model/bone.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/model/cube.rs" beforeDir="false" afterPath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/model/cube.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/serde.rs" beforeDir="false" afterPath="$PROJECT_DIR$/api/rust/crates/spark-core-geometry/src/serde.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/minecraft/neoforge/1.21.1" beforeDir="false" afterPath="$PROJECT_DIR$/minecraft/neoforge/1.21.1" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="RsBuildProfile:dev" />
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+    <projectState path="$PROJECT_DIR$/api">
+      <ProjectState />
+    </projectState>
+    <projectState path="$PROJECT_DIR$/api/jvm">
+      <ProjectState />
+    </projectState>
+    <projectState path="$PROJECT_DIR$/minecraft/neoforge/1.21.1">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$/api">
+          <activation />
+        </task>
+        <task path="$PROJECT_DIR$">
+          <activation />
+        </task>
+        <task path="$PROJECT_DIR$/minecraft/neoforge/1.21.1">
+          <activation />
+        </task>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="[星火核心] 1.21.1-neoforge" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Kotlin Data Class" />
+        <option value="Kotlin File" />
+        <option value="Kotlin Object" />
+        <option value="Kotlin Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/api" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;SolarMoonQAQ&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:SolarMoonQAQ/spark-core-api.git&quot;,
+    &quot;accountId&quot;: &quot;b39dae0c-40e9-4825-90da-caa400aa3639&quot;
+  }
+}</component>
+  <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$/api" gradleHome="C:\Users\曦月\.gradle\wrapper\dists\gradle-9.0.0-bin\d6wjpkvcgsg3oed0qlfss3wgl\gradle-9.0.0" javaHome="C:\Program Files\Java\jdk-21" gradleVersion="9.0.0">
+    <option name="jvmArguments">
+      <list>
+        <option value="-Dhttp.proxyHost=127.0.0.1" />
+        <option value="-Dhttp.proxyPort=7890" />
+        <option value="-Dhttps.proxyHost=127.0.0.1" />
+        <option value="-Dhttps.proxyPort=7890" />
+      </list>
+    </option>
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="PjxcMfHi" />
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="2" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="3AEz1smr5GZVHVRS27cVwYy0z93" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectReloadState">
+    <option name="STATE" value="1" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Cargo.Run generate_headers.executor": "Run",
+    "Cargo.Test test.executor": "Run",
+    "Gradle.'api' 中的测试.executor": "Run",
+    "Gradle.Test.executor": "Run",
+    "Gradle.Test.main.executor": "Run",
+    "Gradle.Test.main0.executor": "Run",
+    "Gradle.Test.testAnimationLoading.executor": "Run",
+    "Gradle.spark-core [:neoforge-1.21.1:build].executor": "Run",
+    "Gradle.spark-core [:neoforge-1.21.1:runClient].executor": "Run",
+    "Gradle.升级 Gradle 包装器.executor": "Run",
+    "JUnit.Test.executor": "Run",
+    "JUnit.Test.main.executor": "Run",
+    "JUnit.Test.main0.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHELLCHECK.PATH": "C:\\Users\\曦月\\AppData\\Roaming\\JetBrains\\IntelliJIdea2026.1\\plugins\\Shell Script\\shellcheck.exe",
+    "cidr.known.project.marker": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/曦月/Documents/编程开发/Minecraft/spark-core/api/jvm",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "project.structure.last.edited": "模块",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "configurable.group.build",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\曦月\Documents\编程开发\Minecraft\spark-core\api\jvm" />
+      <recent name="C:\Users\曦月\Documents\编程开发\Minecraft\spark-core" />
+      <recent name="C:\Users\曦月\Documents\编程开发\Minecraft\spark-core\minecraft\neoforge\1.21.1" />
+      <recent name="C:\Users\曦月\Documents\编程开发\Minecraft\spark-core\minecraft" />
+      <recent name="C:\Users\曦月\Documents\编程开发\Minecraft\spark-core\api" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\曦月\Documents\编程开发\Minecraft\spark-core\minecraft\neoforge\1.21.1" />
+      <recent name="C:\Users\曦月\Documents\编程开发\Minecraft\spark-core\api\src\main\java\cn\solarmoon\sparkcore\api\ffi" />
+    </key>
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="cn.solarmoon.sparkcore.api.ffi" />
+    </key>
+    <key name="K2MoveDeclarationsDialog.RECENT_PACKAGE_KEY">
+      <recent name="cn.solarmoon.sparkcore.api" />
+      <recent name="cn.solarmoon.sparkcore.api.geometry.model" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Cargo.Run generate_headers (1)">
+    <configuration name="Client" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="[星火核心]_1.21.1-neoforge.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\clientRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\clientRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run-client" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ClientAuth" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="[星火核心]_1.21.1-neoforge.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\clientAuthRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\clientAuthRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Data" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="[星火核心]_1.21.1-neoforge.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\dataRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\dataRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="GameTestServer" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="[星火核心]_1.21.1-neoforge.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\gameTestServerRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\gameTestServerRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Server" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="[星火核心]_1.21.1-neoforge.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\serverRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\serverRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run-server" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="neoforge-1.21.1 - Client" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="星火核心.neoforge-1.21.1.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\clientRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\clientRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run-client" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="neoforge-1.21.1 - ClientAuth" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="星火核心.neoforge-1.21.1.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\clientAuthRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\clientAuthRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="neoforge-1.21.1 - Data" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="星火核心.neoforge-1.21.1.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\dataRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\dataRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="neoforge-1.21.1 - GameTestServer" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="星火核心.neoforge-1.21.1.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\gameTestServerRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\gameTestServerRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="neoforge-1.21.1 - Server" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="net.neoforged.devlaunch.Main" />
+      <module name="星火核心.neoforge-1.21.1.main" />
+      <option name="PROGRAM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\serverRunProgramArgs.txt" />
+      <option name="VM_PARAMETERS" value="@C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\moddev\\serverRunVmArgs.txt -Dfml.modFolders=sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\java\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\classes\\kotlin\\main;sparkcore%%C:\\Users\\曦月\\Documents\\编程开发\\Minecraft\\spark-core\\minecraft\\neoforge\\1.21.1\\build\\resources\\main" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/minecraft/neoforge/1.21.1/run-server" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Run generate_headers (1)" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="command" value="run --package spark-core-geometry-ffi --bin generate_headers" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$/api/rust" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Run generate_headers" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="dev" />
+      <option name="command" value="run --package spark-core-geometry-ffi --bin generate_headers --features headers" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$/api/rust" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test test" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+      <option name="buildProfileId" value="test" />
+      <option name="command" value="test --package spark-core-geometry --test test_run -- test --exact" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$/api/rust" />
+      <envs />
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Test.main" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":api:test" />
+            <option value="--tests" />
+            <option value="&quot;Test.main&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="Test.testAnimationLoading" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":api:test" />
+            <option value="--tests" />
+            <option value="&quot;Test.testAnimationLoading&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="Spark-Core" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="Spark-Core" />
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Cargo.Run generate_headers (1)" />
+        <item itemvalue="Cargo.Run generate_headers" />
+        <item itemvalue="Cargo.Test test" />
+        <item itemvalue="Gradle.Test.testAnimationLoading" />
+        <item itemvalue="Gradle.Test.main" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.25134.95" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.25134.95" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="07dd1a24-3f70-4ee1-b9c3-4d7b481e5c2d" name="更改" comment="" />
+      <created>1772172306486</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1772172306486</updated>
+      <workItem from="1782512809153" duration="167000" />
+      <workItem from="1782512987055" duration="8000" />
+      <workItem from="1782513005054" duration="1478000" />
+    </task>
+    <task id="LOCAL-00001" summary="完成拓展包读取功能">
+      <option name="closed" value="true" />
+      <created>1772271844160</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1772271844160</updated>
+    </task>
+    <task id="LOCAL-00002" summary="新增rust作为底层高性能库">
+      <option name="closed" value="true" />
+      <created>1782507868593</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1782507868593</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/main" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/minecraft" />
+    </ignored-roots>
+    <MESSAGE value="完成拓展包读取功能" />
+    <MESSAGE value="新增rust作为底层高性能库" />
+    <option name="LAST_COMMIT_MESSAGE" value="新增rust作为底层高性能库" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
