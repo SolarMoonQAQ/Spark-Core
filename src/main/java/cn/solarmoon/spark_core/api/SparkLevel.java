@@ -286,14 +286,14 @@ public final class SparkLevel {
         int minSecY = SectionPos.blockToSectionCoord((int) yMin);
         int maxSecY = SectionPos.blockToSectionCoord((int) yMax);
         var yRange = new kotlin.ranges.IntRange(minSecY, maxSecY);
-        // ★ 使用 PPhase.POST 而非 PPhase.ALL，确保 addRegionTicket 在 ChunkMap.tick() 之后执行
-        // 避免在 ChunkMap.tick() 迭代 entityMap 时因内部数据结构被修改而导致 NPE
+        // ★ 使用 PPhase.ALL。延迟任务基于绝对 tick 计数（getTickCount() + delayTicks），
+        // 不再依赖 processTasks 调用次数，三种 PPhase 语义一致
         if (delayTicks <= 0) {
-            submitImmediateTask(level, PPhase.POST, () ->
+            submitImmediateTask(level, PPhase.ALL, () ->
                     mgr.scheduleTerrain(chunkPos, yRange, holdTicks)
             );
         } else {
-            submitDelayedTask(level, "terrain_api_" + chunkPos, PPhase.POST, delayTicks, () ->
+            submitDelayedTask(level, "terrain_api_" + chunkPos, PPhase.ALL, delayTicks, () ->
                     mgr.scheduleTerrain(chunkPos, yRange, holdTicks)
             );
         }

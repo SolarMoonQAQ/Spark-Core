@@ -105,7 +105,7 @@ abstract class PhysicsLevel(
     val state = stateFlow.asStateFlow()
     private val crashCount = AtomicInteger(0)
     @Volatile
-    var tickCount: Int = 0
+    override var tickCount: Int = 0
 
     // 同步控制
     private val physicsTickChannel = Channel<Unit>(Channel.CONFLATED)

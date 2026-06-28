@@ -61,6 +61,11 @@ public abstract class LevelMixin implements LevelPatch, ILevelMixin {
     }
 
     @Override
+    public int getTickCount() {
+        return (int) level.getGameTime();
+    }
+
+    @Override
     public @NotNull Map<@NotNull String, PhysicsCollisionObject> getAllPhysicsBodies() {
         return collisionObjects;
     }
