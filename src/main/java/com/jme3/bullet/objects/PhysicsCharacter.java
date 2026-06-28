@@ -203,9 +203,21 @@ public class PhysicsCharacter extends PhysicsCollisionObject {
 
     /**
      * Determine the linear velocity of this character's center.
+     * <p>
+     * <b>重要：KCC 的 XZ 与 Y 分量单位不一致。</b>
+     * Bullet 的 {@code btKinematicCharacterController} 内部：
+     * <ul>
+     *   <li>X, Z 分量 = {@code m_walkDirection} → 位移量（m/tick），
+     *       在 {@code playerStep} 中直接用作位置偏移，不做 {@code * dt} 积分</li>
+     *   <li>Y 分量 = {@code m_verticalVelocity} → 速度（m/s），
+     *       在 {@code playerStep} 中做 {@code m_verticalOffset = m_verticalVelocity * dt} 积分</li>
+     * </ul>
+     * 因此调用方读取水平速率时需 {@code getLinearVelocity().x / dt} 才能得到 m/s。
+     * 详见 {@code btKinematicCharacterController::playerStep} 与
+     * {@code btKinematicCharacterController::stepForwardAndStrafe}。
      *
      * @param storeResult storage for the result (modified if not null)
-     * @return a vector (either storeResult or a new vector, not null)
+     * @return a vector: (walkOffset.x, verticalVelocity, walkOffset.z) — XZ 位移, Y 速度
      */
     public Vector3f getLinearVelocity(Vector3f storeResult) {
         Vector3f result = controller.getLinearVelocity(storeResult);
@@ -258,9 +270,13 @@ public class PhysicsCharacter extends PhysicsCollisionObject {
 
     /**
      * Determine the character's walk offset.
+     * <p>
+     * 返回 {@code m_walkDirection} 的当前值——即上一帧通过
+     * {@link #setWalkDirection(Vector3f)} 或 {@link #setLinearVelocity(Vector3f)}
+     * 写入的水平分量。单位是每物理步位移量（m/tick），不是速度（m/s）。
      *
      * @param storeResult storage for the result (modified if not null)
-     * @return an offset vector (either storeResult or a new vector, not null)
+     * @return an offset vector (m/tick, either storeResult or a new vector, not null)
      */
     public Vector3f getWalkDirection(Vector3f storeResult) {
         Vector3f result = controller.getWalkDirection(storeResult);
@@ -435,8 +451,17 @@ public class PhysicsCharacter extends PhysicsCollisionObject {
 
     /**
      * Alter the linear velocity of this character's center.
+     * <p>
+     * <b>单位注意</b>：由于 KCC 内部 XZ/Y 单位不一致（见
+     * {@link #getLinearVelocity(Vector3f)}），传入参数应为：
+     * <ul>
+     *   <li>X, Z = 水平位移量（m/tick），存入 {@code m_walkDirection}</li>
+     *   <li>Y = 垂直速度（m/s），存入 {@code m_verticalVelocity}</li>
+     * </ul>
+     * 物理速度（m/s）需转换为位移（× dt）再传入 XZ；
+     * 动画帧间位移（m/tick）无需转换直接传入 XZ，Y 需 ÷ dt 转为速度。
      *
-     * @param velocity the desired velocity vector (not null)
+     * @param velocity XZ=位移(m/tick), Y=速度(m/s) (not null)
      */
     public void setLinearVelocity(Vector3f velocity) {
         Validate.nonNull(velocity, "velocity");
@@ -519,6 +544,12 @@ public class PhysicsCharacter extends PhysicsCollisionObject {
     /**
      * Alter this character's walk offset. The offset must be perpendicular to
      * the "up" direction. It will continue to be applied until altered again.
+     * <p>
+     * Bullet KCC 内部在 {@code stepForwardAndStrafe} 中将
+     * {@code walkMove.setY(0)}——Y 分量被强制归零。
+     * 垂直运动由 KCC 内部重力（{@link #setGravity(float)}）和
+     * {@link #setLinearVelocity(Vector3f)} 的 Y 分量共同驱动。
+     * 若需同时控制三轴，请使用 {@link #setLinearVelocity(Vector3f)}。
      *
      * @param offset the desired location increment for each simulation step (in
      * physics-space coordinates, not null, unaffected, default=(0,0,0))

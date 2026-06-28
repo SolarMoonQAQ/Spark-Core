@@ -190,9 +190,15 @@ public class CharacterController extends NativePhysicsObject {
 
     /**
      * Determine the linear velocity of the character's center.
+     * <p>
+     * <b>重要：KCC 的 XZ 与 Y 分量单位不一致。</b>
+     * 底层 {@code btKinematicCharacterController} 中：
+     * X,Z = {@code m_walkDirection}（位移/m/tick），
+     * Y = {@code m_verticalVelocity}（速度/m/s）。
+     * 水平速率需 {@code v.x / dt} 得到 m/s。
      *
      * @param storeResult storage for the result (modified if not null)
-     * @return a vector (either storeResult or a new vector, not null)
+     * @return XZ=位移, Y=速度 (either storeResult or a new vector, not null)
      */
     public Vector3f getLinearVelocity(Vector3f storeResult) {
         Vector3f result = (storeResult == null) ? new Vector3f() : storeResult;
@@ -258,9 +264,11 @@ public class CharacterController extends NativePhysicsObject {
 
     /**
      * Determine the character's walk offset.
+     * <p>
+     * 返回 {@code m_walkDirection}（每物理步位移量，m/tick），非速度。
      *
      * @param storeResult storage for the result (modified if not null)
-     * @return an offset vector (either storeResult or a new vector, not null)
+     * @return an offset vector (m/tick, either storeResult or a new vector, not null)
      */
     public Vector3f getWalkDirection(Vector3f storeResult) {
         Vector3f result = (storeResult == null) ? new Vector3f() : storeResult;
@@ -388,8 +396,11 @@ public class CharacterController extends NativePhysicsObject {
 
     /**
      * Alter the linear velocity of the character's center.
+     * <p>
+     * <b>单位注意</b>：XZ 传入位移（m/tick），Y 传入速度（m/s）。
+     * 物理速度需 × dt 转为位移再传入 XZ。
      *
-     * @param velocity the desired velocity vector (not null, finite)
+     * @param velocity XZ=位移(m/tick), Y=速度(m/s) (not null, finite)
      */
     public void setLinearVelocity(Vector3f velocity) {
         Validate.finite(velocity, "velocity");
@@ -458,6 +469,8 @@ public class CharacterController extends NativePhysicsObject {
     /**
      * Alter the character's walk offset. The offset must be perpendicular to
      * the "up" direction. It will continue to be applied until altered again.
+     * <p>
+     * Bullet KCC 强制 walkMove Y 归零。需控制三轴时请用 {@link #setLinearVelocity(Vector3f)}。
      *
      * @param offset the desired location increment for each simulation step (in
      * physics-space coordinates, not null, finite, unaffected, default=(0,0,0))
