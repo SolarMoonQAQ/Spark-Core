@@ -234,6 +234,13 @@ public class ParticleEmitterInstance {
                 float oz = buf.getPosZ(idx);
                 Vector4f worldPos = transform.transform(new Vector4f(ox, oy, oz, 1.0f));
                 buf.setPos(idx, worldPos.x, worldPos.y, worldPos.z);
+
+                // 速度方向也需要旋转到世界空间（w=0 跳过平移，仅应用旋转和缩放）
+                float vx = buf.getVelX(idx);
+                float vy = buf.getVelY(idx);
+                float vz = buf.getVelZ(idx);
+                Vector4f worldVel = transform.transform(new Vector4f(vx, vy, vz, 0.0f));
+                buf.setVel(idx, worldVel.x, worldVel.y, worldVel.z);
             }
 
             // emitter_local_space.velocity：将发射器速度叠加到粒子初始速度
