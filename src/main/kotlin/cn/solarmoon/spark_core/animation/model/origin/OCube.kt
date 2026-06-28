@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
 import cn.solarmoon.spark_core.compat.accelerated_rendering.ARCompat
+import cn.solarmoon.spark_core.compat.sodium.SodiumCompat
 import cn.solarmoon.spark_core.util.SerializeHelper
 import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.visual_effect.FovHelper
@@ -145,6 +146,10 @@ data class OCube(
                 this, poseStack, buffer, packedLight, packedOverlay, color
             )
         ) return // 优先使用加速渲染管线绘制
+//        if (SodiumCompat.IS_LOADED && SodiumCompat.renderCube(
+//                this, poseStack, buffer, packedLight, packedOverlay, color
+//            )
+//        ) return // 次级：Sodium 顶点缓冲快写 TODO: 有问题
         tmpBoneM4.set(poseStack.last().pose())
         tmpBoneM3.set(poseStack.last().normal())
 

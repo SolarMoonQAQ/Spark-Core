@@ -251,6 +251,9 @@ dependencies {
     compileOnly("maven.modrinth:first-person-model:Sx5QD2SF")
     // 加速渲染
     compileOnly("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
+    // Sodium / Embeddium 顶点缓冲快写（compileOnly，运行时检测）
+    compileOnly("maven.modrinth:sodium:mc1.21-0.6.0-beta.2-neoforge")
+    compileOnly("maven.modrinth:embeddium:1.0.11+mc1.21.1-neoforge")
 
     // 外部库 ------------------------------------------------------------------------------------------------------------
     // GraalJS：编译期用原始坐标；ShadowJar 通过 graaljsForShadow 配置合并并重定位；
