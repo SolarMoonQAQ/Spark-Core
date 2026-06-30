@@ -108,12 +108,21 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     }
 
     /**
-     * 移除完成的实例
+     * 移除已停止的实例
+     * <p>
+     * 清理条件：实例已停止（stop()已调用），且满足以下任一条件：
+     * <ul>
+     *   <li>实例已不再生成新波面（shouldGenerateNewPoints == false），通常是淡出流程</li>
+     *   <li>实例为静态声源（ISoundSpreader == null），波面耗尽后自动停止</li>
+     * </ul>
+     * 此条件排除仍处于活跃状态但尚未进入淡出流程的动态声源实例。
      */
     public static void cleanupStoppedInstances() {
-        activeInstances.entrySet().removeIf(entry -> !entry.getValue().shouldGenerateNewPoints() &&
-                entry.getValue().isStopped() && entry.getValue().isFadedOut()
-        );
+        activeInstances.entrySet().removeIf(entry -> {
+            SpreadingSoundInstance instance = entry.getValue();
+            return instance.isStopped() &&
+                    (!instance.shouldGenerateNewPoints() || instance.ISoundSpreader == null);
+        });
     }
 
     /**

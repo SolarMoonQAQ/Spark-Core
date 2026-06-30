@@ -130,6 +130,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         // 更新淡入淡出状态
         updateFadeState();
         if(this.isStopped()) return;
+
         // 更新声音传播状态
         Iterator<SoundSourcePoint> iterator = this.soundPoints.iterator();
         // 更新传播距离和生成新声源点
@@ -150,19 +151,40 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
             soundPoint.setSpreadDistance(soundPoint.getSpreadDistance() + speed * 0.05f);
         }
 
-        if (ISoundSpreader != null && shouldGenerateNewPoints) {
-            // 记录最新的声源位置速度等
-            var position = ISoundSpreader.getPosition(this.uuid, getSoundEvent());
-            SoundSourcePoint newSoundPoint = new SoundSourcePoint(
-                    position,
-                    ISoundSpreader.getSpeed(this.uuid, getSoundEvent()),
-                    ISoundSpreader.getPitch(this.uuid, getSoundEvent()),
-                    ISoundSpreader.getVolume(this.uuid, getSoundEvent())
-            );
-            this.soundPoints.add(newSoundPoint);
+        // 持续产生波面：循环声源（looping）或动态声源（ISoundSpreader），每tick生成一个新的波面
+        // 非循环的静态声源仅使用构造函数中创建的初始波面，波面耗尽后由下方逻辑自动停止
+        if (shouldGenerateNewPoints && (looping || ISoundSpreader != null)) {
+            Vec3 pointPos;
+            float pointPitch;
+            float pointVolume;
+            Vec3 pointSpeed;
+
+            if (ISoundSpreader != null) {
+                // 动态声源：从ISoundSpreader获取实时位置、速度、音高、音量
+                pointPos = ISoundSpreader.getPosition(this.uuid, getSoundEvent());
+                pointPitch = ISoundSpreader.getPitch(this.uuid, getSoundEvent());
+                pointVolume = ISoundSpreader.getVolume(this.uuid, getSoundEvent());
+                pointSpeed = ISoundSpreader.getSpeed(this.uuid, getSoundEvent());
+            } else {
+                // 循环静态声源：从当前位置持续发射波面
+                pointPos = new Vec3(x, y, z);
+                pointPitch = pitch;
+                pointVolume = volume;
+                pointSpeed = speed;
+            }
+
+            SoundSourcePoint newPoint = new SoundSourcePoint(pointPos, pointSpeed, pointPitch, pointVolume);
+            this.soundPoints.add(newPoint);
             if (this.soundPoints.size() > MAX_SOUND_POINTS) {
                 this.soundPoints.removeFirst(); // 限制声源点数量
             }
+        }
+
+        // 静态声源（无ISoundSpreader）在波面全部消散后，自动停止播放以释放OpenAL通道
+        // 循环播放的声源已在上面重新生成波面，不会被此逻辑误杀
+        if (soundPoints.isEmpty() && ISoundSpreader == null) {
+            stop();
+            return;
         }
 
         // 更新传播范围的AABB
@@ -181,7 +203,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
 //            this.fadeFactor = (float) Math.sqrt(t);
 //            this.fadeFactor = t;
             this.fadeFactor = (1.0f - (float) Math.cos(t * Math.PI)) * 0.5f;  // 余弦曲线
-        } else if (isFadingOut && fadeProgress >= -fadeOutTicks) {
+        } else if (isFadingOut) {
             // 淡出完成且没有活跃波面时停止
             if (fadeProgress <= -fadeOutTicks && soundPoints.isEmpty()) {
                 this.fadeFactor = 0.0f;

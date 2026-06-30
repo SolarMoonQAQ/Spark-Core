@@ -65,11 +65,19 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
                 iterator.remove();
                 continue;
             }
-            // 仅在“尚未开始播放”阶段由本Mixin推进tick：
+            // 仅在"尚未开始播放"阶段由本Mixin推进tick：
             // 已开始播放后由原版SoundEngine维护tickingSounds并推进tick。
             if (!instance.isPlaying) {
                 instance.tick();
             }
+
+            // 静态声源（无ISoundSpreader）在波面全部消散后移除
+            // 无ISoundSpreader意味着不会产生新波面，波面耗尽即生命周期终结
+            if (instance.soundPoints.isEmpty() && instance.ISoundSpreader == null) {
+                iterator.remove();
+                continue;
+            }
+
             // 先检查收听者是否在声音传播范围内
             if (!instance.isListenerInRange(listenerPos)) {
                 // 不在范围内，跳过详细的波面检查
