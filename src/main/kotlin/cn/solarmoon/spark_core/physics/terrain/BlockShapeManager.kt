@@ -24,8 +24,19 @@ class BlockShapeManager(val physicsLevel: PhysicsLevel) {
     val UP_HALF_BLOCK = BoxCollisionShape(0.5f, 0.25f, 0.5f)
     val DOWN_HALF_BLOCK = BoxCollisionShape(0.5f, 0.25f, 0.5f)
 
+    /**
+     * 方块包围盒缓存（BlockState → AABB列表），供投射物精确命中判定使用。
+     * 在 [getCollisionShape] 首次构造 CollisionShape 时同步填充。
+     */
+    val AABB_CACHE: MutableMap<BlockState, List<net.minecraft.world.phys.AABB>> = ConcurrentHashMap()
+
     private fun generateShapeCache(blockState: BlockState): CollisionShape {
         val shape = convertVoxelToCollisionShape(blockState)
+        // 预缓存 AABB 列表供投射物命中判定使用（提前计算，避免物理线程热路径首次访问开销）
+        AABB_CACHE.computeIfAbsent(blockState) {
+            blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
+                .toAabbs()
+        }
         return shape
     }
 
@@ -33,6 +44,17 @@ class BlockShapeManager(val physicsLevel: PhysicsLevel) {
     fun getCollisionShape(state: BlockState): CollisionShape {
         return SHAPE_CACHE.computeIfAbsent(state) {
             generateShapeCache(it)
+        }
+    }
+
+    /**
+     * 获取方块的实际碰撞包围盒列表，与 [getCollisionShape] 共享同一 VoxelShape 数据源。
+     * 对于大多数方块返回单个 AABB；对于楼梯、栅栏等复杂形状返回多个子包围盒。
+     */
+    fun getBlockAabbs(state: BlockState): List<net.minecraft.world.phys.AABB> {
+        return AABB_CACHE.computeIfAbsent(state) {
+            state.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
+                .toAabbs()
         }
     }
 
