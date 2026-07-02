@@ -20,14 +20,25 @@ import kotlin.reflect.KClass
 /**
  * 动画实例 —— 封装单个动画的播放生命周期。
  *
- * @param originOverride 预解析的 [OAnimation]，用于 MultiAnimStateMachine 的
- *   回退动画场景（动画来自素体/内置集而非 target 自身模型）。默认 null 时走标准查找路径。
+ * 提供两个构造路径：
+ * - [AnimInstance(IAnimatable, OAnimation)] — 直接传入已解析的 [OAnimation]，
+ *   用于 MultiAnimStateMachine 回退动画场景（动画来自素体/内置集而非 target 自身模型）。
+ * - [AnimInstance(IAnimatable, AnimIndex)] — 通过 [AnimIndex] 从持有者模型集中查找，
+ *   标准路径，用于动画来自 target 自身模型的场景。
  */
 class AnimInstance internal constructor(
     val holder: IAnimatable<*>,
-    val animIndex: AnimIndex,
-    originOverride: OAnimation? = null
+    val origin: OAnimation
 ) {
+    /**
+     * 通过 [AnimIndex] 从持有者模型集中查找动画。
+     * 标准查找路径，用于动画来自 target 自身模型的场景。
+     */
+    constructor(holder: IAnimatable<*>, index: AnimIndex) : this(
+        holder,
+        OAnimationSet.getOrEmpty(index.modelIndex).getAnimation(index.name)
+            ?: throw IllegalArgumentException("没有找到索引为 $index 的动画")
+    )
 
     private sealed class AnimStateEvent {
         object Start : Event
@@ -37,11 +48,6 @@ class AnimInstance internal constructor(
     }
 
     val state get() = AnimState.valueOf(lifecycleStateMachine.activeStates().firstOrNull()?.name?.uppercase() ?: "IDLE")
-
-    /** 动画本体 —— 优先使用预解析来源，否则从 target 模型查找 */
-    val origin: OAnimation = originOverride
-        ?: OAnimationSet.getOrEmpty(animIndex.modelIndex).getAnimation(animIndex.name)
-        ?: throw IllegalArgumentException("没有找到索引为 $animIndex 的动画")
     val tag = CompoundTag()
     var time = 0.0f
     var speed = 1.0f

@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.anim.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.AnimGroups
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.animInstance
-import cn.solarmoon.spark_core.animation.anim.buildInstance
 import cn.solarmoon.spark_core.animation.state.AnimStateMachine
 import cn.solarmoon.spark_core.animation.state.MultiAnimStateMachine
 import cn.solarmoon.spark_core.js.molang.JSMolangValue
@@ -43,8 +42,8 @@ class PlayAnimAction(
             is MultiAnimStateMachine -> {
                 for (target in controller.animTargets) {
                     val anim = controller.findAnimation(target, animName) ?: continue
-                    // 用预解析的 anim 构建实例，避免在 target 的 OAnimationSet 中重复查找
-                    val instance = buildInstance(target, animName, anim)
+                    // 直接传入已解析的 anim，避免在 target 的 OAnimationSet 中重复查找
+                    val instance = AnimInstance(target, anim)
                     instance.inTransitionTime = blendTime
                     instance.outTransitionTime = blendTime
                     instance.group = controller.animGroup
