@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.gas.ActivationContext
 import cn.solarmoon.spark_core.state_machine.graph.StateCondition
 import cn.solarmoon.spark_core.state_machine.graph.actions.MoLangAction
+import cn.solarmoon.spark_core.state_machine.graph.actions.DebugOutputAction
 import cn.solarmoon.spark_core.state_machine.graph.actions.ParticleAction
 import cn.solarmoon.spark_core.state_machine.graph.actions.PlayAnimAction
 import cn.solarmoon.spark_core.state_machine.graph.actions.SoundAction
@@ -37,6 +38,7 @@ object SparkCodeRegister {
         event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("molang_action")) { MoLangAction.CODEC }
         event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("sound")) { SoundAction.CODEC }
         event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("particle")) { ParticleAction.CODEC }
+        event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("debug_output")) { DebugOutputAction.CODEC }
 
         event.register(SparkRegistries.ACTIVATION_CONTEXT_CODEC.key(), id("empty")) { ActivationContext.Empty.codec }
         event.register(SparkRegistries.ACTIVATION_CONTEXT_STREAM_CODEC.key(), id("empty")) { ActivationContext.Empty.streamCodec }
