@@ -88,6 +88,20 @@ fun JSMolangValue.evalAsBoolean(animatable: IAnimatable<*>): Boolean {
     return evalAsDouble(animatable) > 0.0
 }
 
+// 接受 MolangContext 直接求值（绕过 IAnimatable / AnimInstance，用于 MultiAnimStateMachine 等场景）
+
+@JvmName("evalAsDouble")
+fun JSMolangValue.evalAsDouble(ctx: SparkMolangContext<*>): Double {
+    MolangConstantCache[value]?.let { return it }
+    return MolangContextRegistry.compile(value, ctx).evaluate(ctx)
+}
+
+@JvmName("evalAsBoolean")
+fun JSMolangValue.evalAsBoolean(ctx: SparkMolangContext<*>): Boolean {
+    MolangConstantCache[value]?.let { return it > 0.0 }
+    return evalAsDouble(ctx) > 0.0
+}
+
 // 返回 String 的扩展函数 — 通过 StringExpression 通道支持字符串值
 @JvmName("evalAsString")
 fun JSMolangValue.evalAsString(anim: AnimInstance): String {

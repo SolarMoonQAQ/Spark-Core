@@ -3,8 +3,11 @@ package cn.solarmoon.spark_core.state_machine.graph.actions
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.AnimGroups
+import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.animInstance
+import cn.solarmoon.spark_core.animation.anim.buildInstance
 import cn.solarmoon.spark_core.animation.state.AnimStateMachine
+import cn.solarmoon.spark_core.animation.state.MultiAnimStateMachine
 import cn.solarmoon.spark_core.js.molang.JSMolangValue
 import cn.solarmoon.spark_core.js.molang.evalAsDouble
 import cn.solarmoon.spark_core.state_machine.graph.StateAction
@@ -15,6 +18,11 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 
 /**
  * 进入状态时播放动画。
+ *
+ * 自动根据控制器类型分路：
+ * - [AnimStateMachine]（1:1）：通过 [animInstance] 找 target 自身的动画
+ * - [MultiAnimStateMachine]（1:N）：遍历所有 [animTargets]，
+ *   每个 target 通过三级回退（自身 → 素体 → 内置）查找动画并广播播放
  *
  * @param animName 动画名
  * @param blendTime 进入/退出混合时间（秒）
@@ -31,27 +39,48 @@ class PlayAnimAction(
     override val codec = CODEC
 
     override fun execute(controller: StateGraphController) {
-        val ctrl = controller as? AnimStateMachine ?: run {
-            SparkCore.LOGGER.warn("PlayAnimAction 只能在 AnimStateMachine 上下文中执行，当前控制器为 {}", controller::class.simpleName)
-            return
-        }
-        val instance = animInstance(ctrl.animatable, animName) ?: run {
-            SparkCore.LOGGER.warn("状态 [{}] 引用不存在的动画 [{}]，已跳过", ctrl.currentNode.name, animName)
-            return
-        }
-        instance.inTransitionTime = blendTime
-        instance.outTransitionTime = blendTime
-        instance.group = AnimGroups.LOCOMOTION
-
-        // 动态权重：利用 AnimInstance 现有的 onEvent 机制，每 tick 重新求值
-        if (weightExpression != null) {
-            instance.onEvent<AnimEvent.Tick> {
-                weight = weightExpression.evalAsDouble(this).toFloat()
+        when (controller) {
+            is MultiAnimStateMachine -> {
+                for (target in controller.animTargets) {
+                    val anim = controller.findAnimation(target, animName) ?: continue
+                    // 用预解析的 anim 构建实例，避免在 target 的 OAnimationSet 中重复查找
+                    val instance = buildInstance(target, animName, anim)
+                    instance.inTransitionTime = blendTime
+                    instance.outTransitionTime = blendTime
+                    instance.group = controller.animGroup
+                    applyWeightExpression(instance)
+                    instance.enter()  // enter() 内部自动调用 target.animController.playAnimation(this)
+                    controller.activeAnimInstances.add(instance)
+                }
+            }
+            is AnimStateMachine -> {
+                // 原有 1:1 逻辑不变（保持现有 AnimGroups.LOCOMOTION 默认值）
+                val target = controller.animatable
+                val instance = animInstance(target, animName) ?: return
+                instance.inTransitionTime = blendTime
+                instance.outTransitionTime = blendTime
+                instance.group = AnimGroups.LOCOMOTION
+                applyWeightExpression(instance)
+                instance.enter()  // enter() 内部自动调用 target.animController.playAnimation(this)
+                controller.activeAnimInstances.add(instance)
+            }
+            else -> {
+                SparkCore.LOGGER.warn(
+                    "PlayAnimAction 只能在 AnimStateMachine / MultiAnimStateMachine 上下文中执行，当前控制器为 {}",
+                    controller::class.simpleName
+                )
             }
         }
+    }
 
-        instance.enter()
-        ctrl.activeAnimInstances.add(instance)
+    /** 动态权重：利用 AnimInstance 现有的 onEvent 机制，每 tick 重新求值 */
+    private fun applyWeightExpression(instance: AnimInstance) {
+        if (weightExpression != null) {
+            val exp = weightExpression
+            instance.onEvent<AnimEvent.Tick> {
+                weight = exp.evalAsDouble(this).toFloat()
+            }
+        }
     }
 
     companion object {

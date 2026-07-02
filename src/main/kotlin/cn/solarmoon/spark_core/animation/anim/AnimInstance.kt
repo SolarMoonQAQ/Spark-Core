@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.anim
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex
 import cn.solarmoon.spark_core.animation.anim.origin.Loop
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.api.submitImmediateTask
@@ -16,9 +17,16 @@ import ru.nsk.kstatemachine.statemachine.processEventBlocking
 import ru.nsk.kstatemachine.transition.onTriggered
 import kotlin.reflect.KClass
 
+/**
+ * 动画实例 —— 封装单个动画的播放生命周期。
+ *
+ * @param originOverride 预解析的 [OAnimation]，用于 MultiAnimStateMachine 的
+ *   回退动画场景（动画来自素体/内置集而非 target 自身模型）。默认 null 时走标准查找路径。
+ */
 class AnimInstance internal constructor(
     val holder: IAnimatable<*>,
-    val animIndex: AnimIndex
+    val animIndex: AnimIndex,
+    originOverride: OAnimation? = null
 ) {
 
     private sealed class AnimStateEvent {
@@ -30,7 +38,9 @@ class AnimInstance internal constructor(
 
     val state get() = AnimState.valueOf(lifecycleStateMachine.activeStates().firstOrNull()?.name?.uppercase() ?: "IDLE")
 
-    val origin = OAnimationSet.getOrEmpty(animIndex.modelIndex).getAnimation(animIndex.name)
+    /** 动画本体 —— 优先使用预解析来源，否则从 target 模型查找 */
+    val origin: OAnimation = originOverride
+        ?: OAnimationSet.getOrEmpty(animIndex.modelIndex).getAnimation(animIndex.name)
         ?: throw IllegalArgumentException("没有找到索引为 $animIndex 的动画")
     val tag = CompoundTag()
     var time = 0.0f

@@ -26,6 +26,8 @@ open class StateGraphController(
 ) {
 
     val tags = GameplayTagContainer()
+    /** 数值型状态变量容器（speed、input_forward 等），与标记型 tags 互补 */
+    val variables = StateVariableContainer()
     var currentNode: StateNode = stateMachineGraph.initialNode
         private set
 
@@ -96,6 +98,7 @@ open class StateGraphController(
         activeChildren.clear()
         stateMachine.restartBlocking()
         tags.clear()
+        variables.clear()
     }
 
     open fun triggerEvent(type: String?): ActionEvent {
