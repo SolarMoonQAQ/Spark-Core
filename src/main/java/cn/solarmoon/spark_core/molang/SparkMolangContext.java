@@ -67,4 +67,18 @@ public class SparkMolangContext<T extends IAnimatable<?>> extends MolangContext<
     public AnimatableVariableBinding getVariableBridge() {
         return variableBridge;
     }
+
+    // === 动画控制器相关查询 ===
+
+    @QueryBinding(value = "all_animations_finished", namespace = "q")
+    public double queryAllAnimationsFinished() {
+        T entity = getEntity();
+        return (entity != null && entity.getControllerAllAnimationsFinished()) ? 1.0 : 0.0;
+    }
+
+    @QueryBinding(value = "any_animation_finished", namespace = "q")
+    public double queryAnyAnimationFinished() {
+        T entity = getEntity();
+        return (entity != null && entity.getControllerAnyAnimationFinished()) ? 1.0 : 0.0;
+    }
 }

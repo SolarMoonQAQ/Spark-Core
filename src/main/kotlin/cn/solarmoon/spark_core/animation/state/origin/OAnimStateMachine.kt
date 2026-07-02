@@ -1,25 +1,17 @@
 package cn.solarmoon.spark_core.animation.state.origin
 
-import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.anim.AnimEvent
-import cn.solarmoon.spark_core.animation.anim.AnimGroups
-import cn.solarmoon.spark_core.animation.anim.AnimInstance
-import cn.solarmoon.spark_core.animation.anim.animInstance
 import cn.solarmoon.spark_core.animation.state.AnimStateMachine
-import cn.solarmoon.spark_core.js.molang.evalAsBoolean
-import cn.solarmoon.spark_core.js.molang.evalAsDouble
+import cn.solarmoon.spark_core.state_machine.graph.StateMachineGraph
+import cn.solarmoon.spark_core.state_machine.graph.StateNode
+import cn.solarmoon.spark_core.state_machine.graph.StateTransition
+import cn.solarmoon.spark_core.state_machine.graph.actions.MoLangAction
+import cn.solarmoon.spark_core.state_machine.graph.actions.ParticleAction
+import cn.solarmoon.spark_core.state_machine.graph.actions.PlayAnimAction
+import cn.solarmoon.spark_core.state_machine.graph.actions.SoundAction
+import cn.solarmoon.spark_core.state_machine.graph.conditions.MoLangCondition
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import ru.nsk.kstatemachine.state.State
-import ru.nsk.kstatemachine.state.initialState
-import ru.nsk.kstatemachine.state.onEntry
-import ru.nsk.kstatemachine.state.onExit
-import ru.nsk.kstatemachine.state.state
-import ru.nsk.kstatemachine.state.transitionConditionally
-import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
-import ru.nsk.kstatemachine.transition.noTransition
-import ru.nsk.kstatemachine.transition.targetState
 
 data class OAnimStateMachine(
     val initialState: String,
@@ -27,76 +19,61 @@ data class OAnimStateMachine(
 ) {
 
     fun build(animatable: IAnimatable<*>): AnimStateMachine {
-        // 每个状态对应一个 Map<动画名, AnimInstance>
-        val stateAnims = mutableMapOf<String, Map<String, AnimInstance>>()
+        // 单独构建时无子控制器上下文，传空 resolver
+        return AnimStateMachine(toStateMachineGraph { null }, animatable)
+    }
 
-        val stateMachine = createStdLibStateMachine {
-            val stateMap = mutableMapOf<String, State>()
+    /**
+     * 将 Bedrock JSON 编译为纯数据 [StateMachineGraph]。
+     *
+     * @param resolver 控制器名 → [StateMachineGraph] 查找闭包，返回 null 表示不是控制器引用
+     */
+    fun toStateMachineGraph(
+        resolver: (String) -> StateMachineGraph?
+    ): StateMachineGraph {
+        val nodes = states.map { (stateName, os) ->
+            val subGraphs = mutableMapOf<String, StateMachineGraph>()
+            val animActions = mutableListOf<PlayAnimAction>()
 
-            this@OAnimStateMachine.states.forEach { (stateName, animState) ->
-                // 为该状态生成动画实例 Map
-                val anims = buildMap {
-                    animState.animations.forEach { (animName, animWeight) ->
-                        val anim = animInstance(animatable, animName)
-                        if (anim == null) {
-                            SparkCore.LOGGER.warn("状态机状态 [{}] 引用不存在动画 [{}]，已跳过", stateName, animName)
-                            return@forEach
-                        }
-                        put(animName, anim.apply {
-                            group = AnimGroups.STATE
-                            inTransitionTime = animState.blendTransition
-                            outTransitionTime = animState.blendTransition
-                            onEvent<AnimEvent.Tick> { weight = animWeight.evalAsDouble(this).toFloat() }
-                        })
-                    }
+            os.animations.forEach { (name, weightExpr) ->
+                // 1. 优先按控制器名解析 → subGraph
+                val subGraph = resolver(name)
+                if (subGraph != null) {
+                    subGraphs[name] = subGraph  // key = 控制器名
+                    return@forEach
                 }
-
-                val s = if (stateName == this@OAnimStateMachine.initialState) initialState(stateName) else state(stateName)
-
-                // 绑定状态和动画 Map
-                stateAnims[stateName] = anims
-
-                s.apply {
-                    onEntry {
-//                        SparkCore.LOGGER.info("进入状态: $stateName，Animations: ${anims.keys}")
-                        anims.values.forEach { it.enter() }
-                        animState.onEntry.evalAsDouble(animatable)
-                    }
-                    onExit {
-                        anims.values.forEach { it.exit() }
-                        animState.onExit.evalAsDouble(animatable)
-                    }
-                }
-
-                stateMap[stateName] = s
+                // 2. 其余按动画名处理（存在性校验由 PlayAnimAction.execute() 在运行时完成）
+                animActions.add(PlayAnimAction(name, os.blendTransition, os.blendViaShortestPath, weightExpr))
             }
 
-            // 添加 transition
-            this@OAnimStateMachine.states.forEach { (stateName, animState) ->
-                val fromState = stateMap[stateName]!!
-                fromState.transitionConditionally<AnimStateMachine.TickEvent> {
-                    direction = {
-                        val nextState = animState.transitions.entries.firstNotNullOfOrNull { (targetName, condition) ->
-                            val target = stateMap[targetName]
-                            if (target == null) {
-                                SparkCore.LOGGER.warn("状态机状态 [{}] 转移目标 [{}] 不存在，已跳过该转移", stateName, targetName)
-                                return@firstNotNullOfOrNull null
-                            }
-                            if (condition.evalAsBoolean(animatable)) target else null
-                        }
-
-                        if (nextState == null || nextState == fromState) {
-                            noTransition()
-                        } else {
-                            targetState(nextState)
-                        }
-                    }
-                }
-            }
+            StateNode(
+                name = stateName,
+                transitions = os.transitions.map { (target, condition) ->
+                    StateTransition(
+                        event = null,  // Bedrock 模式：每 tick 自动求值
+                        target = target,
+                        condition = MoLangCondition(condition)  // JSMolangValue 对象，避免重新编译
+                    )
+                },
+                onEntry = buildList {
+                    addAll(animActions)
+                    os.onEntry.takeIf { it.value != "0" }?.let { add(MoLangAction(it)) }
+                    os.soundEffects.forEach { add(SoundAction(it)) }
+                    os.particleEffects.forEach { add(ParticleAction(
+                        effect = it.effect ?: "",
+                        locator = it.locator,
+                        bindToActor = it.bindToActor,
+                        preEffectScript = it.preEffectScript.takeIf { s -> s.value != "0" }
+                    )) }
+                },
+                onExit = os.onExit.takeIf { it.value != "0" }?.let { listOf(MoLangAction(it)) } ?: listOf(),
+                subGraphs = subGraphs
+            )
         }
-
-        // 返回时把 stateAnims 一起交给 AnimStateMachine
-        return AnimStateMachine(animatable, stateAnims, stateMachine)
+        return StateMachineGraph(
+            initialNode = nodes.first { it.name == initialState },
+            nodes = nodes
+        )
     }
 
     companion object {

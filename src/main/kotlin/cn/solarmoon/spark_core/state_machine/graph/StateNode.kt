@@ -9,10 +9,14 @@ data class StateNode(
     val transitions: List<StateTransition>,
     val onEntry: List<StateAction> = listOf(),
     val onExit: List<StateAction> = listOf(),
-    val subGraph: StateMachineGraph? = null
+    val subGraphs: Map<String, StateMachineGraph> = mapOf()
 ) {
 
-    val transitionMap = transitions.groupBy { it.event }
+    /** event != null 的转移，按 event 分组（事件驱动路径，O(1) 查找） */
+    val eventTransitions = transitions.filter { it.event != null }.groupBy { it.event!! }
+
+    /** event == null 的转移，每 tick 自动求值（Bedrock 模式路径） */
+    val autoTransitions = transitions.filter { it.event == null }
 
     companion object {
         val CODEC: Codec<StateNode> = RecordCodecBuilder.create {
@@ -21,10 +25,8 @@ data class StateNode(
                 StateTransition.CODEC.listOf().optionalFieldOf("transitions", listOf()).forGetter(StateNode::transitions),
                 StateAction.CODEC.listOf().optionalFieldOf("on_entry", listOf()).forGetter(StateNode::onEntry),
                 StateAction.CODEC.listOf().optionalFieldOf("on_exit", listOf()).forGetter(StateNode::onExit),
-                Codec.lazyInitialized { StateMachineGraph.CODEC }.optionalFieldOf("sub_graph").forGetter { Optional.ofNullable(it.subGraph) }
-            ).apply(it) { name, transitions, onEntry, onExit, subGraph ->
-                StateNode(name, transitions, onEntry, onExit, subGraph.orElse(null))
-            }
+                Codec.unboundedMap(Codec.STRING, Codec.lazyInitialized { StateMachineGraph.CODEC }).optionalFieldOf("sub_graphs", mapOf()).forGetter(StateNode::subGraphs)
+            ).apply(it, ::StateNode)
         }
     }
 

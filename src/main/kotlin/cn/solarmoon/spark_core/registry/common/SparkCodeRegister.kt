@@ -3,7 +3,13 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.gas.ActivationContext
 import cn.solarmoon.spark_core.state_machine.graph.StateCondition
+import cn.solarmoon.spark_core.state_machine.graph.actions.MoLangAction
+import cn.solarmoon.spark_core.state_machine.graph.actions.ParticleAction
+import cn.solarmoon.spark_core.state_machine.graph.actions.PlayAnimAction
+import cn.solarmoon.spark_core.state_machine.graph.actions.SoundAction
+import cn.solarmoon.spark_core.state_machine.graph.actions.StopAnimAction
 import cn.solarmoon.spark_core.state_machine.graph.conditions.HasTagCondition
+import cn.solarmoon.spark_core.state_machine.graph.conditions.MoLangCondition
 import cn.solarmoon.spark_core.sync.BlockPosSyncData
 import cn.solarmoon.spark_core.sync.IntSyncData
 import net.minecraft.resources.ResourceLocation
@@ -24,6 +30,13 @@ object SparkCodeRegister {
         event.register(SparkRegistries.STATE_CONDITION_CODEC.key(), id("all")) { StateCondition.All.CODEC }
         event.register(SparkRegistries.STATE_CONDITION_CODEC.key(), id("any")) { StateCondition.Any.CODEC }
         event.register(SparkRegistries.STATE_CONDITION_CODEC.key(), id("has_tag")) { HasTagCondition.CODEC }
+        event.register(SparkRegistries.STATE_CONDITION_CODEC.key(), id("molang")) { MoLangCondition.CODEC }
+
+        event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("play_anim")) { PlayAnimAction.CODEC }
+        event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("stop_anim")) { StopAnimAction.CODEC }
+        event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("molang_action")) { MoLangAction.CODEC }
+        event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("sound")) { SoundAction.CODEC }
+        event.register(SparkRegistries.STATE_ACTION_CODEC.key(), id("particle")) { ParticleAction.CODEC }
 
         event.register(SparkRegistries.ACTIVATION_CONTEXT_CODEC.key(), id("empty")) { ActivationContext.Empty.codec }
         event.register(SparkRegistries.ACTIVATION_CONTEXT_STREAM_CODEC.key(), id("empty")) { ActivationContext.Empty.streamCodec }

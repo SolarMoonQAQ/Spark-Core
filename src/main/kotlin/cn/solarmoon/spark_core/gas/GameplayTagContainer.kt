@@ -19,6 +19,8 @@ data class GameplayTagContainer(
 
     fun isEmpty() = tags.isEmpty()
 
+    fun clear() = tags.clear()
+
     override fun toString() = tags.joinToString(", ")
 
     operator fun contains(tag: GameplayTag): Boolean = has(tag)

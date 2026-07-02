@@ -74,12 +74,15 @@ class StateNodeBuilder(
 
     fun build(): StateNode {
         check(!(subNodes.isNotEmpty() && initialNode == null)) { "必须为子状态机设定一个初始状态" }
+        val subGraphs = if (subNodes.isNotEmpty() && initialNode != null) {
+            mapOf(id to StateMachineGraph(initialNode!!.build(), subNodes.map { it.build() }))
+        } else emptyMap()
         return StateNode(
             id,
             transitions.map { it.build() },
             onEnterActions,
             onExitActions,
-            initialNode?.let { StateMachineGraph(it.build(), subNodes.map { it.build() }) },
+            subGraphs,
         )
     }
 }

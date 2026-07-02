@@ -68,4 +68,16 @@ interface IAnimatable<T> {
         return SparkMolangContext(this)
     }
 
+    /**
+     * 由当前活跃动画控制器设置的动画完成状态。
+     * 用于 MoLang 查询 `q.all_animations_finished` 和 `q.any_animation_finished`。
+     */
+    var controllerAllAnimationsFinished: Boolean
+        get() = (variables["__controller_all_animations_finished"] as? Boolean) ?: true
+        set(value) { variables["__controller_all_animations_finished"] = value }
+
+    var controllerAnyAnimationFinished: Boolean
+        get() = (variables["__controller_any_animation_finished"] as? Boolean) ?: true
+        set(value) { variables["__controller_any_animation_finished"] = value }
+
 }

@@ -22,7 +22,7 @@ class AnimController(
 
     val layers = mutableMapOf<Int, AnimLayer>()
 
-    val stateMachines by lazy { originStateMachines.animationControllers.mapValues { it.value.build(animatable) } }
+    val stateMachines by lazy { originStateMachines.buildRootMachines(animatable) }
 
     var speedChangeTime = 0
         private set
@@ -102,7 +102,7 @@ class AnimController(
 
         layers.forEach { (_, layer) -> layer.tick() }
 
-        stateMachines.values.forEach { it.tick() }
+        stateMachines.values.forEach { it.progress() }
     }
 
 }

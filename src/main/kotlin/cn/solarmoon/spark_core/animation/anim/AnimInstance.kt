@@ -43,6 +43,7 @@ class AnimInstance internal constructor(
     var transitionTick = 0
         private set
     val isInTransition get() = state in listOf(AnimState.ENTER, AnimState.EXIT)
+    val isFinished get() = state == AnimState.IDLE
     var maxLength = origin.animationLength
     var shouldTurnBody = false
 
