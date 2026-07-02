@@ -54,7 +54,7 @@ class AnimInstance internal constructor(
         private set
     var paused = false
     var selfDriving = false
-    var group = AnimGroups.MAIN
+    var group = AnimGroups.POSTURE
     private val notifies = mutableListOf<AnimNotify>()
 
     val inTransitionTick get() = (inTransitionTime * tps).toInt()

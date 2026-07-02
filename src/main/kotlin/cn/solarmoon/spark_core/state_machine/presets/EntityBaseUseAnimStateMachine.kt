@@ -92,7 +92,7 @@ class EntityBaseUseAnimStateMachine(
                     group = payload.group
                     inTransitionTime = payload.transTime
                 } else {
-                    group = AnimGroups.DECOR
+                    group = AnimGroups.ACTION
                 }
                 shouldTurnBody = true
                 lastAnim?.exit()

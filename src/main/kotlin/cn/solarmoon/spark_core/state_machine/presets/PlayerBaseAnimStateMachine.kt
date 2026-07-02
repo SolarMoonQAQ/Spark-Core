@@ -67,7 +67,7 @@ class PlayerBaseAnimStateMachine(
             val sleep = state("sleep")
             val fallFly = state("fall_fly")
             val fall = state("fall")
-            val jump = state("jump") { payload = AnimPayload(0f, AnimGroups.MAIN) }
+            val jump = state("jump") { payload = AnimPayload(0f, AnimGroups.POSTURE) }
             val jumpLand = state("jump_land")
 
             initialChoiceState {
@@ -126,7 +126,7 @@ class PlayerBaseAnimStateMachine(
                 group = payload.group
                 inTransitionTime = payload.transTime
             } else {
-                group = AnimGroups.STATE
+                group = AnimGroups.LOCOMOTION
             }
             lastAnim?.let { if (it.origin.loop != Loop.ONCE) it.exit() }
             enter()

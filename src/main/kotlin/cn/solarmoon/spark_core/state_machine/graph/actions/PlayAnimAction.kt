@@ -41,7 +41,7 @@ class PlayAnimAction(
         }
         instance.inTransitionTime = blendTime
         instance.outTransitionTime = blendTime
-        instance.group = AnimGroups.STATE
+        instance.group = AnimGroups.LOCOMOTION
 
         // 动态权重：利用 AnimInstance 现有的 onEvent 机制，每 tick 重新求值
         if (weightExpression != null) {

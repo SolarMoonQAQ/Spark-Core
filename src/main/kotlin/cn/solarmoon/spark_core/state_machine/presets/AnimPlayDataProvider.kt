@@ -11,5 +11,5 @@ import ru.nsk.kstatemachine.state.IState
 
 data class AnimPayload(
     val transTime: Float = 0.15f,
-    val group: Int = AnimGroups.STATE,
+    val group: Int = AnimGroups.LOCOMOTION,
 )
