@@ -69,14 +69,15 @@ public class SparkMolangContext<T extends IAnimatable<?>> extends MolangContext<
     }
 
     // === 动画控制器相关查询 ===
+    // 注意：框架内置 q → query 全局简写映射，因此这些方法同时支持 query.xxx 和 q.xxx
 
-    @QueryBinding(value = "all_animations_finished", namespace = "q")
+    @QueryBinding("all_animations_finished")
     public double queryAllAnimationsFinished() {
         T entity = getEntity();
         return (entity != null && entity.getControllerAllAnimationsFinished()) ? 1.0 : 0.0;
     }
 
-    @QueryBinding(value = "any_animation_finished", namespace = "q")
+    @QueryBinding("any_animation_finished")
     public double queryAnyAnimationFinished() {
         T entity = getEntity();
         return (entity != null && entity.getControllerAnyAnimationFinished()) ? 1.0 : 0.0;

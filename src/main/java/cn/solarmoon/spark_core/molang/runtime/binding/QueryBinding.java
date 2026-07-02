@@ -12,16 +12,20 @@ import java.lang.annotation.*;
  * 用法：在 MolangContext 的子类中，对返回 {@code double} 的无参方法标注此注解。
  * <pre>
  * public class MyContext extends MolangContext&lt;MyEntity&gt; {
+ *     // 基本用法：注册到默认命名空间 "query"
  *     &#64;QueryBinding("is_on_ground")
  *     public double isOnGround() { return getEntity().isOnGround() ? 1.0 : 0.0; }
  *
- *     // 映射到自定义命名空间
- *     &#64;QueryBinding(value = "is_jumping", namespace = "input")
+ *     // 映射到自定义命名空间，同时声明简写别名
+ *     &#64;QueryBinding(value = "is_jumping", namespace = "input", aliases = {"in"})
  *     public double isJumping() { return ...; }
  * }
  * </pre>
- * 编译后 {@code query.is_on_ground} 和 {@code input.is_jumping}
- * 分别生成直接 INVOKEVIRTUAL 调用。
+ * 编译后 {@code query.is_on_ground}、{@code input.is_jumping}、
+ * {@code in.is_jumping} 分别生成直接 INVOKEVIRTUAL 调用。
+ * <p>
+ * 此外，框架内置命名空间简写映射：{@code q → query}、{@code c → context}，
+ * 无需在注解中重复声明。
  */
 @Documented
 @Target(ElementType.METHOD)
@@ -32,4 +36,10 @@ public @interface QueryBinding {
 
     /** 命名空间，默认 {@code "query"} */
     String namespace() default "query";
+
+    /**
+     * 命名空间简写别名。
+     * 例如设为 {@code {"spt"}} 后，该属性同时可通过 {@code spt.xxx} 访问。
+     */
+    String[] aliases() default {};
 }

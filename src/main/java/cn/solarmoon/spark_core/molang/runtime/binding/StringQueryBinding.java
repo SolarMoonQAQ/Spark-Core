@@ -13,7 +13,7 @@ import java.lang.annotation.*;
  * {@code null} 返回值表示空值，可用于 {@code ??} 空值合并兜底。
  * <pre>
  * public class MyContext extends MolangContext&lt;MyEntity&gt; {
- *     &#64;StringQueryBinding(value = "get", namespace = "subpart")
+ *     &#64;StringQueryBinding(value = "get", namespace = "subpart", aliases = {"spt"})
  *     public String subpartGetString(String channel) {
  *         Object val = getEntity().getAnimatable().variables.get(channel);
  *         return val != null ? val.toString() : null; // null → ?? 兜底
@@ -30,4 +30,10 @@ public @interface StringQueryBinding {
 
     /** 命名空间，默认 {@code "query"} */
     String namespace() default "query";
+
+    /**
+     * 命名空间简写别名。
+     * 例如设为 {@code {"spt"}} 后，该属性同时可通过 {@code spt.xxx} 访问。
+     */
+    String[] aliases() default {};
 }

@@ -53,6 +53,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,40 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
     private static final Type OBJECT_VALUE_TYPE = Type.getType(ObjectValue.class);
     private static final Type VALUE_TYPE = Type.getType(Value.class);
     private static final Type NUMBER_VALUE_TYPE = Type.getType(NumberValue.class);
+
+    /**
+     * 全局命名空间简写映射。所有 context 自动生效，无需在注解中重复声明。
+     * 仅映射不区分大小写的第一级 key（全小写），resolveNamespace 负责转换。
+     */
+    private static final Map<String, String> NAMESPACE_ALIASES = Map.of(
+            "q", "query"
+            // 预留: "c", "context"
+    );
+
+    /** 将简写命名空间解析为全名（大小写不敏感） */
+    private static String resolveNamespace(String ns) {
+        return NAMESPACE_ALIASES.getOrDefault(ns.toLowerCase(), ns);
+    }
+
+    /** 检查 QueryBinding 的 namespace 或 aliases 是否匹配给定的命名空间 */
+    private static boolean matchesNamespace(QueryBinding qb, String ns) {
+        final String resolved = resolveNamespace(ns);
+        if (qb.namespace().equalsIgnoreCase(resolved)) return true;
+        for (String alias : qb.aliases()) {
+            if (alias.equalsIgnoreCase(resolved)) return true;
+        }
+        return false;
+    }
+
+    /** 检查 StringQueryBinding 的 namespace 或 aliases 是否匹配给定的命名空间 */
+    private static boolean matchesNamespace(StringQueryBinding sqb, String ns) {
+        final String resolved = resolveNamespace(ns);
+        if (sqb.namespace().equalsIgnoreCase(resolved)) return true;
+        for (String alias : sqb.aliases()) {
+            if (alias.equalsIgnoreCase(resolved)) return true;
+        }
+        return false;
+    }
 
     private final ExpressionInterpreter<?> interpreter;
     private final MethodVisitor mv;
@@ -988,7 +1023,7 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
         for (final Method m : type.getMethods()) {
             final QueryBinding qb = m.getAnnotation(QueryBinding.class);
             if (qb != null && qb.value().equals(property)
-                    && qb.namespace().equalsIgnoreCase(namespace)
+                    && matchesNamespace(qb, namespace)
                     && m.getReturnType() == double.class
                     && m.getParameterCount() == 0
                     && !Modifier.isStatic(m.getModifiers())) {
@@ -1018,7 +1053,7 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
         for (final Method m : type.getMethods()) {
             final QueryBinding qb = m.getAnnotation(QueryBinding.class);
             if (qb != null && qb.value().equals(property)
-                    && qb.namespace().equalsIgnoreCase(namespace)
+                    && matchesNamespace(qb, namespace)
                     && m.getReturnType() == double.class
                     && !Modifier.isStatic(m.getModifiers())) {
                 return m;
@@ -1046,7 +1081,7 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
         for (final Method m : type.getMethods()) {
             final StringQueryBinding sqb = m.getAnnotation(StringQueryBinding.class);
             if (sqb != null && sqb.value().equals(property)
-                    && sqb.namespace().equalsIgnoreCase(namespace)
+                    && matchesNamespace(sqb, namespace)
                     && m.getReturnType() == String.class
                     && m.getParameterCount() == 0
                     && !Modifier.isStatic(m.getModifiers())) {
@@ -1073,7 +1108,7 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
         for (final Method m : type.getMethods()) {
             final StringQueryBinding sqb = m.getAnnotation(StringQueryBinding.class);
             if (sqb != null && sqb.value().equals(property)
-                    && sqb.namespace().equalsIgnoreCase(namespace)
+                    && matchesNamespace(sqb, namespace)
                     && m.getReturnType() == String.class
                     && !Modifier.isStatic(m.getModifiers())) {
                 return m;
