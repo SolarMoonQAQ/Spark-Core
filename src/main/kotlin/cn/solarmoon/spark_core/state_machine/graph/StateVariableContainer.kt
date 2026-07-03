@@ -49,9 +49,21 @@ class StateVariableContainer {
 
     /**
      * 帧首快照覆盖 —— 用 [source] 的全部数据替换当前存储。
+     * 先清空再写入，会丢失目标容器中已有的其他键。
+     * 如需保留目标容器现有字段，使用 [putAll]。
      */
     fun replaceAll(source: StateVariableContainer) {
         data.clear()
+        data.putAll(source.data)
+    }
+
+    /**
+     * 合并写入 —— 将 [source] 中所有键写入当前容器。
+     * 同名键覆盖，目标容器中未被 source 提及的键保持不变。
+     *
+     * 典型用途：逻辑层产出写入到表现层容器，保留表现层自身的动画完成标记等变量。
+     */
+    fun putAll(source: StateVariableContainer) {
         data.putAll(source.data)
     }
 }
