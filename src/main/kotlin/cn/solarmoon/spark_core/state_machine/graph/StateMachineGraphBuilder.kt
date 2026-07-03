@@ -42,10 +42,15 @@ class StateNodeBuilder(
     private val id: String
 ) : NodeContainer {
     private val transitions = mutableListOf<StateTransitionBuilder>()
+
+    // 旧版隐式子图（向后兼容）：嵌套 node{} 自动组成 subGraphs[id]
     private val subNodes = mutableListOf<StateNodeBuilder>()
     private var initialNode: StateNodeBuilder? = null
 
-    // 新增：进入/退出动作
+    // 新版显式命名子图：subGraph("name") { ... } → subGraphs["name"]
+    private val subGraphBuilders = mutableListOf<Pair<String, StateMachineGraphBuilder>>()
+
+    // 进入/退出动作
     private val onEnterActions = mutableListOf<StateAction>()
     private val onExitActions = mutableListOf<StateAction>()
 
@@ -57,6 +62,31 @@ class StateNodeBuilder(
 
     override fun node(id: String, initial: Boolean, block: StateNodeBuilder.() -> Unit) =
         StateNodeBuilder(id).apply(block).also { if (initial) initialNode = it else subNodes += it }
+
+    /**
+     * 新建一个命名子图，构建块内使用 [StateMachineGraphBuilder] 的完整 DSL
+     *（支持 initialNode、node、on、onEnter、onExit 等）。
+     *
+     * 用法：
+     * ```
+     * node("stand") {
+     *     subGraph("gait") {
+     *         initialNode("idle") { ... }
+     *         node("walk") { ... }
+     *     }
+     *     subGraph("vert") {
+     *         initialNode("ground") { ... }
+     *     }
+     * }
+     * ```
+     * 生成的 StateNode.subGraphs = {"gait": gaitGraph, "vert": vertGraph}
+     *
+     * @param name 子图名称，对应 [StateGraphController.children] 中的 key
+     * @param block 子图构建块
+     */
+    fun subGraph(name: String, block: StateMachineGraphBuilder.() -> Unit) {
+        subGraphBuilders.add(name to StateMachineGraphBuilder().apply(block))
+    }
 
     // DSL: onEnter { +action }
     fun onEnter(block: ActionListBuilder.() -> Unit) {
@@ -73,10 +103,19 @@ class StateNodeBuilder(
     }
 
     fun build(): StateNode {
-        check(!(subNodes.isNotEmpty() && initialNode == null)) { "必须为子状态机设定一个初始状态" }
-        val subGraphs = if (subNodes.isNotEmpty() && initialNode != null) {
-            mapOf(id to StateMachineGraph(initialNode!!.build(), subNodes.map { it.build() }))
-        } else emptyMap()
+        val subGraphs = mutableMapOf<String, StateMachineGraph>()
+
+        // 1. 显式命名子图（新方式）
+        subGraphBuilders.forEach { (name, builder) ->
+            subGraphs[name] = builder.build()
+        }
+
+        // 2. 隐式子图：嵌套 node{} 自动组成 subGraphs[id]（旧方式，向后兼容）
+        if (subNodes.isNotEmpty()) {
+            check(initialNode != null) { "节点 \"$id\" 定义了子节点但缺少初始状态（initialNode），请设置一个子节点的 initial = true" }
+            subGraphs[id] = StateMachineGraph(initialNode!!.build(), subNodes.map { it.build() })
+        }
+
         return StateNode(
             id,
             transitions.map { it.build() },
