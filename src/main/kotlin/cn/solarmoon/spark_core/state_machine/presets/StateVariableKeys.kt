@@ -12,34 +12,34 @@ import net.minecraft.resources.ResourceLocation
 object StateVariableKeys {
 
     /** 是否在地面 */
-    val ON_GROUND: StateVariableKey<Boolean> = key("spark_core:on_ground", false)
+    @JvmField val ON_GROUND: StateVariableKey<Boolean> = key("spark_core:on_ground", false)
 
     /** 水平速度（m/s） */
-    val SPEED: StateVariableKey<Float> = key("spark_core:speed", 0f)
+    @JvmField val SPEED: StateVariableKey<Float> = key("spark_core:speed", 0f)
 
     /** 垂直速度（m/s，正=上升） */
-    val VERTICAL_SPEED: StateVariableKey<Float> = key("spark_core:vertical_speed", 0f)
+    @JvmField val VERTICAL_SPEED: StateVariableKey<Float> = key("spark_core:vertical_speed", 0f)
 
     /** 是否在冲刺 */
-    val IS_SPRINTING: StateVariableKey<Boolean> = key("spark_core:is_sprinting", false)
+    @JvmField val IS_SPRINTING: StateVariableKey<Boolean> = key("spark_core:is_sprinting", false)
 
     /** 是否在水中 */
-    val IS_SWIMMING: StateVariableKey<Boolean> = key("spark_core:is_swimming", false)
+    @JvmField val IS_SWIMMING: StateVariableKey<Boolean> = key("spark_core:is_swimming", false)
 
     /** 是否已死亡 */
-    val IS_DEAD: StateVariableKey<Boolean> = key("spark_core:is_dead", false)
+    @JvmField val IS_DEAD: StateVariableKey<Boolean> = key("spark_core:is_dead", false)
 
     /** 前进输入强度（-1 ~ 1） */
-    val INPUT_FORWARD: StateVariableKey<Float> = key("spark_core:input_forward", 0f)
+    @JvmField val INPUT_FORWARD: StateVariableKey<Float> = key("spark_core:input_forward", 0f)
 
     /** 侧移输入强度（-1 ~ 1） */
-    val INPUT_STRAFE: StateVariableKey<Float> = key("spark_core:input_strafe", 0f)
+    @JvmField val INPUT_STRAFE: StateVariableKey<Float> = key("spark_core:input_strafe", 0f)
 
     /** 当前状态所有动画是否均已完成 */
-    val ALL_ANIMATIONS_FINISHED: StateVariableKey<Boolean> = key("spark_core:all_animations_finished", true)
+    @JvmField val ALL_ANIMATIONS_FINISHED: StateVariableKey<Boolean> = key("spark_core:all_animations_finished", true)
 
     /** 当前状态是否有任意动画已完成 */
-    val ANY_ANIMATION_FINISHED: StateVariableKey<Boolean> = key("spark_core:any_animation_finished", true)
+    @JvmField val ANY_ANIMATION_FINISHED: StateVariableKey<Boolean> = key("spark_core:any_animation_finished", true)
 
     /**
      * 便捷构造工厂。
