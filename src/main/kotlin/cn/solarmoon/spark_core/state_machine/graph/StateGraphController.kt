@@ -19,15 +19,26 @@ import ru.nsk.kstatemachine.transition.onTriggered
 import ru.nsk.kstatemachine.transition.targetState
 
 // 此处时间轴只用于控制输入缓冲
-open class StateGraphController(
+open class StateGraphController @JvmOverloads constructor(
     val stateMachineGraph: StateMachineGraph,
     /** 直接子控制器实例（key = 控制器名），工厂方法递归填充，运行时只含本层 */
-    private val children: Map<String, StateGraphController> = mapOf()
+    private val children: Map<String, StateGraphController> = mapOf(),
+    /** 数值型状态变量容器（speed、input_forward 等）。可传入外部容器实现父子/跨层共享；null 则自建。 */
+    variables: StateVariableContainer? = null,
+    /** 标记型标签容器。可传入外部容器实现父子/跨层共享；null 则自建。 */
+    tags: GameplayTagContainer? = null
 ) {
 
-    val tags = GameplayTagContainer()
-    /** 数值型状态变量容器（speed、input_forward 等），与标记型 tags 互补 */
-    val variables = StateVariableContainer()
+    /** 数值型状态变量容器。若构造时传入外部容器则共享引用，否则自建独立实例。 */
+    val variables: StateVariableContainer = variables ?: StateVariableContainer()
+    /** 标记型标签容器。若构造时传入外部容器则共享引用，否则自建独立实例。 */
+    val tags: GameplayTagContainer = tags ?: GameplayTagContainer()
+
+    /** 变量容器是否自建（非共享），reset 时用于判断是否 clear */
+    private val ownsVariables = variables == null
+    /** 标签容器是否自建（非共享），reset 时用于判断是否 clear */
+    private val ownsTags = tags == null
+
     var currentNode: StateNode = stateMachineGraph.initialNode
         private set
 
@@ -92,13 +103,14 @@ open class StateGraphController(
         triggerEvent(null)
     }
 
-    /** 重置到初始状态（递归子控）。利用 KStateMachine.restartBlocking() 回到 initial state */
+    /** 重置到初始状态（递归子控）。利用 KStateMachine.restartBlocking() 回到 initial state。
+     *  共享 storage 时不 clear——避免子控 reset 误清父控/外部写入的快照数据。 */
     open fun reset() {
         activeChildren.values.forEach { it.reset() }
         activeChildren.clear()
         stateMachine.restartBlocking()
-        tags.clear()
-        variables.clear()
+        if (ownsTags) tags.clear()
+        if (ownsVariables) variables.clear()
     }
 
     open fun triggerEvent(type: String?): ActionEvent {
