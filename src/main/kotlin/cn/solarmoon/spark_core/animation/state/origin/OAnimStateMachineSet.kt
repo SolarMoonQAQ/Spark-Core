@@ -22,15 +22,23 @@ data class OAnimStateMachineSet(
     /**
      * 递归构建控制器树，只返回不被其他控制器引用的根控制器。
      *
+     * <p>未传入 [variables] 或 [tags] 时在本方法内新建实例，递归共享给全部子控；
+     * 传入外部容器时则全部子控共享该外部容器。
+     *
      * @param animatable 单个动画目标（1:1 本地控制器模式）
-     * @param variables  共享变量容器，可传入外部容器；null 则各控自建
-     * @param tags       共享标签容器，可传入外部容器；null 则各控自建
+     * @param variables  共享变量容器；null 则本方法内新建并递归共享
+     * @param tags       共享标签容器；null 则本方法内新建并递归共享
      */
+    @JvmOverloads
     fun buildRootMachines(
         animatable: IAnimatable<*>,
         variables: StateVariableContainer? = null,
         tags: GameplayTagContainer? = null
     ): Map<String, AnimStateMachine> {
+        // null 时在入口新建，递归共享给全部子控，避免每个子控各自自建
+        val sharedVars = variables ?: StateVariableContainer()
+        val sharedTags = tags ?: GameplayTagContainer()
+
         // 第一遍：全部编译为 StateMachineGraph，同时填充 subGraphs
         val graphs = compiledGraphs()
 
@@ -40,10 +48,9 @@ data class OAnimStateMachineSet(
         }.toSet()
         val rootNames = graphs.keys - childNames
 
-        /** 递归构建子树，子控共享同一 variables/tags */
+        /** 递归构建子树，子控共享同一 sharedVars/sharedTags */
         fun buildSubtree(graph: StateMachineGraph): AnimStateMachine {
             val children = mutableMapOf<String, StateGraphController>()
-            // 收集 graph 中所有 state 引用的子图 → 递归构建
             graph.nodeMap.values.forEach { node ->
                 node.subGraphs.forEach { (name, subGraph) ->
                     if (name !in children) {
@@ -51,7 +58,7 @@ data class OAnimStateMachineSet(
                     }
                 }
             }
-            return AnimStateMachine(graph, animatable, children, variables, tags)
+            return AnimStateMachine(graph, animatable, children, sharedVars, sharedTags)
         }
 
         return rootNames.associateWith { buildSubtree(graphs[it]!!) }
@@ -65,7 +72,7 @@ data class OAnimStateMachineSet(
      *   <li>构建 [MultiAnimStateMachine] 而非 [AnimStateMachine]</li>
      *   <li>全部子控共享同一批 [animTargets] 广播目标</li>
      *   <li>全部子控共享同一 [contextProvider] / [fallbackAnimations] / [builtinAnimations] / [animGroup]</li>
-     *   <li>[variables] 和 [tags] 可传入外部容器与逻辑层 [MechaLogicController] 共享</li>
+     *   <li>未传入 [variables] 或 [tags] 时在本方法内新建并递归共享</li>
      * </ul>
      *
      * <p>JSON 控制器使用 [cn.solarmoon.spark_core.state_machine.graph.conditions.MoLangCondition] 做转移条件，
@@ -77,10 +84,11 @@ data class OAnimStateMachineSet(
      * @param fallbackAnimations 实例级默认动画集（素体提供），可为空
      * @param builtinAnimations  Mod 内置动画集，可为空
      * @param animGroup          写入目标动画层
-     * @param variables          共享变量容器，可传入外部容器与逻辑层共享；null 则自建
-     * @param tags               共享标签容器，可传入外部容器；null 则自建
+     * @param variables          共享变量容器；null 则本方法内新建并递归共享
+     * @param tags               共享标签容器；null 则本方法内新建并递归共享
      * @return 根控制器名 → MultiAnimStateMachine 映射
      */
+    @JvmOverloads
     fun buildRootMultiMachines(
         animTargets: List<IAnimatable<*>>,
         contextProvider: () -> SparkMolangContext<*>,
@@ -90,6 +98,10 @@ data class OAnimStateMachineSet(
         variables: StateVariableContainer? = null,
         tags: GameplayTagContainer? = null
     ): Map<String, MultiAnimStateMachine> {
+        // null 时在入口新建，递归共享给全部子控
+        val sharedVars = variables ?: StateVariableContainer()
+        val sharedTags = tags ?: GameplayTagContainer()
+
         val graphs = compiledGraphs()
 
         val childNames = graphs.values.flatMap { graph ->
@@ -97,7 +109,7 @@ data class OAnimStateMachineSet(
         }.toSet()
         val rootNames = graphs.keys - childNames
 
-        /** 递归构建子树，子控同类型，共享同一 variables/tags */
+        /** 递归构建子树，子控同类型，共享同一 sharedVars/sharedTags */
         fun buildSubtree(graph: StateMachineGraph): MultiAnimStateMachine {
             val children = mutableMapOf<String, StateGraphController>()
             graph.nodeMap.values.forEach { node ->
@@ -110,7 +122,7 @@ data class OAnimStateMachineSet(
             return MultiAnimStateMachine(
                 graph, animTargets, contextProvider,
                 fallbackAnimations, builtinAnimations, animGroup,
-                children, variables, tags
+                children, sharedVars, sharedTags
             )
         }
 
