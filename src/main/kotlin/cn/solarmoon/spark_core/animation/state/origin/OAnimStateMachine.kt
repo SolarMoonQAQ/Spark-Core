@@ -2,9 +2,11 @@ package cn.solarmoon.spark_core.animation.state.origin
 
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.state.AnimStateMachine
+import cn.solarmoon.spark_core.gas.GameplayTagContainer
 import cn.solarmoon.spark_core.state_machine.graph.StateMachineGraph
 import cn.solarmoon.spark_core.state_machine.graph.StateNode
 import cn.solarmoon.spark_core.state_machine.graph.StateTransition
+import cn.solarmoon.spark_core.state_machine.graph.StateVariableContainer
 import cn.solarmoon.spark_core.state_machine.graph.actions.MoLangAction
 import cn.solarmoon.spark_core.state_machine.graph.actions.ParticleAction
 import cn.solarmoon.spark_core.state_machine.graph.actions.PlayAnimAction
@@ -18,9 +20,20 @@ data class OAnimStateMachine(
     val states: Map<String, OAnimState>
 ) {
 
-    fun build(animatable: IAnimatable<*>): AnimStateMachine {
+    /**
+     * 单独构建 [AnimStateMachine]（无子控制器上下文）。
+     *
+     * @param animatable 动画目标
+     * @param variables  共享变量容器，可传入外部容器；null 则自建
+     * @param tags       共享标签容器，可传入外部容器；null 则自建
+     */
+    fun build(
+        animatable: IAnimatable<*>,
+        variables: StateVariableContainer? = null,
+        tags: GameplayTagContainer? = null
+    ): AnimStateMachine {
         // 单独构建时无子控制器上下文，传空 resolver
-        return AnimStateMachine(toStateMachineGraph { null }, animatable)
+        return AnimStateMachine(toStateMachineGraph { null }, animatable, variables = variables, tags = tags)
     }
 
     /**

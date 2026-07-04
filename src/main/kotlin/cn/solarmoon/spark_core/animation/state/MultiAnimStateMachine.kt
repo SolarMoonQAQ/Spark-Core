@@ -7,9 +7,11 @@ import cn.solarmoon.spark_core.animation.anim.AnimInstance
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.molang.SparkMolangContext
+import cn.solarmoon.spark_core.gas.GameplayTagContainer
 import cn.solarmoon.spark_core.state_machine.graph.StateGraphController
 import cn.solarmoon.spark_core.state_machine.graph.StateMachineGraph
 import cn.solarmoon.spark_core.state_machine.graph.StateNode
+import cn.solarmoon.spark_core.state_machine.graph.StateVariableContainer
 import cn.solarmoon.spark_core.state_machine.presets.StateVariableKeys
 
 /**
@@ -46,8 +48,12 @@ open class MultiAnimStateMachine(
     var builtinAnimations: OAnimationSet? = null,
     /** 写入的目标动画层，默认 [AnimGroups.AMBIENT] */
     val animGroup: Int = AnimGroups.AMBIENT,
-    children: Map<String, StateGraphController> = mapOf()
-) : StateGraphController(graph, children) {
+    children: Map<String, StateGraphController> = mapOf(),
+    /** 共享变量容器，可传入外部容器实现与逻辑层共享；null 则自建 */
+    variables: StateVariableContainer? = null,
+    /** 共享标签容器，可传入外部容器实现与逻辑层共享；null 则自建 */
+    tags: GameplayTagContainer? = null
+) : StateGraphController(graph, children, variables, tags) {
 
     /** 当前状态的活跃动画追踪列表（由 PlayAnimAction 维护，仅本机播放的动画） */
     val activeAnimInstances = mutableListOf<AnimInstance>()

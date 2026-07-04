@@ -2,9 +2,15 @@ package cn.solarmoon.spark_core.animation.state.origin
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.IAnimatable
+import cn.solarmoon.spark_core.animation.anim.AnimGroups
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.state.AnimStateMachine
+import cn.solarmoon.spark_core.animation.state.MultiAnimStateMachine
+import cn.solarmoon.spark_core.gas.GameplayTagContainer
+import cn.solarmoon.spark_core.molang.SparkMolangContext
 import cn.solarmoon.spark_core.state_machine.graph.StateGraphController
 import cn.solarmoon.spark_core.state_machine.graph.StateMachineGraph
+import cn.solarmoon.spark_core.state_machine.graph.StateVariableContainer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.resources.ResourceLocation
@@ -15,8 +21,16 @@ data class OAnimStateMachineSet(
 
     /**
      * 递归构建控制器树，只返回不被其他控制器引用的根控制器。
+     *
+     * @param animatable 单个动画目标（1:1 本地控制器模式）
+     * @param variables  共享变量容器，可传入外部容器；null 则各控自建
+     * @param tags       共享标签容器，可传入外部容器；null 则各控自建
      */
-    fun buildRootMachines(animatable: IAnimatable<*>): Map<String, AnimStateMachine> {
+    fun buildRootMachines(
+        animatable: IAnimatable<*>,
+        variables: StateVariableContainer? = null,
+        tags: GameplayTagContainer? = null
+    ): Map<String, AnimStateMachine> {
         // 第一遍：全部编译为 StateMachineGraph，同时填充 subGraphs
         val graphs = compiledGraphs()
 
@@ -26,7 +40,7 @@ data class OAnimStateMachineSet(
         }.toSet()
         val rootNames = graphs.keys - childNames
 
-        /** 递归构建子树 */
+        /** 递归构建子树，子控共享同一 variables/tags */
         fun buildSubtree(graph: StateMachineGraph): AnimStateMachine {
             val children = mutableMapOf<String, StateGraphController>()
             // 收集 graph 中所有 state 引用的子图 → 递归构建
@@ -37,7 +51,67 @@ data class OAnimStateMachineSet(
                     }
                 }
             }
-            return AnimStateMachine(graph, animatable, children)
+            return AnimStateMachine(graph, animatable, children, variables, tags)
+        }
+
+        return rootNames.associateWith { buildSubtree(graphs[it]!!) }
+    }
+
+    /**
+     * 中央广播模式：从 JSON 反序列化的动画控制器递归构建 [MultiAnimStateMachine] 树。
+     *
+     * <p>与 [buildRootMachines] 的区别：
+     * <ul>
+     *   <li>构建 [MultiAnimStateMachine] 而非 [AnimStateMachine]</li>
+     *   <li>全部子控共享同一批 [animTargets] 广播目标</li>
+     *   <li>全部子控共享同一 [contextProvider] / [fallbackAnimations] / [builtinAnimations] / [animGroup]</li>
+     *   <li>[variables] 和 [tags] 可传入外部容器与逻辑层 [MechaLogicController] 共享</li>
+     * </ul>
+     *
+     * <p>JSON 控制器使用 [cn.solarmoon.spark_core.state_machine.graph.conditions.MoLangCondition] 做转移条件，
+     * 不支持事件触发转移和 [cn.solarmoon.spark_core.state_machine.graph.conditions.CheckVariableCondition]。
+     * 需要硬编码补充时可直接构造 [MultiAnimStateMachine] 并传入同一份 [variables]。
+     *
+     * @param animTargets        广播目标列表（如机甲的所有 SubPart）
+     * @param contextProvider    MoLang 上下文提供者（来自宿主实体）
+     * @param fallbackAnimations 实例级默认动画集（素体提供），可为空
+     * @param builtinAnimations  Mod 内置动画集，可为空
+     * @param animGroup          写入目标动画层
+     * @param variables          共享变量容器，可传入外部容器与逻辑层共享；null 则自建
+     * @param tags               共享标签容器，可传入外部容器；null 则自建
+     * @return 根控制器名 → MultiAnimStateMachine 映射
+     */
+    fun buildRootMultiMachines(
+        animTargets: List<IAnimatable<*>>,
+        contextProvider: () -> SparkMolangContext<*>,
+        fallbackAnimations: OAnimationSet? = null,
+        builtinAnimations: OAnimationSet? = null,
+        animGroup: Int = AnimGroups.AMBIENT,
+        variables: StateVariableContainer? = null,
+        tags: GameplayTagContainer? = null
+    ): Map<String, MultiAnimStateMachine> {
+        val graphs = compiledGraphs()
+
+        val childNames = graphs.values.flatMap { graph ->
+            graph.nodeMap.values.flatMap { it.subGraphs.keys }
+        }.toSet()
+        val rootNames = graphs.keys - childNames
+
+        /** 递归构建子树，子控同类型，共享同一 variables/tags */
+        fun buildSubtree(graph: StateMachineGraph): MultiAnimStateMachine {
+            val children = mutableMapOf<String, StateGraphController>()
+            graph.nodeMap.values.forEach { node ->
+                node.subGraphs.forEach { (name, subGraph) ->
+                    if (name !in children) {
+                        children[name] = buildSubtree(subGraph)
+                    }
+                }
+            }
+            return MultiAnimStateMachine(
+                graph, animTargets, contextProvider,
+                fallbackAnimations, builtinAnimations, animGroup,
+                children, variables, tags
+            )
         }
 
         return rootNames.associateWith { buildSubtree(graphs[it]!!) }

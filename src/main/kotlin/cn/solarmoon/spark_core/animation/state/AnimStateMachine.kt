@@ -3,9 +3,11 @@ package cn.solarmoon.spark_core.animation.state
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
+import cn.solarmoon.spark_core.gas.GameplayTagContainer
 import cn.solarmoon.spark_core.state_machine.graph.StateGraphController
 import cn.solarmoon.spark_core.state_machine.graph.StateMachineGraph
 import cn.solarmoon.spark_core.state_machine.graph.StateNode
+import cn.solarmoon.spark_core.state_machine.graph.StateVariableContainer
 
 /**
  * 动画状态机控制器。
@@ -20,8 +22,12 @@ import cn.solarmoon.spark_core.state_machine.graph.StateNode
 class AnimStateMachine(
     graph: StateMachineGraph,
     val animatable: IAnimatable<*>,
-    children: Map<String, StateGraphController> = mapOf()
-) : StateGraphController(graph, children) {
+    children: Map<String, StateGraphController> = mapOf(),
+    /** 共享变量容器，可传入外部容器实现与逻辑层共享；null 则自建 */
+    variables: StateVariableContainer? = null,
+    /** 共享标签容器，可传入外部容器实现与逻辑层共享；null 则自建 */
+    tags: GameplayTagContainer? = null
+) : StateGraphController(graph, children, variables, tags) {
 
     /** 当前状态活跃的动画追踪列表（仅本层，不含子控） */
     internal val activeAnimInstances = mutableListOf<AnimInstance>()
