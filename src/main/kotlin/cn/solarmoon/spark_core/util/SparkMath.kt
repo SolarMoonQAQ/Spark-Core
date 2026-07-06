@@ -201,6 +201,35 @@ fun Transform.lerp(target: Transform, delta: Float) = Transform(
     scale.toVector3f().lerp(target.scale.toVector3f(), delta).toBVector3f()
 )
 
+/** JME Transform → JOML Matrix4f 便捷转换 */
+fun Transform.toMatrix4f(): org.joml.Matrix4f {
+    return org.joml.Matrix4f().translationRotateScale(
+        translation.toVector3f(),
+        rotation.toQuaternionf(),
+        scale.toVector3f()
+    )
+}
+
+/**
+ * 对 JOML Matrix4f 做 TRS 分解后插值：平移 lerp、旋转 slerp、缩放 lerp。
+ * 避免 JOML 内置分量线性插值对旋转部分造成的非均匀缩放畸变。
+ */
+fun org.joml.Matrix4f.lerp(target: org.joml.Matrix4f, delta: Float): org.joml.Matrix4f {
+    val t0 = Vector3f(); getTranslation(t0)
+    val r0 = Quaternionf(); getNormalizedRotation(r0)
+    val s0 = Vector3f(); getScale(s0)
+
+    val t1 = Vector3f(); target.getTranslation(t1)
+    val r1 = Quaternionf(); target.getNormalizedRotation(r1)
+    val s1 = Vector3f(); target.getScale(s1)
+
+    return org.joml.Matrix4f().translationRotateScale(
+        t0.lerp(t1, delta),
+        r0.slerp(r1, delta),
+        s0.lerp(s1, delta)
+    )
+}
+
 fun catmullromVector3f(prev: Vector3f, now: Vector3f, next: Vector3f, nextNext: Vector3f, t: Float): Vector3f {
     return Vector3f(
         Mth.catmullrom(t, prev.x, now.x, next.x, nextNext.x),

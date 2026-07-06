@@ -11,6 +11,7 @@ import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLi
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeLooping;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.ParticleLifetimeEvents;
 import cn.solarmoon.spark_core.particle.common.data.event.EventNode;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -50,7 +51,10 @@ public class ParticleEmitterInstance {
     private float emitterLifetime = 0;
     private boolean active = true;
     private boolean expired = false;
-    private final Matrix4f transform = new Matrix4f();
+    /** 当前帧位姿变换矩阵 */
+    private Matrix4f transform = new Matrix4f();
+    /** 上一帧位姿变换矩阵（null = 首帧或无历史，不插值） */
+    private Matrix4f oldTransform = null;
 
     /** 绑定的定位器锚点（null = 无绑定，世界坐标模式） */
     @Nullable
@@ -66,7 +70,7 @@ public class ParticleEmitterInstance {
     // 发射器发射速率累加器
     private float spawnAccumulator = 0;
     private boolean instantFired = false; // EmitterRateInstant 是否已触发
-    private Level level;
+    private final Level level;
 
     // EmitterLifetimeLooping 相位追踪（用于睡眠/激活循环 + 周期重置）
     private final boolean hasLooping;
@@ -99,7 +103,7 @@ public class ParticleEmitterInstance {
         this(definition, null);
     }
 
-    public ParticleEmitterInstance(ParticleEffectDefinition definition, @Nullable Level level) {
+    public ParticleEmitterInstance(ParticleEffectDefinition definition, Level level) {
         this.definition = definition;
         this.level = level;
         this.doubleBuffer = new ParticleDoubleBuffer(256);
@@ -148,14 +152,12 @@ public class ParticleEmitterInstance {
     public void tick(Level level, float tickDt) {
         if (expired) return;
 
-        // 0. 若绑定到锚点，轮询实时位姿（JME Transform → JOML transform）
+        // 0. 若绑定到锚点，轮询实时位姿（JME Transform → JOML Matrix4f）
+        // 使用 updateTransform 保存旧位姿，供粒子发射时在 old→new 路径上插值
         if (anchor != null) {
             com.jme3.math.Transform t = anchor.getLocatorTransform(instanceId, anchorLocatorName);
             if (t != null) {
-                setPosition(new Vec3(t.getTranslation().x, t.getTranslation().y, t.getTranslation().z));
-                setRotation(new Quaternionf(t.getRotation().getX(), t.getRotation().getY(),
-                    t.getRotation().getZ(), t.getRotation().getW()));
-                setScale(new Vec3(t.getScale().x, t.getScale().y, t.getScale().z));
+                updateTransform(SparkMathKt.toMatrix4f(t));
             }
             Vec3 vel = anchor.getAnchorVelocity(instanceId, anchorLocatorName);
             if (vel != null) this.velocity = vel;
@@ -246,20 +248,31 @@ public class ParticleEmitterInstance {
                 comp.onApply(buf, idx, molang);
             }
 
-            // World 模式：用完整变换矩阵将局部偏移转为世界坐标（含旋转和缩放）
+            // World 模式：用插值变换矩阵将局部偏移转为世界坐标（含旋转和缩放）
+            // 若有上一帧位姿且本帧发射多个粒子，按时间比例在 old→new 路径上均匀分布，
+            // 避免高速锚点移动时粒子呈团块状
             // Local 模式：粒子存相对坐标，不做偏移
             if (!isLocal) {
+                Matrix4f useTransform = transform;
+                // Instant 模式不插值（瞬间爆发，所有粒子在同一位置），
+                // Steady 模式按时间比例分布粒子在 old→new 路径上
+                boolean isSteady = definition.getEmitterPreset().getSpawnRateExpr() != null;
+                if (oldTransform != null && isSteady && spawnCount > 1) {
+                    float t = (float) s / (spawnCount - 1);
+                    useTransform = SparkMathKt.lerp(oldTransform, transform, t);
+                }
+
                 float ox = buf.getPosX(idx);
                 float oy = buf.getPosY(idx);
                 float oz = buf.getPosZ(idx);
-                Vector4f worldPos = transform.transform(new Vector4f(ox, oy, oz, 1.0f));
+                Vector4f worldPos = useTransform.transform(new Vector4f(ox, oy, oz, 1.0f));
                 buf.setPos(idx, worldPos.x, worldPos.y, worldPos.z);
 
                 // 速度方向也需要旋转到世界空间（w=0 跳过平移，仅应用旋转和缩放）
                 float vx = buf.getVelX(idx);
                 float vy = buf.getVelY(idx);
                 float vz = buf.getVelZ(idx);
-                Vector4f worldVel = transform.transform(new Vector4f(vx, vy, vz, 0.0f));
+                Vector4f worldVel = useTransform.transform(new Vector4f(vx, vy, vz, 0.0f));
                 buf.setVel(idx, worldVel.x, worldVel.y, worldVel.z);
             }
 
@@ -618,8 +631,26 @@ public class ParticleEmitterInstance {
     /** 获取完整变换矩阵。 */
     public Matrix4f getTransform() { return transform; }
 
-    /** 设置完整变换矩阵（深拷贝）。 */
-    public void setTransform(Matrix4f mat) { transform.set(mat); }
+    /** 设置完整变换矩阵。同时更新 oldTransform，避免与上次位姿产生错误插值。 */
+    public void setTransform(Matrix4f mat) {
+        transform.set(mat);
+        if (oldTransform == null) oldTransform = new Matrix4f(mat);
+        else oldTransform.set(mat);
+    }
+
+    /**
+     * 更新发射器位姿（用于锚点跟随等连续运动场景）。
+     * 将当前 transform 保存为 oldTransform，然后设置新位姿，
+     * 使粒子发射时能在 old→new 路径上按时间比例插值，避免高速移动时的团块感。
+     */
+    public void updateTransform(Matrix4f newTransform) {
+        if (oldTransform == null) {
+            oldTransform = new Matrix4f(newTransform);
+        } else {
+            oldTransform = transform;  // 引用交换：上一帧的变成旧值
+        }
+        transform = newTransform;
+    }
 
     /** 绑定到定位器锚点，发射器每 tick 轮询 locator 位姿以跟随移动 */
     public void bindToAnchor(IParticleAnchor anchor, String locatorName) {
