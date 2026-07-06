@@ -55,12 +55,10 @@ class ParticleAction(
         }
 
         try {
-            if (locator != null) {
-                ParticleEffects.burst(level, effectId, locator, entity.uuid)
-            } else {
-                val pos = Vec3(entity.x, entity.y, entity.z)
-                ParticleEffects.burst(level, effectId, pos, Quaternionf())
-            }
+            // 当前 locator 绑定需 IParticleAnchor 接口，状态机暂不支持
+            // 回退为实体位置的一次性粒子效果
+            val pos = Vec3(entity.x, entity.y, entity.z)
+            ParticleEffects.burst(level, effectId, pos, Quaternionf())
         } catch (e: Exception) {
             SparkCore.LOGGER.warn("无法触发粒子效果 [{}]: {}", effect, e.message)
         }

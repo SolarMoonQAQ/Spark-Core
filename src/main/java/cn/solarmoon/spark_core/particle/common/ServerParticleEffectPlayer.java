@@ -1,6 +1,5 @@
-package cn.solarmoon.spark_core.particle.client;
+package cn.solarmoon.spark_core.particle.common;
 
-import cn.solarmoon.spark_core.particle.common.IParticleEffectPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -34,7 +33,7 @@ public class ServerParticleEffectPlayer implements IParticleEffectPlayer {
 
     @Override
     public UUID playEffect(Level level, ResourceLocation effectId,
-                           String locator, UUID entityId) {
+                           IParticleAnchor anchor, String locatorName) {
         return null;
     }
 

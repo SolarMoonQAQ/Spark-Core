@@ -41,16 +41,17 @@ public interface IParticleEffectPlayer {
                     Vec3 position, Quaternionf rotation, Vec3 scale);
 
     /**
-     * 触发粒子效果并绑定到 locator（双端可用）。
+     * 触发持久粒子效果并绑定到定位器锚点。
+     * 发射器每 tick 从 anchor 轮询 locatorName 的实时位姿以跟随移动。
      *
-     * @param level    维度
-     * @param effectId 粒子效果标识符
-     * @param locator  定位器名称
-     * @param entityId 实体 UUID
+     * @param level       维度
+     * @param effectId    粒子效果标识符
+     * @param anchor      定位器锚点（位姿轮询源）
+     * @param locatorName 定位器名称（如 "muzzle"）
      * @return 效果实例 UUID，可用于停止
      */
     UUID playEffect(Level level, ResourceLocation effectId,
-                    String locator, UUID entityId);
+                    IParticleAnchor anchor, String locatorName);
 
     /**
      * 停止指定粒子的播放（双端可用）。

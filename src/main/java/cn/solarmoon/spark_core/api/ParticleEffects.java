@@ -1,7 +1,8 @@
 package cn.solarmoon.spark_core.api;
 
-import cn.solarmoon.spark_core.particle.client.ClientParticleEffectPlayer;
-import cn.solarmoon.spark_core.particle.client.ServerParticleEffectPlayer;
+import cn.solarmoon.spark_core.particle.common.ClientParticleEffectPlayer;
+import cn.solarmoon.spark_core.particle.common.IParticleAnchor;
+import cn.solarmoon.spark_core.particle.common.ServerParticleEffectPlayer;
 import cn.solarmoon.spark_core.particle.common.IParticleEffectPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -57,13 +58,18 @@ public class ParticleEffects {
     }
 
     /**
-     * 触发粒子效果并绑定到 locator，双端可用。
+     * 触发持久粒子效果并绑定到定位器锚点。
+     * 发射器每 tick 轮询锚点 locator 位姿以跟随移动（如炮口烟雾）。
      *
-     * @return 效果实例 UUID，可用于停止
+     * @param level       维度
+     * @param effectId    粒子效果标识符
+     * @param anchor      定位器锚点
+     * @param locatorName 定位器名称
+     * @return 效果实例 UUID，可用于 {@link #stop}
      */
-    public static UUID burst(Level level, ResourceLocation effectId,
-                             String locator, UUID entityId) {
-        return INSTANCE.playEffect(level, effectId, locator, entityId);
+    public static UUID burstPersistent(Level level, ResourceLocation effectId,
+                                        IParticleAnchor anchor, String locatorName) {
+        return INSTANCE.playEffect(level, effectId, anchor, locatorName);
     }
 
     /**

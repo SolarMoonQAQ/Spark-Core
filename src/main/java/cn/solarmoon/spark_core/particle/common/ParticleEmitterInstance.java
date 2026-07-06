@@ -51,7 +51,14 @@ public class ParticleEmitterInstance {
     private boolean active = true;
     private boolean expired = false;
     private final Matrix4f transform = new Matrix4f();
-    private boolean bindToActor = false;
+
+    /** 绑定的定位器锚点（null = 无绑定，世界坐标模式） */
+    @Nullable
+    private IParticleAnchor anchor;
+
+    /** 定位器名称（仅在 anchor != null 时有效） */
+    @Nullable
+    private String anchorLocatorName;
 
     /** 运行时贴图，构造时默认取 JSON 定义中的贴图，外部可随时修改实现动态换贴图 */
     private ResourceLocation texture;
@@ -140,6 +147,19 @@ public class ParticleEmitterInstance {
      */
     public void tick(Level level, float tickDt) {
         if (expired) return;
+
+        // 0. 若绑定到锚点，轮询实时位姿（JME Transform → JOML transform）
+        if (anchor != null) {
+            com.jme3.math.Transform t = anchor.getLocatorTransform(instanceId, anchorLocatorName);
+            if (t != null) {
+                setPosition(new Vec3(t.getTranslation().x, t.getTranslation().y, t.getTranslation().z));
+                setRotation(new Quaternionf(t.getRotation().getX(), t.getRotation().getY(),
+                    t.getRotation().getZ(), t.getRotation().getW()));
+                setScale(new Vec3(t.getScale().x, t.getScale().y, t.getScale().z));
+            }
+            Vec3 vel = anchor.getAnchorVelocity(instanceId, anchorLocatorName);
+            if (vel != null) this.velocity = vel;
+        }
 
         ParticleArray buf = doubleBuffer.startTick();
 
@@ -601,8 +621,13 @@ public class ParticleEmitterInstance {
     /** 设置完整变换矩阵（深拷贝）。 */
     public void setTransform(Matrix4f mat) { transform.set(mat); }
 
-    public void setBindToActor(boolean bind) { this.bindToActor = bind; }
-    public boolean isBindToActor() { return bindToActor; }
+    /** 绑定到定位器锚点，发射器每 tick 轮询 locator 位姿以跟随移动 */
+    public void bindToAnchor(IParticleAnchor anchor, String locatorName) {
+        this.anchor = anchor;
+        this.anchorLocatorName = locatorName;
+    }
+
+    public boolean isBoundToAnchor() { return anchor != null; }
 
     // ====== 运行时贴图 ======
 

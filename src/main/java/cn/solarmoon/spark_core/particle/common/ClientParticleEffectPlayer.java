@@ -1,8 +1,8 @@
-package cn.solarmoon.spark_core.particle.client;
+package cn.solarmoon.spark_core.particle.common;
 
 import cn.solarmoon.spark_core.SparkCore;
-import cn.solarmoon.spark_core.particle.common.IParticleEffectPlayer;
-import cn.solarmoon.spark_core.particle.common.ParticleEmitterInstance;
+import cn.solarmoon.spark_core.particle.client.ParticleDefinitionLoader;
+import cn.solarmoon.spark_core.particle.client.ParticleEmitterManager;
 import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -62,18 +62,28 @@ public class ClientParticleEffectPlayer implements IParticleEffectPlayer {
 
     @Override
     public UUID playEffect(Level level, ResourceLocation effectId,
-                           String locator, UUID entityId) {
-        // TODO: 通过 locator 获取实体变换并触发粒子效果
-        // 需要从 level 查找 entityId 对应的实体
+                           IParticleAnchor anchor, String locatorName) {
         ParticleEffectDefinition def = ParticleDefinitionLoader.getInstance().getDefinition(effectId);
         if (def == null) {
-            SparkCore.LOGGER.warn("[粒子] 未找到定义: {} (locator模式)", effectId);
+            SparkCore.LOGGER.warn("[粒子] 未找到定义: {} (锚点模式, locator={})",
+                    effectId, locatorName);
             return null;
         }
 
         ParticleEmitterInstance emitter = new ParticleEmitterInstance(def, level);
-        emitter.setPosition(Vec3.ZERO);
-        emitter.setBindToActor(true);
+        emitter.bindToAnchor(anchor, locatorName);
+            // 初始位姿从锚点获取一次
+            com.jme3.math.Transform init = anchor.getLocatorTransform(emitter.getInstanceId(), locatorName);
+            if (init != null) {
+                emitter.setPosition(new Vec3(init.getTranslation().x,
+                    init.getTranslation().y, init.getTranslation().z));
+                // JME Quaternion → JOML Quaternionf
+                emitter.setRotation(new org.joml.Quaternionf(
+                    init.getRotation().getX(), init.getRotation().getY(),
+                    init.getRotation().getZ(), init.getRotation().getW()));
+                emitter.setScale(new Vec3(init.getScale().x,
+                    init.getScale().y, init.getScale().z));
+            }
         ParticleEmitterManager.getInstance().add(emitter);
         return emitter.getInstanceId();
     }

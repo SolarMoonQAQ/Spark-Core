@@ -172,9 +172,10 @@ public class EventExecutor {
             child.setVelocity(new Vec3(buf.getVelX(particleIndex), buf.getVelY(particleIndex), buf.getVelZ(particleIndex)));
         }
 
-        // EMITTER_BOUND：子发射器标记为绑定到发射器（每 tick 跟随位置）
+        // EMITTER_BOUND：子发射器标记为绑定到父发射器（每 tick 跟随位置）
+        // TODO: 需要将父发射器作为 IParticleAnchor 传递给子发射器
         if (e.getParticleEffectType() == EventNode.ParticleEffectType.EMITTER_BOUND) {
-            child.setBindToActor(true);
+            // child.setBindToActor(true); // 旧 API 已移除，需用 IParticleAnchor 重写
         }
 
         ParticleEmitterManager.getInstance().add(child);
