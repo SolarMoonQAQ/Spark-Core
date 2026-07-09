@@ -10,6 +10,7 @@ import cn.solarmoon.spark_core.registry.common.*
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.fml.ModContainer
 import net.neoforged.fml.common.Mod
+import net.neoforged.fml.config.ModConfig
 import net.neoforged.fml.loading.FMLEnvironment
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -32,6 +33,9 @@ class SparkCore(modEventBus: IEventBus, modContainer: ModContainer) {
         EVENT_BUS = modEventBus
         NativeLoader.load(MOD_ID, "bullet", fallbackModuleName = "bullet_sp")
         REGISTER.register(modEventBus)
+
+        // 注册 Common Config（服务端/客户端各自独立）
+        modContainer.registerConfig(ModConfig.Type.COMMON, SparkCoreConfig.SPEC)
 
         if (FMLEnvironment.dist.isClient) {
             SparkClientEventRegister.register()

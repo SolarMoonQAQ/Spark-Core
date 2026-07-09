@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.physics.level
 
+import cn.solarmoon.spark_core.SparkCoreConfig
 import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.api.processTasks
 import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent
@@ -25,7 +26,8 @@ object PhysicsLevelApplier {
         if (level is Level) {
             // 初始化物理世界(客户端在客户端监听器进行)
             if (level is ServerLevel) {
-                (level as ILevelMixin).setPhysicsLevel(ServerPhysicsLevel(level as ServerLevel, 5))
+                val singleThread = SparkCoreConfig.SINGLE_THREAD_PHYSICS.get()
+                (level as ILevelMixin).setPhysicsLevel(ServerPhysicsLevel(level as ServerLevel, 5, singleThread))
                 level.physicsLevel.start {
                     // 从 Attachment 恢复区块高程索引（投影片加载前恢复索引数据）
                     level.physicsLevel.terrainManager.loadFromAttachment(level)

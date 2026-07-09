@@ -34,6 +34,8 @@ abstract class PhysicsLevel(
     val name: String,
     open val mcLevel: Level,
     open val baseStep: Int = 5,
+    /** 单线程模式：物理计算在主线程同步执行，不创建独立协程。调试/兼容性诊断用。 */
+    val singleThreadMode: Boolean = false,
 ) : AutoCloseable, TaskSubmitOffice, PhysicsTickListener {
 
     companion object {
@@ -133,69 +135,79 @@ abstract class PhysicsLevel(
     lateinit var blockShapeManager: BlockShapeManager
 
     suspend fun CoroutineScope.run() {
-        val fixedStep = 1f / tps
         while (isActive) {
             physicsTickChannel.receive()
-            // 执行物理计算
-            val ticker = System.nanoTime()
-            stateFlow.value = PhysicsLevelState.RUNNING
-            val stepSleepTime = ((targetStepTime - smoothedStepTime) / dynamicRepeat).toLong()
-            // 动态步进次数
-            repeat(dynamicRepeat) { stepIndex ->
-                tickCount++
-                world.update(fixedStep, 0, false, true, false, true)
-
-                // 计算当前步的休眠时间（除了最后一步）
-                if (stepSleepTime > 0 && stepIndex < dynamicRepeat - 1) {
-                    delay(stepSleepTime / 1_000_000) // 转换为毫秒
-                }
-                // ===== 动态调节逻辑 =====
-                lastPhysicsTickTime = System.nanoTime()
-                val currentMs = lastStepTickTime.toDouble() - stepSleepTime * (dynamicRepeat - 1)
-                smoothedStepTime = if (currentMs > smoothedStepTime) {
-                    // 负载上升：快速跟随 (Attack)
-                    (ATTACK_ALPHA * currentMs) + (1.0 - ATTACK_ALPHA) * smoothedStepTime
-                } else {
-                    // 负载下降：缓慢回落 (Decay)
-                    (DECAY_ALPHA * currentMs) + (1.0 - DECAY_ALPHA) * smoothedStepTime
-                }
-                if (adjustmentCooldown > 0) {
-                    adjustmentCooldown--
-                } else {
-                    val overloadThreshold = (TICK_BUDGET_NS * OVERLOAD_THRESHOLD_RATIO).toLong()
-                    val recoveryThreshold = (TICK_BUDGET_NS * RECOVER_THRESHOLD_RATIO).toLong()
-                    when {
-                        smoothedStepTime > overloadThreshold && dynamicRepeat > minStep -> {
-                            dynamicRepeat--
-                            adjustmentCooldown = 20 // 降频后观察1秒（20tick）再做决定
-                            SparkCore.LOGGER.warn(
-                                "{} physics overload detected, step reduced to {}",
-                                name,
-                                dynamicRepeat
-                            )
-                        }
-
-                        smoothedStepTime < recoveryThreshold && dynamicRepeat < maxStep -> {
-                            dynamicRepeat++
-                            adjustmentCooldown = 20
-                            SparkCore.LOGGER.warn(
-                                "{} physics recovered, step increased to {}",
-                                name,
-                                dynamicRepeat
-                            )
-                        }
-                    }
-                }
-            }
-            // 通知主线程计算完成
-            lastStepTickTime = System.nanoTime() - ticker
-            stateFlow.value = PhysicsLevelState.IDLE
+            stepPhysics()
             stepCompletedChannel.send(Unit)
         }
     }
 
     /**
-     * 在主线程每tick调用，向物理线程发送模拟请求，物理线程接收到请求后会立刻模拟约1主线程tick时间的物理步进，此时主线程会继续执行后续内容
+     * 同步执行一轮物理步进（dynamicRepeat 次 world.update()）。
+     * 单线程模式下由 requestStep() 直接调用，多线程模式下由 run() 循环内调用。
+     */
+    private fun stepPhysics() {
+        val fixedStep = 1f / tps
+        val ticker = System.nanoTime()
+        stateFlow.value = PhysicsLevelState.RUNNING
+        val stepSleepTime = ((targetStepTime - smoothedStepTime) / dynamicRepeat).toLong()
+        // 动态步进次数
+        repeat(dynamicRepeat) { stepIndex ->
+            tickCount++
+            world.update(fixedStep, 0, false, true, false, true)
+
+            // 计算当前步的休眠时间（除了最后一步）
+            if (stepSleepTime > 0 && stepIndex < dynamicRepeat - 1) {
+                // 单线程模式用 Thread.sleep 替代协程 delay
+                Thread.sleep(stepSleepTime / 1_000_000) // 转换为毫秒
+            }
+            // ===== 动态调节逻辑 =====
+            lastPhysicsTickTime = System.nanoTime()
+            val currentMs = lastStepTickTime.toDouble() - stepSleepTime * (dynamicRepeat - 1)
+            smoothedStepTime = if (currentMs > smoothedStepTime) {
+                // 负载上升：快速跟随 (Attack)
+                (ATTACK_ALPHA * currentMs) + (1.0 - ATTACK_ALPHA) * smoothedStepTime
+            } else {
+                // 负载下降：缓慢回落 (Decay)
+                (DECAY_ALPHA * currentMs) + (1.0 - DECAY_ALPHA) * smoothedStepTime
+            }
+            if (adjustmentCooldown > 0) {
+                adjustmentCooldown--
+            } else {
+                val overloadThreshold = (TICK_BUDGET_NS * OVERLOAD_THRESHOLD_RATIO).toLong()
+                val recoveryThreshold = (TICK_BUDGET_NS * RECOVER_THRESHOLD_RATIO).toLong()
+                when {
+                    smoothedStepTime > overloadThreshold && dynamicRepeat > minStep -> {
+                        dynamicRepeat--
+                        adjustmentCooldown = 20 // 降频后观察1秒（20tick）再做决定
+                        SparkCore.LOGGER.warn(
+                            "{} physics overload detected, step reduced to {}",
+                            name,
+                            dynamicRepeat
+                        )
+                    }
+
+                    smoothedStepTime < recoveryThreshold && dynamicRepeat < maxStep -> {
+                        dynamicRepeat++
+                        adjustmentCooldown = 20
+                        SparkCore.LOGGER.warn(
+                            "{} physics recovered, step increased to {}",
+                            name,
+                            dynamicRepeat
+                        )
+                    }
+                }
+            }
+        }
+        // 通知主线程计算完成
+        lastStepTickTime = System.nanoTime() - ticker
+        stateFlow.value = PhysicsLevelState.IDLE
+    }
+
+    /**
+     * 在主线程每tick调用，向物理线程发送模拟请求（或多线程模式直接同步调用）。
+     * 多线程模式下物理线程接收到请求后会立刻模拟约1主线程tick时间的物理步进，
+     * 此时主线程会继续执行后续内容。单线程模式下直接同步执行。
      */
     fun requestStep() {
         if (!::world.isInitialized) return
@@ -260,58 +272,98 @@ abstract class PhysicsLevel(
         terrainManager.updateActivation(activationBoxes)
         // 清理过期的预约调度（投射物区块加载释放）
         terrainManager.updateScheduledChunks()
-        // 发送物理步进请求（异步）
-        scope.launch {
-            physicsTickChannel.send(Unit)
+
+        if (singleThreadMode) {
+            // ★ 单线程模式：直接同步执行 stepPhysics，跳过协程路径
+            stepPhysics()
+        } else {
+            // 多线程模式：发送物理步进请求（异步）
+            scope.launch {
+                physicsTickChannel.send(Unit)
+            }
         }
     }
 
     /**
-     * 开启物理线程并初始化
+     * 启动物理系统并初始化。
+     * 多线程模式下创建独立协程执行物理循环，单线程模式下同步初始化（不创建协程）。
      */
     fun start(onInitialized: (() -> Unit)? = null) {
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
         New6Dof.logger2.setLevel(java.util.logging.Level.WARNING)
         SparkCore.LOGGER.info(
-            "启动物理线程：{}，线程数：{}/{}, threadSafe:{}, Debug:{}",
+            "启动物理线程：{}，线程数：{}/{}, threadSafe:{}, Debug:{}, singleThread:{}",
             name,
             Runtime.getRuntime().availableProcessors(),
             NativeLibrary.countThreads(),
             NativeLibrary.isThreadSafe(),
-            NativeLibrary.isDebug()
+            NativeLibrary.isDebug(),
+            singleThreadMode
         )
-        scope.launch {
+
+        if (singleThreadMode) {
+            // ★ 单线程模式：同步初始化，不创建协程
             world = PhysicsWorld(this@PhysicsLevel)
             terrainManager = PhysicsChunkManager(this@PhysicsLevel)
             blockShapeManager = BlockShapeManager(this@PhysicsLevel)
-
-            // 初始化完成，执行回调
             onInitialized?.invoke()
+        } else {
+            // 多线程模式：协程内初始化 + 启动 run() 循环
+            scope.launch {
+                world = PhysicsWorld(this@PhysicsLevel)
+                terrainManager = PhysicsChunkManager(this@PhysicsLevel)
+                blockShapeManager = BlockShapeManager(this@PhysicsLevel)
 
-            run()
+                // 初始化完成，执行回调
+                onInitialized?.invoke()
+
+                run()
+            }
         }
     }
 
     /**
-     * 关闭物理线程并清理资源
+     * 关闭物理线程并清理资源。
+     * 多线程模式使用 runBlocking 等待协程内清理完成，
+     * 单线程模式直接同步清理，避免不必要的 runBlocking 阻塞主线程。
      */
     override fun close() {
-        runBlocking {
+        if (singleThreadMode) {
+            // ★ 单线程模式：直接同步清理，无需协程上下文
             if (::terrainManager.isInitialized) terrainManager.destroy()
             if (::blockShapeManager.isInitialized) {
                 blockShapeManager.SHAPE_CACHE.clear()
             }
             if (::world.isInitialized) world.destroy()
             hostManager.clear()
-            scope.cancel("物理线程已关闭")
-            dispatcher.close()
+        } else {
+            // 多线程模式：协程内清理
+            runBlocking {
+                if (::terrainManager.isInitialized) terrainManager.destroy()
+                if (::blockShapeManager.isInitialized) {
+                    blockShapeManager.SHAPE_CACHE.clear()
+                }
+                if (::world.isInitialized) world.destroy()
+                hostManager.clear()
+                scope.cancel("物理线程已关闭")
+                dispatcher.close()
+            }
         }
     }
 
     /**
-     * 重启并刷新线程
+     * 重启并刷新线程。
+     * 单线程模式下不支持自动重启（无协程故 handleException 永不触发），
+     * 若被直接调用则记录警告并跳过。
      */
     fun restart() {
+        if (singleThreadMode) {
+            SparkCore.LOGGER.warn(
+                "{} 单线程模式下不支持自动重启，跳过 restart()",
+                name
+            )
+            return
+        }
         close()
         start()
         crashCount.set(0)

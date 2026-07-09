@@ -5,8 +5,9 @@ import net.minecraft.world.entity.Entity
 
 class ServerPhysicsLevel(
     override val mcLevel: ServerLevel,
-    baseStep : Int
-) : PhysicsLevel("Server PhysicsThread", mcLevel, baseStep) {
+    baseStep : Int,
+    singleThreadMode: Boolean = false,
+) : PhysicsLevel("Server PhysicsThread", mcLevel, baseStep, singleThreadMode) {
 
     override fun requestEntities(): List<Entity> {
         return mcLevel.allEntities.toList()
