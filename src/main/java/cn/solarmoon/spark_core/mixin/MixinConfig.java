@@ -26,14 +26,13 @@ public class MixinConfig extends MixinExtrasConfigPlugin {
     }
 
     /**
-     * 检测指定类在当前运行环境是否可加载。
+     * 检测指定类在当前运行环境是否存在，但不加载该类。
+     * <p>
+     * 使用 ClassLoader.getResource 仅查询 .class 文件，避免 Class.forName 触发类加载，
+     * 否则会导致目标 Mixin 在准备阶段发现类已提前加载而抛出 MixinTargetAlreadyLoadedException。
      */
     private boolean hasClass(String className) {
-        try {
-            Class.forName(className, false, this.getClass().getClassLoader());
-            return true;
-        } catch (Throwable ignored) {
-            return false;
-        }
+        String path = className.replace('.', '/').concat(".class");
+        return this.getClass().getClassLoader().getResource(path) != null;
     }
 }
