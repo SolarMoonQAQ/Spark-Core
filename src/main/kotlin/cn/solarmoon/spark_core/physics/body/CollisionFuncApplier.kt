@@ -8,7 +8,6 @@ import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.decoration.BlockAttachedEntity
 import net.minecraft.world.entity.player.Player
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
@@ -20,7 +19,10 @@ object CollisionFuncApplier {
     @SubscribeEvent
     private fun addBodyForEntity(event: EntityJoinLevelEvent) {
         val entity = event.entity
-        if (entity is PhysicsHost && entity !is BlockAttachedEntity && entity !is CollisionObjectEntity) {
+        if (entity is PhysicsHost
+            && entity !is CollisionObjectEntity
+            && entity.shouldCreateDefaultPhysicsBody()
+        ) {
             val bb = entity.boundingBox
             val x = (bb.xsize / 2).toFloat()
             val y = (bb.ysize / 3).toFloat()

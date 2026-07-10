@@ -46,4 +46,17 @@ interface PhysicsHost {
         return PenetrationKey(this, getPenetrationZoneId(body, triangleIndex))
     }
 
+    /**
+     * 当该 PhysicsHost 为实体时，是否应由 SparkCore 自动为其创建默认的
+     * 运动学刚体代理（名为 "body"）。
+     *
+     * 注意：PhysicsHost 不一定是实体（例如 PhysicsChunkSection、LevelPatch 也实现了
+     * PhysicsHost）。本方法仅在宿主为实体（Entity）的场景下被 CollisionFuncApplier 调用，
+     * 其他宿主类型可安全忽略或保留默认实现。
+     *
+     * 默认返回 true。若实体自身已管理刚体（如 Create 装置、自定义物理实体等），
+     * 可通过 Mixin 覆写此方法返回 false，避免重复/冲突的碰撞体。
+     */
+    fun shouldCreateDefaultPhysicsBody(): Boolean = true
+
 }

@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.physics.body.addPhysicsBody
 import cn.solarmoon.spark_core.physics.body.removePhysicsBody
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity
 import com.simibubi.create.content.contraptions.Contraption
 import net.minecraft.world.level.Level
@@ -126,11 +125,6 @@ object CreateContraptionPhysicsApplier {
     fun onEntityTick(event: EntityTickEvent.Pre) {
         if (!ModList.get().isLoaded(CreateCompat.MOD_ID)) return
         val entity = event.entity as? AbstractContraptionEntity ?: return
-        //移除SparkCore为实体添加的默认碰撞箱刚体
-        val body: PhysicsCollisionObject? = entity.getPhysicsBody("body")
-        if (body != null) {
-            entity.level().removePhysicsBody(body)
-        }
         val physicsLevel = entity.level().physicsLevel
         val host = hostsByLevel[physicsLevel]?.get(entity.id) ?: return
         host.onSyncTick(entity)
