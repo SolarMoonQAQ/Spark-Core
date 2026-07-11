@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable
-import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.registry.common.SparkCapabilities
@@ -10,15 +9,6 @@ import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.tick.EntityTickEvent
 
 object AnimApplier {
-
-//    @SubscribeEvent
-//    private fun playerJoin(event: EntityJoinLevelEvent) {
-//        val entity = event.entity
-//        if (entity is Player && entity.isLocalPlayer && entity is LocalPlayer) {
-//            entity.modelController.setTextureLocation(entity.skin.texture)
-//        }
-//    }
-
 
     @SubscribeEvent
     private fun physTick(event: PhysicsEntityTickEvent) {
@@ -52,12 +42,6 @@ object AnimApplier {
             inventoryTick(event.entity)
             animController.tick()
         }
-    }
-
-    @SubscribeEvent
-    private fun onBoneUpdate(event: BoneUpdateEvent) {
-        val animatable = event.model.animatable
-        animatable.onBoneUpdate(event)
     }
 
 }

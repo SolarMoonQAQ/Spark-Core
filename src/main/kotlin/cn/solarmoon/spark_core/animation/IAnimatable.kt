@@ -1,10 +1,10 @@
 package cn.solarmoon.spark_core.animation
 
 import cn.solarmoon.spark_core.animation.anim.AnimController
+import cn.solarmoon.spark_core.animation.model.BonePose
 import cn.solarmoon.spark_core.animation.model.ModelController
 import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.api.physicsLevel
-import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.molang.SparkMolangContext
 import net.minecraft.world.level.Level
 import org.joml.Matrix4f
@@ -50,9 +50,16 @@ interface IAnimatable<T> {
     fun getWorldPositionMatrix(partialTicks: Number = 1f): Matrix4f
 
     /**
-     * 当任意骨骼被更新后调用，可以在此基础上对骨骼的位移旋转等参数进行调整
+     * 单骨骼动画后处理回调（替代已移除的逐骨骼 EventBus）。
+     * <p>
+     * 由 {@link cn.solarmoon.spark_core.animation.anim.AnimController#tick} 每骨骼每帧直调。
+     * 默认空实现；LivingEntity 覆写以接入头部朝向/睡觉姿态修正，
+     * 载具等可覆写以接入 IK 骨骼修正。
+     *
+     * @param bonePose 当前骨骼姿态（{@link BonePose#localTransform} 已更新为本帧动画值，
+     *                 {@link BonePose#oLocalTransform} 为上帧值，可读取并覆写前者）
      */
-    fun onBoneUpdate(event: BoneUpdateEvent) {}
+    fun onBoneUpdate(bonePose: BonePose) {}
 
     /**
      * 返回此动画体专用的 Molang 求值上下文。

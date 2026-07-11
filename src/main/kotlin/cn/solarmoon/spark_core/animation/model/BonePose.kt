@@ -1,10 +1,8 @@
 package cn.solarmoon.spark_core.animation.model
 
 import cn.solarmoon.spark_core.animation.anim.KeyAnimData
-import cn.solarmoon.spark_core.event.BoneUpdateEvent
 import cn.solarmoon.spark_core.util.rotLerp
 import net.minecraft.world.phys.Vec3
-import net.neoforged.neoforge.common.NeoForge
 import org.joml.Matrix4f
 import org.joml.Vector3f
 
@@ -15,8 +13,8 @@ class BonePose(
 
     private var internalTransform = KeyAnimData()
 
-    private var oLocalTransform = KeyAnimData()
-    private var localTransform = KeyAnimData()
+    internal var oLocalTransform = KeyAnimData()
+    internal var localTransform = KeyAnimData()
 
     /**
      * 内部线程更新骨骼数据，更新不会立刻生效，将在下一个主线程tick开始时统一更新
@@ -26,12 +24,14 @@ class BonePose(
     }
 
     /**
-     * 在主线程调用，每tick从动画线程更新最新的动画变换数据到骨骼
+     * 主线程调用，将物理线程写入的动画数据发布到本地变换（双缓冲，供渲染插值）。
+     * <p>
+     * 不再逐骨骼发送 BoneUpdateEvent（每帧 1500+ 次 EventBus.post 是性能灾难）。
+     * IK 等需求应订阅模型级事件 {@link ModelPoseUpdatedEvent}，一次性获取所有骨骼。
      */
     internal fun setChanged() {
-        val event = NeoForge.EVENT_BUS.post(BoneUpdateEvent(model, this, localTransform, internalTransform))
-        oLocalTransform = event.oldTransform
-        localTransform = event.newTransform
+        oLocalTransform = localTransform
+        localTransform = internalTransform
     }
 
     fun getLocalPosition(partialTicks: Number = 1.0) = oLocalTransform.position.lerp(localTransform.position, partialTicks.toDouble())

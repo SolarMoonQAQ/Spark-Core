@@ -2,7 +2,6 @@ package cn.solarmoon.spark_core.registry.common
 
 import cn.solarmoon.spark_core.animation.anim.AnimApplier
 import cn.solarmoon.spark_core.animation.presets.DynamicStateAnimApplier
-import cn.solarmoon.spark_core.animation.vanilla.BoneModifier
 import cn.solarmoon.spark_core.entity.EntityPatchApplier
 import cn.solarmoon.spark_core.gas.ASCApplier
 import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
@@ -21,7 +20,6 @@ object SparkCommonEventRegister {
         add(AnimApplier)
         add(PlayerBaseAnimStateMachine.Modifier)
         add(DynamicStateAnimApplier)
-        add(BoneModifier)
         add(CollisionFuncApplier)
         add(EntityPatchApplier)
         add(StateMachineApplier)

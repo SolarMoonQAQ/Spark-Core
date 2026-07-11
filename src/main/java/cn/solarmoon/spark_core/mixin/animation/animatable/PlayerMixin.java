@@ -2,7 +2,9 @@ package cn.solarmoon.spark_core.mixin.animation.animatable;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.animation.model.BonePose;
 import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.animation.vanilla.BoneModifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -52,5 +54,10 @@ public abstract class PlayerMixin extends LivingEntity implements IEntityAnimata
     @Override
     public @NotNull Map<@NotNull String, @NotNull Object> getVariables() {
         return variables;
+    }
+
+    @Override
+    public void onBoneUpdate(BonePose bonePose) {
+        BoneModifier.INSTANCE.applyBoneTransform(bonePose, this);
     }
 }
