@@ -13,10 +13,14 @@ import net.minecraft.world.level.block.entity.BlockEntityType
 
 /**
  * 保存了客户端渲染完整模型所需的必要数据
+ *
+ * @param fullDetailDistance 全细节距离（米），物体在此距离以内以 LOD 0（全细节）渲染。
+ *                           默认 24m 适合多数中型模型，大物体设大值（如车体 24m），小物体设小值（如螺栓 4m）。
  */
-data class ModelIndex (
+data class ModelIndex @JvmOverloads constructor(
     val type: String,
-    val location: ResourceLocation
+    val location: ResourceLocation,
+    val fullDetailDistance: Double = 24.0
 ) {
 
     fun isPlayer(): Boolean {
@@ -32,6 +36,7 @@ data class ModelIndex (
         val STREAM_CODEC: StreamCodec<in RegistryFriendlyByteBuf, ModelIndex> = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8, ModelIndex::type,
             ResourceLocation.STREAM_CODEC, ModelIndex::location,
+            ByteBufCodecs.DOUBLE, ModelIndex::fullDetailDistance,
             ::ModelIndex
         )
 
@@ -40,6 +45,7 @@ data class ModelIndex (
             instance.group(
                 Codec.STRING.fieldOf("type").forGetter { it.type },
                 ResourceLocation.CODEC.fieldOf("path").forGetter(ModelIndex::location),
+                Codec.DOUBLE.optionalFieldOf("full_detail_distance", 24.0).forGetter { it.fullDetailDistance },
             ).apply(instance, ::ModelIndex)
         }
 

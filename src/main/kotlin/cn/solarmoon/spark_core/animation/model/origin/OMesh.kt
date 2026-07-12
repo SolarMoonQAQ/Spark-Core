@@ -1,7 +1,7 @@
 package cn.solarmoon.spark_core.animation.model.origin
 
 import cn.solarmoon.spark_core.util.SerializeHelper
-import cn.solarmoon.spark_core.visual_effect.FovHelper
+import cn.solarmoon.spark_core.animation.CameraHelper
 import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -192,9 +192,9 @@ data class OMesh(
     @OnlyIn(Dist.CLIENT)
     private fun getCurrentThresholdSq(): Float {
         val threshold = 1 // 面积小于1像素时不渲染
-        val fov = FovHelper.fov // 垂直FOV，单位度
+        val fov = CameraHelper.fov // 垂直FOV，单位度
         val tanHalfFov = kotlin.math.tan(Math.toRadians(fov / 2.0)).toFloat()
-        val screenHeight = FovHelper.height
+        val screenHeight = CameraHelper.screenHeight
         val factor = (threshold * 2 * tanHalfFov) / screenHeight
         return factor * factor
     }

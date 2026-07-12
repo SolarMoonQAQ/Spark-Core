@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.compat.accelerated_rendering.ARCompat
 import cn.solarmoon.spark_core.compat.sodium.SodiumCompat
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
+import net.minecraft.world.phys.Vec3
 import org.joml.Matrix3f
 import org.joml.Matrix4f
 
@@ -16,6 +17,11 @@ object ModelRenderHelper {
 
 val tmpM4 = Matrix4f()
 val tmpM3 = Matrix3f()
+
+/** 判断 Vec3 三个分量是否都接近零（用于骨骼 scale≈0 检测） */
+private fun Vec3.isScaleNearZero(): Boolean {
+    return this.x < 0.001 && this.y < 0.001 && this.z < 0.001
+}
 
 @JvmOverloads
 fun OBone.render(
@@ -28,6 +34,18 @@ fun OBone.render(
     partialTick: Float,
     force: Boolean = false
 ) {
+    // 自身 scale≈0 → 跳过整条子树渲染（Molang 几何裁剪入口）
+    val selfScale = pose.getBonePose(name)?.getLocalScale(partialTick) ?: return
+    if (selfScale.isScaleNearZero()) return
+
+    // 任一父骨骼 scale≈0 → 整条子树跳过
+    var parent: OBone? = getParent()
+    while (parent != null) {
+        val parentScale = pose.getBonePose(parent.name)?.getLocalScale(partialTick)
+        if (parentScale != null && parentScale.isScaleNearZero()) return
+        parent = parent.getParent()
+    }
+
     tmpM4.identity()
     tmpM3.identity()
     applyTransformWithParents(pose, tmpM4, partialTick)

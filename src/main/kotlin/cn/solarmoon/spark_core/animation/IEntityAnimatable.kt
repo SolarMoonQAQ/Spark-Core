@@ -12,6 +12,7 @@ import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.level.Level
+import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 import kotlin.math.PI
 
@@ -19,6 +20,13 @@ import kotlin.math.PI
 interface IEntityAnimatable<T: Entity>: IAnimatable<T> {
 
     override val defaultModelIndex: ModelIndex get() = ModelIndex.of(animatable.type)
+
+    /**
+     * 轻量世界坐标查询——直接取实体位置，零矩阵分配。
+     */
+    override fun getRenderPosition(partialTicks: Number): Vec3 {
+        return animatable.getPosition(partialTicks.toFloat())
+    }
 
     override fun getWorldPositionMatrix(partialTicks: Number): Matrix4f {
         return Matrix4f()

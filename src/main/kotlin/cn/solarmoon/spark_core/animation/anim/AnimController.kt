@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.animation.anim
 
+import cn.solarmoon.spark_core.animation.CameraHelper
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.state.origin.OAnimStateMachineSet
@@ -16,6 +17,18 @@ import kotlin.collections.component2
 class AnimController(
     val animatable: IAnimatable<*>
 ) {
+    /**
+     * 当前 LOD 等级（0-3），由 [physTick] 每 tick 计算更新。
+     * Molang 查询 `query.lod` 通过此字段获取。
+     */
+    var lodLevel: Int = 0
+        internal set
+
+    /**
+     * LOD 降频跳帧计数器，在 [physTick] 中递增使用。
+     */
+    var skipCounter: Int = 0
+        internal set
 
     val originAnimations get() = OAnimationSet.getOrEmpty(animatable.modelController.model?.index)
     val originStateMachines get() = OAnimStateMachineSet.getOrEmpty(animatable.modelController.model?.index?.location)
@@ -98,7 +111,26 @@ class AnimController(
             return
         }
 
+        // 始终推进动画时间（保证进度正确）
         layers.values.forEach { it.physicsTick(overallSpeed) }
+
+        // 计算 LOD 等级（animLevel 在物理线程始终非 null）
+        val pos = animatable.getRenderPosition(0)
+        val fullDetailDist = animatable.modelController.model?.index?.fullDetailDistance ?: 24.0
+        lodLevel = CameraHelper.getLodLevel(animatable.animLevel!!, pos, fullDetailDist)
+
+        // LOD 降频：按 lodSkipIntervals 跳帧执行骨骼混合
+        // skipCounter 取模保持在 [0, skipInterval] 范围，防溢出
+        val skipInterval = lodSkipIntervals[lodLevel.coerceIn(0, 3)]
+        if (skipInterval > 0) {
+            skipCounter = (skipCounter + 1) % (skipInterval + 1)
+            if (skipCounter != 0) {
+                // 跳过本帧骨骼混合，但 speedChangeTime 仍需递减
+                if (speedChangeTime > 0) speedChangeTime--
+                else overallSpeed = 1.0f
+                return
+            }
+        }
 
         animatable.modelController.model?.let { model ->
             for (bonePose in model.pose.bonePoseList) {
@@ -108,6 +140,18 @@ class AnimController(
 
         if (speedChangeTime > 0) speedChangeTime--
         else overallSpeed = 1.0f
+    }
+
+    companion object {
+        /**
+         * LOD 降频跳帧间隔表。
+         * 索引为 LOD 等级，值为跳过的 tick 数：
+         * - LOD 0: 跳过 0 tick（每 tick 混合，60Hz）
+         * - LOD 1: 跳过 1 tick（每 2 tick 混合，30Hz）
+         * - LOD 2: 跳过 11 tick（每 12 tick 混合，5Hz）
+         * - LOD 3: 跳过 29 tick（每 30 tick 混合，2Hz）
+         */
+        val lodSkipIntervals = intArrayOf(0, 1, 11, 29)
     }
 
     fun tick() {

@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.molang.SparkMolangContext
 import net.minecraft.world.level.Level
+import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 
 /**
@@ -48,6 +49,16 @@ interface IAnimatable<T> {
     }
 
     fun getWorldPositionMatrix(partialTicks: Number = 1f): Matrix4f
+
+    /**
+     * 获取用于 LOD 判断的轻量世界坐标。
+     * 默认实现从 [getWorldPositionMatrix] 提取 translation（构建完整 Matrix4f），
+     * GC 开销较大。子类应覆写为字段直读以降低物理线程压力。
+     */
+    fun getRenderPosition(partialTicks: Number = 0): Vec3 {
+        val mat = getWorldPositionMatrix(partialTicks)
+        return Vec3(mat.m30().toDouble(), mat.m31().toDouble(), mat.m32().toDouble())
+    }
 
     /**
      * 单骨骼动画后处理回调（替代已移除的逐骨骼 EventBus）。

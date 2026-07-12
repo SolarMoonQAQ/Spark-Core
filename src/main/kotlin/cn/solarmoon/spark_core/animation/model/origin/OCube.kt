@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.compat.accelerated_rendering.ARCompat
 import cn.solarmoon.spark_core.compat.sodium.SodiumCompat
 import cn.solarmoon.spark_core.util.SerializeHelper
 import cn.solarmoon.spark_core.util.div
-import cn.solarmoon.spark_core.visual_effect.FovHelper
+import cn.solarmoon.spark_core.animation.CameraHelper
 import com.mojang.blaze3d.systems.RenderSystem
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
@@ -222,9 +222,9 @@ data class OCube(
     @OnlyIn(Dist.CLIENT)
     private fun getCurrentThresholdSq(): Float {
         val threshold = 1 // 面积小于1像素时不渲染
-        val fov = FovHelper.fov // 垂直FOV，单位度
+        val fov = CameraHelper.fov // 垂直FOV，单位度
         val tanHalfFov = tan(Math.toRadians(fov / 2.0)).toFloat()
-        val screenHeight = FovHelper.height
+        val screenHeight = CameraHelper.screenHeight
         val factor = (threshold * 2 * tanHalfFov) / screenHeight
         return factor * factor
     }

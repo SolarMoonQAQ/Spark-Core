@@ -4,11 +4,13 @@
 
 package cn.solarmoon.spark_core.molang;
 
+import cn.solarmoon.spark_core.animation.CameraHelper;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.molang.runtime.MolangContext;
 import cn.solarmoon.spark_core.molang.runtime.binding.QueryBinding;
 import cn.solarmoon.spark_core.molang.runtime.value.ObjectProperty;
 import cn.solarmoon.spark_core.molang.runtime.value.Value;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
@@ -81,5 +83,35 @@ public class SparkMolangContext<T extends IAnimatable<?>> extends MolangContext<
     public double queryAnyAnimationFinished() {
         T entity = getEntity();
         return (entity != null && entity.getControllerAnyAnimationFinished()) ? 1.0 : 0.0;
+    }
+
+    // === LOD 相关查询 ===
+    // 模型作者可在动画 JSON 中通过 query.lod / query.camera_distance 控制骨骼缩放
+
+    /**
+     * 当前 LOD 等级（0-3），服务端返回 0。
+     * 模型作者在动画 JSON 中使用，例如：
+     * <pre>
+     * "scale": "query.lod > 1 ? 0 : 1"
+     * </pre>
+     */
+    @QueryBinding("lod")
+    public double queryLod() {
+        T entity = getEntity();
+        if (entity == null) return 0.0;
+        return entity.getAnimController().getLodLevel();
+    }
+
+    /**
+     * 相机到物体的距离（米），服务端返回 0。
+     * 用于模型作者在动画中根据距离控制骨骼行为。
+     */
+    @QueryBinding("camera_distance")
+    public double queryCameraDistance() {
+        T entity = getEntity();
+        if (entity == null || entity.getAnimLevel() == null) return 0.0;
+        if (!entity.getAnimLevel().isClientSide()) return 0.0;
+        Vec3 worldPos = entity.getRenderPosition(0);
+        return CameraHelper.getCameraDistance(entity.getAnimLevel(), worldPos);
     }
 }
