@@ -55,8 +55,8 @@ class PhysicsChunkManager(
     private val dirtySections = ConcurrentSet<SectionPos>()
 
     // 地形构建线程池
-    private val terrainBuilderExecutor = Executors.newFixedThreadPool(
-        (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1).coerceAtMost(2)
+    private val terrainBuilderExecutor = Executors.newFixedThreadPool( // 实测大部分时候地形构建线程限制，单核即可
+        (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1).coerceAtMost(1)
     ) { r -> Thread(r, "TerrainShapeBuilder-${physicsLevel.name}") }.asCoroutineDispatcher()
 
     val terrainBuilderScope = CoroutineScope(
