@@ -2,7 +2,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("idea")
-    id("net.neoforged.moddev") version "1.0.14"
+    id("net.neoforged.moddev") version "2.0.107"
     kotlin("jvm")
     kotlin("plugin.serialization") version "2.2.20"
     id("com.vanniktech.maven.publish") version "0.34.0"
@@ -250,7 +250,7 @@ dependencies {
     compileOnly("maven.modrinth:real-camera:0.7.4-beta-1.21.1")
     compileOnly("maven.modrinth:first-person-model:Sx5QD2SF")
     // 加速渲染
-    compileOnly("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
+    compileOnly("curse.maven:accelerated-rendering-1314021:8366742")
     // Sodium / Embeddium 顶点缓冲快写（compileOnly，运行时检测）
     compileOnly("maven.modrinth:sodium:mc1.21-0.6.0-beta.2-neoforge")
     compileOnly("maven.modrinth:embeddium:1.0.11+mc1.21.1-neoforge")
