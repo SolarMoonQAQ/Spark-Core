@@ -12,11 +12,11 @@
       "projectName": "[星火核心]1.21.1-neoforge",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@D:\\Files\\Project_MinecraftMods\\Spark-Core\\build\\moddev\\clientRunProgramArgs.txt"
+        "@C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\build\\moddev\\clientRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@D:\\Files\\Project_MinecraftMods\\Spark-Core\\build\\moddev\\clientRunVmArgs.txt",
-        "-Dfml.modFolders\u003dspark_core%%D:\\Files\\Project_MinecraftMods\\Spark-Core\\bin\\main"
+        "@C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dspark_core%%C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\bin\\main"
       ],
       "cwd": "${workspaceFolder}\\run-client",
       "env": {},
@@ -34,11 +34,11 @@
       "projectName": "[星火核心]1.21.1-neoforge",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@D:\\Files\\Project_MinecraftMods\\Spark-Core\\build\\moddev\\dataRunProgramArgs.txt"
+        "@C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\build\\moddev\\dataRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@D:\\Files\\Project_MinecraftMods\\Spark-Core\\build\\moddev\\dataRunVmArgs.txt",
-        "-Dfml.modFolders\u003dspark_core%%D:\\Files\\Project_MinecraftMods\\Spark-Core\\bin\\main"
+        "@C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\build\\moddev\\dataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dspark_core%%C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\bin\\main"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},
@@ -56,11 +56,11 @@
       "projectName": "[星火核心]1.21.1-neoforge",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@D:\\Files\\Project_MinecraftMods\\Spark-Core\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+        "@C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\build\\moddev\\gameTestServerRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@D:\\Files\\Project_MinecraftMods\\Spark-Core\\build\\moddev\\gameTestServerRunVmArgs.txt",
-        "-Dfml.modFolders\u003dspark_core%%D:\\Files\\Project_MinecraftMods\\Spark-Core\\bin\\main"
+        "@C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dspark_core%%C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\bin\\main"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},
@@ -78,11 +78,11 @@
       "projectName": "[星火核心]1.21.1-neoforge",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@D:\\Files\\Project_MinecraftMods\\Spark-Core\\build\\moddev\\serverRunProgramArgs.txt"
+        "@C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\build\\moddev\\serverRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@D:\\Files\\Project_MinecraftMods\\Spark-Core\\build\\moddev\\serverRunVmArgs.txt",
-        "-Dfml.modFolders\u003dspark_core%%D:\\Files\\Project_MinecraftMods\\Spark-Core\\bin\\main"
+        "@C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dspark_core%%C:\\Users\\liruo\\IdeaProjects\\MachineMax-Workspace\\modules\\Spark-Core\\bin\\main"
       ],
       "cwd": "${workspaceFolder}\\run-server",
       "env": {},
