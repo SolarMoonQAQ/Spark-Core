@@ -61,7 +61,7 @@ data class OAnimStateMachineSet(
             return AnimStateMachine(graph, animatable, children, sharedVars, sharedTags)
         }
 
-        return rootNames.associateWith { buildSubtree(graphs[it]!!) }
+        return rootNames.associateWith { buildSubtree(graphs[it]!!).also { it.start() } }
     }
 
     /**
@@ -126,7 +126,7 @@ data class OAnimStateMachineSet(
             )
         }
 
-        return rootNames.associateWith { buildSubtree(graphs[it]!!) }
+        return rootNames.associateWith { buildSubtree(graphs[it]!!).also { it.start() } }
     }
 
     /**

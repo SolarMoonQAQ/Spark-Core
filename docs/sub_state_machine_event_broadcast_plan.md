@@ -1,7 +1,8 @@
 # 子状态机事件递归广播改造计划
 
-> **状态**：计划  
+> **状态**：已完成  
 > **创建**：2026-07-16  
+> **完成**：2026-07-16  
 > **范围**：`cn.solarmoon.spark_core.state_machine.graph.StateGraphController` 及其测试  
 > **关联**：[状态机统一计划](./state_machine_unification_plan.md) · [状态变量与多目标动画计划](./state_variable_and_multianim_plan.md)
 
@@ -343,3 +344,32 @@ onTriggered {
 - 子控制器在激活前不执行 entry，退出和 reset 不漏 action、不重复 entry。
 - 广播热路径不因排序或集合快照产生临时 Map/List。
 - 兄弟子图交换遍历顺序后结果不变。
+
+---
+
+## 9. 实施总结
+
+本次改造已完成以下核心变更：
+
+### 代码变更
+
+| 文件 | 变更 |
+|------|------|
+| `StateGraphController.kt` | 延迟启动（`start = false`）、`enterNode/exitNode` 生命周期、`isStarted/start()/stop()/reset()` 统一 API、`broadcastEvent(String)` 广播、`ActionEvent.targetNode` 修正、stopped 控制器守卫 |
+| `OAnimStateMachineSet.kt` | `buildRootMachines()` / `buildRootMultiMachines()` 返回前调用 `.also { it.start() }` |
+| `OAnimStateMachine.kt` | `build()` 返回前调用 `.also { it.start() }` |
+| `build.gradle.kts` | 启用 ModDevGradle JUnit 集成，添加 JUnit 5 依赖并配置 `useJUnitPlatform()` |
+| `StateGraphControllerTest.kt` (新文件) | 25 个状态图 JUnit 测试，覆盖生命周期契约、广播语义、targetNode、共享 storage |
+
+### 文档更新
+
+| 文件 | 变更 |
+|------|------|
+| `state_machine_unification_plan.md` | 更新 2.1 节 API 说明、5.6 节子控制器约束（延迟启动、enterNode/exitNode、broadcastEvent）、renumber 子节 |
+| `sub_state_machine_event_broadcast_plan.md` | 标记状态为已完成，新增实施总结 |
+
+### ARMS-Core
+
+| 文件 | 变更 |
+|------|------|
+| `MechaLogicStateMachine.java` | 更新 Javadoc 使用 `broadcastEvent` 替代 `triggerEvent`，补充 `reset()`/`start()` 生命周期要求 |

@@ -33,7 +33,7 @@ data class OAnimStateMachine(
         tags: GameplayTagContainer? = null
     ): AnimStateMachine {
         // 单独构建时无子控制器上下文，传空 resolver
-        return AnimStateMachine(toStateMachineGraph { null }, animatable, variables = variables, tags = tags)
+        return AnimStateMachine(toStateMachineGraph { null }, animatable, variables = variables, tags = tags).also { it.start() }
     }
 
     /**

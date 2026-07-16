@@ -57,19 +57,12 @@ neoForge {
         create("client") {
             client()
             gameDirectory = project.file("run-client")
-            systemProperty("neoforge.enabledGameTestNamespaces", mod_id)
         }
 
         create("server") {
             server()
             gameDirectory = project.file("run-server")
             programArgument("--nogui")
-            systemProperty("neoforge.enabledGameTestNamespaces", mod_id)
-        }
-
-        create("gameTestServer") {
-            type = "gameTestServer"
-            systemProperty("neoforge.enabledGameTestNamespaces", mod_id)
         }
 
         create("data") {
@@ -88,10 +81,13 @@ neoForge {
         }
     }
 
-    mods {
-        create(project.property("mod_id") as String) {
-            sourceSet(sourceSets.main.get())
-        }
+    val sparkCoreMod = mods.create(project.property("mod_id") as String) {
+        sourceSet(sourceSets.main.get())
+    }
+
+    unitTest {
+        enable()
+        testedMod.set(sparkCoreMod)
     }
 }
 
@@ -141,6 +137,10 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xjvm-default=all")
     }
+}
+
+tasks.named<Test>("test") {
+    useJUnitPlatform()
 }
 
 // ==========================================
@@ -227,6 +227,10 @@ val graaljsJarJarModules = listOf(
 dependencies {
     // KotlinForForge
     implementation("thedarkcolour:kotlinforforge-neoforge:${property("kotlinforforge_version")}")
+
+    // === 测试依赖 ===
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // jei
     compileOnly("mezz.jei:jei-${property("minecraft_version")}-common-api:${property("jei_version")}")

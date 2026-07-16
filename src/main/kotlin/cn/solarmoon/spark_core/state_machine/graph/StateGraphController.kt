@@ -4,16 +4,15 @@ import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.gas.GameplayTagContainer
 import ru.nsk.kstatemachine.event.Event
 import ru.nsk.kstatemachine.state.IState
-import ru.nsk.kstatemachine.state.State
 import ru.nsk.kstatemachine.state.initialState
 import ru.nsk.kstatemachine.state.onEntry
 import ru.nsk.kstatemachine.state.onExit
 import ru.nsk.kstatemachine.state.state
-import ru.nsk.kstatemachine.state.transition
 import ru.nsk.kstatemachine.state.transitionConditionally
 import ru.nsk.kstatemachine.statemachine.createStdLibStateMachine
 import ru.nsk.kstatemachine.statemachine.processEventBlocking
-import ru.nsk.kstatemachine.statemachine.restartBlocking
+import ru.nsk.kstatemachine.statemachine.startBlocking
+import ru.nsk.kstatemachine.statemachine.stopBlocking
 import ru.nsk.kstatemachine.transition.noTransition
 import ru.nsk.kstatemachine.transition.onTriggered
 import ru.nsk.kstatemachine.transition.targetState
@@ -49,21 +48,27 @@ open class StateGraphController @JvmOverloads constructor(
         var targetNode: StateNode? = null
     }
 
-    private val stateMachine = createStdLibStateMachine {
+    /**
+     * 延迟启动的状态机（start = false），构造后不自动进入初始节点。
+     * 子控制器生命周期统一由 [enterNode]/[exitNode] 管理。
+     */
+    private val stateMachine = createStdLibStateMachine(start = false) {
         val states = mutableMapOf<String, IState>()
         val stateToNodes = mutableMapOf<IState, StateNode>()
+
+        /**
+         * 递归创建 KStateMachine 状态，注册统一的 enter/exit 回调。
+         * 子图不内联到 KStateMachine，由 enterNode/exitNode 通过 activeChildren 管理。
+         */
         fun IState.createStates(graph: StateMachineGraph) {
             graph.nodeMap.forEach { (id, node) ->
                 val state = (if (id == graph.initialNode.name) initialState(graph.initialNode.name) else state(id)).apply {
                     onEntry {
-                        currentNode = node
-                        node.onEntry.forEach { it.execute(this@StateGraphController) }
-                        onEntry(node)
+                        enterNode(node)
                     }
 
                     onExit {
-                        node.onExit.forEach { it.execute(this@StateGraphController) }
-                        onExit(node)
+                        exitNode(node)
                     }
 
                     // 输入事件驱动衔接 + 无事件自动转移
@@ -78,16 +83,16 @@ open class StateGraphController @JvmOverloads constructor(
                                 node.eventTransitions[event.type]?.firstOrNull { it.condition.check(this@StateGraphController) }
                             }
                             if (next != null) {
-                                event.targetNode = node
                                 targetState(states[next.target]!!)
                             } else noTransition()
                         }
                         onTriggered {
-                            onTriggered(it.event, stateToNodes[it.transition.sourceState], stateToNodes[it.direction.targetState])
+                            // 在已确认转移的回调中写入目标节点，确保 targetNode 语义正确
+                            val target = stateToNodes[it.direction.targetState]
+                            it.event.targetNode = target
+                            onTriggered(it.event, stateToNodes[it.transition.sourceState], target)
                         }
                     }
-
-                    // subGraphs 不再内联到 KStateMachine；由 onEntry 中的 children + activeChildren 管理
                 }
                 states[id] = state
                 stateToNodes[state] = node
@@ -97,43 +102,178 @@ open class StateGraphController @JvmOverloads constructor(
         createStates(stateMachineGraph)
     }
 
+    // ═══════════════════════════════════════════════
+    // 节点生命周期（统一 enter/exit，供 KStateMachine 回调和 stop() 共用）
+    // ═══════════════════════════════════════════════
+
+    /**
+     * 进入节点：先执行 [StateNode.onEntry] actions，再激活子控制器，最后调用子类钩子。
+     */
+    private fun enterNode(node: StateNode) {
+        val previousNode = currentNode
+        currentNode = node
+        node.onEntry.forEach { it.execute(this) }
+
+        // 先收集需要激活的子控制器映射（名称 → 实例），避免在 try 块内修改 activeChildren
+        val toActivate = mutableMapOf<String, StateGraphController>()
+        for (name in node.subGraphs.keys) {
+            val child = children[name]
+            if (child != null) {
+                toActivate[name] = child
+            } else {
+                SparkCore.LOGGER.warn("子控制器 $name 未在 children 中注册")
+            }
+        }
+
+        try {
+            for (child in toActivate.values) {
+                child.start()
+            }
+        } catch (e: Exception) {
+            // 回滚：停止已激活的子控制器，还原 currentNode
+            SparkCore.LOGGER.warn("激活子控制器失败，回滚节点 ${node.name} 的 entry", e)
+            for (child in toActivate.values) {
+                if (child.isStarted) {
+                    try {
+                        child.stop()
+                    } catch (rollbackError: Exception) {
+                        SparkCore.LOGGER.error("回滚子控制器时出错", rollbackError)
+                    }
+                }
+            }
+            // activeChildren 此时尚未写入，无需清理
+            currentNode = previousNode
+            throw e
+        }
+
+        // 全部成功后才写入 activeChildren
+        activeChildren.putAll(toActivate)
+
+        onEntry(node) // 子类钩子，不再负责激活 children
+    }
+
+    /**
+     * 退出节点：按内到外顺序 — 先完整停止活跃子图，再执行 [StateNode.onExit] actions，
+     * 最后调用子类 [onExit] 钩子。
+     */
+    private fun exitNode(node: StateNode) {
+        // 内到外：先停止活跃子图；单个子控停止失败不影响其余子图的停止
+        val errors = mutableListOf<Exception>()
+        for (child in activeChildren.values) {
+            try {
+                child.stop()
+            } catch (e: Exception) {
+                SparkCore.LOGGER.warn("退出节点 ${node.name} 时停止子控制器出错", e)
+                errors.add(e)
+            }
+        }
+        activeChildren.clear()
+
+        node.onExit.forEach { it.execute(this) }
+        onExit(node) // 子类钩子，不再负责递归退出 children
+
+        if (errors.isNotEmpty()) {
+            throw RuntimeException(
+                "退出节点 ${node.name} 时 ${errors.size} 个子控制器停止失败",
+                errors.first()
+            )
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    // 公开生命周期入口
+    // ═══════════════════════════════════════════════
+
+    /** 底层 KStateMachine 是否已启动。构造完成后为 false，需显式调用 [start]。 */
+    val isStarted: Boolean
+        get() = stateMachine.isRunning
+
+    /**
+     * 启动控制器：进入 [stateMachineGraph.initialNode]。
+     *
+     * @throws IllegalStateException 控制器已启动
+     */
+    fun start() {
+        check(!stateMachine.isRunning) { "StateGraphController 已启动" }
+        stateMachine.startBlocking()
+    }
+
+    /**
+     * 停止控制器：先退出当前节点（含子图清理），再停止底层状态机。
+     */
+    fun stop() {
+        if (!stateMachine.isRunning) return
+        exitNode(currentNode)
+        stateMachine.stopBlocking()
+    }
+
+    /**
+     * 重置到初始状态（递归子控）。
+     * 构造完成后初次调用即可正常初始化——无需额外调用 [start]。
+     *
+     * 共享 storage 时不 clear——避免子控 reset 误清父控/外部写入的快照数据。
+     */
+    open fun reset() {
+        if (stateMachine.isRunning) stop()
+
+        // 只清理由本控制器自己创建的容器，在初始节点 entry 之前清理
+        if (ownsTags) tags.clear()
+        if (ownsVariables) variables.clear()
+
+        start()
+    }
+
+    // ═══════════════════════════════════════════════
+    // 每帧推进
+    // ═══════════════════════════════════════════════
+
     /** 每帧调用。先递归驱动子控制器，再驱动自身 event=null 转移 */
     open fun progress() {
+        check(isStarted) { "StateGraphController 未启动，请先调用 start() 或 reset()" }
         activeChildren.values.forEach { it.progress() }
         triggerEvent(null)
     }
 
-    /** 重置到初始状态（递归子控）。利用 KStateMachine.restartBlocking() 回到 initial state。
-     *  共享 storage 时不 clear——避免子控 reset 误清父控/外部写入的快照数据。 */
-    open fun reset() {
-        activeChildren.values.forEach { it.reset() }
-        activeChildren.clear()
-        stateMachine.restartBlocking()
-        if (ownsTags) tags.clear()
-        if (ownsVariables) variables.clear()
-    }
+    // ═══════════════════════════════════════════════
+    // 事件 API
+    // ═══════════════════════════════════════════════
 
+    /**
+     * 在当前控制器上触发事件，只处理本层转移。
+     * 使用 [broadcastEvent] 将事件广播到整棵活跃树。
+     */
     open fun triggerEvent(type: String?): ActionEvent {
+        check(isStarted) { "StateGraphController 未启动，请先调用 start() 或 reset()" }
         val event = ActionEvent(type)
         stateMachine.processEventBlocking(event)
         return event
     }
 
-    open fun onEntry(node: StateNode) {
-        // 激活当前状态的子控制器（reset 确保每次进入从初始态开始）
-        node.subGraphs.keys.forEach { name ->
-            children[name]?.also {
-                it.reset()
-                activeChildren[name] = it
-            }
+    /**
+     * 将非空事件从当前控制器向其处理后的活跃子树广播。
+     * 顺序：父级优先、深度优先；不消费、不短路。
+     *
+     * 父级先处理事件，确定本次事件后的模式与活跃子树；
+     * 再将同一个事件向下传播给处理后的活跃子控制器。
+     * 由父级转移退出的旧子图已从 [activeChildren] 移除，不会收到事件；
+     * 父级转移新激活的子图会继续收到同一个事件。
+     *
+     * @param type 非空事件名
+     */
+    open fun broadcastEvent(type: String) {
+        triggerEvent(type)
+        for (child in activeChildren.values) {
+            child.broadcastEvent(type)
         }
     }
 
-    open fun onExit(node: StateNode) {
-        // 递归退出子控制器——子控自己的 onExit 会清理孙子，逐层传递
-        activeChildren.values.forEach { it.onExit(it.currentNode) }
-        activeChildren.clear()
-    }
+    // ═══════════════════════════════════════════════
+    // 子类钩子
+    // ═══════════════════════════════════════════════
+
+    open fun onEntry(node: StateNode) {}
+
+    open fun onExit(node: StateNode) {}
 
     open fun onTriggered(event: ActionEvent, source: StateNode?, target: StateNode?) {
         SparkCore.LOGGER.info("执行动作: ${target?.name}")

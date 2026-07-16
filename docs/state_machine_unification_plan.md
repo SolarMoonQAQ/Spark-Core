@@ -67,17 +67,25 @@ StateMachineGraph (纯数据，Codec 可序列化)
 
 StateGraphController（运行时）
 ├── stateMachineGraph: StateMachineGraph
-├── children: Map<String, StateGraphController>  ← 直接子控制器（工厂预建）
+├── children: Map<String, StateGraphController>  ← 直接子控制器（工厂预建，stopped）
 ├── activeChildren: Map<String, StateGraphController> ← 当前状态激活的子控
 ├── tags: GameplayTagContainer        ← "黑板"，供 HasTagCondition 查询
+├── variables: StateVariableContainer ← 数值型状态变量容器
 ├── currentNode: StateNode            ← 当前状态
+├── isStarted: Boolean                ← 底层 KStateMachine 是否启动
+├── start()                           ← 启动（stopped → 进入初始节点）
+├── stop()                            ← 停止（退出当前节点 + 清理子图）
+├── reset()                           ← 回到初始状态（可选清理自有 storage）
 ├── progress()                        ← 每帧驱动（递归子控）
-├── reset()                           ← 回到初始状态（递归子控）
-├── triggerEvent(String?)             ← 事件驱动的转移触发
-└── 内部: KStateMachine               ← 执行引擎（restartBlocking() 实现 reset）
+├── triggerEvent(String?)             ← 单层事件驱动的转移触发
+├── broadcastEvent(String)            ← 父级优先的活跃树事件广播
+└── 内部: KStateMachine               ← 执行引擎（start = false，延迟启动）
 ```
 
-> **子控制器组织方式**：树形结构——每个控制器至多一个父控。父控只持有直接子控引用（`children`），孙子及更深层由子控自行管理。进入状态时 `onEntry` 激活并 `reset()` 子控，退出时 `onExit` 递归清理。详见 5.6 节。
+> **子控制器组织方式**：树形结构——每个控制器至多一个父控。父控只持有直接子控引用（`children`），孙子及更深层由子控自行管理。
+> 构造完成后所有控制器处于 **stopped** 状态，需显式调用 `start()` 或 `reset()` 启动。
+> 父控进入节点时通过 `enterNode()` 对子控调 `start()` 激活，退出时 `exitNode()` 调 `stop()` 清理。
+> 事件广播使用 `broadcastEvent(type)` 沿处理后的活跃树父级优先传播。详见 5.6 节。
 
 已有参考实现（KStateMachine DSL 级别验证）：
 
@@ -322,23 +330,98 @@ interface StateAction {
 |------|------|
 | **树形结构** | 每个子控制器至多一个父控，不允许菱形依赖或多父共享 |
 | **父只持子** | 父控 `children` 只含直接子控，不穿透持有孙子——孙子由子控自行管理 |
-| **进入即 reset** | 父控 `onEntry` 激活子控时调用 `reset()` 回到初始状态，避免前次残留 |
-| **退出递归清理** | 父控 `onExit` 中清理 `activeChildren`，子控的 `onExit` 会递归清理孙子，逐层传递 |
+| **延迟启动** | 构造完成后所有控制器处于 stopped 状态；根控制器的启动由工厂负责任（`start()` / `reset()`）；子控只在父节点激活时由 `enterNode()` 调 `start()` |
+| **进入激活** | 父控 `enterNode()` 激活子控时调 `child.start()`，子控进入初始节点，确保每次进入无残留 |
+| **退出递归停止** | 父控 `exitNode()` 中先调 `child.stop()` 清理，再执行节点 onExit actions，最后调父控制器 onExit 钩子 |
 | **递归 progress** | 父控 `progress()` 先递归 `activeChildren.values.forEach { it.progress() }`，再驱自身转移 |
+| **事件广播** | `broadcastEvent(type)` 父级优先传播：父级先处理事件确定新活跃子树，再将同一事件向下传播给处理后的活跃子控制器 |
 
-#### 5.6.2 `reset()` 实现方案
-
-KStateMachine 提供 `restartBlocking()` 方法（`stop()` + `start()` → 回到 initial state），无需重建实例：
+#### 5.6.2 生命周期 API
 
 ```kotlin
-open fun reset() {
-    stateMachine.restartBlocking()
-    tags.clear()
-    // currentNode 在 onEntry 中重新赋值为 initialNode
+// 构造后必须 start/reset 才能使用
+val controller = StateGraphController(graph, children)
+controller.start()           // → 进入初始节点（激活对应子控）
+
+// 每帧调用
+controller.progress()        // → 递归子控 → 自身 auto 转移
+
+// 事件驱动
+controller.broadcastEvent("dodge")  // → 父级优先活跃树广播
+controller.triggerEvent("dodge")    // → 只处理本层
+
+// 重置
+controller.reset()           // → stop → 清理自有 storage → start
+
+// 停止
+controller.stop()            // → exitNode(currentNode) → stopBlocking()
+```
+
+#### 5.6.3 enterNode / exitNode 生命周期方法
+
+```kotlin
+private fun enterNode(node: StateNode) {
+    currentNode = node
+    node.onEntry.forEach { it.execute(this) }
+    // 激活子控制器
+    for (name in node.subGraphs.keys) {
+        val child = children[name] ?: continue
+        check(!child.isStarted) { "子控制器 $name 已被激活" }
+        child.start()
+        activeChildren[name] = child
+    }
+    onEntry(node)  // 子类钩子
+}
+
+private fun exitNode(node: StateNode) {
+    // 内到外：先停止活跃子图
+    for (child in activeChildren.values) {
+        child.stop()
+    }
+    activeChildren.clear()
+    
+    node.onExit.forEach { it.execute(this) }
+    onExit(node)  // 子类钩子
 }
 ```
 
-#### 5.6.3 工厂构建流程（树递归）
+退出顺序固定为**内到外**：先完整停止活跃子图，再执行父节点 onExit actions，最后调父控制器 onExit 钩子。
+
+#### 5.6.4 broadcastEvent 语义
+
+`broadcastEvent(type)` 采用父级优先的动态树传播语义：
+
+1. 当前控制器先处理事件，再读取其处理后实际活跃的直接子控制器
+2. 处理后仍活跃的每个控制器恰好接收一次事件，顺序为父到子
+3. 父级转移退出的旧子图已从 `activeChildren` 移除，不会收到事件
+4. 父级转移新激活的子图会继续收到同一个事件
+5. 不消费、不短路；多个并行子图允许响应同一事件
+6. 同层子控制器的先后顺序不属于状态机语义，兄弟子图不得依赖彼此在同一次广播中的副作用
+
+```kotlin
+open fun broadcastEvent(type: String) {
+    triggerEvent(type)
+    for (child in activeChildren.values) {
+        child.broadcastEvent(type)
+    }
+}
+```
+
+#### 5.6.5 reset() 实现方案
+
+KStateMachine 提供 `stopBlocking()` + `startBlocking()` 组合回到 initial state，无需重建实例：
+
+```kotlin
+open fun reset() {
+    if (stateMachine.isRunning) stop()
+    // 只清理由本控制器自己创建的容器，在初始节点 entry 之前清理
+    if (ownsTags) tags.clear()
+    if (ownsVariables) variables.clear()
+    start()
+}
+```
+
+#### 5.6.6 工厂构建流程（树递归）
 
 构建方（`OAnimStateMachineSet.buildRootMachines()` 或代码路径）负责递归创建全树：
 
@@ -355,7 +438,7 @@ buildRootMachines(animatable):
 
 > **与旧设计的区别**：不用全局 flat `childMachines` 共享表——每棵子树独立构建 `children`，天然保证树形隔离。
 
-#### 5.6.4 `StateGraphController` init 需跳过 `subGraphs` 嵌入
+#### 5.6.7 `StateGraphController` init 需跳过 `subGraphs` 嵌入
 
 当前 `StateGraphController` 在构建 KStateMachine 时对 `subGraph`（单数）递归创建嵌套状态。改为 `subGraphs`（复数 map）后，父类 **不再处理子图**——子图数据仅作为元数据存在，由 `onEntry` 激活子控实例。
 
