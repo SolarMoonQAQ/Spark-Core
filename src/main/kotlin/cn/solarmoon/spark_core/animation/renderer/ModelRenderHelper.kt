@@ -60,7 +60,7 @@ fun OBone.render(
 
     // 优先使用骨骼级加速渲染 —— 将整个骨骼的cube和mesh合批为单个mesh，一次draw call
     // force参数在AR路径中无效（面剔除交由AR管线处理），非AR回退路径仍遵循force语义
-    if (ARCompat.IS_LOADED && ARCompat.renderBoneWithAR(
+    if (!force &&ARCompat.IS_LOADED && ARCompat.renderBoneWithAR(
             this, worldM4, worldM3, buffer, packedLight, packedOverlay, color
         )
     ) {

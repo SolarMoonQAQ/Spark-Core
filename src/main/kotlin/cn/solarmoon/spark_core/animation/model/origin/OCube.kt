@@ -142,11 +142,11 @@ data class OCube(
         color: Int,
         force: Boolean = false //控制是否强制渲染
     ) {
-        if (ARCompat.IS_LOADED && ARCompat.renderCubeWithAR(
+        if (!force && ARCompat.IS_LOADED && ARCompat.renderCubeWithAR(
                 this, poseStack, buffer, packedLight, packedOverlay, color
             )
         ) return // 优先使用加速渲染管线绘制
-//        if (SodiumCompat.IS_LOADED && SodiumCompat.renderCube(
+//        if (!force && SodiumCompat.IS_LOADED && SodiumCompat.renderCube(
 //                this, poseStack, buffer, packedLight, packedOverlay, color
 //            )
 //        ) return // 次级：Sodium 顶点缓冲快写 TODO: 有问题
