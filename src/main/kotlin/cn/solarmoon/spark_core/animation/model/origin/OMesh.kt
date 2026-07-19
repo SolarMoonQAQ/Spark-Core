@@ -67,8 +67,10 @@ data class OMesh(
      * @param color 颜色
      * @param partialTick 插值进度
      * @param force 是否强制渲染（跳过剔除）
+     * @param skipAcceleration 是否跳过加速管线（当前mesh层无加速路径，保留参数用于前向兼容）
      */
     @OnlyIn(Dist.CLIENT)
+    @JvmOverloads
     fun renderVertexes(
         matrix4f: Matrix4f,
         normal3f: Matrix3f,
@@ -77,7 +79,8 @@ data class OMesh(
         packedOverlay: Int,
         color: Int,
         partialTick: Float,
-        force: Boolean = false
+        force: Boolean = false,
+        skipAcceleration: Boolean = false
     ) {
         tmpBoneM4.set(matrix4f)
         tmpFinalNormalM3.set(normal3f)

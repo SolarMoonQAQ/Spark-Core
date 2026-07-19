@@ -131,22 +131,25 @@ data class OCube(
     /**
      * 在客户端渲染各个顶点
      * 面剔除参考自 https://github.com/TartaricAcid/TouhouLittleMaid/blob/cabcd1f3/src/main/java/com/github/tartaricacid/touhoulittlemaid/compat/sodium/SodiumGeoRenderer.java
-     * @param force 是否跳过面剔除强制渲染, force=true时强制渲染
+     * @param force 是否跳过面剔除强制渲染无UV的面（如HitBox调试方块）
+     * @param skipAcceleration 是否跳过 AR/Sodium 加速管线（用于FBO等需要立即提交顶点的场景）
      */
     @OnlyIn(Dist.CLIENT)
+    @JvmOverloads
     fun renderVertexes(
         poseStack: PoseStack,
         buffer: VertexConsumer,
         packedLight: Int,
         packedOverlay: Int,
         color: Int,
-        force: Boolean = false //控制是否强制渲染
+        force: Boolean = false,
+        skipAcceleration: Boolean = false
     ) {
-        if (!force && ARCompat.IS_LOADED && ARCompat.renderCubeWithAR(
+        if (!skipAcceleration && ARCompat.IS_LOADED && ARCompat.renderCubeWithAR(
                 this, poseStack, buffer, packedLight, packedOverlay, color
             )
         ) return // 优先使用加速渲染管线绘制
-//        if (!force && SodiumCompat.IS_LOADED && SodiumCompat.renderCube(
+//        if (!skipAcceleration && SodiumCompat.IS_LOADED && SodiumCompat.renderCube(
 //                this, poseStack, buffer, packedLight, packedOverlay, color
 //            )
 //        ) return // 次级：Sodium 顶点缓冲快写 TODO: 有问题

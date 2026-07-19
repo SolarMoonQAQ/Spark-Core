@@ -32,7 +32,8 @@ fun OBone.render(
     packedOverlay: Int,
     color: Int,
     partialTick: Float,
-    force: Boolean = false
+    force: Boolean = false,
+    skipAcceleration: Boolean = false // 是否跳过 AR/Sodium 加速管线（用于FBO等需要立即提交顶点的场景）
 ) {
     // 自身 scale≈0 → 跳过整条子树渲染（Molang 几何裁剪入口）
     val selfScale = pose.getBonePose(name)?.getLocalScale(partialTick) ?: return
@@ -59,8 +60,8 @@ fun OBone.render(
     val worldM3 = Matrix3f(poseEntry.normal()).mul(tmpM3)
 
     // 优先使用骨骼级加速渲染 —— 将整个骨骼的cube和mesh合批为单个mesh，一次draw call
-    // force参数在AR路径中无效（面剔除交由AR管线处理），非AR回退路径仍遵循force语义
-    if (!force &&ARCompat.IS_LOADED && ARCompat.renderBoneWithAR(
+    // skipAcceleration=true 时跳过AR/Sodium加速管线，回退到传统逐cube渲染（如FBO渲染需要立即提交顶点）
+    if (!skipAcceleration && ARCompat.IS_LOADED && ARCompat.renderBoneWithAR(
             this, worldM4, worldM3, buffer, packedLight, packedOverlay, color
         )
     ) {
@@ -68,7 +69,7 @@ fun OBone.render(
     }
 
 //    // 次级：Sodium / Embeddium 顶点缓冲快写 —— 合批后一次提交，无逐顶点JNI开销 TODO: 位姿不对，需要排查
-//    if (SodiumCompat.IS_LOADED && SodiumCompat.renderBone(
+//    if (!skipAcceleration && SodiumCompat.IS_LOADED && SodiumCompat.renderBone(
 //            this, worldM4, worldM3, buffer, packedLight, packedOverlay, color
 //        )
 //    ) {
@@ -85,7 +86,8 @@ fun OBone.render(
             packedLight,
             packedOverlay,
             color,
-            force
+            force,
+            skipAcceleration
         )
     }
 
@@ -98,7 +100,8 @@ fun OBone.render(
         packedOverlay,
         color,
         partialTick,
-        force
+        force,
+        skipAcceleration
     )
     poseStack.popPose()
 }
@@ -112,7 +115,8 @@ fun OModel.render(
     packedOverlay: Int,
     color: Int,
     partialTick: Float,
-    force: Boolean = false
+    force: Boolean = false,
+    skipAcceleration: Boolean = false
 ) {
     bones.values.forEach {
         it.render(
@@ -123,7 +127,8 @@ fun OModel.render(
             packedOverlay,
             color,
             partialTick,
-            force
+            force,
+            skipAcceleration
         )
     }
 }
