@@ -180,9 +180,9 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
             }
         }
 
-        // 静态声源（无ISoundSpreader）在波面全部消散后，自动停止播放以释放OpenAL通道
-        // 循环播放的声源已在上面重新生成波面，不会被此逻辑误杀
-        if (soundPoints.isEmpty() && ISoundSpreader == null) {
+        // 静态声源的波面在播放前耗尽时，停止未启动的实例以释放资源。
+        // 已开始播放的实例交由原版 SoundEngine 在音频结束后清理。
+        if (soundPoints.isEmpty() && ISoundSpreader == null && !isPlaying) {
             stop();
             return;
         }
