@@ -31,8 +31,9 @@
  */
 package com.jme3.bullet;
 
-import java.util.logging.Logger;
 import jme3utilities.Validate;
+
+import java.util.logging.Logger;
 
 /**
  * Tuning parameters for a CollisionSpace, based on Bullet's

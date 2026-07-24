@@ -237,7 +237,7 @@ abstract class PhysicsLevel(
         world.worldSnapshot.syncStructure()
         // 2️⃣ transform 同步（每 tick）
         world.worldSnapshot.syncTransform()
-        world.worldSnapshot.update(1f / tps, 0, false, true, false, true) // 保持AABB更新，且使用与主世界一致的callback flags以避免覆盖全局回调
+        world.worldSnapshot.update(1f / tps, 0, false, false, false, false) // 保持AABB更新，快照不需要回调，关闭以节约性能
         // 收集所有需要激活地形的刚体的包围盒
         val buildBoxes = mutableListOf<AABB>()
         val activationBoxes = mutableListOf<AABB>()

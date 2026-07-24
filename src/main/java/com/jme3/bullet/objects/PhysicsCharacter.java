@@ -139,8 +139,8 @@ public class PhysicsCharacter extends PhysicsCollisionObject {
      * Determine this character's angular velocity.
      *
      * @param storeResult storage for the result (modified if not null)
-     * @return the velocity vector (either storeResult or a new vector, not
-     * null)
+     * @return the velocity vector (in radians per second, either storeResult or
+     * a new vector, not null)
      */
     public Vector3f getAngularVelocity(Vector3f storeResult) {
         Vector3f result = controller.getAngularVelocity(storeResult);
@@ -345,8 +345,8 @@ public class PhysicsCharacter extends PhysicsCollisionObject {
     /**
      * Alter this character's angular velocity.
      *
-     * @param angularVelocity the desired angular velocity vector (not null,
-     * unaffected)
+     * @param angularVelocity the desired angular velocity vector (in radians
+     * per second, not null, unaffected)
      */
     public void setAngularVelocity(Vector3f angularVelocity) {
         Validate.nonNull(angularVelocity, "angular velocity");
@@ -544,12 +544,6 @@ public class PhysicsCharacter extends PhysicsCollisionObject {
     /**
      * Alter this character's walk offset. The offset must be perpendicular to
      * the "up" direction. It will continue to be applied until altered again.
-     * <p>
-     * Bullet KCC 内部在 {@code stepForwardAndStrafe} 中将
-     * {@code walkMove.setY(0)}——Y 分量被强制归零。
-     * 垂直运动由 KCC 内部重力（{@link #setGravity(float)}）和
-     * {@link #setLinearVelocity(Vector3f)} 的 Y 分量共同驱动。
-     * 若需同时控制三轴，请使用 {@link #setLinearVelocity(Vector3f)}。
      *
      * @param offset the desired location increment for each simulation step (in
      * physics-space coordinates, not null, unaffected, default=(0,0,0))

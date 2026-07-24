@@ -57,9 +57,7 @@ import java.util.logging.Logger;
  *
  * @author normenhansen
  */
-public class PhysicsSpace
-        extends CollisionSpace
-        implements ContactListener {
+public class PhysicsSpace extends CollisionSpace implements ContactListener {
     // *************************************************************************
     // enums
 
@@ -358,6 +356,15 @@ public class PhysicsSpace
         assert !tickListeners.contains(listener);
 
         tickListeners.add(listener);
+    }
+
+    /**
+     * Clear the forces and torques on all non-static bodies in the space. This
+     * operation is performed automatically at the end of each {@code update()}.
+     */
+    public void clearForces() {
+        long spaceId = nativeId();
+        clearForces(spaceId);
     }
 
     /**
@@ -728,8 +735,8 @@ public class PhysicsSpace
     }
 
     /**
-     * Update the space, enabling the default callbacks. This method should be
-     * invoked on the thread that created the space.
+     * Update the space. This method should be invoked on the thread that
+     * created the space.
      *
      * @param timeInterval the time interval to simulate (in seconds, &ge;0)
      * @param maxSteps the maximum number of steps of size {@code accuracy}
@@ -738,6 +745,7 @@ public class PhysicsSpace
     public void update(float timeInterval, int maxSteps) {
         assert Validate.nonNegative(timeInterval, "time interval");
         assert Validate.nonNegative(maxSteps, "max steps");
+
         update(timeInterval, maxSteps, 0x0);
     }
 
@@ -756,7 +764,7 @@ public class PhysicsSpace
      * false to skip them (default=false)
      */
     public void update(float timeInterval, int maxSteps, boolean doEnded,
-                       boolean doProcessed, boolean doStarted) {
+            boolean doProcessed, boolean doStarted) {
         int stepFlags = 0x0;
         if (doEnded) {
             stepFlags |= StepFlag.contactEnded;
@@ -814,7 +822,7 @@ public class PhysicsSpace
      * @param timeInterval the time interval to simulate (in seconds, &ge;0)
      * @param maxSteps the maximum number of steps of size {@code accuracy}
      * (&ge;1) or 0 for a single step of size {@code timeInterval}
-     * @param stepFlags the desired flags, ORed together (default=0x0)
+     * @param stepFlags the desired callbacks, ORed together (default=0x0)
      * @see StepFlag
      */
     public void update(float timeInterval, int maxSteps, int stepFlags) {
@@ -1042,7 +1050,7 @@ public class PhysicsSpace
 
     /**
      * Invoked by native code immediately before a contact point is added to a
-     * manifold. Skipped if stepSimulation() was invoked without the
+     * manifold. Skipped if {@code stepSimulation()} was invoked without the
      * {@code contactConceived} flag set.
      * <p>
      * Override this method to customize how contacts are handled.
@@ -1063,8 +1071,8 @@ public class PhysicsSpace
 
     /**
      * Invoked by native code immediately after a contact manifold is destroyed.
-     * Skipped if stepSimulation() was invoked without the {@code contactEnded}
-     * flag set.
+     * Skipped if {@code stepSimulation()} was invoked without the
+     * {@code contactEnded} flag set.
      * <p>
      * Override this method to customize how contacts are handled.
      *
@@ -1079,8 +1087,8 @@ public class PhysicsSpace
     /**
      * Invoked by native code immediately after a contact point is refreshed
      * without being destroyed. Skipped for Sphere-Sphere contacts. Skipped if
-     * stepSimulation() was invoked without the {@code contactProcessed} flag
-     * set.
+     * {@code stepSimulation()} was invoked without the {@code contactProcessed}
+     * flag set.
      * <p>
      * Override this method to customize how contacts are handled.
      *
@@ -1096,7 +1104,7 @@ public class PhysicsSpace
 
     /**
      * Invoked by native code immediately after a contact manifold is created.
-     * Skipped if stepSimulation() was invoked without the
+     * Skipped if {@code stepSimulation()} was invoked without the
      * {@code contactStarted} flag.
      * <p>
      * Override this method to customize how contacts are handled.
@@ -1312,6 +1320,8 @@ public class PhysicsSpace
 
     native private static void addRigidBody(
             long spaceId, long rigidBodyId, int proxyGroup, int proxyMask);
+
+    native private static void clearForces(long spaceId);
 
     native private static int countManifolds(long spaceId);
 

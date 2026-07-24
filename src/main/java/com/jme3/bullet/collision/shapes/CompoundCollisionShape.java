@@ -37,16 +37,13 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.bullet.util.DebugShapeFactory;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Matrix4f;
-import com.jme3.math.Transform;
-import com.jme3.math.Triangle;
-import com.jme3.math.Vector3f;
+import com.jme3.math.*;
+import jme3utilities.Validate;
+
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Logger;
-import jme3utilities.Validate;
 
 /**
  * A collision shape formed by combining child shapes, based on Bullet's
@@ -164,7 +161,7 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param rotation the local orientation of the child shape (not null,
      * unaffected)
      */
-    public ChildCollisionShape addChildShape(
+    public void addChildShape(
             CollisionShape childShape, Vector3f offset, Matrix3f rotation) {
         if (childShape instanceof CompoundCollisionShape) {
             throw new IllegalArgumentException(
@@ -179,7 +176,6 @@ public class CompoundCollisionShape extends CollisionShape {
 
         long parentId = nativeId();
         addChildShape(parentId, childId, offset, rotation);
-        return child;
     }
 
     /**
@@ -191,10 +187,10 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param transform the local transform of the child shape (not null,
      * unaffected)
      */
-    public ChildCollisionShape addChildShape(CollisionShape shape, Transform transform) {
+    public void addChildShape(CollisionShape shape, Transform transform) {
         Vector3f offset = transform.getTranslation(); // alias
         Matrix3f rotation = transform.getRotation().toRotationMatrix();
-        return addChildShape(shape, offset, rotation);
+        addChildShape(shape, offset, rotation);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2022 jMonkeyEngine
+ * Copyright (c) 2009-2026 jMonkeyEngine
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,8 +122,8 @@ public class CharacterController extends NativePhysicsObject {
      * Determine the character's angular velocity.
      *
      * @param storeResult storage for the result (modified if not null)
-     * @return the velocity vector (either storeResult or a new vector, not
-     * null)
+     * @return the velocity vector (in radians per second, either storeResult or
+     * a new vector, not null)
      */
     public Vector3f getAngularVelocity(Vector3f storeResult) {
         Vector3f result = (storeResult == null) ? new Vector3f() : storeResult;
@@ -339,8 +339,8 @@ public class CharacterController extends NativePhysicsObject {
     /**
      * Alter the character's angular velocity.
      *
-     * @param angularVelocity the desired angular velocity vector (not null,
-     * unaffected)
+     * @param angularVelocity the desired angular velocity vector (in radians
+     * per second, not null, unaffected)
      */
     public void setAngularVelocity(Vector3f angularVelocity) {
         long controllerId = nativeId();
@@ -469,8 +469,6 @@ public class CharacterController extends NativePhysicsObject {
     /**
      * Alter the character's walk offset. The offset must be perpendicular to
      * the "up" direction. It will continue to be applied until altered again.
-     * <p>
-     * Bullet KCC 强制 walkMove Y 归零。需控制三轴时请用 {@link #setLinearVelocity(Vector3f)}。
      *
      * @param offset the desired location increment for each simulation step (in
      * physics-space coordinates, not null, finite, unaffected, default=(0,0,0))

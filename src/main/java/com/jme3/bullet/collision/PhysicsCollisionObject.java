@@ -39,11 +39,7 @@ import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.CollisionSpace;
 import com.jme3.bullet.NativePhysicsObject;
 import com.jme3.bullet.collision.shapes.CollisionShape;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Transform;
-import com.jme3.math.TransformDp;
-import com.jme3.math.Vector3f;
+import com.jme3.math.*;
 import com.simsilica.mathd.Matrix3d;
 import com.simsilica.mathd.Quatd;
 import com.simsilica.mathd.Vec3d;
@@ -170,11 +166,11 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject impleme
     /**
      * collision groups with which this object can collide
      */
-    private int collideWithGroups = CollisionGroups.NONE;
+    private int collideWithGroups = COLLISION_GROUP_01;
     /**
      * collision group to which this object belongs
      */
-    private int collisionGroup = CollisionGroups.PHYSICS_BODY;
+    private int collisionGroup = COLLISION_GROUP_01;
     /**
      * scene object that's using this collision object
      */
