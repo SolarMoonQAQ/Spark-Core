@@ -45,10 +45,13 @@ object ARCubeRenderer : IAcceleratedRenderer<OCube> {
                     val normal = cube.buildLocalTransformMatrix().transformDirection(polygon.normal)
                     for (vertex in polygon.vertexes) {
                         val pos = cube.buildLocalTransformMatrix().transformPosition(Vector3f(vertex.x, vertex.y, vertex.z))
+                        // 烘焙时 overlay/light 传 0（与 SimpleBedrockModel 参考实现一致）：
+                        // 光照/叠加/颜色是每帧动态数据，由下方 mesh.write() 的 varying 提供，
+                        // 不能固化进缓存的 mesh 顶点，否则首次渲染时的亮度会被永久缓存（如淡入阶段的满亮度）
                         meshBuilder.addVertex(
                             pos.x, pos.y, pos.z, 0xFFFFFFFF.toInt(),
                             vertex.u, vertex.v,
-                            overlay, light,
+                            0, 0,
                             normal.x, normal.y, normal.z
                         )
                     }

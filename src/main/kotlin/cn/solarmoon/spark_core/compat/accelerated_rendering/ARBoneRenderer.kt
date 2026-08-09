@@ -66,10 +66,12 @@ object ARBoneRenderer : IAcceleratedRenderer<OBone> {
                         for (vertex in polygon.vertexes) {
                             // 变换顶点位置到骨骼局部空间
                             localTransform.transformPosition(vertex.x, vertex.y, vertex.z, tmpPos)
+                            // 烘焙时 overlay/light 传 0（与 SimpleBedrockModel 参考实现一致）：
+                            // 光照/叠加/颜色由下方 mesh.write() 每帧以 varying 提供，不固化进缓存顶点
                             meshBuilder.addVertex(
                                 tmpPos.x, tmpPos.y, tmpPos.z, 0xFFFFFFFF.toInt(),
                                 vertex.u, vertex.v,
-                                overlay, light,
+                                0, 0,
                                 tmpNormal.x, tmpNormal.y, tmpNormal.z
                             )
                         }
@@ -80,11 +82,12 @@ object ARBoneRenderer : IAcceleratedRenderer<OBone> {
                 bone.mesh?.let { mesh ->
                     for (polygon in mesh.polygons) {
                         for (vertex in polygon.vertices) {
+                            // 同上：overlay/light 烘焙传 0，由每帧 write 提供
                             meshBuilder.addVertex(
                                 vertex.position.x.toFloat(), vertex.position.y.toFloat(), vertex.position.z.toFloat(),
                                 0xFFFFFFFF.toInt(),
                                 vertex.uv.x, vertex.uv.y,
-                                overlay, light,
+                                0, 0,
                                 vertex.normal.x.toFloat(), vertex.normal.y.toFloat(), vertex.normal.z.toFloat()
                             )
                         }
