@@ -48,9 +48,6 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     public boolean isPlaying = false;
     public Vec3 speed = Vec3.ZERO;
 
-    // 多普勒音调平滑
-    private float smoothedDopplerPitch = 1.0f;
-    private static final float PITCH_SMOOTHING_FACTOR = 0.15f;
 
     // 淡入淡出相关
     private final int fadeInTicks;
