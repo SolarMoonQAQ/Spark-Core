@@ -91,10 +91,12 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
                     instance.applySoundPoint(point);// 将抵达的波面的音效历史数据应用到声音实例
 
                     // 如果是第一个到达的波面且实例尚未播放，则开始播放
+                    // 注意：此处不能预先 setPitch/setVolume——原版 SoundEngine.play 内部会再次调用
+                    // calculatePitch/calculateVolume（已被本 Mixin 覆盖），若先把多普勒因子/距离衰减
+                    // 乘入 pitch/volume 字段，会导致因子被应用两次（如多普勒因子被平方）。
+                    // applySoundPoint 已将原始 pitch/volume 写入实例，play() 内覆盖后的
+                    // calculatePitch/calculateVolume 会读取原始值并正确计算一次。
                     if (!instance.isPlaying && point == reachedPoints.getFirst()) {
-                        //预初始化音调音量
-                        instance.setVolume(spark_core$calculateVolume(instance));
-                        instance.setPitch(spark_core$calculatePitch(instance));
                         this.play(instance);
                         instance.isPlaying = true;
                     }
@@ -117,7 +119,7 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
     private void calculatePitch(SoundInstance sound, CallbackInfoReturnable<Float> cir) {
         if (sound instanceof SpreadingSoundInstance instance) {
             float dopplerFactor = spark_core$calculatePitch(instance);
-            cir.setReturnValue(Math.clamp(dopplerFactor, 0.25f, 4f));//限制多普勒因子的大小以防止极端音效
+            cir.setReturnValue(dopplerFactor);//限制多普勒因子的大小以防止极端音效
         }
     }
 
@@ -146,9 +148,22 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
 
     @Unique
     public float spark_core$calculateVolume(SpreadingSoundInstance sound) {
-        Vec3 sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
+        Vec3 sourcePos;
+        if (sound.ISoundSpreader != null) {
+            sourcePos = sound.ISoundSpreader.getPosition(sound.getUUID(), sound.getSoundEvent());
+        } else {
+            sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
+        }
         float distance = (float) listener.getTransform().position().distanceTo(sourcePos);
         float volume = sound.getVolume();
+
+        // 球面声学模型（ISoundSpreader.isAttenuationIncluded == true）：
+        // getVolume 已按物体真实距离完成大气吸收衰减 e^(-α·d)·(R/d)²，
+        // 此处不能再按波面点到收听者的距离做二次平方衰减，否则衰减会被平方两次。
+        if (sound.ISoundSpreader != null && sound.ISoundSpreader.isAttenuationIncluded()) {
+            return volume;
+        }
+
         //平方衰减
         // Square fall-off
         float rate = 1f - Math.min(distance / sound.getMaxRange(), 1f);
@@ -167,20 +182,39 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
         } else {
             listenerSpeed = Vec3.ZERO;
         }
-        Vec3 sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
-        Vec3 sourceSpeed = sound.getSpeed();
+
+        Vec3 sourcePos;
+        Vec3 sourceSpeed;
+        if (sound.ISoundSpreader != null) {
+            // 动态声源：使用当前实时状态计算多普勒，避免旧波面到达时用过时状态导致音调突变
+            sourcePos = sound.ISoundSpreader.getPosition(sound.getUUID(), sound.getSoundEvent());
+            sourceSpeed = sound.ISoundSpreader.getSpeed(sound.getUUID(), sound.getSoundEvent());
+        } else {
+            sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
+            sourceSpeed = sound.getSpeed();
+        }
+        // 源→听方向（单位向量）
         Vec3 toListener = listener.getTransform().position().subtract(sourcePos).normalize();
 
-        // 计算相对速度在方向上的投影
-        // Calculate the projection of the relative speed on the direction
-        float relativeSpeed = (float) sourceSpeed.dot(toListener)
-                - (float) listenerSpeed.dot(toListener);
-
-        // 多普勒因子
-        // Doppler factor
-        return (1.0f + relativeSpeed / SpreadingSoundInstance.getSoundSpeed(
+        float soundSpeed = SpreadingSoundInstance.getSoundSpeed(
                 sourcePos.scale(0.5)
                         .add(Minecraft.getInstance().gameRenderer.getMainCamera().getPosition().scale(0.5)),
-                Minecraft.getInstance().level)) * sound.getPitch();
+                Minecraft.getInstance().level);
+
+        // 声源速度在"源→听"方向上的投影 v_s·cosθ_s（>0 = 朝收听者接近）
+        // 收听者速度在"源→听"方向上的投影 v_l·cosθ_l（>0 = 收听者朝声源运动）
+        float sourceRadialSpeed = (float) sourceSpeed.dot(toListener);
+        float listenerRadialSpeed = (float) listenerSpeed.dot(toListener);
+
+        // 精确多普勒公式 f' = f · (c - v_l·cosθ_l) / (c - v_s·cosθ_s)
+        // 对亚音速相对运动均成立；分母趋近 0（v_s·cosθ → c⁻）时音调急剧升高（激波堆积），由上层 clamp 限制。
+        // 分母 ≤ 0 表示声源在该方向上超音速接近（收听者位于马赫锥静区），波面无法到达收听者，该声音不可闻。
+        // 波面扩散模拟已天然保证静区波面晚于声源经过时刻才到达，此处仅作健壮性兜底。
+        float denominator = soundSpeed - sourceRadialSpeed;
+        if (denominator <= 0.0f) {
+            return 0.25f * sound.getPitch();
+        }
+        float dopplerFactor = (soundSpeed - listenerRadialSpeed) / denominator;
+        return dopplerFactor * sound.getPitch();
     }
 }

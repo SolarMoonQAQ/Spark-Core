@@ -114,6 +114,20 @@ public interface ISoundSpreader {
     }
 
     /**
+     * 判断该声源返回的音量是否已包含完整的距离衰减。
+     *
+     * <p>默认返回 false：此时音效系统会对波面点到收听者的距离应用平方衰减。
+     * 若声源实现已在 {@link #getVolume} 中完成距离衰减（例如球面声学模型按物体
+     * 真实距离应用大气吸收衰减 {@code e^(-α·d)·(R/d)²}），应返回 true，
+     * 避免衰减被重复计算导致音量过小。</p>
+     *
+     * @return true 表示 {@link #getVolume} 的返回值已是最终衰减后的音量
+     */
+    default boolean isAttenuationIncluded() {
+        return false;
+    }
+
+    /**
      * 判断是否应对当前收听者应用"内部"音效变体。
      *
      * <p>由 {@link SpreadingSoundInstance#getSoundBuffer()} 在解析音频 buffer 前调用，
