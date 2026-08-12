@@ -37,13 +37,16 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.bullet.util.DebugShapeFactory;
-import com.jme3.math.*;
-import jme3utilities.Validate;
-
+import com.jme3.math.Matrix3f;
+import com.jme3.math.Matrix4f;
+import com.jme3.math.Transform;
+import com.jme3.math.Triangle;
+import com.jme3.math.Vector3f;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import jme3utilities.Validate;
 
 /**
  * A collision shape formed by combining child shapes, based on Bullet's
@@ -128,7 +131,7 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param offsetZ the local Z coordinate of the child shape's origin
      */
     public void addChildShape(CollisionShape childShape, float offsetX,
-            float offsetY, float offsetZ) {
+                              float offsetY, float offsetZ) {
         Validate.nonNull(childShape, "child shape");
 
         Vector3f offset
@@ -161,12 +164,12 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param rotation the local orientation of the child shape (not null,
      * unaffected)
      */
-    public void addChildShape(
+    public ChildCollisionShape addChildShape(
             CollisionShape childShape, Vector3f offset, Matrix3f rotation) {
         if (childShape instanceof CompoundCollisionShape) {
             throw new IllegalArgumentException(
                     "A CompoundCollisionShape cannot have"
-                    + " a CompoundCollisionShape child!");
+                            + " a CompoundCollisionShape child!");
         }
         long childId = childShape.nativeId();
 
@@ -176,6 +179,7 @@ public class CompoundCollisionShape extends CollisionShape {
 
         long parentId = nativeId();
         addChildShape(parentId, childId, offset, rotation);
+        return child;
     }
 
     /**
@@ -187,10 +191,10 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param transform the local transform of the child shape (not null,
      * unaffected)
      */
-    public void addChildShape(CollisionShape shape, Transform transform) {
+    public ChildCollisionShape addChildShape(CollisionShape shape, Transform transform) {
         Vector3f offset = transform.getTranslation(); // alias
         Matrix3f rotation = transform.getRotation().toRotationMatrix();
-        addChildShape(shape, offset, rotation);
+        return addChildShape(shape, offset, rotation);
     }
 
     /**
@@ -223,7 +227,7 @@ public class CompoundCollisionShape extends CollisionShape {
 
         CollisionSpace testSpace = (space == null)
                 ? new CollisionSpace(
-                        tmpOffset, tmpOffset, PhysicsSpace.BroadphaseType.DBVT)
+                tmpOffset, tmpOffset, PhysicsSpace.BroadphaseType.DBVT)
                 : space;
 
         // Test each pair of children for intersections.
@@ -394,7 +398,7 @@ public class CompoundCollisionShape extends CollisionShape {
      * storeTransform or a new instance, not null, scale=1)
      */
     public Transform principalAxes(FloatBuffer masses, Transform storeTransform,
-            Vector3f storeInertia) {
+                                   Vector3f storeInertia) {
         if (!masses.isDirect()) {
             throw new IllegalArgumentException("The buffer must be direct.");
         }
@@ -419,7 +423,7 @@ public class CompoundCollisionShape extends CollisionShape {
         removeChildShape(parentId, childId);
 
         for (Iterator<ChildCollisionShape> it = children.iterator();
-                it.hasNext();) {
+             it.hasNext();) {
             ChildCollisionShape childCollisionShape = it.next();
             if (childCollisionShape.getShape() == childShape) {
                 it.remove();
@@ -459,7 +463,7 @@ public class CompoundCollisionShape extends CollisionShape {
      * @param transform the desired Transform (not null, unaffected)
      */
     public void
-            setChildTransform(CollisionShape childShape, Transform transform) {
+    setChildTransform(CollisionShape childShape, Transform transform) {
         long childId = childShape.nativeId();
         long parentId = nativeId();
         Vector3f offset = transform.getTranslation(); // alias
@@ -727,7 +731,7 @@ public class CompoundCollisionShape extends CollisionShape {
     // native private methods
 
     native private static void addChildShape(long compoundId, long childShapeId,
-            Vector3f offset, Matrix3f rotation);
+                                             Vector3f offset, Matrix3f rotation);
 
     native private static void calculatePrincipalAxisTransform(
             long shapeId, FloatBuffer massBuffer, Transform storeTransform,
@@ -736,18 +740,18 @@ public class CompoundCollisionShape extends CollisionShape {
     native private static int countChildren(long shapeId);
 
     native private static long
-            createShape2(boolean dynamicAabbTree, int initialChildCapacity);
+    createShape2(boolean dynamicAabbTree, int initialChildCapacity);
 
     native private static void recalcAabb(long shapeId);
 
     native private static void
-            removeChildShape(long compoundId, long childShapeId);
+    removeChildShape(long compoundId, long childShapeId);
 
     native private static void rotate(long compoundId, Matrix3f rotationMatrix);
 
     native private static void setChildTransform(long compoundId,
-            long childShapeId, Vector3f offset, Matrix3f rotation);
+                                                 long childShapeId, Vector3f offset, Matrix3f rotation);
 
     native private static void
-            translate(long compoundId, Vector3f offsetVector);
+    translate(long compoundId, Vector3f offsetVector);
 }
