@@ -38,7 +38,30 @@ open class StateGraphController @JvmOverloads constructor(
     /** 标签容器是否自建（非共享），reset 时用于判断是否 clear */
     private val ownsTags = tags == null
 
+    companion object {
+        /** 兜底步长 (s)：20 TPS 一帧，仅作为 [lastDt] 的构造初值，正式调用必须传入真实 dt。 */
+        const val DEFAULT_DT = 1f / 20f
+    }
+
     var currentNode: StateNode = stateMachineGraph.initialNode
+        private set
+
+    /**
+     * 当前节点驻留时间 (s)。节点进入时清零，每次 [progress] 累加传入的 dt。
+     * 供 [StateTimeCondition] 等"有时长状态"（dodge / stun / hard_land）自动退出使用。
+     */
+    var stateTime: Float = 0f
+        private set
+
+    /**
+     * 控制器累计运行时间 (s)，单调递增，不随节点切换/重置清零。
+     * 供冷却（[ElapsedTimeCondition] + [RecordTimeAction]）、能量恢复等全局时钟使用。
+     */
+    var controllerTime: Float = 0f
+        private set
+
+    /** 最近一次 [progress] 传入的步长 (s)，供动作/条件查询。 */
+    var lastDt: Float = DEFAULT_DT
         private set
 
     /** 当前状态激活的子控制器 */
@@ -110,6 +133,7 @@ open class StateGraphController @JvmOverloads constructor(
      * 进入节点：先执行 [StateNode.onEntry] actions，再激活子控制器，最后调用子类钩子。
      */
     private fun enterNode(node: StateNode) {
+        stateTime = 0f // 节点驻留计时从进入当帧起算
         val previousNode = currentNode
         currentNode = node
         node.onEntry.forEach { it.execute(this) }
@@ -227,10 +251,18 @@ open class StateGraphController @JvmOverloads constructor(
     // 每帧推进
     // ═══════════════════════════════════════════════
 
-    /** 每帧调用。先递归驱动子控制器，再驱动自身 event=null 转移 */
-    open fun progress() {
+    /**
+     * 每帧调用。先递归驱动子控制器，再驱动自身 event=null 转移。
+     *
+     * @param dt 本帧物理步长 (s)，变 TPS 下必须传入真实秒数；同时累积
+     *           [stateTime]（节点驻留）与 [controllerTime]（全局时钟）。
+     */
+    open fun progress(dt: Float) {
         check(isStarted) { "StateGraphController 未启动，请先调用 start() 或 reset()" }
-        activeChildren.values.forEach { it.progress() }
+        lastDt = dt
+        controllerTime += dt
+        stateTime += dt
+        activeChildren.values.forEach { it.progress(dt) }
         triggerEvent(null)
     }
 

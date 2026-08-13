@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.CameraHelper
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.state.origin.OAnimStateMachineSet
+import cn.solarmoon.spark_core.state_machine.graph.StateGraphController
 import cn.solarmoon.spark_core.util.minus
 import cn.solarmoon.spark_core.util.plus
 import cn.solarmoon.spark_core.util.toEuler
@@ -167,7 +168,7 @@ class AnimController(
 
         layers.values.forEach { it.tick() }
 
-        stateMachines.values.forEach { it.progress() }
+        stateMachines.values.forEach { it.progress(StateGraphController.DEFAULT_DT) }
     }
 
 }
