@@ -33,7 +33,11 @@ object CollisionFuncApplier {
                 isKinematic = true
                 isContactResponse = false
                 collisionGroup = CollisionGroups.PAWN
-//                addCollideWithGroup(CollisionGroups.TERRAIN)
+                // 默认刚体不参与任何碰撞（isContactResponse = false），显式清空碰撞掩码：
+                // JME 默认 collideWithGroups = COLLISION_GROUP_01（与 TERRAIN 位相同），
+                // 若不显式设置，玩家刚体会被 PhysicsLevel.requestStep() 误判为"与地形碰撞"，
+                // 从而持续驱动无载具场景下的物理区块构建/激活，造成 CPU 占用
+                setCollideWithGroups(CollisionGroups.NONE)
                 onEvent<PhysicsBodyEvent.Tick> {
                     val bb = entity.boundingBox
                     val x: Float = (bb.xsize / 2).toFloat()

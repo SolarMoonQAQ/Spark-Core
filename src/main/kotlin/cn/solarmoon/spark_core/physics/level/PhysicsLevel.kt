@@ -20,12 +20,12 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.AABB
 import net.neoforged.neoforge.common.NeoForge
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
@@ -64,15 +64,15 @@ abstract class PhysicsLevel(
     @Volatile
     var dynamicRepeat = baseStep
 
+    val defaultMinStep: Int = 1
+
     /** 允许的最小每tick步进次数（可运行时调整） */
     @Volatile
-    var minStep: Int = 3
+    var minStep: Int = defaultMinStep
         set(value) {
             field = value.coerceAtLeast(1)
             if (dynamicRepeat < field) dynamicRepeat = field
         }
-
-    val defaultMinStep: Int = 1
 
     /** 允许的最大每tick步进次数（可运行时调整） */
     @Volatile
@@ -93,14 +93,10 @@ abstract class PhysicsLevel(
     /** 目标步进时间：完成一轮物理计算的目标用时, 设为0以尽可能快速完成，更新之间不插入休眠 */
     var targetStepTime = 0L
 
-    // 协程配置
-    val dispatcher = Executors.newSingleThreadExecutor { runnable ->
-        Thread(runnable, name).apply {
-            isDaemon = true
-        }
-    }.asCoroutineDispatcher()
-    val scope =
-        CoroutineScope(dispatcher + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException))
+    // 协程配置（restart 时会重建，故为可空 var）
+    private var dispatcher: CoroutineDispatcher? = null
+    private var dispatcherExecutor: ExecutorService? = null
+    private var scope: CoroutineScope? = null
 
     // 状态管理
     private val stateFlow = MutableStateFlow(PhysicsLevelState.IDLE)
@@ -150,7 +146,12 @@ abstract class PhysicsLevel(
         val fixedStep = 1f / tps
         val ticker = System.nanoTime()
         stateFlow.value = PhysicsLevelState.RUNNING
-        val stepSleepTime = ((targetStepTime - smoothedStepTime) / dynamicRepeat).toLong()
+        val stepSleepTime = if (targetStepTime > 0) {
+            // 仅当设置了目标步进时间才插入休眠（targetStepTime=0 表示尽可能快完成，不休眠）
+            ((targetStepTime - smoothedStepTime) / dynamicRepeat).toLong().coerceAtLeast(0L)
+        } else {
+            0L
+        }
         // 动态步进次数
         repeat(dynamicRepeat) { stepIndex ->
             tickCount++
@@ -163,7 +164,10 @@ abstract class PhysicsLevel(
             }
             // ===== 动态调节逻辑 =====
             lastPhysicsTickTime = System.nanoTime()
-            val currentMs = lastStepTickTime.toDouble() - stepSleepTime * (dynamicRepeat - 1)
+            // 实时更新整轮已用时间（含当前步），供调节逻辑使用，避免滞后一tick
+            lastStepTickTime = System.nanoTime() - ticker
+            // 扣除当前步之前已插入的休眠时间，得到纯物理计算耗时
+            val currentMs = (lastStepTickTime - stepSleepTime * stepIndex).toDouble()
             smoothedStepTime = if (currentMs > smoothedStepTime) {
                 // 负载上升：快速跟随 (Attack)
                 (ATTACK_ALPHA * currentMs) + (1.0 - ATTACK_ALPHA) * smoothedStepTime
@@ -199,8 +203,7 @@ abstract class PhysicsLevel(
                 }
             }
         }
-        // 通知主线程计算完成
-        lastStepTickTime = System.nanoTime() - ticker
+        // 整轮计算完成（lastStepTickTime 已在循环内实时更新，这里保持最终值一致）
         stateFlow.value = PhysicsLevelState.IDLE
     }
 
@@ -223,7 +226,7 @@ abstract class PhysicsLevel(
                 name,
                 tickCount,
                 (lastStepTickTime / 1000000).toInt(),
-                dynamicRepeat / baseStep * 100,
+                dynamicRepeat * 100 / baseStep,
                 world.pcoList.size,
                 terrainManager.getStats(),
                 mcLevel.chunkSource.loadedChunksCount
@@ -249,7 +252,9 @@ abstract class PhysicsLevel(
             // 收集所有需要激活地形的刚体的包围盒
             val owner = it.owner
             if (!it.isStatic && owner !is PhysicsChunkSection) {
-                if (it.collideWithGroups and CollisionGroups.TERRAIN != 0 || owner is Player)
+                // 仅与地形碰撞组的刚体才驱动地形构建/激活（载具、物理实体等）
+                // 玩家默认刚体不碰撞地形（见 CollisionFuncApplier），也不应驱动物理地形加载
+                if (it.collideWithGroups and CollisionGroups.TERRAIN != 0)
                     if (owner !is RigidBodyEntity || (owner.isActive)) {
                         var aabb = stateOf(it).cachedBoundingBox.toAABB()
                         if (it is PhysicsRigidBody) {
@@ -257,7 +262,6 @@ abstract class PhysicsLevel(
                             if (delta.length() < 5f)
                                 aabb = aabb.expandTowards(delta)
                         }
-                        if (owner is Player) aabb = aabb.expandTowards(0.0, -1.1, 0.0)
                         buildBoxes.add(aabb)
                         activationBoxes.add(aabb)
                     }
@@ -278,7 +282,7 @@ abstract class PhysicsLevel(
             stepPhysics()
         } else {
             // 多线程模式：发送物理步进请求（异步）
-            scope.launch {
+            scope?.launch {
                 physicsTickChannel.send(Unit)
             }
         }
@@ -308,8 +312,16 @@ abstract class PhysicsLevel(
             blockShapeManager = BlockShapeManager(this@PhysicsLevel)
             onInitialized?.invoke()
         } else {
-            // 多线程模式：协程内初始化 + 启动 run() 循环
-            scope.launch {
+            // 多线程模式：重建协程基础设施（restart 后旧 dispatcher/scope 已关闭），协程内初始化 + 启动 run() 循环
+            dispatcher = Executors.newSingleThreadExecutor { runnable ->
+                Thread(runnable, name).apply {
+                    isDaemon = true
+                }
+            }.asCoroutineDispatcher()
+            scope = CoroutineScope(
+                dispatcher!! + CoroutineName(name) + SupervisorJob() + CoroutineExceptionHandler(::handleException)
+            )
+            scope!!.launch {
                 world = PhysicsWorld(this@PhysicsLevel)
                 terrainManager = PhysicsChunkManager(this@PhysicsLevel)
                 blockShapeManager = BlockShapeManager(this@PhysicsLevel)
@@ -345,8 +357,11 @@ abstract class PhysicsLevel(
                 }
                 if (::world.isInitialized) world.destroy()
                 hostManager.clear()
-                scope.cancel("物理线程已关闭")
-                dispatcher.close()
+                scope?.cancel("物理线程已关闭")
+                scope = null
+                dispatcherExecutor?.shutdown()
+                dispatcherExecutor = null
+                dispatcher = null
             }
         }
     }

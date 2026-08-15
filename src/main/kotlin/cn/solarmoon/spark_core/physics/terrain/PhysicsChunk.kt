@@ -23,7 +23,18 @@ class PhysicsChunk(
     private var isLoaded = false
 
     /**
+     * 当前应激活的 section Y 坐标集合（去重缓存）。
+     * 供 [activateSectionsInRanges] 判断激活范围是否变化，避免无变化时重复执行 activate/deactivate。
+     */
+    private val activeSectionYs = mutableSetOf<Int>()
+
+    /**
      * 异步加载区块物理表示
+     *
+     * 懒构建：仅创建 section 对象并预填充构建快照（廉价主线程操作），
+     * 不立即排队构建作业。构建推迟到 section 首次 [PhysicsChunkSection.activate] 时触发，
+     * 避免区块加载时一次性将全部约 20 个 section 的构建作业排队到单线程构建队列
+     * （无载具场景下 TerrainShapeBuilder 线程被饱和的关键因素之一）。
      */
     fun load() {
         if (isLoaded) return
@@ -35,8 +46,8 @@ class PhysicsChunk(
             val sectionPos = SectionPos.of(chunkPos, sectionY)
             val physicsSection = PhysicsChunkSection(sectionPos, physicsLevel, chunk)
 
-            // 开始异步构建碰撞形状
-            physicsSection.startAsyncBuild(physicsLevel.terrainManager)
+            // 预填充构建快照（廉价），懒构建作业在首次激活时才排队
+            physicsSection.prepareSnapshot()
             sections[sectionY] = physicsSection
         }
 
@@ -49,6 +60,7 @@ class PhysicsChunk(
     fun unload() {
         sections.values.forEach {it.destroy()}
         sections.clear()
+        activeSectionYs.clear()
         isLoaded = false
     }
 
@@ -56,16 +68,27 @@ class PhysicsChunk(
      * 一次性激活指定范围内的所有section
      */
     fun activateSectionsInRanges(ranges: List<IntRange>) {
+        // 计算目标激活集合，与当前缓存比较，无变化则直接跳过
+        val targetYs = HashSet<Int>()
         sections.values.forEach { section ->
             val sectionY = section.sectionPos.y
-            val shouldActivate = ranges.any { range -> sectionY in range }
+            if (ranges.any { range -> sectionY in range }) targetYs.add(sectionY)
+        }
+        if (targetYs == activeSectionYs) return
 
-            if (shouldActivate) {
+        activeSectionYs.clear()
+        activeSectionYs.addAll(targetYs)
+        sections.values.forEach { section ->
+            val sectionY = section.sectionPos.y
+            if (sectionY in targetYs) {
                 section.activate()
             } else {
                 // 如果section当前是激活状态但不在新范围内，则停用
                 if (section.isActive) {
                     section.deactivate()
+                } else {
+                    // 未激活但可能在懒构建中：清除待激活标记，避免构建完成后自动加入物理世界
+                    section.cancelPendingActivation()
                 }
             }
         }
@@ -81,6 +104,7 @@ class PhysicsChunk(
 
             if (shouldDeactivate && section.isActive) {
                 section.deactivate()
+                activeSectionYs.remove(sectionY)
             }
         }
     }
@@ -97,7 +121,15 @@ class PhysicsChunk(
      */
     fun deactivateAll() {
         sections.values.forEach { it.deactivate() }
+        // 同步清空激活缓存，否则后续 activateSectionsInRanges 会被缓存误判为“无变化”而跳过重新激活
+        activeSectionYs.clear()
     }
+
+    /**
+     * 是否有任意激活的 section（O(1) 判断，基于激活缓存）。
+     * 供 PhysicsChunkManager 增量遍历确定候选 chunk 是否仍需要检查停用。
+     */
+    fun hasActiveSections(): Boolean = activeSectionYs.isNotEmpty()
 
     /**
      * 获取指定位置的section

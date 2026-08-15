@@ -67,6 +67,13 @@ class PhysicsChunkSection(
     private var buildJob: Job? = null
 
     /**
+     * 懒构建待激活标记：section 尚未构建完成时被 [activate] 请求过激活，
+     * 构建完成后自动加入物理世界。激活需求取消时（deactivate/cancelPendingActivation）清除。
+     */
+    @Volatile
+    private var pendingActivation = false
+
+    /**
      * 异步构建碰撞形状
      * 在专用线程池中执行，避免阻塞主线程
      */
@@ -185,19 +192,37 @@ class PhysicsChunkSection(
     }
 
     /**
+     * 主线程调用：预填充构建快照（廉价），不排队构建作业。
+     * 供懒构建使用（PhysicsChunk.load 时调用），构建作业推迟到首次激活时触发。
+     */
+    fun prepareSnapshot() {
+        if (snapshotForBuild == null) {
+            snapshotForBuild = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+        }
+    }
+
+    /**
      * 开始异步构建过程(主线程调用)
      */
     fun startAsyncBuild(manager: PhysicsChunkManager) {
         // 取消之前的构建任务
         buildJob?.cancel()
-        // 缓存section内所有方块信息
-        snapshotForBuild = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+        // 缓存section内所有方块信息（懒构建路径下已由 prepareSnapshot 预填充，此处兜底）
+        prepareSnapshot()
         buildJob = manager.terrainBuilderScope.launch {
             val buildResult = buildCollisionShapeAsync(this).await()
 
             if (buildResult) {
-                // 纯Java部分在构建线程完成（含内部replaceCollisionSnapshot），刚体不加入世界，等待updateActivation激活
+                // 纯Java部分在构建线程完成（含内部replaceCollisionSnapshot），刚体不加入世界，等待激活
                 createPhysicsBody()
+                // 懒构建：若构建期间该 section 已被请求激活，构建完成后自动加入物理世界
+                if (pendingActivation) {
+                    pendingActivation = false
+                    activate()
+                }
+            } else {
+                // 构建失败或为空形状：清除待激活标记，避免后续误激活
+                pendingActivation = false
             }
         }
     }
@@ -289,20 +314,38 @@ class PhysicsChunkSection(
 
     /**
      * 将section刚体加入物理世界
+     *
+     * 懒构建：若刚体尚未构建完成（physicsBody == null），标记待激活并触发异步构建，
+     * 构建完成后自动加入物理世界（见 [startAsyncBuild]）。
      */
     fun activate() {
-        if (isActive || physicsBody == null) {
-            return
-        }
-        refreshSlipIfNeeded(physicsLevel.terrainManager.currentWeatherEpoch())
-        if (physicsBody!!.isInWorld) {
+        if (isActive) return
+        val body = physicsBody
+        if (body != null) {
+            refreshSlipIfNeeded(physicsLevel.terrainManager.currentWeatherEpoch())
+            if (body.isInWorld) {
+                isActive = true
+                return
+            }
+            // 使用包含任务队列的方法将任务提交到物理线程，确保在物理线程中执行
+            body.owner = this
+            physicsLevel.mcLevel.addPhysicsBody(body)
             isActive = true
             return
         }
-        // 使用包含任务队列的方法将任务提交到物理线程，确保在物理线程中执行
-        physicsBody!!.owner = this
-        physicsLevel.mcLevel.addPhysicsBody(physicsBody!!)
-        isActive = true
+        // 尚未构建：标记待激活并触发懒构建（构建完成后自动激活）
+        pendingActivation = true
+        if (buildState == BuildState.IDLE) {
+            startAsyncBuild(physicsLevel.terrainManager)
+        }
+    }
+
+    /**
+     * 取消懒构建的待激活标记（section 已不在任何激活范围时调用）。
+     * 不影响已开始的构建作业；构建完成后因标记已清除而不会自动加入物理世界。
+     */
+    fun cancelPendingActivation() {
+        pendingActivation = false
     }
 
     /**
@@ -310,6 +353,8 @@ class PhysicsChunkSection(
      */
     fun deactivate() {
         if (!isActive || physicsBody == null) {
+            // 尚未构建完成：同时清除待激活标记，避免构建完成后自动激活
+            pendingActivation = false
             isActive = false
             return
         }
@@ -374,6 +419,7 @@ class PhysicsChunkSection(
      */
     fun destroy() {
         cancelBuild()
+        pendingActivation = false
         destroyPhysicsBody()
         snapshotForBuild = null
         snapshotForCollision = null
@@ -390,6 +436,18 @@ class PhysicsChunkSection(
      * 检查section是否为空（没有碰撞体积）
      */
     fun isEmpty(): Boolean = collisionShape == null
+
+    /**
+     * 判断该 section 是否不包含任何有碰撞体积的方块（纯空气或无碰撞方块）。
+     *
+     * 基于构建快照判断：快照由 [startAsyncBuild] 在主线程同步写入，且仅收录
+     * 非空气且有非空碰撞形状的方块，因此在构建完成前也能可靠区分
+     * "纯空气（无支撑需求）"与"尚未构建完成"。构建完成后结果与 [isEmpty] 等价。
+     */
+    fun hasNoCollisionBlocks(): Boolean {
+        val snapshot = snapshotForBuild ?: return true
+        return snapshot.isEmpty()
+    }
 
     /**
      * 仅刷新 snapshot 中的 slip，不触发 shape 重建和刚体重建

@@ -3,14 +3,34 @@ package cn.solarmoon.spark_core.physics.terrain
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.math.Vector3f
-import net.minecraft.core.BlockPos
-import net.minecraft.world.level.EmptyBlockGetter
 import net.minecraft.world.level.block.state.BlockState
 
 /**
  * 使用洪水填充算法合并相同形状的方块
  */
 class BlockMerger(private val physicsLevel: PhysicsLevel) {
+
+    companion object {
+        /** 不可合并/空位 */
+        private const val TYPE_NONE = 0
+        /** 完整方块 */
+        private const val TYPE_FULL = 1
+        /** 上半砖（碰撞盒位于 Y∈[0.5,1]，中心偏移 +0.25） */
+        private const val TYPE_UPPER_HALF = 2
+        /** 下半砖（碰撞盒位于 Y∈[0,0.5]，中心偏移 -0.25） */
+        private const val TYPE_LOWER_HALF = 3
+
+        /**
+         * 由形状类型直接推导 Y 中心偏移。
+         * 等价于原先每次对同一方块重复计算 VoxelShape 的 calculateCenterOffset：
+         * 完整方块 -> 0，上半砖(2) -> +0.25，下半砖(3) -> -0.25。
+         */
+        private fun centerOffsetFor(shapeType: Int): Float = when (shapeType) {
+            TYPE_UPPER_HALF -> 0.25f
+            TYPE_LOWER_HALF -> -0.25f
+            else -> 0f
+        }
+    }
 
     /**
      * 表示一个合并后的矩形区域
@@ -61,17 +81,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
         val width: Int, val height: Int,
         val shapeType: Int,
         val area: Int = width * height
-    ) : Comparable<CandidateRect> {
-        override fun compareTo(other: CandidateRect): Int {
-            // 优先比较面积，面积相同则比较位置（确保稳定性）
-            return if (area != other.area) {
-                other.area - area // 面积大的优先
-            } else {
-                // 面积相同则按位置排序
-                if (x != other.x) x - other.x else z - other.z
-            }
-        }
-    }
+    )
 
     /**
      * 三阶段合并
@@ -80,10 +90,20 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
         levelY: Int,
         blockStates: Array<Array<BlockState?>>
     ): List<MergedRect> {
+        // 预计算 16×16 形状类型矩阵：每个方块仅计算一次 VoxelShape，
+        // 避免合并过程中对同一方块反复执行 isMergeableShape + getShapeType（性能热点）
+        val typeMatrix = Array(16) { x ->
+            IntArray(16) { z ->
+                blockStates[x][z]
+                    ?.let { physicsLevel.blockShapeManager.getMergeableShapeType(it) }
+                    ?: TYPE_NONE
+            }
+        }
+
         val mergedRects = mutableListOf<MergedRect>()
 
         // 第一阶段：最大矩形优先合并
-        val phase1Rects = mergeXDirectionFirst(levelY, blockStates)
+        val phase1Rects = mergeXDirectionFirst(typeMatrix)
 
         // 过滤掉1x1的矩形，只保留较大的矩形
         val (largeRects, smallRects) = phase1Rects.partition { rect ->
@@ -102,11 +122,11 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
         }
 
         // 第二阶段：专门合并z方向连续方块（包括第一阶段留下的1x1矩形）
-        val phase2Rects = mergeZDirectionRemains(levelY, blockStates, processed)
+        val phase2Rects = mergeZDirectionRemains(typeMatrix, processed)
         mergedRects.addAll(phase2Rects)
 
         // 第三阶段：处理剩余的单个方块
-        val phase3Rects = mergeSingleBlocks(levelY, blockStates, processed)
+        val phase3Rects = mergeSingleBlocks(typeMatrix, processed)
         mergedRects.addAll(phase3Rects)
 
         return mergedRects
@@ -116,25 +136,18 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
      * 第一阶段：x方向优先，合并尽可能大的矩形
      */
     private fun mergeXDirectionFirst(
-        levelY: Int,
-        blockStates: Array<Array<BlockState?>> // [16][16] 的二维数组
+        typeMatrix: Array<IntArray> // [16][16] 的形状类型矩阵
     ): List<MergedRect> {
         val mergedRects = mutableListOf<MergedRect>()
         val processed = Array(16) { BooleanArray(16) }
 
-        // 预计算每个位置向右的连续相同形状长度
-        val rightLengths = calculateRightLengths(levelY, blockStates)
-
         while (true) {
-            // 寻找当前最大的可合并矩形
-            val bestRect = findLargestMergeableRect(processed, rightLengths, blockStates, levelY)
+            // 寻找当前最大的可合并矩形（直方图法，单次 O(16×16×类型数)）
+            val bestRect = findLargestMergeableRect(processed, typeMatrix)
             if (bestRect == null) break
 
             // 标记整个矩形为已处理
             markRectAsProcessed(processed, bestRect.x, bestRect.z, bestRect.width, bestRect.height)
-
-            // 计算Y偏移
-            val centerOffsetY = calculateCenterOffset(blockStates[bestRect.x][bestRect.z]!!)
 
             mergedRects.add(
                 MergedRect(
@@ -142,7 +155,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                     bestRect.x + bestRect.width - 1,
                     bestRect.z + bestRect.height - 1,
                     bestRect.shapeType,
-                    centerOffsetY
+                    centerOffsetFor(bestRect.shapeType)
                 )
             )
         }
@@ -153,8 +166,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
      * 第二阶段：专门合并z方向连续的剩余方块
      */
     private fun mergeZDirectionRemains(
-        levelY: Int,
-        blockStates: Array<Array<BlockState?>>,
+        typeMatrix: Array<IntArray>,
         processed: Array<BooleanArray>
     ): List<MergedRect> {
         val mergedRects = mutableListOf<MergedRect>()
@@ -169,26 +181,17 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                     continue
                 }
 
-                val startState = blockStates[x][z]
-
-                if (startState == null || !isMergeable(startState)) {
+                val startShapeType = typeMatrix[x][z]
+                if (startShapeType == TYPE_NONE) {
                     z++
                     continue
                 }
-
-                val startShapeType = physicsLevel.blockShapeManager.getShapeType(startState)
 
                 // 寻找z方向连续的长度
                 var endZ = z
                 for (checkZ in z + 1 until 16) {
                     if (processed[x][checkZ]) break
-
-                    val checkState = blockStates[x][checkZ] ?: break
-                    if (!isMergeable(checkState)) break
-
-                    val checkShapeType = physicsLevel.blockShapeManager.getShapeType(checkState)
-                    if (checkShapeType != startShapeType) break
-
+                    if (typeMatrix[x][checkZ] != startShapeType) break
                     endZ = checkZ
                 }
 
@@ -197,15 +200,14 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                 // 只有当连续长度大于1时才合并（避免单个方块）
                 if (length > 1) {
                     // 检查是否可以扩展到相邻的x列（形成更宽的条带）
-                    val maxWidth = findMaxZStripWidth(x, z, endZ, blockStates, processed, startShapeType)
+                    val maxWidth = findMaxZStripWidth(x, z, endZ, typeMatrix, processed, startShapeType)
 
-                    val centerOffsetY = calculateCenterOffset(startState)
                     mergedRects.add(
                         MergedRect(
                             x, z,
                             x + maxWidth - 1, endZ,
                             startShapeType,
-                            centerOffsetY
+                            centerOffsetFor(startShapeType)
                         )
                     )
 
@@ -232,8 +234,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
      * 第三阶段：处理剩余的单个方块
      */
     private fun mergeSingleBlocks(
-        levelY: Int,
-        blockStates: Array<Array<BlockState?>>,
+        typeMatrix: Array<IntArray>,
         processed: Array<BooleanArray>
     ): List<MergedRect> {
         val singleRects = mutableListOf<MergedRect>()
@@ -244,13 +245,8 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                 // 跳过已处理的方块
                 if (processed[x][z]) continue
 
-                val blockState = blockStates[x][z] ?: continue
-
-                if (!isMergeable(blockState)) continue
-
-                val shapeType = physicsLevel.blockShapeManager.getShapeType(blockState)
-
-                val centerOffsetY = calculateCenterOffset(blockState)
+                val shapeType = typeMatrix[x][z]
+                if (shapeType == TYPE_NONE) continue
 
                 // 创建1x1的矩形
                 singleRects.add(
@@ -258,7 +254,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                         x, z,
                         x, z, // 1x1矩形，所以maxX和maxZ与min相同
                         shapeType,
-                        centerOffsetY
+                        centerOffsetFor(shapeType)
                     )
                 )
 
@@ -275,7 +271,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
      */
     private fun findMaxZStripWidth(
         startX: Int, startZ: Int, endZ: Int,
-        blockStates: Array<Array<BlockState?>>,
+        typeMatrix: Array<IntArray>,
         processed: Array<BooleanArray>,
         targetShapeType: Int
     ): Int {
@@ -286,20 +282,7 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
             // 检查从startZ到endZ的所有z坐标
             var canExtend = true
             for (checkZ in startZ..endZ) {
-                if (extendX >= 16 || processed[extendX][checkZ]) {
-                    canExtend = false
-                    break
-                }
-
-                val state = blockStates[extendX][checkZ]
-
-                if (state == null || !isMergeable(state)) {
-                    canExtend = false
-                    break
-                }
-
-                val shapeType = physicsLevel.blockShapeManager.getShapeType(state)
-                if (shapeType != targetShapeType) {
+                if (processed[extendX][checkZ] || typeMatrix[extendX][checkZ] != targetShapeType) {
                     canExtend = false
                     break
                 }
@@ -316,136 +299,80 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
     }
 
     /**
-     * 计算每个位置向右的连续相同形状长度
-     * 用于快速判断矩形扩展的可能性
-     */
-    private fun calculateRightLengths(
-        levelY: Int,
-        blockStates: Array<Array<BlockState?>>
-    ): Array<IntArray> {
-        val rightLengths = Array(16) { IntArray(16) }
-
-        // 从右向左计算连续长度
-        for (z in 0 until 16) {
-            var currentLength = 0
-            for (x in 15 downTo 0) {
-                val blockState = blockStates[x][z]
-                if (blockState != null && isMergeable(blockState)) {
-                    currentLength++
-                } else {
-                    currentLength = 0
-                }
-                rightLengths[x][z] = currentLength
-            }
-        }
-
-        return rightLengths
-    }
-
-    /**
-     * 寻找当前最大的可合并矩形
+     * 寻找当前最大的可合并矩形（直方图法）
+     *
+     * 对每种形状类型维护柱状图：heights[x] 表示列 x 从当前底行 z 向上
+     * 连续未被处理且类型相同的方块数。对每个底行 z 用单调栈在 O(16) 内
+     * 求出该柱状图的最大矩形，整体单次 O(16×16×类型数)。
      */
     private fun findLargestMergeableRect(
         processed: Array<BooleanArray>,
-        rightLengths: Array<IntArray>,
-        blockStates: Array<Array<BlockState?>>,
-        levelY: Int
+        typeMatrix: Array<IntArray>
     ): CandidateRect? {
         var bestRect: CandidateRect? = null
+        val heights = IntArray(16)
 
-        // 遍历所有未处理的位置
-        for (startZ in 0 until 16) {
-            for (startX in 0 until 16) {
-                if (processed[startX][startZ]) continue
-
-                val startState = blockStates[startX][startZ] ?: continue
-                if (!isMergeable(startState)) continue
-
-                val shapeType = physicsLevel.blockShapeManager.getShapeType(startState)
-
-                // 当前行的最大可能宽度
-                val maxWidth = rightLengths[startX][startZ]
-
-                // 尝试不同的高度，找到面积最大的矩形
-                var currentHeight = 1
-                var currentMinWidth = maxWidth
-
-                // 向下扩展高度
-                for (extendZ in startZ until 16) {
-                    // 检查当前行是否可以被包含
-                    if (extendZ > startZ) {
-                        if (processed[startX][extendZ]) break
-                        val extendState = blockStates[startX][extendZ]
-                        if (extendState == null || !isMergeable(extendState)) break
-
-                        val extendShapeType = physicsLevel.blockShapeManager.getShapeType(extendState)
-                        if (extendShapeType != shapeType) break
-
-                        // 更新当前最小宽度
-                        currentMinWidth = minOf(currentMinWidth, rightLengths[startX][extendZ])
-                    }
-
-                    // 计算当前矩形的实际宽度
-                    val actualWidth = calculateActualWidth(
-                        startX, startZ, extendZ, currentMinWidth,
-                        processed, blockStates, shapeType
-                    )
-
-                    val currentArea = actualWidth * (extendZ - startZ + 1)
-
-                    // 更新最佳矩形
-                    if (bestRect == null || currentArea > bestRect.area) {
-                        bestRect = CandidateRect(
-                            startX, startZ,
-                            actualWidth, extendZ - startZ + 1,
-                            shapeType,
-                            currentArea
-                        )
-                    }
-
-                    // 如果宽度已经为1，再增加高度也不会增加面积
-                    if (currentMinWidth == 1) break
+        for (shapeType in TYPE_FULL..TYPE_LOWER_HALF) {
+            heights.fill(0)
+            for (z in 0 until 16) {
+                // 更新柱状图高度（已处理或类型不匹配则清零）
+                for (x in 0 until 16) {
+                    heights[x] =
+                        if (!processed[x][z] && typeMatrix[x][z] == shapeType) heights[x] + 1 else 0
+                }
+                // 以 z 为底行求该柱状图的最大矩形
+                val rect = largestRectInHistogram(heights, z, shapeType)
+                if (rect != null && (bestRect == null || rect.area > bestRect.area)) {
+                    bestRect = rect
                 }
             }
         }
-
         return bestRect
     }
 
     /**
-     * 计算矩形的实际可用宽度
+     * 单调栈求柱状图的最大矩形（O(16)）
+     *
+     * @param bottomZ 底行索引，矩形在 z 方向的顶行为 bottomZ - rectHeight + 1
      */
-    private fun calculateActualWidth(
-        startX: Int, startZ: Int, currentZ: Int, maxPossibleWidth: Int,
-        processed: Array<BooleanArray>,
-        blockStates: Array<Array<BlockState?>>,
-        targetShapeType: Int
-    ): Int {
-        var actualWidth = maxPossibleWidth
+    private fun largestRectInHistogram(
+        heights: IntArray,
+        bottomZ: Int,
+        shapeType: Int
+    ): CandidateRect? {
+        var maxArea = 0
+        var bestX = 0
+        var bestWidth = 0
+        var bestHeight = 0
+        val stack = IntArray(17)
+        var top = -1
 
-        // 检查从startZ到currentZ的所有行，确保宽度一致
-        for (checkZ in startZ..currentZ) {
-            var rowWidth = 0
-            for (checkX in startX until startX + maxPossibleWidth) {
-                if (checkX >= 16 || processed[checkX][checkZ]) break
-
-                val state = blockStates[checkX][checkZ]
-                if (state == null || !isMergeable(state)) break
-
-                val checkShapeType = physicsLevel.blockShapeManager.getShapeType(state)
-                if (checkShapeType != targetShapeType) break
-
-                rowWidth++
+        for (x in 0..16) {
+            // x == 16 时用 0 作为哨兵，强制弹出栈中剩余柱
+            val h = if (x < 16) heights[x] else 0
+            while (top >= 0 && h < heights[stack[top]]) {
+                val col = stack[top]
+                top--
+                val rectHeight = heights[col]
+                val left = if (top >= 0) stack[top] + 1 else 0
+                val width = x - left
+                val area = rectHeight * width
+                if (area > maxArea) {
+                    maxArea = area
+                    bestX = left
+                    bestWidth = width
+                    bestHeight = rectHeight
+                }
             }
-            actualWidth = minOf(actualWidth, rowWidth)
-
-            // 如果某行的宽度已经小于当前实际宽度，提前返回
-            if (actualWidth < maxPossibleWidth) {
-                return actualWidth
-            }
+            top++
+            stack[top] = x
         }
 
-        return actualWidth
+        if (maxArea == 0) return null
+        return CandidateRect(
+            bestX, bottomZ - bestHeight + 1,
+            bestWidth, bestHeight, shapeType, maxArea
+        )
     }
 
     /**
@@ -461,26 +388,6 @@ class BlockMerger(private val physicsLevel: PhysicsLevel) {
                     processed[x][z] = true
                 }
             }
-        }
-    }
-
-    /**
-     * 检查方块是否可合并
-     */
-    private fun isMergeable(blockState: BlockState): Boolean {
-        return physicsLevel.blockShapeManager.isMergeableShape(blockState)
-    }
-
-    /**
-     * 计算形状的Y中心偏移
-     */
-    private fun calculateCenterOffset(blockState: BlockState): Float {
-        if (blockState.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO)) return 0f
-        val shape = blockState.getBulletCollisionShape(physicsLevel)
-        return when (shape) {
-            physicsLevel.blockShapeManager.UP_HALF_BLOCK -> -0.25f
-            physicsLevel.blockShapeManager.DOWN_HALF_BLOCK -> 0.25f
-            else -> 0f
         }
     }
 }

@@ -115,6 +115,24 @@ class BlockShapeManager(val physicsLevel: PhysicsLevel) {
     }
 
     /**
+     * 单次计算获取可合并形状的类型标识（0=不可合并，1=完整方块，2=下半砖，3=上半砖）。
+     * 等价于 [isMergeableShape] + [getShapeType] 的一次性合并版本，
+     * 避免 BlockMerger 在合并循环中对同一方块重复计算 VoxelShape。
+     */
+    fun getMergeableShapeType(state: BlockState): Int {
+        if (state.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO)) return 1
+        if (isXZFullShape(state)) {
+            val voxel = state.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty())
+            return when {
+                voxel.min(Direction.Axis.Y) == 0.0 && voxel.max(Direction.Axis.Y) == 0.5 -> 3
+                voxel.min(Direction.Axis.Y) == 0.5 && voxel.max(Direction.Axis.Y) == 1.0 -> 2
+                else -> 0
+            }
+        }
+        return 0
+    }
+
+    /**
      * 获取形状的类型标识，用于合并时的形状匹配
      */
     private fun getShapeType(shape: CollisionShape): Int {
