@@ -2,8 +2,13 @@ package cn.solarmoon.spark_core.state_machine.graph
 
 import cn.solarmoon.spark_core.gas.GameplayTag
 import cn.solarmoon.spark_core.gas.GameplayTagContainer
+import cn.solarmoon.spark_core.state_machine.graph.actions.RecordTimeAction
+import cn.solarmoon.spark_core.state_machine.graph.conditions.ElapsedTimeCondition
+import cn.solarmoon.spark_core.state_machine.graph.conditions.StateTimeCondition
+import cn.solarmoon.spark_core.state_machine.graph.conditions.StateTimeVariableCondition
 import cn.solarmoon.spark_core.state_machine.presets.StateVariableKeys
 import com.mojang.serialization.MapCodec
+import net.minecraft.resources.ResourceLocation
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -120,7 +125,7 @@ class StateGraphControllerTest {
         val controller = StateGraphController(singleNodeGraph())
         assertFalse(controller.isStarted)
         assertThrows(IllegalStateException::class.java) {
-            controller.progress()
+            controller.progress(0.05f)
         }
     }
 
@@ -138,7 +143,7 @@ class StateGraphControllerTest {
         assertEquals("A", recorder.entries[0])
 
         // progress 会触发 auto 转移 A→B
-        controller.progress()
+        controller.progress(0.05f)
         assertEquals(2, recorder.entries.size)
         assertEquals("B", recorder.entries[1])
         assertEquals(1, recorder.exits.size)
@@ -469,12 +474,12 @@ class StateGraphControllerTest {
         recorder.entries.clear()
 
         // progress 1: a → b
-        controller.progress()
+        controller.progress(0.05f)
         assertEquals("b", controller.currentNode.name)
         assertEquals(listOf("b"), recorder.entries)
 
         // progress 2: b → c
-        controller.progress()
+        controller.progress(0.05f)
         assertEquals("c", controller.currentNode.name)
     }
 
@@ -721,5 +726,175 @@ class StateGraphControllerTest {
 
         // 父子共享同一容器
         assertSame(parent.variables, child.variables)
+    }
+
+    // ═══════════════════════════════════════════════
+    // 5.5 时间条件与驻留计时（progress(dt)）
+    // ═══════════════════════════════════════════════
+
+    /** 构造测试用 float 变量键（test 命名空间） */
+    private fun floatKey(name: String): StateVariableKey<Float> =
+        StateVariableKey(ResourceLocation.fromNamespaceAndPath("test", name), Float::class, 0f)
+
+    @Test
+    fun `progress 传入 dt 后 stateTime 与 controllerTime 按秒累积`() {
+        val controller = StateGraphController(singleNodeGraph())
+        controller.start()
+
+        controller.progress(0.1f)
+        controller.progress(0.2f)
+
+        assertEquals(0.3f, controller.stateTime, 1e-6f)
+        assertEquals(0.3f, controller.controllerTime, 1e-6f)
+        assertEquals(0.2f, controller.lastDt, 1e-6f)
+    }
+
+    @Test
+    fun `节点切换时 stateTime 清零而 controllerTime 保持单调`() {
+        val graph = twoNodeGraph(event = "go", aName = "A", bName = "B")
+        val controller = StateGraphController(graph)
+        controller.start()
+
+        controller.progress(0.1f)          // 仍在 A，驻留 0.1s
+        assertEquals(0.1f, controller.stateTime, 1e-6f)
+
+        controller.triggerEvent("go")      // 进入 B → stateTime 清零
+        assertEquals(0f, controller.stateTime, 1e-6f)
+        assertEquals(0.1f, controller.controllerTime, 1e-6f)
+
+        controller.progress(0.05f)         // B 的驻留从 0 重新累积
+        assertEquals(0.05f, controller.stateTime, 1e-6f)
+        assertEquals(0.15f, controller.controllerTime, 1e-6f)
+    }
+
+    @Test
+    fun `auto 转移当帧先累积 转移后在新节点从零起算`() {
+        // A --[null True]--> B：progress 当帧 stateTime 先累积到 0.05，再因进入 B 清零
+        val graph = twoNodeGraph(event = null, aName = "A", bName = "B")
+        val controller = StateGraphController(graph)
+        controller.start()
+
+        controller.progress(0.05f)
+
+        assertEquals("B", controller.currentNode.name)
+        assertEquals(0f, controller.stateTime, 1e-6f)
+        assertEquals(0.05f, controller.controllerTime, 1e-6f)
+    }
+
+    @Test
+    fun `子控制器接收父级 progress 的 dt 并独立累计 stateTime`() {
+        val childGraph = singleNodeGraph("child_stay")
+        val child = StateGraphController(childGraph)
+
+        val (parentGraph, _) = parentGraph(subGraphs = mapOf("child_ctrl" to childGraph))
+        val parent = StateGraphController(parentGraph, children = mapOf("child_ctrl" to child))
+        parent.start()
+
+        parent.progress(0.05f)
+        parent.progress(0.05f)
+
+        assertEquals(0.1f, parent.stateTime, 1e-6f)
+        assertEquals(0.1f, child.stateTime, 1e-6f) // 子控同样收到真实 dt
+    }
+
+    @Test
+    fun `驻留时长条件在 stateTime 达到时长前不放行 达到后转移`() {
+        val graph = twoNodeGraph(
+            event = null,
+            condition = StateTimeCondition(0.25f),
+            aName = "A", bName = "B"
+        )
+        val controller = StateGraphController(graph)
+        controller.start() // A，stateTime=0
+
+        controller.progress(0.1f)  // 0.1 < 0.25 → 保持 A
+        assertEquals("A", controller.currentNode.name)
+
+        controller.progress(0.1f)  // 0.2 < 0.25 → 保持 A
+        assertEquals("A", controller.currentNode.name)
+
+        controller.progress(0.05f) // 0.25 >= 0.25 → 转移 B
+        assertEquals("B", controller.currentNode.name)
+        assertEquals(0f, controller.stateTime, 1e-6f) // B 驻留从零开始
+    }
+
+    @Test
+    fun `变量版驻留条件从变量读取时长`() {
+        val durationKey = floatKey("stun_duration")
+        val graph = twoNodeGraph(
+            event = null,
+            condition = StateTimeVariableCondition(durationKey),
+            aName = "A", bName = "B"
+        )
+        val controller = StateGraphController(graph)
+        controller.start()
+
+        controller.variables.set(durationKey, 0.5f)
+        controller.progress(0.1f)  // 0.1 < 0.5 → 保持
+        assertEquals("A", controller.currentNode.name)
+
+        controller.progress(0.4f)  // 0.5 >= 0.5 → 转移
+        assertEquals("B", controller.currentNode.name)
+    }
+
+    @Test
+    fun `未使用过记录时冷却条件立即放行`() {
+        val key = floatKey("last_use")
+        val graph = twoNodeGraph(
+            event = "use",
+            condition = ElapsedTimeCondition(key, 1.0f),
+            aName = "A", bName = "B"
+        )
+        val controller = StateGraphController(graph)
+        controller.start()
+
+        // key 从未写入 → 视为无冷却，事件直接放行
+        controller.triggerEvent("use")
+        assertEquals("B", controller.currentNode.name)
+    }
+
+    @Test
+    fun `记录动作与冷却条件实现最短间隔`() {
+        val key = floatKey("last_use")
+        val bNode = StateNode(
+            name = "B",
+            transitions = listOf(
+                StateTransition(event = null, target = "C", condition = ElapsedTimeCondition(key, 0.5f))
+            ),
+            onEntry = listOf(RecordTimeAction(key))
+        )
+        val graph = StateMachineGraph(
+            initialNode = StateNode(
+                name = "A",
+                transitions = listOf(StateTransition(event = "use", target = "B", condition = StateCondition.True))
+            ),
+            nodes = listOf(bNode, StateNode("C", transitions = emptyList()))
+        )
+        val controller = StateGraphController(graph)
+        controller.start() // A，controllerTime=0
+
+        controller.progress(0.1f)        // controllerTime=0.1
+        controller.triggerEvent("use")   // → B，RecordTimeAction 记录 0.1
+        assertEquals("B", controller.currentNode.name)
+
+        controller.progress(0.2f)        // controllerTime=0.3，elapsed=0.2 < 0.5 → 保持 B
+        assertEquals("B", controller.currentNode.name)
+
+        controller.progress(0.3f)        // controllerTime=0.6，elapsed=0.5 → C
+        assertEquals("C", controller.currentNode.name)
+    }
+
+    @Test
+    fun `stop后start重新进入初始节点时 stateTime 清零`() {
+        val controller = StateGraphController(singleNodeGraph())
+        controller.start()
+        controller.progress(0.1f)
+        assertEquals(0.1f, controller.stateTime, 1e-6f)
+
+        controller.stop()
+        controller.start()
+
+        assertEquals(0f, controller.stateTime, 1e-6f)
+        assertEquals(0.1f, controller.controllerTime, 1e-6f) // 全局时钟不回退
     }
 }
