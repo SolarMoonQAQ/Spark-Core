@@ -308,7 +308,6 @@ open class StateGraphController @JvmOverloads constructor(
     open fun onExit(node: StateNode) {}
 
     open fun onTriggered(event: ActionEvent, source: StateNode?, target: StateNode?) {
-        SparkCore.LOGGER.info("执行动作: ${target?.name}")
     }
 
     open fun onCheckTransition() {}

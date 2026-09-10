@@ -108,8 +108,8 @@ data class OBone(
         until: OBone? = null
     ): Matrix4f {
         val l = arrayListOf<OBone>(this)
-        var parent = getParent()
-        while (parent != null) {
+        var parent: OBone? = getParent()
+        while (parent != null && until != this) {
             l.add(parent)
             if (parent == until) break
             parent = parent.getParent()
@@ -140,8 +140,8 @@ data class OBone(
     ): Matrix4f {
         tmpM4.identity()
         val l = arrayListOf<OBone>(this)
-        var parent = getParent()
-        while (parent != null) {
+        var parent: OBone? = getParent()
+        while (parent != null && until != this) {
             l.add(parent)
             if (parent == until) break
             parent = parent.getParent()
