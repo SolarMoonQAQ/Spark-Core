@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.physics.level
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent
+import cn.solarmoon.spark_core.event.PhysicsSnapshotReadyEvent
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.body.*
 import cn.solarmoon.spark_core.physics.terrain.BlockShapeManager
@@ -241,6 +242,9 @@ abstract class PhysicsLevel(
         // 2️⃣ transform 同步（每 tick）
         world.worldSnapshot.syncTransform()
         world.worldSnapshot.update(1f / tps, 0, false, false, false, false) // 保持AABB更新，快照不需要回调，关闭以节约性能
+        // 快照刷新完成：广播就绪事件。爆炸等主线程订阅者据此按"一次事件一步"推进。
+        // 此处位于本方法提前返回分支之后、物理线程唤醒之前，因此只在快照确实刷新时触发。
+        NeoForge.EVENT_BUS.post(PhysicsSnapshotReadyEvent(this, tickCount.toLong()))
         // 收集所有需要激活地形的刚体的包围盒
         val buildBoxes = mutableListOf<AABB>()
         val activationBoxes = mutableListOf<AABB>()

@@ -65,6 +65,34 @@ class WorldSnapshot(
     }
 
     /**
+     * 收集包围盒与给定查询盒相交的快照刚体（主线程）。
+     *
+     * 等价于 `contactTest` 的宽相候选集（AABB 相交），但**不跑窄相**，
+     * 供爆炸等主线程订阅者做粗筛：先用纯 Java 算术排除够不到任何刚体的射线，
+     * 只有通过粗筛的射线才进入 `rayTest`。
+     *
+     * @param min    查询盒最小角（物理空间坐标，闭区间）
+     * @param max    查询盒最大角（物理空间坐标，闭区间）
+     * @param out    结果列表，调用时会被清空并填充相交的快照刚体
+     */
+    fun collectBodiesInAabb(min: Vector3f, max: Vector3f, out: MutableList<PhysicsRigidBody>) {
+        out.clear()
+        val tmpMin = Vector3f()
+        val tmpMax = Vector3f()
+        for (snap in snapshotMap.values) {
+            val bb = snap.boundingBox(null)
+            bb.getMin(tmpMin)
+            bb.getMax(tmpMax)
+            if (tmpMax.x >= min.x && tmpMin.x <= max.x &&
+                tmpMax.y >= min.y && tmpMin.y <= max.y &&
+                tmpMax.z >= min.z && tmpMin.z <= max.z
+            ) {
+                out.add(snap)
+            }
+        }
+    }
+
+    /**
      * 同步结构（只在 dirty 时执行）
      *
      * 必须在物理线程停止期间调用
