@@ -31,6 +31,19 @@ data class OBone(
     }
 
     /**
+     * 该骨骼是否应作为自发光骨骼渲染。
+     *
+     * 判定依据是模型格式通用的骨骼命名约定，在模型解析期只计算一次（后续访问为常量读取）：
+     * - 名前缀 [GLOW_PREFIX] —— Yes Steve Model 导出的车灯/发光件命名
+     * - 名后缀 [GLOW_SUFFIX] —— Blockbench 生态的 illuminated 发光标记
+     * 两者均为大小写不敏感匹配，以兼容导出工具产生的 `ysmGLow`、`_Illuminated` 等写法。
+     *
+     * 此处仅描述模型数据自身的语义；发光用什么 RenderType、是否使用全亮光照，由渲染方决定。
+     */
+    val shouldGlow: Boolean =
+        name.startsWith(GLOW_PREFIX, ignoreCase = true) || name.endsWith(GLOW_SUFFIX, ignoreCase = true)
+
+    /**
      * 获取当前骨骼组的父组，没有就返回null
      */
     fun getParent(): OBone? = parentName?.let { rootModel.getBone(it) }
@@ -157,6 +170,12 @@ data class OBone(
     }
 
     companion object {
+        /** 自发光骨骼名前缀 —— Yes Steve Model 导出约定 */
+        const val GLOW_PREFIX = "ysmGlow"
+
+        /** 自发光骨骼名后缀 —— Blockbench 生态约定 */
+        const val GLOW_SUFFIX = "_illuminated"
+
         @JvmStatic
         val CODEC: Codec<OBone> = RecordCodecBuilder.create {
             it.group(
