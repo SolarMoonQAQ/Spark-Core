@@ -48,4 +48,26 @@ object CollisionGroups {
      * Used for trigger volumes that detect enter/exit events but don't produce physical collision responses.
      */
     const val TRIGGER = 1 shl 3
+
+    /**
+     * 投射物碰撞组 / Projectile collision group
+     *
+     * 用于投射物的运动学触发体：一个只被射线与凸体扫掠查询看到的可探测体积。
+     * 触发体的 collideWith 为 [NONE]，因此不与任何组产生接触对、不产生接触响应。
+     *
+     * Used for projectile trigger volumes: detectable volumes visible only to ray and
+     * convex sweep queries. Their collideWith is [NONE], so they form no contact pairs.
+     */
+    const val PROJECTILE = 1 shl 4
+
+    /**
+     * 参与 WorldSnapshot 追踪的碰撞组。
+     *
+     * 决定主线程只读查询（rayTest / sweepTest / collectBodiesInAabb）可见的刚体范围。
+     * 新增组的可见性只需改这一行。
+     *
+     * Collision groups tracked by WorldSnapshot, i.e. the set of bodies visible to
+     * main-thread read-only queries.
+     */
+    val SNAPSHOT_TRACKED = setOf(PHYSICS_BODY, PROJECTILE)
 }

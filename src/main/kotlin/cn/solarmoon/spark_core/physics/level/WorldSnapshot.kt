@@ -50,7 +50,7 @@ class WorldSnapshot(
      * 标记需要新增一个刚体
      */
     fun markAdd(pco: PhysicsRigidBody) {
-        if (pco.collisionGroup == CollisionGroups.PHYSICS_BODY) {
+        if (pco.collisionGroup in CollisionGroups.SNAPSHOT_TRACKED) {
             trackedBodies.add(pco)
             structureDirty = true
         }
