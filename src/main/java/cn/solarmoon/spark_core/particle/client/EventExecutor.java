@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.particle.client;
 
 import cn.solarmoon.spark_core.particle.common.ParticleEmitterInstance;
 import cn.solarmoon.spark_core.particle.common.data.ParticleEffectDefinition;
+import cn.solarmoon.spark_core.particle.common.data.component.motion.ParticleMotionCollision;
 import cn.solarmoon.spark_core.particle.common.data.event.EventNode;
 import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
 import net.minecraft.resources.ResourceLocation;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -66,6 +68,29 @@ public class EventExecutor {
             if (nodes == null) continue;
             execute(nodes, buf, particleIndex);
         }
+    }
+
+    /**
+     * 触发碰撞事件（`particle_motion_collision.events`）。
+     * <p>
+     * 按 {@code min_speed}（方块/秒）过滤后复用 {@link #fireEventNames(List, ParticleArray, int)}。
+     * {@code speed} 由调用方传入**反弹前**的 |v|，与 Bedrock 语义一致。
+     *
+     * @param events        碰撞事件定义（可为 null 或空表）
+     * @param particleIndex 粒子索引
+     * @param buf           粒子数组
+     * @param speed         碰撞前的粒子速度（方块/秒）
+     */
+    public void fireCollisionEvents(List<ParticleMotionCollision.CollisionEvent> events,
+                                    int particleIndex, ParticleArray buf, float speed) {
+        if (events == null || events.isEmpty()) return;
+        List<String> names = null;
+        for (ParticleMotionCollision.CollisionEvent e : events) {
+            if (speed < e.minSpeed()) continue;
+            if (names == null) names = new ArrayList<>(events.size());
+            names.add(e.event());
+        }
+        if (names != null) fireEventNames(names, buf, particleIndex);
     }
 
     // ==================== 执行事件列表 ====================

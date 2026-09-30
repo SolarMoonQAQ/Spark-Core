@@ -88,9 +88,12 @@ public class ParticleRenderer {
                           MultiBufferSource buffer, Camera camera,
                           float partialTick, int light) {
         for (ParticleEmitterInstance emitter : emitters) {
-            if (!emitter.getDefinition().getParticlePreset().hasLighting()) // 不受环境光照影响则满亮度
-                light = LightTexture.FULL_BRIGHT;
-            renderEmitter(emitter, pose, buffer, camera, partialTick, light);
+            // 逐个发射器独立取光：不要就地改写入参 light，否则一旦遇到一个未启用
+            // particle_appearance_lighting 的发射器，其后所有发射器都会被渲染成满亮度。
+            int emitterLight = emitter.getDefinition().getParticlePreset().hasLighting()
+                    ? light
+                    : LightTexture.FULL_BRIGHT;
+            renderEmitter(emitter, pose, buffer, camera, partialTick, emitterLight);
         }
     }
 }

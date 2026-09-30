@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.particle.common.data;
 
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.ParticleLifetimeEvents;
+import cn.solarmoon.spark_core.particle.common.data.component.motion.ParticleMotionCollision;
 
 import java.util.List;
 
@@ -14,15 +15,18 @@ public class ParticlePreset {
     private final List<IComponentDefinition> definitions; // 原始定义列表，用于事件查找
     private final BillboardMode faceCameraMode;
     private final boolean hasLighting;
+    private final List<ParticleMotionCollision.CollisionEvent> collisionEvents;
 
     public ParticlePreset(List<IParticleComponent> allComponents,
                           List<IComponentDefinition> definitions,
-                          BillboardMode faceCameraMode, boolean hasLighting) {
+                          BillboardMode faceCameraMode, boolean hasLighting,
+                          List<ParticleMotionCollision.CollisionEvent> collisionEvents) {
         this.allComponents = allComponents.toArray(new IParticleComponent[0]);
         this.updateComponents = allComponents.stream().filter(c -> true).toList();
         this.definitions = definitions;
         this.faceCameraMode = faceCameraMode;
         this.hasLighting = hasLighting;
+        this.collisionEvents = collisionEvents;
     }
 
     public IParticleComponent[] getAllComponents() { return allComponents; }
@@ -30,6 +34,12 @@ public class ParticlePreset {
     public List<IComponentDefinition> getDefinitions() { return definitions; }
     public BillboardMode getFaceCameraMode() { return faceCameraMode; }
     public boolean hasLighting() { return hasLighting; }
+
+    /**
+     * 碰撞事件列表（{@code particle_motion_collision.events}）。
+     * 在反序列化时一次性提取，避免在每粒子每 tick 的热路径上反查组件（与 {@link #findLifetimeEvents()} 的取舍相反）。
+     */
+    public List<ParticleMotionCollision.CollisionEvent> getCollisionEvents() { return collisionEvents; }
 
     /**
      * 从原始定义中查找粒子生命周期事件组件。

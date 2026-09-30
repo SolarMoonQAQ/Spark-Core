@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.particle.common.data.component.shape;
 
 import cn.solarmoon.spark_core.particle.common.data.component.EmitterShapeAdapter;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -25,9 +24,9 @@ public class EmitterShapeBox extends EmitterShapeAdapter {
      * 从 JSON 对象反序列化。
      */
     public static EmitterShapeBox fromJson(JsonObject json) {
-        String[] offset = parseStringArray(json, "offset", "0", "0", "0");
-        String[] dir = parseStringArray(json, "direction", "0", "0", "1");
-        String[] half = parseStringArray(json, "half_dimensions", "1", "1", "1");
+        String[] offset = readVec3(json, "offset", "0", "0", "0");
+        String[] dir = readDirection(json, "0", "0", "1");
+        String[] half = readVec3(json, "half_dimensions", "1", "1", "1");
         boolean surface = json.has("surface_only") && json.get("surface_only").getAsBoolean();
         return new EmitterShapeBox(offset, dir, half, surface);
     }
@@ -38,16 +37,5 @@ public class EmitterShapeBox extends EmitterShapeAdapter {
 
     public boolean isSurfaceOnly() {
         return surfaceOnly;
-    }
-
-    /**
-     * 从 JSON 对象中读取字符串数组字段。
-     */
-    private static String[] parseStringArray(JsonObject json, String key, String defX, String defY, String defZ) {
-        JsonArray arr = json.getAsJsonArray(key);
-        if (arr != null && arr.size() >= 3) {
-            return new String[]{arr.get(0).getAsString(), arr.get(1).getAsString(), arr.get(2).getAsString()};
-        }
-        return new String[]{defX, defY, defZ};
     }
 }

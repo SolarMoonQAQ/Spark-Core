@@ -19,6 +19,8 @@ import cn.solarmoon.spark_core.particle.common.data.component.rate.*;
 import cn.solarmoon.spark_core.particle.common.data.component.shape.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Random;
@@ -36,6 +38,7 @@ import java.util.Set;
  */
 public class ParticleComponentRuntimes {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParticleComponentRuntimes.class);
     private static final Random RANDOM = new Random();
 
     // ==================== 发射器速率组件 ====================
@@ -410,7 +413,7 @@ public class ParticleComponentRuntimes {
 
     /**
      * ParticleMotionDynamic: 动力学运动——通过 Molang 表达式设置加速度和阻力系数，
-     * 由 ParticleArray.integrateParticle() 执行运动积分。
+     * 由 {@link CollisionResolver#move} 执行运动积分。
      */
     public static IParticleComponent createMotionDynamic(ParticleMotionDynamic def, ParticleMolangEnvironment molang) {
         return new IParticleComponent() {
@@ -428,7 +431,7 @@ public class ParticleComponentRuntimes {
                 buf.setAccelZ(index, (float) molang.evaluate(accelZ));
                 buf.setDragCoeff(index, (float) molang.evaluate(drag));
                 buf.setRotAccel(index, (float) molang.evaluate(rotAccel));
-                // 旋转阻力通过拖拽系数应用到 rotRate（由 integrateParticle 处理）
+                // 旋转阻力通过拖拽系数应用到 rotRate（由 CollisionResolver.move 处理）
                 float rd = (float) molang.evaluate(rotDrag);
                 if (rd > 0) {
                     float rate = buf.getRotRate(index);
@@ -471,8 +474,14 @@ public class ParticleComponentRuntimes {
     }
 
     /**
-     * ParticleMotionCollision: 碰撞运动——检测粒子与方块的碰撞并反弹。
-     * 对标 SBM：所有数值字段均为 MoLang 表达式，每 tick 求值后使用。
+     * ParticleMotionCollision: 碰撞参数写入器。
+     * <p>
+     * 本组件**不做检测、不改速度与位置**，只把每 tick 求值出的
+     * radius / restitution / drag / 标志位写入 {@link ParticleArray}；
+     * 位移积分与 AABB 扫掠由 {@link CollisionResolver#move} 在所有组件 tick 之后统一执行一次。
+     * <p>
+     * 非世界空间的预设（`emitter_local_space.position=true` 或含 `particle_motion_parametric`）
+     * 不会创建本组件，见 ParticleEffectDeserializer 的构建期门控。
      */
     public static IParticleComponent createMotionCollision(ParticleMotionCollision def, ParticleMolangEnvironment molang) {
         return new IParticleComponent() {
@@ -481,40 +490,34 @@ public class ParticleComponentRuntimes {
             private final MolangExpression restitutionExpr = molang.compile(def.getCoefficientOfRestitution());
             private final MolangExpression radiusExpr = molang.compile(def.getCollisionRadius());
             private final boolean expireOnContact = def.isExpireOnContact();
+            private boolean warnedRadius = false;
 
             @Override
             public void tick(ParticleArray buf, int index, float tickDt, ParticleMolangEnvironment ctx) {
                 if (!buf.isAlive(index)) return;
-                // enabled 表达式为 0 时跳过碰撞检测
-                if (molang.evaluate(enabledExpr) == 0) return;
 
-                Level level = ctx.getLevel();
-                if (level == null) return; // 服务端或 Level 不可用时跳过
+                // 读-改-写：保留 CollisionResolver 写入的接触位，其余位每 tick 重算
+                byte flags = (byte) (buf.getCollFlags(index) & ParticleArray.COLL_CONTACT);
+                if (ctx.evaluate(enabledExpr) != 0) {
+                    flags |= ParticleArray.COLL_ENABLED;
 
-                float px = buf.getPosX(index);
-                float py = buf.getPosY(index);
-                float pz = buf.getPosZ(index);
-                float vx = buf.getVelX(index);
-                float vy = buf.getVelY(index);
-                float vz = buf.getVelZ(index);
-
-                // 简单方块碰撞检测
-                BlockPos blockPos = BlockPos.containing(px, py, pz);
-                if (!level.getBlockState(blockPos).isAir()) {
-                    // 计算反弹方向（简化为沿法线反转）
-                    // 精确碰撞检测需要更复杂的算法，此处为基础实现
-                    if (expireOnContact) {
-                        buf.markDead(index);
-                        return;
+                    float radius = (float) ctx.evaluate(radiusExpr);
+                    if (radius > CollisionResolver.MAX_COLLISION_RADIUS) {
+                        if (!warnedRadius) {
+                            warnedRadius = true;
+                            LOGGER.warn("collision_radius 表达式 \"{}\" 求得 {}，超过基岩规范上限 {}（1/2 格），已夹取",
+                                    def.getCollisionRadius(), radius, CollisionResolver.MAX_COLLISION_RADIUS);
+                        }
+                        radius = CollisionResolver.MAX_COLLISION_RADIUS;
+                    } else if (!(radius > 0f)) {
+                        radius = 0f;   // 负值 / NaN 归零，避免碰撞盒被缩小到基础尺寸以下
                     }
-                    // 反转速度并施加阻力和弹性系数（均为运行时 Molang 求值）
-                    float drag = (float) ctx.evaluate(dragExpr);
-                    float restitution = (float) ctx.evaluate(restitutionExpr);
-                    buf.setVel(index,
-                            -vx * restitution * (1 - drag),
-                            -vy * restitution * (1 - drag),
-                            -vz * restitution * (1 - drag));
+                    buf.setCollRadius(index, radius);
+                    buf.setCollRestitution(index, (float) ctx.evaluate(restitutionExpr));
+                    buf.setCollDrag(index, (float) ctx.evaluate(dragExpr));
                 }
+                if (expireOnContact) flags |= ParticleArray.COLL_EXPIRE;
+                buf.setCollFlags(index, flags);
             }
         };
     }
@@ -542,6 +545,8 @@ public class ParticleComponentRuntimes {
             private final MolangExpression fbStepY = hasFlipbook ? molang.compile(def.getFlipbook().getStepY()) : null;
             private final MolangExpression fbFps = hasFlipbook ? molang.compile(def.getFlipbook().getFps()) : null;
             private final MolangExpression fbMaxFrame = hasFlipbook ? molang.compile(def.getFlipbook().getMaxFrame()) : null;
+            /** 翻页书 UV 复用的 4 元素暂存器（零分配） */
+            private final float[] fbUvScratch = new float[4];
 
             @Override
             public void onApply(ParticleArray buf, int index, ParticleMolangEnvironment molang) {
@@ -565,7 +570,7 @@ public class ParticleComponentRuntimes {
                     float age = buf.getAge(index);
                     float maxLife = buf.getMaxLifetime(index);
 
-                    // 运行时求值所有 Flipbook Molang 表达式
+                    // 运行时求值所有 Flipbook Molang 表达式（像素坐标）
                     float baseU = (float) molang.evaluate(fbBaseU);
                     float baseV = (float) molang.evaluate(fbBaseV);
                     float sizeX = (float) molang.evaluate(fbSizeX);
@@ -575,22 +580,59 @@ public class ParticleComponentRuntimes {
                     float fps = (float) molang.evaluate(fbFps);
                     int maxFrame = Math.round((float) molang.evaluate(fbMaxFrame));
 
-                    float progress;
-                    if (def.getFlipbook().isStretchToLifetime() && maxLife > 0) {
-                        progress = age / maxLife;
-                    } else {
-                        progress = age * fps;
-                    }
-                    int frame = (int) progress;
-                    if (maxFrame > 0) {
-                        frame = def.getFlipbook().isLoop() ? frame % maxFrame : Math.min(frame, maxFrame - 1);
-                    }
-                    float u = baseU + stepX * frame;
-                    float v = baseV + stepY * frame;
-                    buf.setUV(index, u, v, u + sizeX, v + sizeY);
+                    // 帧号：stretch_to_lifetime 时整个生命周期播放一遍，否则按 fps 推进
+                    int frame = flipbookFrame(age, maxLife, fps, maxFrame,
+                            def.getFlipbook().isStretchToLifetime(), def.getFlipbook().isLoop());
+
+                    // 像素坐标 → 归一化 UV（与静态 uv/uv_size 同一口径）
+                    flipbookUv(fbUvScratch, baseU, baseV, sizeX, sizeY, stepX, stepY, frame,
+                            def.getFlipbook().getTextureWidth(), def.getFlipbook().getTextureHeight());
+                    buf.setUV(index, fbUvScratch[0], fbUvScratch[1], fbUvScratch[2], fbUvScratch[3]);
                 }
             }
         };
+    }
+
+    /**
+     * 翻页书当前帧号。
+     * <ul>
+     *   <li>{@code stretch_to_lifetime}：把 0..1 的生命周期进度映射到 {@code 0..maxFrame}（整段寿命播放一遍）；</li>
+     *   <li>否则按 {@code age * fps} 推进；</li>
+     *   <li>{@code loop} 时对 {@code maxFrame} 取模，否则截断到 {@code [0, maxFrame - 1]}。</li>
+     * </ul>
+     * 包级可见以便单测（{@code maxFrame <= 0} 表示未指定帧数，此时不做取模/截断）。
+     */
+    static int flipbookFrame(float age, float maxLife, float fps, int maxFrame,
+                             boolean stretchToLifetime, boolean loop) {
+        int frame;
+        if (stretchToLifetime && maxLife > 0f) {
+            // 未指定 max_frame 时映射不出帧号，停在第一帧（而不是退化成按 fps 无界推进）
+            frame = maxFrame > 0 ? (int) (age / maxLife * maxFrame) : 0;
+        } else {
+            frame = (int) (age * fps);
+        }
+        if (maxFrame > 0) {
+            frame = loop ? Math.floorMod(frame, maxFrame) : Math.min(Math.max(frame, 0), maxFrame - 1);
+        }
+        return frame;
+    }
+
+    /**
+     * 把翻页书帧的 UV 写入 {@code out}（长度 ≥ 4，顺序 u0/v0/u1/u2），归一化到 [0,1]。
+     * <p>
+     * 翻页书的 UV 三元组与同组件的 {@code uv}/{@code uv_size} 一样是**像素**坐标，必须按纹理尺寸归一化
+     * —— 直接写像素值会让 UV 落在 [0,1] 之外。包级可见以便单测。
+     */
+    static void flipbookUv(float[] out, float baseU, float baseV, float sizeX, float sizeY,
+                           float stepX, float stepY, int frame, float texW, float texH) {
+        if (!(texW > 0f)) texW = 1f;
+        if (!(texH > 0f)) texH = 1f;
+        float u = (baseU + stepX * frame) / texW;
+        float v = (baseV + stepY * frame) / texH;
+        out[0] = u;
+        out[1] = v;
+        out[2] = u + sizeX / texW;
+        out[3] = v + sizeY / texH;
     }
 
     /**

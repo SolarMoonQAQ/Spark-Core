@@ -10,8 +10,10 @@ import cn.solarmoon.spark_core.particle.common.data.ParticlePreset;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeEvents;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.EmitterLifetimeLooping;
 import cn.solarmoon.spark_core.particle.common.data.component.lifetime.ParticleLifetimeEvents;
+import cn.solarmoon.spark_core.particle.common.data.component.motion.ParticleMotionCollision;
 import cn.solarmoon.spark_core.particle.common.data.event.EventNode;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -30,8 +32,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * tick 流程:
  * ① startTick() → ② snapshotPositions() → ③ Emitter 寿命/速率
- * → ④ 发射新粒子 (形状 + 组件初始化) → ⑤ 对每个粒子: Molang → 运动积分 → 碰撞 → expiration
- * → ⑥ compact() → ⑦ swap()
+ * → ④ 发射新粒子 (形状 + 组件初始化) → ⑤ 对每个粒子: Molang → 组件 tick → 时间线事件
+ * → ⑥ CollisionResolver.move()（唯一的位移积分 + 方块扫掠点）
+ * → ⑦ compact() → ⑧ swap()
  */
 public class ParticleEmitterInstance {
 
@@ -83,6 +86,16 @@ public class ParticleEmitterInstance {
     // 暂存待删除粒子索引（使用 IntArrayList 避免高粒子数下的 Integer 装箱 GC 压力）
     private final IntArrayList pendingDead = new IntArrayList();
 
+    // ====== 碰撞（§4.2 时序重排 / §4.7 实例级门控）======
+    /** 位移推进阶段复用的 impact 暂存器（只在发生碰撞时写入，紧随其后读取，零分配） */
+    private final float[] impactScratch = new float[1];
+    /** 实例级碰撞开关：FirstPersonEmitter 构造时置 false，使扫掠被跳过而只做积分 */
+    private boolean collisionEnabled = true;
+    /** 预取的碰撞事件列表，避免在每粒子每 tick 的热路径上反查组件 */
+    private final List<ParticleMotionCollision.CollisionEvent> collisionEvents;
+    /** §7.2 验证用统计（每实例一份，见 ParticleCollisionStats） */
+    private final ParticleCollisionStats collisionStats = new ParticleCollisionStats();
+
     // 发射器随机数
     private final double[] emitterRandoms = new double[4];
     private final Random random = new Random();
@@ -117,6 +130,7 @@ public class ParticleEmitterInstance {
         ParticlePreset particlePreset = definition.getParticlePreset();
         this.emitterComponents = emitterPreset.getAllComponents();
         this.particleComponents = particlePreset.getAllComponents();
+        this.collisionEvents = particlePreset.getCollisionEvents();
 
         // 收集需要 onApply 的粒子组件
         this.allParticleComponents = Arrays.asList(particleComponents);
@@ -373,6 +387,7 @@ public class ParticleEmitterInstance {
 
     private void updateParticles(ParticleArray buf, float tickDt, Level level) {
         int n = buf.getCount();
+        collisionStats.beginTick();
 
         for (int i = 0; i < n; i++) {
             if (!buf.isAlive(i)) continue;
@@ -397,6 +412,7 @@ public class ParticleEmitterInstance {
             curveEvaluator.evaluate(buf, i);
 
             // 粒子组件 tick（传入发射器自身的 Molang 环境，确保 particle_age 等变量正确）
+            // 碰撞组件在此只写入 collRadius / collRestitution / collDrag / collFlags，不做检测
             for (IParticleComponent comp : particleComponents) {
                 comp.tick(buf, i, tickDt, molang);
             }
@@ -412,8 +428,35 @@ public class ParticleEmitterInstance {
                 }
             }
 
-            // 运动积分
-            buf.integrateParticle(i, tickDt);
+            // 位移积分 + 方块扫掠 —— 唯一的位置推进点（旧 buf.integrateParticle 已迁入此处）
+            // collisionEnabled=false（第一人称）时传 null Level，只做无碰撞积分、不进入扫掠
+            float ageBeforeMove = buf.getAge(i);
+            byte result = CollisionResolver.move(buf, i, tickDt,
+                    collisionEnabled ? level : null, impactScratch);
+
+            if ((result & CollisionResolver.RESULT_COLLIDED) != 0) {
+                collisionStats.collisions++;
+                collisionStats.collisionsThisTick++;
+            }
+            if ((result & CollisionResolver.RESULT_CONTACT_EDGE) != 0) {
+                collisionStats.contactEdges++;
+                // D11-A：致死的那一 tick 同样触发碰撞事件，故先判上升沿、再判致死
+                eventExecutor.fireCollisionEvents(collisionEvents, i, buf, impactScratch[0]);
+            }
+            if ((result & CollisionResolver.RESULT_EXPIRED) != 0) {
+                // expire_on_contact 等价于过期
+                collisionStats.deadByContact++;
+                eventExecutor.fireExpirationEvents(i, buf);
+                pendingDead.add(i);
+            }
+
+            // §7.2 penetrationTicks：仅 debug 开关下采样；跳过出生那一 tick（出生即重叠的粒子会直接穿过，不计入）
+            if (ParticleCollisionStats.isPenetrationSamplingEnabled() && ageBeforeMove > 0f
+                    && level != null && buf.isAlive(i)
+                    && (buf.getCollFlags(i) & ParticleArray.COLL_ENABLED) != 0) {
+                BlockPos pos = BlockPos.containing(buf.getPosX(i), buf.getPosY(i), buf.getPosZ(i));
+                if (!level.getBlockState(pos).isAir()) collisionStats.penetrationTicks++;
+            }
         }
 
         // 清理已过期粒子的 timeline 追踪记录
@@ -503,6 +546,17 @@ public class ParticleEmitterInstance {
     public boolean isExpired() { return expired; }
     public void setExpired(boolean expired) { this.expired = expired; }
     public float getEmitterAge() { return emitterAge; }
+
+    /**
+     * 实例级碰撞开关（§4.7）。为 false 时位移推进阶段只做无碰撞积分、不进入扫掠与碰撞事件。
+     * 第一人称发射器在构造时置 false —— 它们是视图层装饰，且摄像机可以处在方块内部。
+     */
+    public boolean isCollisionEnabled() { return collisionEnabled; }
+
+    public void setCollisionEnabled(boolean collisionEnabled) { this.collisionEnabled = collisionEnabled; }
+
+    /** §7.2 验证用的每实例碰撞统计。 */
+    public ParticleCollisionStats getCollisionStats() { return collisionStats; }
 
     // ====== 事件系统辅助方法 ======
 

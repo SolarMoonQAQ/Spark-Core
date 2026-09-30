@@ -91,6 +91,11 @@ public class FirstPersonParticleSystem {
 
         public FirstPersonEmitter(ParticleEffectDefinition def, Vec3 position, Vec3 rotation) {
             super(def, null);
+            // 第一人称粒子不参与方块碰撞（§4.7，产品决定）：它们是视图层装饰、只对本人可见，
+            // 且摄像机可以处在方块内部（旁观/穿墙//tp/水中），开碰撞会让贴墙的枪口火焰
+            // 按 expire_on_contact 凭空消失或每 tick 抖动。
+            // 注意不能依赖「level 为 null」来判断——tick(level, …) 传进来的正是 mc.level。
+            setCollisionEnabled(false);
             this.fpPosition = position;
             setPosition(position);
             setRotation(new Quaternionf().rotationXYZ(

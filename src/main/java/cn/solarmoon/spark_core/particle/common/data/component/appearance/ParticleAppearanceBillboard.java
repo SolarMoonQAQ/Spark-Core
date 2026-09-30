@@ -2,16 +2,24 @@ package cn.solarmoon.spark_core.particle.common.data.component.appearance;
 
 import cn.solarmoon.spark_core.particle.common.data.IParticleComponentDefinition;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 粒子公告板外观组件。
  * 控制粒子的尺寸、朝向相机模式、UV 和翻页书动画。
  * 对应 JSON key: minecraft:particle_appearance_billboard
  * <p>
- * UV 和 Flipbook 字段当前仅支持静态数值（MoLang 表达式尚未实现，见 §14.5）。
+ * UV 与翻页书字段在规范里都允许 MoLang 表达式。**逐粒子求值尚未实现**
+ * （见 particle_soa_plan.md §14.5）：无法解析为数值的元素回退到默认值并告警一次，
+ * 而不是抛异常让整个粒子定义加载失败（后者在游戏内表现为该效果整体缺失）。
  */
 public class ParticleAppearanceBillboard implements IParticleComponentDefinition {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParticleAppearanceBillboard.class);
 
     private final String[] size;
     private final String faceCameraMode;
@@ -30,63 +38,101 @@ public class ParticleAppearanceBillboard implements IParticleComponentDefinition
      */
     public static ParticleAppearanceBillboard fromJson(JsonObject json) {
         String[] size = readStringArray(json, "size", new String[]{"0.25", "0.25"});
-        String faceCam = json.has("face_camera_mode") ? json.get("face_camera_mode").getAsString() : "rotate_xyz";
+        // 规范字段名是 facing_camera_mode；face_camera_mode 是早期拼写，保留兼容
+        String faceCam = json.has("facing_camera_mode") ? json.get("facing_camera_mode").getAsString()
+                : json.has("face_camera_mode") ? json.get("face_camera_mode").getAsString()
+                : "rotate_xyz";
 
         UV uv = null;
+        Flipbook flipbook = null;
         if (json.has("uv")) {
             JsonObject uvObj = json.getAsJsonObject("uv");
             // 基岩版格式: "uv": [32, 88], "uv_size": [8, 8], "texture_width": 128, "texture_height": 128
             float texW = uvObj.has("texture_width") ? uvObj.get("texture_width").getAsFloat() : 1f;
             float texH = uvObj.has("texture_height") ? uvObj.get("texture_height").getAsFloat() : 1f;
-            float[] uvArr = uvObj.has("uv") ? readFloatArray(uvObj, "uv", new float[]{0, 0}) : new float[]{0, 0};
-            float[] uvSize = uvObj.has("uv_size") ? readFloatArray(uvObj, "uv_size", new float[]{1, 1}) : new float[]{1, 1};
+            float[] uvArr = readFloatArray(uvObj, "uv", new float[]{0, 0});
+            float[] uvSize = readFloatArray(uvObj, "uv_size", new float[]{1, 1});
             // 归一化到 [0,1]，像素坐标 / 纹理尺寸
             float u0 = uvArr[0] / texW;
             float v0 = uvArr[1] / texH;
             float u1 = (uvArr[0] + uvSize[0]) / texW;
             float v1 = (uvArr[1] + uvSize[1]) / texH;
             uv = new UV(u0, v0, u1, v1);
-        }
 
-        Flipbook flipbook = null;
-        if (json.has("flipbook")) {
-            JsonObject fb = json.getAsJsonObject("flipbook");
-            // 所有数值字段均读为字符串，同时支持数字字面量和 MoLang 表达式
-            String[] baseUV = fb.has("base_uv")
-                    ? new String[]{fb.get("base_uv").getAsJsonArray().get(0).getAsString(),
-                                   fb.get("base_uv").getAsJsonArray().get(1).getAsString()}
-                    : new String[]{"0", "0"};
-            String[] sizeUV = fb.has("size_uv")
-                    ? new String[]{fb.get("size_uv").getAsJsonArray().get(0).getAsString(),
-                                   fb.get("size_uv").getAsJsonArray().get(1).getAsString()}
-                    : new String[]{"1", "1"};
-            String[] stepUV = fb.has("step_uv")
-                    ? new String[]{fb.get("step_uv").getAsJsonArray().get(0).getAsString(),
-                                   fb.get("step_uv").getAsJsonArray().get(1).getAsString()}
-                    : new String[]{"0", "0"};
-            String fps = fb.has("fps") ? fb.get("fps").getAsString() : "1";
-            String maxFrame = fb.has("max_frame") ? fb.get("max_frame").getAsString() : "0";
-            boolean stretch = fb.has("stretch_to_lifetime") && fb.get("stretch_to_lifetime").getAsBoolean();
-            boolean loop = fb.has("loop") && fb.get("loop").getAsBoolean();
-            flipbook = new Flipbook(baseUV, sizeUV, stepUV, fps, maxFrame, stretch, loop);
+            if (uvObj.has("flipbook")) {
+                JsonObject fb = uvObj.getAsJsonObject("flipbook");
+                // 规范字段名是大写 UV（base_UV/size_UV/step_UV），小写是早期拼写，两者都接受；
+                // 与上面的 uv/uv_size 同为**像素**坐标，运行时按 texture_width/height 归一化。
+                String[] baseUV = readStringPair(fb, "base_UV", "base_uv", new String[]{"0", "0"});
+                String[] sizeUV = readStringPair(fb, "size_UV", "size_uv", new String[]{"1", "1"});
+                String[] stepUV = readStringPair(fb, "step_UV", "step_uv", new String[]{"0", "0"});
+                String fps = fb.has("fps") ? fb.get("fps").getAsString() : "1";
+                String maxFrame = fb.has("max_frame") ? fb.get("max_frame").getAsString() : "0";
+                boolean stretch = fb.has("stretch_to_lifetime") && fb.get("stretch_to_lifetime").getAsBoolean();
+                boolean loop = fb.has("loop") && fb.get("loop").getAsBoolean();
+                flipbook = new Flipbook(baseUV, sizeUV, stepUV, fps, maxFrame, stretch, loop, texW, texH);
+            }
         }
 
         return new ParticleAppearanceBillboard(size, faceCam, uv, flipbook);
     }
 
-    /** 读取 JSON 数组为字符串数组 */
+    /** 读取 JSON 数组为字符串数组；值不是数组或长度不足时返回默认值 */
     private static String[] readStringArray(JsonObject json, String key, String[] def) {
-        JsonArray arr = json.getAsJsonArray(key);
-        if (arr == null || arr.size() < 2) return def;
+        JsonElement element = json.get(key);
+        if (element == null || !element.isJsonArray()) return def;
+        JsonArray arr = element.getAsJsonArray();
+        if (arr.size() < 2) return def;
         return new String[]{arr.get(0).getAsString(), arr.get(1).getAsString()};
     }
 
-    /** 读取 JSON 数组为 float 数组 */
-    // TODO: 支持数组元素为 Molang 表达式字符串（如 "math.floor(v.particle_random_2*8)*8"），当前 getAsFloat 会抛 NumberFormatException
+    /** 读取二元素字符串数组，规范键名与旧键名都试；都不是数组时返回默认值 */
+    private static String[] readStringPair(JsonObject json, String specKey, String legacyKey, String[] def) {
+        JsonElement element = json.has(specKey) ? json.get(specKey)
+                : json.has(legacyKey) ? json.get(legacyKey) : null;
+        if (element == null || !element.isJsonArray()) return def;
+        JsonArray arr = element.getAsJsonArray();
+        if (arr.size() < 2) return def;
+        return new String[]{arr.get(0).getAsString(), arr.get(1).getAsString()};
+    }
+
+    /**
+     * 读取 JSON 数组为 float 数组。元素可以是数字、数字字符串，也可以是 MoLang 表达式字符串
+     * （规范允许，如 {@code "math.floor(variable.particle_random_2*8)*8"}）。
+     * 表达式求值尚未实现（§14.5），因此**解析不出数值的元素回退到该位置上的默认值并告警一次**：
+     * 对 {@code uv} 而言默认值是 0（即该行的第一格精灵），对 {@code uv_size} 是 1。
+     */
     private static float[] readFloatArray(JsonObject json, String key, float[] def) {
-        JsonArray arr = json.getAsJsonArray(key);
-        if (arr == null || arr.size() < 2) return def;
-        return new float[]{arr.get(0).getAsFloat(), arr.get(1).getAsFloat()};
+        JsonElement element = json.get(key);
+        if (element == null || !element.isJsonArray()) return def;
+        JsonArray arr = element.getAsJsonArray();
+        if (arr.size() < 2) return def;
+
+        float[] out = new float[]{def[0], def[1]};
+        boolean warned = false;
+        for (int i = 0; i < 2; i++) {
+            Float value = asFloat(arr.get(i));
+            if (value != null) {
+                out[i] = value;
+            } else if (!warned) {
+                warned = true;
+                LOGGER.warn("[particle_appearance_billboard.{}] 第 {} 个元素不是数值（MoLang 表达式求值尚未实现，"
+                        + "见 particle_soa_plan.md §14.5），已回退默认值 {}", key, i, def[i]);
+            }
+        }
+        return out;
+    }
+
+    /** 元素 → float：数字直接取，字符串尝试解析，其余（含 MoLang 表达式）返回 null */
+    @Nullable
+    private static Float asFloat(@Nullable JsonElement element) {
+        if (element == null || !element.isJsonPrimitive()) return null;
+        if (element.getAsJsonPrimitive().isNumber()) return element.getAsFloat();
+        try {
+            return Float.parseFloat(element.getAsString().trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override
@@ -115,8 +161,8 @@ public class ParticleAppearanceBillboard implements IParticleComponentDefinition
     /**
      * 翻页书动画定义。
      * <p>
-     * 所有数值字段均存储为 MoLang 表达式字符串（对齐 SBM），
-     * 运行时编译求值，支持每粒子动态帧率和帧数。
+     * 所有数值字段均存储为 MoLang 表达式字符串（对齐 SBM），运行时编译求值，支持每粒子动态帧率和帧数。
+     * UV 三元组为**像素**坐标，与同组件的 {@code uv}/{@code uv_size} 一致，运行时按纹理尺寸归一化。
      */
     public static class Flipbook {
         private final String baseU, baseV;
@@ -126,15 +172,19 @@ public class ParticleAppearanceBillboard implements IParticleComponentDefinition
         private final String maxFrame;
         private final boolean stretchToLifetime;
         private final boolean loop;
+        private final float textureWidth;
+        private final float textureHeight;
 
         public Flipbook(String[] baseUV, String[] sizeUV, String[] stepUV,
                         String fps, String maxFrame,
-                        boolean stretchToLifetime, boolean loop) {
+                        boolean stretchToLifetime, boolean loop,
+                        float textureWidth, float textureHeight) {
             this.baseU = baseUV[0]; this.baseV = baseUV[1];
             this.sizeX = sizeUV[0]; this.sizeY = sizeUV[1];
             this.stepX = stepUV[0]; this.stepY = stepUV[1];
             this.fps = fps; this.maxFrame = maxFrame;
             this.stretchToLifetime = stretchToLifetime; this.loop = loop;
+            this.textureWidth = textureWidth; this.textureHeight = textureHeight;
         }
 
         public String getBaseU() { return baseU; }
@@ -147,6 +197,8 @@ public class ParticleAppearanceBillboard implements IParticleComponentDefinition
         public String getMaxFrame() { return maxFrame; }
         public boolean isStretchToLifetime() { return stretchToLifetime; }
         public boolean isLoop() { return loop; }
+        public float getTextureWidth() { return textureWidth; }
+        public float getTextureHeight() { return textureHeight; }
     }
 
     // --- Getter ---

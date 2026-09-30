@@ -1,9 +1,10 @@
 # Spark-Core 粒子系统 SoA 重构实施计划
 
-> **状态**: 编码完成 + 运行时调试修复 · **创建**: 2026-06-10 · **修订**: 2026-06-10（B1/B2/B3/B5/B7/B8/B9/B10 已修复）  
-> **阶段状态**: Phase 1✅/2✅/3✅/4✅/5⚠️(部分)/6✅/7⚠️ · **截至 2026-06-10 实现进度**  
+> **状态**: 编码完成 + 运行时调试修复 · **创建**: 2026-06-10 · **修订**: 2026-10-02（B1/B2/B3/B5/B7/B8/B9/B10 已修复；**B12 已实现**、新增 B13/B14）  
+> **阶段状态**: Phase 1✅/2✅/3✅/4✅/5⚠️(部分)/6✅/7⚠️ · **截至 2026-10-02 实现进度**  
 > **目标版本**: Spark-Core 1.x  
-> **参考源**: [SimpleBedrockModel](https://github.com/McModderAnchor/SimpleBedrockModel) (LGPL-3.0, 其中 `molang/` 子模块 MIT) · Bedrock Edition `particle_effect` JSON 规范 v1.10.0
+> **参考源**: [SimpleBedrockModel](https://github.com/McModderAnchor/SimpleBedrockModel) (LGPL-3.0, 其中 `molang/` 子模块 MIT) · Bedrock Edition `particle_effect` JSON 规范 v1.10.0  
+> **方块碰撞**: 打点采样实现已由 [particle_collision_plan.md](./particle_collision_plan.md)（P0–P2）替换为 AABB 扫掠 + 逐轴反弹 + 位移裁剪；组件层面的改动、单位口径与决策点以该文档为准
 
 ---
 
@@ -132,8 +133,8 @@ MolangContextRegistry ✓ 缓存机制
 │  ② Emitter 寿命/速率/形状  │  │  partialTick lerp 位置      │
 │  ③ 新粒子: Molang 初始值   │  │  提交 Billboard 顶点        │
 │  ④ 各粒子: Molang → accel │  │                             │
-│  ⑤ 运动积分 (pos+=vel*dt) │  │                             │
-│  ⑥ 碰撞/事件/expiration   │  │                             │
+│  ⑤ 组件 tick + 时间线事件   │  │                             │
+│  ⑥ 积分 + 扫掠 + 反弹 + 过期│  │                             │
 │  ⑦ compact               │  │                             │
 │  ⑧ swap                  │  │                             │
 └──────────────────────────┘  └─────────────────────────────┘
@@ -152,7 +153,7 @@ MolangContextRegistry ✓ 缓存机制
     ① snapshot: pos → prevPos (逐粒子复制)
     ② Emitter 逻辑 (寿命/速率 → 发射)
     ③ 新粒子: 形状 → 初始值 (Molang 求值) → 写入 tickBuffer
-    ④ 活动粒子: Molang → accel/drag / 运动积分 / 碰撞 / expiration
+    ④ 活动粒子: Molang → accel/drag / 组件 tick / 时间线事件 / 位移积分 + 方块扫掠 + 反弹 / expiration
     ⑤ compact (删除死粒子)
   atomic swap (renderBuffer = tickBuffer)
 
@@ -431,7 +432,7 @@ public class ParticleDoubleBuffer {
   T0: startTick() → tickBuffer = renderBuffer (两者引用同一数组)
   T1: snapshotPositions() → 保存 pos → prevPos
   T2: Emitter 逻辑 → 发射新粒子
-  T3: 对每个粒子: Molang → accel/drag, integrate(), 碰撞/事件
+  T3: 对每个粒子: Molang → accel/drag, 组件 tick, 位移积分 + 方块扫掠, 碰撞事件/过期
   T4: compact()
   T5: swap() → renderBuffer = tickBuffer (volatile 写)
   
@@ -457,7 +458,7 @@ public class ParticleDoubleBuffer {
 | snapshotPositions() | 主线程 | tick 开头 | 由 swap 保证可见性 |
 | Emitter 生命周期 (速率/寿命) | 主线程 | tick | 涉及 Molang 求值 |
 | 发射新粒子 (形状/初始值) | 主线程 | tick | 涉及 Molang 求值 |
-| 碰撞检测 | 主线程 | tick | `Level.getBlockState()` 仅主线程 |
+| 位移积分 + 方块碰撞扫掠 | 主线程 | tick（组件 tick 之后的独立阶段） | `Entity.collideBoundingBox()` → `Level.getBlockCollisions()` 仅主线程 |
 | 事件触发 (音效/子粒子) | 主线程 | tick | `Level.playSound()` 仅主线程 |
 | **运动积分** (pos+=vel*dt) | **主线程** | **tick** | **简化: 全量在 tick 做** |
 | Molang 表达式求值 | 主线程 | tick | 可能访问实体/世界状态 |
@@ -504,8 +505,19 @@ public void tick(ParticleDoubleBuffer db, float tickDt) {
         buf.setAccelZ(i, (float) accelExprZ.evaluate(molangCtx));
         buf.setDragCoeff(i, (float) dragExpr.evaluate(molangCtx));
         
-        // 运动积分
-        buf.integrateParticle(i, tickDt);   // 单粒子积分
+        // 位移积分 + 方块扫掠 (唯一的位置推进点)
+        // 两道门控: 非世界空间预设(局部空间 / parametric)在构建期就没有碰撞组件 -> collFlags 恒 0;
+        //          第一人称发射器由实例开关 collisionEnabled 传 null Level
+        byte result = CollisionResolver.move(buf, i, tickDt,
+                collisionEnabled ? level : null, impactScratch);
+        if ((result & CollisionResolver.RESULT_CONTACT_EDGE) != 0) {
+            eventExecutor.fireCollisionEvents(preset.getCollisionEvents(), i, buf, impactScratch[0]);
+        }
+        if ((result & CollisionResolver.RESULT_EXPIRED) != 0) {   // expire_on_contact
+            pendingDead.add(i);
+            eventExecutor.fireExpirationEvents(i);
+            continue;
+        }
         
         // expiration 检查
         if (expirationExpr != null && expirationExpr.evaluate(molangCtx) != 0) {
@@ -513,9 +525,6 @@ public void tick(ParticleDoubleBuffer db, float tickDt) {
             eventExecutor.fireExpirationEvents(i);
             continue;
         }
-        
-        // 碰撞检测 (仅主线程)
-        collisionHandler.check(i, buf, level);
     }
     
     // 4. 统一标记死亡
@@ -1333,7 +1342,7 @@ spark_modules/MyPack/machine_max/
 | **MolangExpression 跨 Context 兼容性** | ⚠️ 低 | `ParticleEffectDefinition` 持有 `contextClass` 字段, 确保编译和求值使用同一类型 |
 | **纹理图集缺失** | ⚠️ 中 | 已知问题, 标记 TODO。每材质独立 RenderType → 多批次。后续自动图集合并 |
 | **Sodium/Embeddium 兼容** | ⚠️ 低 | 复用 SimpleBedrockModel 已验证的方案 |
-| **碰撞检测开销** | ⚠️ 低 | 仅在 tick 检测 (20 TPS) |
+| **碰撞扫掠开销** | ⚠️ 中 | 仅在 tick 内对 `COLL_ENABLED` 粒子执行（多数粒子 `collFlags = 0`，不进入扫掠、只做 float 积分）；速度上限保护 + `collision_radius` 按规范夹取 ≤ 0.5；4000 并发基准与「空形状预筛」的取舍见 [particle_collision_plan.md](./particle_collision_plan.md) §7.3 与 D1 |
 | **服务端 stub 后续扩展** | ⚠️ 低 | 接口已预留, 网络包协议待后续实现 |
 
 ---
@@ -1432,7 +1441,7 @@ alive[] = [T,   T,   T,   F,   ...]
 | 1 | SoA 核心数据结构 | `ParticleArray.java`, `ParticleDoubleBuffer.java` | 2 | ~500 | ✅ 已完成 | allocate/snapshot/integrate/compact/lerp 全部实现。遗留: `mass[]` 字段未使用, `reset()` 与 `clear()` 重复 |
 | 2 | 数据模型 + JSON 解析 | `ParticleEffectDefinition`, 29 组件, 事件, 曲线 | 30+ | ~3000 | ✅ 已完成 | B2 已修复（28 个 register 全改用正确方法引用），所有 29 种组件反序列化到位。ParticleMotionCollision 分支已补全 |
 | 3 | Molang 集成 | `ParticleMolangContext.java`, `ParticleMolangEnvironment.java` | 2 | ~200 | ✅ 已完成 | 10 个 @QueryBinding 变量齐全，使用 MolangContextRegistry。新增 `getLevel()`/`setLevel()` 供碰撞组件。遗留: 无基准测试 |
-| 4 | 发射器运行时 | `ParticleEmitterInstance.java`, 各组件 runtime | 8 | ~1500 | ✅ 已完成 | B1 已修复（组件通过方法参数接收 emitter 的 molang 环境，粒子变量正确绑定）。B7 已修复（IntArrayList 代替 ArrayList<Integer>）。遗留: `EmitterLifetimeEvents`/`ParticleLifetimeEvents` 事件触发逻辑尚未完整（依赖 EventExecutor） |
+| 4 | 发射器运行时 | `ParticleEmitterInstance.java`, 各组件 runtime | 8 | ~1500 | ✅ 已完成 | B1 已修复（组件通过方法参数接收 emitter 的 molang 环境，粒子变量正确绑定）。B7 已修复（IntArrayList 代替 ArrayList<Integer>）。**B12 已实现**（打点采样 → `CollisionResolver` 的 AABB 扫掠，位移推进从组件管线中抽出为独立阶段；构建期/实例级两道门控详见 [particle_collision_plan.md](./particle_collision_plan.md)）。遗留: `EmitterLifetimeEvents`/`ParticleLifetimeEvents` 事件触发逻辑尚未完整（依赖 EventExecutor）；碰撞的客户端场景验证与 4000 并发基准未做 |
 | 5 | 渲染器 | Billboard 渲染, 11 种朝向, Sodium 兼容, RenderType 注册 | 7 | ~800 | ⚠️ 部分阻塞 | B5 已修复（`vertex()` 中使用传入的 light 参数）。阻塞降级: Sodium/Embeddium 空壳(B4) 和 4 种朝向(B6) 为低优先级 |
 | 6 | 内容包 + 双端 API | `ParticleModule.kt`, `ParticleEffects`, Client/Server Player | 7 | ~700 | ✅ 已完成 | ParticleModule 完整，双端 API 工厂模式正确，EmitterManager 使用 CLQ。遗留: /reload 线程安全空窗期 |
 | 7 | 第一人称系统 | `FirstPersonParticleSystem.java` | 1 | ~300 | ⚠️ 阻塞 | 骨架存在，locator 参数和 SOUND_EFFECT/particle_effect 事件未实现 |
@@ -1458,7 +1467,10 @@ alive[] = [T,   T,   T,   F,   ...]
 | B8 | 🔴 阻塞 | P1 | **`horizontal_range` 类型错误** — JSON 中可为 MoLang 表达式（如 `"variable.particle_lifetime"`），反序列化用 `float.class` 导致 `NumberFormatException` | 使用表达式 horizontal_range 的粒子 JSON 加载失败 | ✅ 已修复 — `ParticleCurve.horizontalRange` 改为 `String`，`CurveEvaluator` 运行时解析 |
 | B9 | 🔴 阻塞 | P2 | **`EmitterLifetimeLooping` 循环逻辑缺陷** — 运行时组件追踪相位但无人消费；`getSpawnCount()` 不查相位；`instantFired` 永不清零 | 循环发射器仅第一轮发射，之后永远空转 | ✅ 已修复 — `IEmitterComponent.isInActivePhase()` + `checkEmitterLifetime()` 周期重置 |
 | B10 | 🔴 阻塞 | P1 | **`max_particles` 用累积计数器限制** — `totalSpawnedParticles` 只增不减，达到上限后永不再发射 | 粒子寿命结束后发射器停止工作 | ✅ 已修复 — 改用 `buf.getCount()`（当前存活数）做上限 |
-| B11 | 🟡 低 | P2 | **UV/Flipbook MoLang 运行时未求值** — 定义已存为字符串，但 `createAppearanceBillboard()` 未编译求值；`uv_mode` 未解析 | UV 和翻页书动画所有表达式形同虚设，`fb.getFps()` 等返回 String 直接参与运算会出错 | 📝 见 [§14.5 UV/Flipbook MoLang 待办](#145-uvflipbook-molang-待办) |
+| B11 | 🟡 低 | P2 | **UV/Flipbook 的 MoLang 支持不完整** — 翻页书已编译求值并按纹理尺寸归一化；`uv`/`uv_size` 的表达式回退默认值 + 告警（目的是不让单个字段拖垮整个定义）；`uv_mode` 未解析 | 表达式形式的 UV 偏移/尺寸不生效（回退到该行第一格精灵）；`uv_mode` 的三种模式被忽略 | 🔧 部分完成 — 翻页书已可用（含规范键名 `base_UV`/`size_UV`/`step_UV`），剩余 `uv`/`uv_size` 求值与 `uv_mode` 见 [§14.5 UV/Flipbook MoLang 待办](#145-uvflipbook-molang-待办) |
+| B12 | 🔴 阻塞 | P4 | **粒子方块碰撞为打点采样实现** — 判定用 `BlockPos.containing` + `isAir`，`collision_radius` 编译后从不求值，命中后三轴速度整体取反且从不修正位置 | 半径 0.1 与 1.0 行为一致；半砖/薄墙判定错误；默认 `restitution=0` 时粒子永久冻结在地表内部 | ✅ 已实现 — 见 [particle_collision_plan.md](./particle_collision_plan.md)（P0–P2：`CollisionResolver` 扫掠 + 逐轴反弹 + 位移裁剪 + 双格式事件解析）。客户端场景验证与 4000 并发基准未做 |
+| B13 | 🟡 低 | P4 | **`particle_motion_parametric` 未按规范实现** — `relative_position` 被当作绝对坐标直接 `setPos`，既不要求 local space、也不叠加发射器变换 | 与 Bedrock 规范「位置相对发射器，且只对 local space 实体发射器有效」不符 | 📝 未开始（本计划范围外，见 [particle_collision_plan.md](./particle_collision_plan.md) §4.6）；该组件已裁定不参与方块碰撞 |
+| B14 | 🟡 低 | P2 | **`emitter_local_space.rotation` 解析后无人消费** — 只有 `EmitterPreset.hasLocalRotation()` 这个 getter；且规范规定 `rotation=true, position=false` 为非法组合 | 旋转版局部空间语义缺失；非法组合静默通过 | 📝 未开始（本计划范围外，见 [particle_collision_plan.md](./particle_collision_plan.md) §4.6） |
 
 ### 里程碑
 
@@ -1470,51 +1482,49 @@ alive[] = [T,   T,   T,   F,   ...]
 | **M4: 完整可用** | Phase 1-7 完成 + 全部 B 修复 | Machine-Max 武器子系统调用 `ParticleEffects.burst()` 触发枪口火焰 | ❌ Phase 7 未完成 |
 | **M5: 性能达标** | 全部完成 + 基准测试 | 8000 粒子 × 5 表达式，每 tick < 2ms | ❌ |
 
+> **M5 口径说明**：该里程碑**从未实测**，因此任何文档都不得把它当作已达标基线引用。方块碰撞加入后每粒子多一条扫掠路径（仅对 `COLL_ENABLED` 粒子生效），其独立基准口径为「4000 并发 + 碰撞启用 < 2ms/tick」与「4000 静止粒子同量级」，测量方法、分配剖析与决策输入（D1/D8）见 [particle_collision_plan.md](./particle_collision_plan.md) §7.3；计数入口为 `/spark particle collision-stats`。
+
 ---
 
 ## 14.5 UV/Flipbook MoLang 待办
 
-> **状态**: 设计已完成，运行时待实现 · **优先级**: P2（当前不影响基本粒子可渲染，但 UV 动画/翻页书不可用）
+> **状态**: 翻页书已可用；`uv`/`uv_size` 的逐粒子表达式求值待实现（实现为容错回退 + 告警）；`uv_mode` 未解析 · **优先级**: P2
 
 ### 背景
 
 `minecraft:particle_appearance_billboard` 组件的 `uv` 和 `flipbook` 子对象的**所有数值字段均支持 MoLang 表达式**，允许每粒子动态 UV 和翻页书动画。当前实现中：
 
-- ✅ **反序列化**：`ParticleAppearanceBillboard.fromJson()` 已将 UV/Flipbook 字段正确存储为 MoLang 表达式字符串（`readStringArray()` + `jsonElementToString()`）
-- ❌ **运行时**：`ParticleComponentRuntimes.createAppearanceBillboard()` 未编译/求值这些字符串，直接当作原始值使用
-- ❌ **`uv_mode`**：未解析（基岩版支持 `static`/`entire_texture`/`animated` 三种模式）
+- ✅ **翻页书（运行时已求值）**：`Flipbook` 把 `base_UV`/`size_UV`/`step_UV`/`fps`/`max_frame` 存为字符串，`ParticleComponentRuntimes.createAppearanceBillboard()` 构造时编译为 `MolangExpression`、每 tick 求值并计算帧号；UV 三元组为**像素**坐标，按 `texture_width`/`texture_height` 归一化（与静态 `uv`/`uv_size` 同一口径）。字段名同时接受规范写法 `base_UV`/`size_UV`/`step_UV` 与早期写法 `base_uv`/`size_uv`/`step_uv`。
+- ⚠️ **`uv`/`uv_size`（容错回退）**：解析器接受数字与数字字符串；**不是数值的元素回退到默认值（偏移 0 像素、尺寸 1 像素）并告警一次**，而不是抛 `NumberFormatException`（那样整个粒子定义加载失败，游戏内表现为该效果整体缺失）。逐粒子求值未实现。
+- ❌ **`uv_mode`**：未解析（基岩版支持 `static`/`entire_texture`/`animated` 三种模式）。
 
 ### 受影响字段
 
 | 字段 | JSON 路径 | 类型 | 当前行为 | 预期行为 |
 |---|---|---|---|---|
-| UV 偏移 | `uv.uv[0], uv.uv[1]` | MoLang → 像素坐标 | 读到 `String` 但运行时当作数值用（编译错误） | 每 tick 编译求值 → 归一化 UV |
-| UV 尺寸 | `uv.uv_size[0], uv.uv_size[1]` | MoLang → 像素尺寸 | 同上 | 同上 |
-| 纹理宽高 | `uv.texture_width, uv.texture_height` | Float（可 MoLang） | 硬编码 Float | 支持 MoLang 表达式 |
-| 翻页书基础 UV | `flipbook.base_uv` | MoLang → 归一化 UV | 读到 `String[]` 但未求值 | 每 tick 编译求值 |
-| 翻页书帧尺寸 | `flipbook.size_uv` | MoLang → 归一化 UV | 同上 | 同上 |
-| 翻页书帧步进 | `flipbook.step_uv` | MoLang → 归一化 UV | 同上 | 同上 |
-| FPS | `flipbook.fps` | MoLang → float | `String` 直接参与乘除运算 | 编译求值 |
-| 最大帧数 | `flipbook.max_frame` | MoLang → int | `String` 直接参与 `>` 比较 | 编译求值 |
+| UV 偏移 | `uv.uv[0], uv.uv[1]` | MoLang → 像素坐标 | 数字直接使用；表达式回退 0 像素 + 告警 | 每 tick 编译求值 → 归一化 UV |
+| UV 尺寸 | `uv.uv_size[0], uv.uv_size[1]` | MoLang → 像素尺寸 | 数字直接使用；表达式回退 1 像素 + 告警 | 同上 |
+| 纹理宽高 | `uv.texture_width, uv.texture_height` | Float（可 MoLang） | 直接取 Float，缺省 1 | 支持 MoLang 表达式 |
+| 翻页书基础 UV | `flipbook.base_UV` / `base_uv` | MoLang → 像素坐标 | 已编译求值 + 按纹理尺寸归一化 | 同（已达成） |
+| 翻页书帧尺寸 | `flipbook.size_UV` / `size_uv` | MoLang → 像素尺寸 | 同上 | 同（已达成） |
+| 翻页书帧步进 | `flipbook.step_UV` / `step_uv` | MoLang → 像素步进 | 同上 | 同（已达成） |
+| FPS | `flipbook.fps` | MoLang → float | 已编译求值（非 `stretch_to_lifetime` 时按 `age * fps` 推进帧） | 同（已达成） |
+| 最大帧数 | `flipbook.max_frame` | MoLang → int | 已编译求值（`stretch_to_lifetime` 时帧号 = `age / max_lifetime * max_frame`） | 同（已达成） |
 | UV 模式 | `uv.uv_mode` | enum（未解析） | 完全忽略 | 支持 `static`/`entire_texture`/`animated` |
 
 ### 实现要点
 
-1. **`UV` 内部类改造**：`uvOffset`/`uvSize` 字段不变（已是 `String[]`），`textureWidth`/`textureHeight` 改为 `String`（支持 MoLang）
-2. **`Flipbook` 内部类**：字段已为 `String`/`String[]`，无需改变
-3. **运行时 `createAppearanceBillboard()`**：
-   - 构造时编译所有 UV/Flipbook MoLang 表达式为 `MolangExpression`
-   - `onApply`：求值 UV 表达式、归一化到 `[0,1]`、写入 buffer
-   - `tick`：求值 Flipbook 表达式、根据 `fps` / `stretch_to_lifetime` / `max_frame` / `loop` 计算当前帧、更新 UV
-4. **`uv_mode`**：新增枚举，解析 JSON；`animated` 模式下逐帧推进，`entire_texture` 模式下忽略 UV 子矩形直接用全图，`static` 为当前行为
+1. **`uv`/`uv_size`（唯一未实现的运行时求值）**：把 `UV` 的四个值改为表达式字符串，构造时编译，`onApply`/`tick` 按粒子求值后归一化写入 buffer
+2. **`uv_mode`**：新增枚举，解析 JSON；`animated` 模式下逐帧推进，`entire_texture` 模式下忽略 UV 子矩形直接用全图，`static` 为当前行为
+3. `Flipbook`（含像素→归一化与 `stretch_to_lifetime` 帧号）已落地，剩余工作只在 UV 侧
 
 ### 影响范围
 
-- `ParticleAppearanceBillboard.java`（UV/Flipbook 内部类字段类型微调 + uv_mode 新增）
-- `ParticleComponentRuntimes.java`（`createAppearanceBillboard` 运行时大改）
+- `ParticleAppearanceBillboard.java`（`UV` 内部类字段类型改为表达式字符串 + `uv_mode` 新增）
+- `ParticleComponentRuntimes.java`（`createAppearanceBillboard` 的 UV 分支改为求值）
 - 文档同步更新
 
-> **当前运行时编译状态**：`ParticleComponentRuntimes.java` 第 513 行 `uv.getU0()` 等方法已不存在（UV 类已改为 MoLang 字符串存储）；第 531-539 行 `fb.getFps()`/`getMaxFrame()` 等返回 `String`，无法直接参与浮点/整数运算。UV 静态初始化在 `onApply` 中暂时跳过，翻页书动画 tick 逻辑已禁用。
+> **回归护栏**：`ContentParticleLoadTest` 逐个加载内容包里的全部 `.particle.json`，并断言「允许加载失败的集合」恰好为空；`ParticleComponentFieldTest` 覆盖 uv 表达式回退、翻页书规范/早期键名与归一化参数。UV 求值落地时需要把这两处的期望值一并更新。
 
 ---
 

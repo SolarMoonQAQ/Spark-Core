@@ -24,6 +24,14 @@ public class ParticleArray {
     private static final int MAX_CAPACITY = 16384;
     private static final Random RANDOM = new Random();
 
+    // ====== 碰撞标志位（collFlags 的数位定义）======
+    /** 本 tick 启用方块碰撞扫掠；由 ParticleMotionCollision 运行时组件每 tick 重写 */
+    public static final byte COLL_ENABLED = 1;
+    /** 接触即死亡（expire_on_contact） */
+    public static final byte COLL_EXPIRE = 1 << 1;
+    /** 上一 tick 处于接触状态；由 CollisionResolver 独占写入，组件必须读-改-写保留 */
+    public static final byte COLL_CONTACT = 1 << 2;
+
     // ====== 位置 (双缓冲 lerp 用) ======
     private float[] posX, posY, posZ;
     private float[] prevPosX, prevPosY, prevPosZ;
@@ -49,6 +57,12 @@ public class ParticleArray {
 
     // ====== 粒子随机种子 ======
     private float[] random1, random2, random3, random4;
+
+    // ====== 碰撞参数（每 tick 由 ParticleMotionCollision 运行时组件写入）======
+    private float[] collRadius;       // 碰撞半径（方块），已按规范夹取到 [0, 0.5]
+    private float[] collRestitution;  // 弹性系数
+    private float[] collDrag;         // 碰撞阻力（方块/秒）
+    private byte[] collFlags;         // 见 COLL_* 常量
 
     // ====== 元数据 ======
     private int count;
@@ -108,6 +122,12 @@ public class ParticleArray {
         random2 = new float[capacity];
         random3 = new float[capacity];
         random4 = new float[capacity];
+
+        // 碰撞参数
+        collRadius = new float[capacity];
+        collRestitution = new float[capacity];
+        collDrag = new float[capacity];
+        collFlags = new byte[capacity];
     }
 
     // ==================== 容量管理 ====================
@@ -159,6 +179,11 @@ public class ParticleArray {
         random3 = growArray(random3, newCapacity);
         random4 = growArray(random4, newCapacity);
 
+        collRadius = growArray(collRadius, newCapacity);
+        collRestitution = growArray(collRestitution, newCapacity);
+        collDrag = growArray(collDrag, newCapacity);
+        collFlags = growArray(collFlags, newCapacity);
+
         this.capacity = newCapacity;
     }
 
@@ -170,6 +195,12 @@ public class ParticleArray {
 
     private static boolean[] growArray(boolean[] src, int newCapacity) {
         boolean[] dst = new boolean[newCapacity];
+        System.arraycopy(src, 0, dst, 0, src.length);
+        return dst;
+    }
+
+    private static byte[] growArray(byte[] src, int newCapacity) {
+        byte[] dst = new byte[newCapacity];
         System.arraycopy(src, 0, dst, 0, src.length);
         return dst;
     }
@@ -201,6 +232,8 @@ public class ParticleArray {
         random2[slot] = RANDOM.nextFloat();
         random3[slot] = RANDOM.nextFloat();
         random4[slot] = RANDOM.nextFloat();
+
+        collRadius[slot] = 0; collRestitution[slot] = 0; collDrag[slot] = 0; collFlags[slot] = 0;
 
         return slot;
     }
@@ -258,45 +291,6 @@ public class ParticleArray {
     }
 
     /**
-     * 对单个粒子执行运动积分（在主线程 tick 内调用）。
-     */
-    public void integrateParticle(int index, float tickDt) {
-        if (!alive[index]) return;
-
-        // 加速度积分 → 速度
-        velX[index] += accelX[index] * tickDt;
-        velY[index] += accelY[index] * tickDt;
-        velZ[index] += accelZ[index] * tickDt;
-
-        // 阻力: vel *= max(0, 1 - drag * dt)
-        float dragFactor = Math.max(0, 1 - dragCoeff[index] * tickDt);
-        velX[index] *= dragFactor;
-        velY[index] *= dragFactor;
-        velZ[index] *= dragFactor;
-
-        // 速度 → 位置
-        posX[index] += velX[index] * tickDt;
-        posY[index] += velY[index] * tickDt;
-        posZ[index] += velZ[index] * tickDt;
-
-        // 旋转
-        rotRate[index] += rotAccel[index] * tickDt;
-        rot[index] += rotRate[index] * tickDt;
-
-        // 年龄
-        age[index] += tickDt;
-    }
-
-    /**
-     * 全量运动积分。遍历所有存活粒子执行 integrateParticle。
-     */
-    public void integrate(float tickDt) {
-        for (int i = 0; i < count; i++) {
-            integrateParticle(i, tickDt);
-        }
-    }
-
-    /**
      * 批量紧凑：将所有存活粒子移动到数组前部，更新 count。
      * 仅在所有粒子遍历完成后、swap 之前调用一次。
      */
@@ -325,6 +319,10 @@ public class ParticleArray {
         alive[dst] = alive[src];
         random1[dst] = random1[src]; random2[dst] = random2[src];
         random3[dst] = random3[src]; random4[dst] = random4[src];
+        collRadius[dst] = collRadius[src];
+        collRestitution[dst] = collRestitution[src];
+        collDrag[dst] = collDrag[src];
+        collFlags[dst] = collFlags[src];
     }
 
     /**
@@ -387,6 +385,11 @@ public class ParticleArray {
         System.arraycopy(src.random2, 0, random2, 0, srcCount);
         System.arraycopy(src.random3, 0, random3, 0, srcCount);
         System.arraycopy(src.random4, 0, random4, 0, srcCount);
+
+        System.arraycopy(src.collRadius, 0, collRadius, 0, srcCount);
+        System.arraycopy(src.collRestitution, 0, collRestitution, 0, srcCount);
+        System.arraycopy(src.collDrag, 0, collDrag, 0, srcCount);
+        System.arraycopy(src.collFlags, 0, collFlags, 0, srcCount);
 
         this.count = srcCount;
     }
@@ -508,4 +511,14 @@ public class ParticleArray {
     public float getRandom2(int i) { return random2[i]; }
     public float getRandom3(int i) { return random3[i]; }
     public float getRandom4(int i) { return random4[i]; }
+
+    // 碰撞参数
+    public float getCollRadius(int i) { return collRadius[i]; }
+    public void setCollRadius(int i, float v) { collRadius[i] = v; }
+    public float getCollRestitution(int i) { return collRestitution[i]; }
+    public void setCollRestitution(int i, float v) { collRestitution[i] = v; }
+    public float getCollDrag(int i) { return collDrag[i]; }
+    public void setCollDrag(int i, float v) { collDrag[i] = v; }
+    public byte getCollFlags(int i) { return collFlags[i]; }
+    public void setCollFlags(int i, byte v) { collFlags[i] = v; }
 }

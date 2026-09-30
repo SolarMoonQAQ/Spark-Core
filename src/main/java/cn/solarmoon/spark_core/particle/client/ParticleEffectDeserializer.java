@@ -18,6 +18,8 @@ import cn.solarmoon.spark_core.particle.common.data.component.expire.*;
 import com.google.gson.*;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -27,6 +29,7 @@ import java.util.*;
  */
 public class ParticleEffectDeserializer {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParticleEffectDeserializer.class);
     private static final Gson GSON = new Gson();
 
     /**
@@ -95,7 +98,23 @@ public class ParticleEffectDeserializer {
 
         // 构建 Preset（使用 ParticleComponentRuntimes 工厂）
         EmitterPreset emitterPreset = buildEmitterPreset(emitterComponents, molang);
-        ParticlePreset particlePreset = buildParticlePreset(particleComponents, molang);
+
+        // 只有「在世界坐标中仿真」的粒子才参与方块碰撞（§4.1）：
+        // 局部空间粒子在实体坐标系里仿真、脚本粒子（parametric）的位置相对发射器，二者都没有可碰撞的地形。
+        boolean hasParametric = false;
+        for (IComponentDefinition def : particleComponents) {
+            if (def instanceof ParticleMotionParametric) { hasParametric = true; break; }
+        }
+        boolean worldSpace = !emitterPreset.hasLocalPosition() && !hasParametric;
+        String collisionGateReason = null;
+        if (emitterPreset.hasLocalPosition() && hasParametric) {
+            collisionGateReason = "它同时启用了 emitter_local_space.position 与 particle_motion_parametric";
+        } else if (emitterPreset.hasLocalPosition()) {
+            collisionGateReason = "它启用了 emitter_local_space.position（粒子在实体坐标系中仿真）";
+        } else if (hasParametric) {
+            collisionGateReason = "它使用了 particle_motion_parametric（位置相对发射器）";
+        }
+        ParticlePreset particlePreset = buildParticlePreset(particleComponents, molang, worldSpace, collisionGateReason, id);
 
         // 解析 curves
         Map<String, ParticleCurve> curves = parseCurves(effectObj.getAsJsonObject("curves"), molang);
@@ -214,10 +233,14 @@ public class ParticleEffectDeserializer {
     }
 
     private static ParticlePreset buildParticlePreset(List<IComponentDefinition> particleDefs,
-                                                       ParticleMolangEnvironment molang) {
+                                                       ParticleMolangEnvironment molang,
+                                                       boolean worldSpace,
+                                                       @Nullable String collisionGateReason,
+                                                       ResourceLocation effectId) {
         List<IParticleComponent> runtimeComponents = new ArrayList<>();
         ParticlePreset.BillboardMode faceCameraMode = ParticlePreset.BillboardMode.ROTATE_XYZ;
         boolean hasLighting = false;
+        List<ParticleMotionCollision.CollisionEvent> collisionEvents = List.of();
 
         for (IComponentDefinition def : particleDefs) {
             // 使用 ParticleComponentRuntimes 工厂创建运行时组件
@@ -226,7 +249,18 @@ public class ParticleEffectDeserializer {
             } else if (def instanceof ParticleMotionParametric md) {
                 runtimeComponents.add(ParticleComponentRuntimes.createMotionParametric(md, molang));
             } else if (def instanceof ParticleMotionCollision md) {
-                runtimeComponents.add(ParticleComponentRuntimes.createMotionCollision(md, molang));
+                collisionEvents = md.getEvents();
+                if (md.isEventsFieldPresent() && collisionEvents.isEmpty()) {
+                    LOGGER.warn("粒子效果 {} 的 particle_motion_collision.events 存在但未解析出任何事件"
+                            + "（应为事件对象或事件对象数组），该字段被忽略", effectId);
+                }
+                if (worldSpace) {
+                    runtimeComponents.add(ParticleComponentRuntimes.createMotionCollision(md, molang));
+                } else {
+                    // 构建期门控：连每 tick 的 MoLang 求值都省掉（§4.6）
+                    LOGGER.warn("粒子效果 {} 声明了 particle_motion_collision，但{}，方块碰撞被忽略"
+                            + "（需要与地形交互时请改用世界空间发射器 + bindToAnchor）", effectId, collisionGateReason);
+                }
             } else if (def instanceof ParticleAppearanceBillboard bd) {
                 runtimeComponents.add(ParticleComponentRuntimes.createAppearanceBillboard(bd, molang));
                 faceCameraMode = parseBillboardMode(bd.getFaceCameraMode());
@@ -254,7 +288,7 @@ public class ParticleEffectDeserializer {
             }
         }
 
-        return new ParticlePreset(runtimeComponents, particleDefs, faceCameraMode, hasLighting);
+        return new ParticlePreset(runtimeComponents, particleDefs, faceCameraMode, hasLighting, collisionEvents);
     }
 
     /**

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.command
 
+import cn.solarmoon.spark_core.particle.client.ParticleCollisionStats
 import cn.solarmoon.spark_core.particle.client.ParticleDefinitionLoader
 import cn.solarmoon.spark_core.particle.client.ParticleEmitterManager
 import cn.solarmoon.spark_core.api.ParticleEffects
@@ -91,6 +92,18 @@ class ParticleCommand : BaseCommand("particle", 2) {
         builder.then(
             Commands.literal("clear")
                 .executes { executeClear(it) }
+        )
+
+        // collision-stats [reset|penetration]
+        builder.then(
+            Commands.literal("collision-stats")
+                .executes { executeCollisionStats(it, "show") }
+                .then(
+                    Commands.literal("reset").executes { executeCollisionStats(it, "reset") }
+                )
+                .then(
+                    Commands.literal("penetration").executes { executeCollisionStats(it, "penetration") }
+                )
         )
     }
 
@@ -184,6 +197,62 @@ class ParticleCommand : BaseCommand("particle", 2) {
             { Component.literal("已清空 $count 个粒子发射器") },
             true
         )
+        return Command.SINGLE_SUCCESS
+    }
+
+    /**
+     * 碰撞统计（§7.2）。数据来自每个发射器实例的 ParticleCollisionStats，
+     * 全部由 CollisionResolver 返回的位标志累加，因此扫掠热路径本身无需感知统计。
+     *
+     * @param mode show / reset / penetration（穿透采样开关）
+     */
+    private fun executeCollisionStats(context: CommandContext<CommandSourceStack>, mode: String): Int {
+        val source = context.source
+        val emitters = ParticleEmitterManager.getInstance().activeEmitters
+
+        when (mode) {
+            "reset" -> {
+                emitters.forEach { it.collisionStats.reset() }
+                source.sendSuccess(
+                    { Component.literal("已重置 ${emitters.size} 个发射器的碰撞统计") },
+                    false
+                )
+                return Command.SINGLE_SUCCESS
+            }
+            "penetration" -> {
+                val enabled = !ParticleCollisionStats.isPenetrationSamplingEnabled()
+                ParticleCollisionStats.setPenetrationSamplingEnabled(enabled)
+                source.sendSuccess(
+                    {
+                        Component.literal(
+                            if (enabled) "已开启穿透采样（每粒子每 tick 一次方块查询，仅验证用）"
+                            else "已关闭穿透采样"
+                        )
+                    },
+                    false
+                )
+                return Command.SINGLE_SUCCESS
+            }
+        }
+
+        val total = ParticleCollisionStats()
+        emitters.forEach { total.addFrom(it.collisionStats) }
+
+        source.sendSuccess({ Component.literal("碰撞统计（${emitters.size} 个活跃发射器）:") }, false)
+        source.sendSuccess({
+            Component.literal(
+                "  碰撞次数: ${total.collisions}" +
+                        "（本 tick ${total.collisionsThisTick}，峰值 ${total.maxCollisionsPerTick}）"
+            )
+        }, false)
+        source.sendSuccess({ Component.literal("  碰撞事件（接触上升沿）: ${total.contactEdges}") }, false)
+        source.sendSuccess({ Component.literal("  expire_on_contact 致死: ${total.deadByContact}") }, false)
+        source.sendSuccess({
+            Component.literal(
+                "  穿透 tick 数: ${total.penetrationTicks}" +
+                        if (ParticleCollisionStats.isPenetrationSamplingEnabled()) "" else "（采样未开启）"
+            )
+        }, false)
         return Command.SINGLE_SUCCESS
     }
 }
