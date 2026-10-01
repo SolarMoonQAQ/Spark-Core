@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * 基岩版粒子效果 JSON 反序列化器。
@@ -125,39 +126,104 @@ public class ParticleEffectDeserializer {
         return new ParticleEffectDefinition(id, description, emitterPreset, particlePreset, curves, events);
     }
 
+    /** 默认贴图（原版粒子图集精灵；等价于原版的 {@code minecraft:particle/particles}） */
+    private static final String DEFAULT_TEXTURE = "textures/particle/particles";
+
+    /** 贴图路径省略的默认命名空间 */
+    private static final String DEFAULT_TEXTURE_NAMESPACE = "minecraft";
+
+    /** 资源命名空间允许的字符（与 {@code ResourceLocation} 一致：不能含 '/'、':' 等） */
+    private static final Pattern VALID_NAMESPACE = Pattern.compile("[a-z0-9_.-]+");
+
+    /** 资源路径允许的字符（与 {@code ResourceLocation} 一致） */
+    private static final Pattern VALID_PATH = Pattern.compile("[a-z0-9/._-]+");
+
     private static ParticleDescription parseDescription(JsonObject effectObj, ResourceLocation defaultId) {
         JsonObject desc = effectObj.getAsJsonObject("description");
         if (desc == null) {
-            return new ParticleDescription(defaultId, "particles_blend",
-                    ResourceLocation.parse("textures/particle/particles.png"));
+            return new ParticleDescription(defaultId, "particles_blend", parseTexture(DEFAULT_TEXTURE));
         }
 
         String identifier = GSON.fromJson(desc.get("identifier"), String.class);
-        ResourceLocation id = identifier != null ? ResourceLocation.parse(identifier) : defaultId;
+        ResourceLocation id = identifier != null ? parseLocation(identifier, defaultId, "identifier") : defaultId;
 
         JsonObject renderParams = desc.getAsJsonObject("basic_render_parameters");
         String material = "particles_blend";
-        ResourceLocation texture = ResourceLocation.parse("textures/particle/particles.png");
+        ResourceLocation texture = parseTexture(DEFAULT_TEXTURE);
 
         if (renderParams != null) {
             if (renderParams.has("material")) {
                 material = renderParams.get("material").getAsString();
             }
             if (renderParams.has("texture")) {
-                String texStr = renderParams.get("texture").getAsString();
-                // 基岩版路径: "textures/particle/smoke" → Java版: "namespace:textures/particle/smoke.png"
-                // 无冒号时 ResourceLocation.parse() 自动使用默认命名空间 minecraft:
-                if (!texStr.startsWith("textures/")) {
-                    texStr = "textures/" + texStr;
-                }
-                if (!texStr.endsWith(".png")) {
-                    texStr = texStr + ".png";
-                }
-                texture = ResourceLocation.parse(texStr);
+                texture = parseTexture(renderParams.get("texture").getAsString());
             }
         }
 
         return new ParticleDescription(id, material, texture);
+    }
+
+    /**
+     * 解析 JSON 里的贴图字段为资源位置。
+     * <p>
+     * 接受两种写法，且**先切分命名空间、再补全路径**（顺序不能反）：
+     * <ul>
+     *   <li>带命名空间引用：{@code "machine_max:textures/particle/explosion_atlas"}
+     *       —— 命名空间是冒号前的部分，路径可能带也可能不带 {@code textures/} 前缀与 {@code .png} 后缀；</li>
+     *   <li>省略命名空间：{@code "textures/particle/particles"}、{@code "particle/smoke"}
+     *       —— 落到 {@code minecraft}；</li>
+     * </ul>
+     * 冒号前不是合法命名空间（例如写了绝对路径 {@code textures/machine_max:...}）、或补全后的路径含非法字符时，
+     * 退回默认贴图并告警，而不是让整个粒子定义加载失败。
+     * <p>
+     * 这里的资源位置必须与 {@code TextureModule} 注册内容包贴图的方式一致：内容包里的
+     * {@code <pack>/<namespace>/particle/explosion_atlas.png} 被注册为
+     * {@code <namespace>:textures/particle/explosion_atlas.png}，因此 {@code .png} 后缀要带上
+     * （{@code TextureModule} 用的是含后缀的完整文件名）。
+     */
+    private static ResourceLocation parseTexture(String raw) {
+        String value = raw.trim();
+        String namespace = DEFAULT_TEXTURE_NAMESPACE;
+
+        int colon = value.indexOf(':');
+        if (colon > 0) {
+            String declared = value.substring(0, colon);
+            if (VALID_NAMESPACE.matcher(declared).matches()) {
+                namespace = declared;
+                value = value.substring(colon + 1);
+            } else {
+                LOGGER.warn("[particle] 贴图 '{}' 的冒号前缀 '{}' 不是合法命名空间，已回退默认贴图 {}",
+                        raw, declared, DEFAULT_TEXTURE);
+                return parseTexture(DEFAULT_TEXTURE);
+            }
+        }
+
+        if (!value.startsWith("textures/")) {
+            value = "textures/" + value;
+        }
+        if (!value.endsWith(".png")) {
+            value = value + ".png";
+        }
+
+        // 补全后仍需是合法资源位置，否则退回默认贴图（保持「贴图坏了不影响粒子效果本身」）
+        if (!VALID_PATH.matcher(value).matches()) {
+            LOGGER.warn("[particle] 贴图 '{}' 补全为 '{}:{}' 后不是合法资源位置，已回退默认贴图 {}",
+                    raw, namespace, value, DEFAULT_TEXTURE);
+            return parseTexture(DEFAULT_TEXTURE);
+        }
+        return ResourceLocation.fromNamespaceAndPath(namespace, value);
+    }
+
+    /**
+     * 解析其它资源位置字段（如 {@code identifier}），非法时回退默认值并告警。
+     */
+    private static ResourceLocation parseLocation(String raw, ResourceLocation fallback, String field) {
+        try {
+            return ResourceLocation.parse(raw.trim());
+        } catch (Exception e) {
+            LOGGER.warn("[particle] {} '{}' 不是合法资源位置，已回退 {}: {}", field, raw, fallback, e.getMessage());
+            return fallback;
+        }
     }
 
     /**

@@ -849,6 +849,21 @@ Phase 3 验证阶段需补充基准测试：
 Java版: ResourceLocation("namespace:textures/particle/smoke.png")
 ```
 
+`basic_render_parameters.texture` 支持**命名空间引用**，解析顺序是「先切分命名空间，再补全路径」：
+
+| 写法 | 解析结果 |
+|------|----------|
+| `machine_max:textures/particle/explosion_atlas` | `machine_max:textures/particle/explosion_atlas.png` |
+| `machine_max:textures/particle/explosion_atlas.png` | 同上 |
+| `machine_max:explosion_atlas` | `machine_max:textures/explosion_atlas.png`（缺 `textures/` 时只做字面补全） |
+| `textures/particle/particles` | `minecraft:textures/particle/particles.png` |
+
+资源位置必须与 `TextureModule` 的注册方式一致：内容包中的
+`<pack>/<namespace>/particle/explosion_atlas.png` 被注册为
+`<namespace>:textures/particle/explosion_atlas.png`（注册用的文件名**含** `.png` 后缀，故引用时也要带上）。
+冒号前不是合法命名空间（含 `/`、大写、模板变量等）时退回默认贴图并告警，
+而不是让整个粒子定义加载失败。
+
 ### 8.4 曲线系统
 
 ```json
