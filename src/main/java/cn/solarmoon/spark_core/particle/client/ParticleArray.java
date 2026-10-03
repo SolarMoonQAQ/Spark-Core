@@ -49,6 +49,20 @@ public class ParticleArray {
     private float[] prevWidth, prevHeight; // 上一 tick 的尺寸，用于渲染插值
     private float[] r, g, b, a;
     private float[] u0, v0, u1, v1;
+    /**
+     * 出生时烘焙的发射器尺寸倍率（标量，取发射器缩放三轴的均值）。
+     * <p>
+     * 发射器缩放作用于"分布在数据空间的量"：位置/速度（见
+     * {@code ParticleEmitterInstance.emitParticles}）已由变换矩阵烘焙，而
+     * {@code particle_appearance_billboard.size} 与 {@code particle_motion_collision.collision_radius}
+     * 是逐 tick 从 MoLang 求值的，变换矩阵碰不到它们，故在此存一份乘数。
+     * <p>
+     * 尺寸与碰撞半径共用同一个倍率，保证「贴图正好落在方块表面」这一不变式在任意缩放下成立
+     * （见 {@code CollisionTestParticleContentTest} 的视觉/碰撞半边长断言）。
+     * 局部空间模式下发射器变换由渲染期父矩阵承载、已在渲染时缩放 quad，且该模式下碰撞被门控
+     * （见 {@code ParticleEffectDeserializer} 的 worldSpace 判定），故此处为 1。
+     */
+    private float[] sizeScale;
 
     // ====== 生命周期 ======
     private float[] age;
@@ -111,6 +125,7 @@ public class ParticleArray {
         v0 = new float[capacity];
         u1 = new float[capacity];
         v1 = new float[capacity];
+        sizeScale = new float[capacity];
 
         // 生命周期
         age = new float[capacity];
@@ -169,6 +184,7 @@ public class ParticleArray {
         v0 = growArray(v0, newCapacity);
         u1 = growArray(u1, newCapacity);
         v1 = growArray(v1, newCapacity);
+        sizeScale = growArray(sizeScale, newCapacity);
 
         age = growArray(age, newCapacity);
         maxLifetime = growArray(maxLifetime, newCapacity);
@@ -224,6 +240,7 @@ public class ParticleArray {
         rot[slot] = 0; rotRate[slot] = 0; rotAccel[slot] = 0;
         width[slot] = 0.25f; height[slot] = 0.25f;
         prevWidth[slot] = 0.25f; prevHeight[slot] = 0.25f;
+        sizeScale[slot] = 1f;
         r[slot] = 1; g[slot] = 1; b[slot] = 1; a[slot] = 1;
         u0[slot] = 0; v0[slot] = 0; u1[slot] = 1; v1[slot] = 1;
         age[slot] = 0; maxLifetime[slot] = Float.MAX_VALUE;
@@ -313,6 +330,7 @@ public class ParticleArray {
         rot[dst] = rot[src];        rotRate[dst] = rotRate[src]; rotAccel[dst] = rotAccel[src];
         width[dst] = width[src];    height[dst] = height[src];
         prevWidth[dst] = prevWidth[src]; prevHeight[dst] = prevHeight[src];
+        sizeScale[dst] = sizeScale[src];
         r[dst] = r[src]; g[dst] = g[src]; b[dst] = b[src]; a[dst] = a[src];
         u0[dst] = u0[src]; v0[dst] = v0[src]; u1[dst] = u1[src]; v1[dst] = v1[src];
         age[dst] = age[src];        maxLifetime[dst] = maxLifetime[src];
@@ -368,6 +386,7 @@ public class ParticleArray {
         System.arraycopy(src.height, 0, height, 0, srcCount);
         System.arraycopy(src.prevWidth, 0, prevWidth, 0, srcCount);
         System.arraycopy(src.prevHeight, 0, prevHeight, 0, srcCount);
+        System.arraycopy(src.sizeScale, 0, sizeScale, 0, srcCount);
         System.arraycopy(src.r, 0, r, 0, srcCount);
         System.arraycopy(src.g, 0, g, 0, srcCount);
         System.arraycopy(src.b, 0, b, 0, srcCount);
@@ -475,6 +494,15 @@ public class ParticleArray {
     public void setWidth(int i, float v) { width[i] = v; }
     public float getHeight(int i) { return height[i]; }
     public void setHeight(int i, float v) { height[i] = v; }
+
+    /**
+     * 出生时烘焙的发射器尺寸倍率。默认 1（不缩放），世界模式发射时由发射器写入，
+     * 局部空间模式保持 1（缩放由渲染期父矩阵承担，且该模式下碰撞被门控）。
+     * 同时被 particle_appearance_billboard 的尺寸与 particle_motion_collision 的
+     * 碰撞半径消费。
+     */
+    public float getSizeScale(int i) { return sizeScale[i]; }
+    public void setSizeScale(int i, float v) { sizeScale[i] = v; }
 
     public float getR(int i) { return r[i]; }
     public void setR(int i, float v) { r[i] = v; }

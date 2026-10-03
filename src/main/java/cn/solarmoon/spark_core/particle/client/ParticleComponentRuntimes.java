@@ -502,6 +502,8 @@ public class ParticleComponentRuntimes {
                     flags |= ParticleArray.COLL_ENABLED;
 
                     float radius = (float) ctx.evaluate(radiusExpr);
+                    // 规范上限按**表达式书写值**判定：0.5 是 Bedrock 对 collision_radius 的硬性规定，
+                    // 与发射器缩放无关，不应因缩放而改变告警判定。
                     if (radius > CollisionResolver.MAX_COLLISION_RADIUS) {
                         if (!warnedRadius) {
                             warnedRadius = true;
@@ -512,7 +514,12 @@ public class ParticleComponentRuntimes {
                     } else if (!(radius > 0f)) {
                         radius = 0f;   // 负值 / NaN 归零，避免碰撞盒被缩小到基础尺寸以下
                     }
-                    buf.setCollRadius(index, radius);
+                    // 发射器缩放：碰撞盒与贴图同步放大，否则放大后的贴图会视觉上陷入方块。
+                    // 倍率取出生时烘焙值（与同粒子的尺寸同源），使发射器中途改变缩放不会让已飞出的
+                    // 粒子碰撞盒突变；上限（已按规范夹到 ≤0.5）随缩放等比放宽，语义上等价于
+                    // "0.5 是缩放前的规格上限"，且 AABB 尺寸保护随之同步。
+                    float scale = buf.getSizeScale(index);
+                    buf.setCollRadius(index, radius * scale);
                     buf.setCollRestitution(index, (float) ctx.evaluate(restitutionExpr));
                     buf.setCollDrag(index, (float) ctx.evaluate(dragExpr));
                 }
@@ -550,8 +557,11 @@ public class ParticleComponentRuntimes {
 
             @Override
             public void onApply(ParticleArray buf, int index, ParticleMolangEnvironment molang) {
-                buf.setWidth(index, (float) molang.evaluate(sizeW));
-                buf.setHeight(index, (float) molang.evaluate(sizeH));
+                // 乘出生尺寸倍率：世界模式为发射器缩放（在发射时烘焙，与位置/速度同源），
+                // 局部空间模式为 1（缩放已由渲染期父矩阵作用于 quad）
+                float sizeScale = buf.getSizeScale(index);
+                buf.setWidth(index, (float) molang.evaluate(sizeW) * sizeScale);
+                buf.setHeight(index, (float) molang.evaluate(sizeH) * sizeScale);
 
                 if (hasUv) {
                     var uv = def.getUv();
@@ -562,9 +572,11 @@ public class ParticleComponentRuntimes {
 
             @Override
             public void tick(ParticleArray buf, int index, float tickDt, ParticleMolangEnvironment molang) {
-                // 每 tick 更新尺寸（支持动态 Molang 表达式）
-                buf.setWidth(index, (float) molang.evaluate(sizeW));
-                buf.setHeight(index, (float) molang.evaluate(sizeH));
+                // 每 tick 更新尺寸（支持动态 Molang 表达式）；
+                // 倍率沿用出生时烘焙的值，使发射器中途改变缩放不会让已飞出的粒子突变尺寸
+                float sizeScale = buf.getSizeScale(index);
+                buf.setWidth(index, (float) molang.evaluate(sizeW) * sizeScale);
+                buf.setHeight(index, (float) molang.evaluate(sizeH) * sizeScale);
 
                 if (hasFlipbook) {
                     float age = buf.getAge(index);

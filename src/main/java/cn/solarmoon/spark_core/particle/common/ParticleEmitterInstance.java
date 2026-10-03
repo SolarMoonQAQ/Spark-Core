@@ -241,6 +241,25 @@ public class ParticleEmitterInstance {
         for (int s = 0; s < spawnCount; s++) {
             int idx = buf.allocate();
 
+            // World 模式：先定出本次发射使用的位姿（含插值），
+            // 使尺寸倍率与稍后的位置/速度烘焙同源，避免两者取自不同帧的位姿。
+            Matrix4f useTransform = transform;
+            float sizeScale;
+            if (!isLocal) {
+                // Instant 模式不插值（瞬间爆发，所有粒子在同一位置），
+                // Steady 模式按时间比例分布粒子在 old→new 路径上
+                boolean isSteady = definition.getEmitterPreset().getSpawnRateExpr() != null;
+                if (oldTransform != null && isSteady && spawnCount > 1) {
+                    float t = (float) s / (spawnCount - 1);
+                    useTransform = SparkMathKt.lerp(oldTransform, transform, t);
+                }
+                sizeScale = averageScale(useTransform);
+            } else {
+                // 局部空间：缩放由渲染期父矩阵承载（见 ParticleRenderer），此处不重复施加
+                sizeScale = 1f;
+            }
+            buf.setSizeScale(idx, sizeScale);
+
             // 立即绑定新粒子的 Molang 变量（age=0, lifetime=1.0 为默认占位值，
             // 后续 setMaxLifetime 和 onApply 会更新，此处主要是让随机数等变量可用）
             molang.bindParticle(0, 1.0f, new double[]{
@@ -257,25 +276,15 @@ public class ParticleEmitterInstance {
             buf.setAge(idx, 0);
             buf.setMaxLifetime(idx, 1.0f);
 
-            // 粒子组件 onApply（尺寸/UV/颜色/初始速度/自旋等）
+            // 粒子组件 onApply（尺寸/UV/颜色/初始速度/自旋等）。
+            // 尺寸组件会乘上上面写入的 sizeScale，故位置与尺寸一起被发射器缩放。
             for (IParticleComponent comp : allParticleComponents) {
                 comp.onApply(buf, idx, molang);
             }
 
             // World 模式：用插值变换矩阵将局部偏移转为世界坐标（含旋转和缩放）
-            // 若有上一帧位姿且本帧发射多个粒子，按时间比例在 old→new 路径上均匀分布，
-            // 避免高速锚点移动时粒子呈团块状
             // Local 模式：粒子存相对坐标，不做偏移
             if (!isLocal) {
-                Matrix4f useTransform = transform;
-                // Instant 模式不插值（瞬间爆发，所有粒子在同一位置），
-                // Steady 模式按时间比例分布粒子在 old→new 路径上
-                boolean isSteady = definition.getEmitterPreset().getSpawnRateExpr() != null;
-                if (oldTransform != null && isSteady && spawnCount > 1) {
-                    float t = (float) s / (spawnCount - 1);
-                    useTransform = SparkMathKt.lerp(oldTransform, transform, t);
-                }
-
                 float ox = buf.getPosX(idx);
                 float oy = buf.getPosY(idx);
                 float oz = buf.getPosZ(idx);
@@ -670,6 +679,19 @@ public class ParticleEmitterInstance {
         org.joml.Vector3f s = new org.joml.Vector3f();
         transform.getScale(s);
         return new Vec3(s.x(), s.y(), s.z());
+    }
+
+    /**
+     * 变换矩阵缩放三轴的均值，用作世界模式的出生尺寸倍率。
+     * <p>
+     * 取标量均值是因为 billboard 的 quad 在渲染期才对齐屏幕，世界坐标里没有
+     * "水平/垂直"两个确定的缩放轴；发射器缩放为各向同性（本项目所有入口传入的
+     * 都是统一缩放）时该均值即为精确值。
+     */
+    private static float averageScale(Matrix4f mat) {
+        org.joml.Vector3f s = new org.joml.Vector3f();
+        mat.getScale(s);
+        return (s.x() + s.y() + s.z()) / 3f;
     }
 
     /** 设置发射器缩放（非均匀，保持位置和旋转不变）。 */
