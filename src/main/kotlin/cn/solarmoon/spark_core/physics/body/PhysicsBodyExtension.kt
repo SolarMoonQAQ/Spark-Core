@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.api.physicsLevel
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.physics.toVec3d
 import cn.solarmoon.spark_core.util.*
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
@@ -106,6 +107,8 @@ fun PhysicsRigidBody.attachToBone(owner: IAnimatable<*>, boneName: String, offse
         owner.modelController.model?.pose?.getBonePose(boneName)?.let { pose ->
             val ma = pose.getWorldBonePivotMatrix()
             ma.translate(offset)
+            // 这里刻意保持 float：源矩阵是 joml Matrix4f，绝对平移量在取出时就已经是 float 精度，
+            // 改用 Dp 写入不会增加任何精度，只会多一次 Vec3d 分配（见文档 §4.4）
             setPhysicsLocation(ma.transformPosition(Vector3f()).toBVector3f())
             setPhysicsRotation(ma.getUnnormalizedRotation(Quaternionf()).toBQuaternion())
             setPhysicsScale(ma.getScale(Vector3f()).toBVector3f())
@@ -124,6 +127,7 @@ fun PhysicsRigidBody.attachToLocator(owner: IAnimatable<*>, locatorName: String,
         owner.modelController.model?.pose?.let { pose ->
             val ma = pose.getWorldBoneLocatorMatrix(locatorName)
             ma.translate(offset)
+            // 同 attachToBone：源矩阵是 Matrix4f，改 Dp 无精度收益
             setPhysicsLocation(ma.transformPosition(Vector3f()).toBVector3f())
             setPhysicsRotation(ma.getUnnormalizedRotation(Quaternionf()).toBQuaternion())
             setPhysicsScale(ma.getScale(Vector3f()).toBVector3f())
@@ -134,7 +138,8 @@ fun PhysicsRigidBody.attachToLocator(owner: IAnimatable<*>, locatorName: String,
 fun PhysicsRigidBody.attachToEntity(entity: Entity, offset: Vector3f = Vector3f()) {
     detach()
     subs[this] = onEvent<PhysicsBodyEvent.Tick> {
-        setPhysicsLocation(entity.boundingBox.center.add(offset.toVec3()).toBVector3f())
+        // 实体的绝对位置本来就是 double（MC Vec3），这里走 Dp 写入，避免中途被窄化成 float（决策 D4）
+        setPhysicsLocationDp(entity.boundingBox.center.add(offset.toVec3()).toVec3d())
     }
 }
 

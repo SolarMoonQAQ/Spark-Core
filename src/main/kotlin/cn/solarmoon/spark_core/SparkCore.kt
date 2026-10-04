@@ -31,7 +31,7 @@ class SparkCore(modEventBus: IEventBus, modContainer: ModContainer) {
 
     init {
         EVENT_BUS = modEventBus
-        NativeLoader.load(MOD_ID, "bullet", fallbackModuleName = "bullet_sp")
+        NativeLoader.load(MOD_ID)
         REGISTER.register(modEventBus)
 
         // 注册 Common Config（服务端/客户端各自独立）

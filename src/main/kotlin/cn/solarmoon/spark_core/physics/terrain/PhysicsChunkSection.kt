@@ -17,6 +17,7 @@ import com.jme3.bullet.util.NativeLibrary
 import com.jme3.math.Quaternion
 import com.jme3.math.Transform
 import com.jme3.math.Vector3f
+import com.simsilica.mathd.Vec3d
 import jme3utilities.math.MyMath
 import kotlinx.coroutines.*
 import net.minecraft.core.BlockPos
@@ -278,11 +279,13 @@ class PhysicsChunkSection(
             name = "section_$sectionPos"
             owner = this@PhysicsChunkSection
         }
-        physicsBody!!.setPhysicsLocation(
-            Vector3f(
-                sectionPos.minBlockX() + 8f,
-                sectionPos.minBlockY() + 8f,
-                sectionPos.minBlockZ() + 8f
+        // section 中心是绝对世界坐标：|x| 超过 2^24 后 `int + 8f` 已无法精确表示，
+        // 因此用 Dp 写入，避免地形整体在大坐标处被 float 量化（决策 D4）
+        physicsBody!!.setPhysicsLocationDp(
+            Vec3d(
+                sectionPos.minBlockX() + 8.0,
+                sectionPos.minBlockY() + 8.0,
+                sectionPos.minBlockZ() + 8.0
             )
         )
         physicsBody!!.collisionGroup = CollisionGroups.TERRAIN

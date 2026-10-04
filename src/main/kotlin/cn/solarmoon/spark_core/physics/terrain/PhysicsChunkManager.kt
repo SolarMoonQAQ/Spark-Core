@@ -3,7 +3,7 @@ package cn.solarmoon.spark_core.physics.terrain
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.physics.body.CollisionGroups
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.physics.toVec3d
 import cn.solarmoon.spark_core.registry.common.SparkAttachments
 import cn.solarmoon.spark_core.util.PPhase
 import cn.solarmoon.spark_core.util.toVec3
@@ -414,8 +414,9 @@ class PhysicsChunkManager(
             chunkAffectedSections.getOrPut(chunkPos) { mutableSetOf() }.add(sectionPos.y())
 
             physicsLevel.submitDeduplicatedTask("terrain_update_activate_${blockPos.toShortString()}", PPhase.ALL) {
-                activator.setPhysicsLocation(
-                    blockPos.toVec3().add(0.5, 0.5, 0.5).toBVector3f()
+                // 幽灵体位置是方块中心的绝对坐标；`+0.5` 在 ≳3e7 格处会被 float 直接吃掉（决策 D4）
+                activator.setPhysicsLocationDp(
+                    blockPos.toVec3().add(0.5, 0.5, 0.5).toVec3d()
                 )
                 physicsLevel.world.contactTest(activator, this)
             }

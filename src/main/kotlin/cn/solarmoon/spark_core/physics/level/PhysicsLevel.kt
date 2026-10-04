@@ -260,7 +260,9 @@ abstract class PhysicsLevel(
                 // 玩家默认刚体不碰撞地形（见 CollisionFuncApplier），也不应驱动物理地形加载
                 if (it.collideWithGroups and CollisionGroups.TERRAIN != 0)
                     if (owner !is RigidBodyEntity || (owner.isActive)) {
-                        var aabb = stateOf(it).cachedBoundingBox.toAABB()
+                        // 双精度绝对包围盒：float 的 cachedBoundingBox 在大坐标处会把盒子量化到格栅上，
+                        // 导致远处地形不激活/掉出世界（决策 D4、D9）
+                        var aabb = stateOf(it).absoluteAabb()
                         if (it is PhysicsRigidBody) {
                             val delta = it.getLinearVelocity(null).toVec3().scale(1.5 / tps)
                             if (delta.length() < 5f)
@@ -300,12 +302,13 @@ abstract class PhysicsLevel(
         PhysicsRigidBody.logger2.setLevel(java.util.logging.Level.WARNING) // 防止创建log刷屏
         New6Dof.logger2.setLevel(java.util.logging.Level.WARNING)
         SparkCore.LOGGER.info(
-            "启动物理线程：{}，线程数：{}/{}, threadSafe:{}, Debug:{}, singleThread:{}",
+            "启动物理线程：{}，线程数：{}/{}, threadSafe:{}, Debug:{}, doublePrecision:{}, singleThread:{}",
             name,
             Runtime.getRuntime().availableProcessors(),
             NativeLibrary.countThreads(),
             NativeLibrary.isThreadSafe(),
             NativeLibrary.isDebug(),
+            NativeLibrary.isDoublePrecision(),
             singleThreadMode
         )
 

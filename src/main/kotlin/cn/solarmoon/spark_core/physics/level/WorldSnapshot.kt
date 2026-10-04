@@ -5,6 +5,8 @@ import com.jme3.bullet.PhysicsSpace
 import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.objects.PhysicsRigidBody
 import com.jme3.math.Vector3f
+import com.simsilica.mathd.Quatd
+import com.simsilica.mathd.Vec3d
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -22,8 +24,8 @@ import java.util.concurrent.ConcurrentHashMap
 class WorldSnapshot(
     world: PhysicsWorld
 ) : PhysicsSpace(
-    Vector3f(-Int.MAX_VALUE.toFloat(), -1_000f, -Int.MAX_VALUE.toFloat()),
-    Vector3f(Int.MAX_VALUE.toFloat(), 15_000f, Int.MAX_VALUE.toFloat()),
+    PhysicsSpaceBounds.min(),
+    PhysicsSpaceBounds.max(),
     BroadphaseType.DBVT, 1
 ) {
 
@@ -128,8 +130,31 @@ class WorldSnapshot(
     fun syncTransform() {
         for ((main, snap) in snapshotMap) {
             if (!main.isStatic)
-                snap.setPhysicsTransform(main.getTransform(null))
+                syncPose(main, snap)
         }
+    }
+
+    // 复用的临时对象，避免每 tick 每刚体额外产生垃圾
+    private val poseLocationScratch = Vec3d()
+    private val poseRotationScratch = Quatd()
+    private val poseScaleScratch = Vector3f()
+
+    /**
+     * 把一个主世界刚体的位姿同步到它的快照刚体。
+     *
+     * 位置与姿态走**双精度**入口（决策 D4）：快照自身也是刚体，装在 Dp native 上时其 DBVT 里的
+     * AABB 由 double 计算，写入时若走 float 会把这份精度白白丢掉。
+     * 注意查询链路的 Java 侧入参仍然是 float（决策 D10），这里只是不额外损失。
+     *
+     * 缩放没有 Dp 写入入口，且快照与主刚体**共享同一个 shape**，保持 float 与原逻辑一致。
+     */
+    private fun syncPose(main: PhysicsRigidBody, snap: PhysicsRigidBody) {
+        main.getPhysicsLocationDp(poseLocationScratch)
+        main.getPhysicsRotationDp(poseRotationScratch)
+        main.getScale(poseScaleScratch)
+        snap.setPhysicsLocationDp(poseLocationScratch)
+        snap.setPhysicsRotationDp(poseRotationScratch)
+        snap.setPhysicsScale(poseScaleScratch)
     }
 
     /**
@@ -150,7 +175,7 @@ class WorldSnapshot(
         snap.collideWithGroups = main.collideWithGroups
 
         // 初始 transform
-        snap.setPhysicsTransform(main.getTransform(null))
+        syncPose(main, snap)
         return snap
     }
 

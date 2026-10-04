@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.physics.body
 
 import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.physics.toVec3
 import cn.solarmoon.spark_core.util.getQuaternionf
 import cn.solarmoon.spark_core.util.getVec3
 import cn.solarmoon.spark_core.util.ifContains
@@ -9,6 +10,7 @@ import cn.solarmoon.spark_core.util.putVec3
 import cn.solarmoon.spark_core.util.toQuaternionf
 import cn.solarmoon.spark_core.util.toVec3
 import com.jme3.bullet.collision.PhysicsCollisionObject
+import com.simsilica.mathd.Vec3d
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.syncher.EntityDataAccessor
 import net.minecraft.network.syncher.EntityDataSerializers
@@ -58,6 +60,9 @@ abstract class CollisionObjectEntity(
     private var lerpViewAngles = Vec2.ZERO
     private var lerpSteps = 0
 
+    /** 复用给双精度位置回读的临时对象，避免每 tick 每实体额外产生垃圾 */
+    private val locationDpScratch = Vec3d()
+
     var rotationO = Quaternionf()
     abstract var rotation: Quaternionf
     var scaleO = Vec3.ZERO
@@ -94,7 +99,8 @@ abstract class CollisionObjectEntity(
                 activationState = body.activationState
                 if (body.isActive) {
                     // 仅在刚体激活时才更新位置和旋转，节约带宽
-                    setPos(body.getPhysicsLocation(null).toVec3())
+                    // 位置走双精度入口：实体位置本身就是 double，经 float 中转会在远处丢精度（决策 D4）
+                    setPos(body.getPhysicsLocationDp(locationDpScratch).toVec3())
                     rotation = body.getPhysicsRotation(null).toQuaternionf()
                     isContactResponse = body.isContactResponse
                 }

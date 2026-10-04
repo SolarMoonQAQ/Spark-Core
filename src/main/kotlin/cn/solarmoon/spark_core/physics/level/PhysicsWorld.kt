@@ -19,8 +19,8 @@ import com.jme3.math.Vector3f
 import net.neoforged.neoforge.common.NeoForge
 
 class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
-    Vector3f(-Int.MAX_VALUE.toFloat(), -1_000f, -Int.MAX_VALUE.toFloat()),
-    Vector3f(Int.MAX_VALUE.toFloat(), 15_000f, Int.MAX_VALUE.toFloat()),
+    PhysicsSpaceBounds.min(),
+    PhysicsSpaceBounds.max(),
     BroadphaseType.DBVT, NativeLibrary.countThreads(), CollisionConfiguration(8192, 1)
 ) {
 

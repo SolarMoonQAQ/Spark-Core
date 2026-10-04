@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.pack
 
 import cn.solarmoon.spark_core.SparkCore
+import com.jme3.bullet.util.NativeLibrary
 import com.jme3.system.JmeSystem
 import com.jme3.system.Platform.Os.*
 import net.neoforged.fml.ModList
@@ -8,6 +9,7 @@ import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.concurrent.TimeUnit
@@ -82,76 +84,166 @@ object NativeLoader {
     }
 
     /**
-     * 加载本地物理库，支持在主库加载失败时自动回退到备选库（如从多线程版回退到单线程版）
+     * 解析本平台的 native 候选档，**按偏好从强到弱**排列。
      *
-     * @param modId 模组ID
-     * @param moduleName 主模块名，对应资源路径 natives/<moduleName>/<platform>/<arch>/
-     * @param fallbackModuleName 回退模块名，主库加载失败时尝试此模块（如 "bullet_sp"），null 表示不回退
+     * 候选名同时是资源目录名（`natives/<候选>/<平台>/<架构>/<库文件名>`）与提取缓存的桶名，
+     * 因此同名模块换二进制不会命中旧缓存。
+     *
+     * | 平台 | 候选顺序 | 原因 |
+     * |---|---|---|
+     * | Windows / Linux | `bullet_dpmt` → `bullet_dp` | 桌面拿双精度 + 多线程求解；上游不提供 macOS 的 Mt 构件 |
+     * | macOS | `bullet_dp` | 上游 Mt 的可构建条件含 `(os != 'osx')`，不存在 `MacOSX*-DpMt*.jar` |
+     * | Android | `bullet_dp` → `bullet_sp` | 上游未发布 Android 的 Dp 构件；`bullet_dp` 目录留空即可，将来放入 `.so` 自动生效 |
+     */
+    private fun candidatesFor(platform: com.jme3.system.Platform.Os): List<String> = when (platform) {
+        Windows, Linux -> listOf("bullet_dpmt", "bullet_dp")
+        MacOS -> listOf("bullet_dp")
+        Android -> listOf("bullet_dp", "bullet_sp")
+        else -> throw ModLoadingException(ModLoadingIssue.error("Bullet 物理库不支持该系统平台: $platform"))
+    }
+
+    /**
+     * 加载本地物理库。
+     *
+     * 按平台的候选表逐个尝试（见 [candidatesFor]）：
+     *
+     * 1. **资源不存在** → 记一条 info 后跳到下一个候选（为将来预留的空目录属于这种常态，
+     *    不再是「加载失败」）；
+     * 2. **资源存在但 `System.load` 失败**（`UnsatisfiedLinkError`）→ 先跑依赖诊断
+     *    （[buildLoadErrorReport]），记 error 后继续下一个候选；
+     * 3. **加载成功** → 立刻用 JNI **实测**档位并打一行汇总。以实测为准，不以模块名推断；
+     * 4. 落点弱于「本平台实际投放的最强候选」→ 只警告不阻断启动（决策 D8）；
+     *    平台首选档本身就是实际落点时只记 info；
+     * 5. 全部候选失败 → 抛 `ModLoadingException`，消息里带上每个候选各自的失败原因。
+     *
+     * @param modId 模组ID，native 资源与提取缓存都挂在这个模组下
      */
     @JvmStatic
-    fun load(
-        modId: String,
-        moduleName: String,
-        fallbackModuleName: String? = null
-    ) {
+    fun load(modId: String) {
         val platform = JmeSystem.getPlatform().os
         val libFileName = getLibFileName(platform)
-        val rawArch = System.getProperty("os.arch").lowercase()
-        val archPath = resolveArchPath(platform, rawArch)
         val platformPath = getPlatformPath(platform)
+        val archPath = resolveArchPath(platform, System.getProperty("os.arch").lowercase())
+        val candidates = candidatesFor(platform)
 
-        // 尝试加载主库（如多线程版本 SpMt）
-        val primaryResult = tryLoadModule(modId, moduleName, platformPath, archPath, libFileName)
-        if (primaryResult.isSuccess) {
-            LOGGER.info("已加载多线程物理库: ${primaryResult.getOrThrow()}")
-            return
-        }
+        // 本平台**实际投放**的最强候选下标；-1 表示一个候选都没投放
+        var strongestShipped = -1
+        val failures = mutableListOf<String>()
+        val attemptedPaths = mutableListOf<String>()
 
-        val primaryError = primaryResult.exceptionOrNull()!!
+        candidates.forEachIndexed { index, moduleName ->
+            val relativePath = "natives/$moduleName/$platformPath/$archPath/$libFileName"
+            attemptedPaths += relativePath
 
-        // 主库加载失败，先做诊断日志
-        LOGGER.error("====== 多线程物理库 ($moduleName) 加载失败 ======")
-        LOGGER.error("原因: ${primaryError.message}")
-        if (primaryError is NativeLoadFailedException) {
-            buildLoadErrorReport(primaryError.soPath, libFileName, primaryError.cause as UnsatisfiedLinkError)
-        }
-        LOGGER.error("==============================================")
+            val sourceFile = findResourceOrNull(modId, relativePath)
+            if (sourceFile == null) {
+                if (strongestShipped < 0) {
+                    LOGGER.info("本平台未投放候选档 {}（{}），跳过", moduleName, relativePath)
+                }
+                return@forEachIndexed
+            }
+            if (strongestShipped < 0) strongestShipped = index
 
-        // 尝试回退到单线程版本
-        if (fallbackModuleName != null) {
-            LOGGER.error("正在尝试回退到单线程物理库 ($fallbackModuleName)...")
-            val fallbackResult = tryLoadModule(modId, fallbackModuleName, platformPath, archPath, libFileName)
-            if (fallbackResult.isSuccess) {
-                LOGGER.info("已成功加载回退的单线程物理库: ${fallbackResult.getOrThrow()}")
+            val result = tryLoadModule(modId, moduleName, sourceFile, platformPath, archPath, libFileName)
+            val error = result.exceptionOrNull()
+            if (error == null) {
+                reportLoaded(moduleName, index, strongestShipped, candidates, result.getOrThrow())
                 return
             }
 
-            val fallbackError = fallbackResult.exceptionOrNull()!!
-            val fallbackMsg = if (fallbackError is NativeLoadFailedException) {
-                "回退库加载错误: ${fallbackError.cause?.message ?: fallbackError.message}"
+            val reason = if (error is NativeLoadFailedException) {
+                error.cause?.message ?: error.message ?: "unknown error"
             } else {
-                "回退库加载错误: ${fallbackError.message}"
+                error.message ?: error.toString()
             }
-
-            LOGGER.error("====== 单线程物理库 ($fallbackModuleName) 也加载失败 ======")
-            LOGGER.error(fallbackMsg)
-            if (fallbackError is NativeLoadFailedException) {
-                buildLoadErrorReport(fallbackError.soPath, libFileName, fallbackError.cause as UnsatisfiedLinkError)
+            LOGGER.error("====== 物理库候选 ($moduleName) 加载失败 ======")
+            LOGGER.error("原因: {}", reason)
+            if (error is NativeLoadFailedException) {
+                buildLoadErrorReport(error.soPath, libFileName, error.cause as UnsatisfiedLinkError)
             }
-            LOGGER.error("======================================================")
-
-            throw ModLoadingException(ModLoadingIssue.error(
-                "物理库加载失败：主库多线程版本 ($moduleName) 和回退单线程版本 ($fallbackModuleName) 均无法加载。"
-            ))
+            LOGGER.error("==============================================")
+            failures += "$moduleName: $reason"
         }
 
-        // 没有配置回退，直接抛出原始错误
-        if (primaryError is NativeLoadFailedException) {
+        if (failures.isEmpty()) {
             throw ModLoadingException(ModLoadingIssue.error(
-                "物理库 ($moduleName) 加载失败：${primaryError.cause?.message ?: primaryError.message}"
+                "物理库加载失败：本平台（$platform/$archPath）没有任何已投放的候选档。已尝试的路径：" +
+                        attemptedPaths.joinToString("、")
             ))
         }
-        throw primaryError
+        throw ModLoadingException(ModLoadingIssue.error(
+            "物理库加载失败：本平台的全部候选档（${candidates.joinToString(" → ")}）均无法加载。\n" +
+                    failures.joinToString("\n") { "  - $it" }
+        ))
+    }
+
+    /**
+     * 查询模组内的 native 资源，不存在时返回 null。
+     *
+     * 模组本身不存在属于致命错误（直接抛）。
+     *
+     * 注意：`IModFile#findResource` 对**目录形态**的模组（开发环境 `build/resources/main`、测试环境）
+     * 只做路径拼接、**不校验存在性**，缺失时会返回一个指向不存在文件的 [Path]。因此这里必须自己确认
+     * 它真的是一个普通文件，否则「本平台没有投放这个候选档」会被误报成「候选档加载失败」，
+     * 并连带打出一条假的降级警告。
+     */
+    private fun findResourceOrNull(modId: String, relativePath: String): Path? {
+        val modFileInfo = ModList.get().getModFileById(modId)
+            ?: throw ModLoadingException(ModLoadingIssue.error("未找到模组: $modId"))
+        val path = modFileInfo.file.findResource(relativePath) ?: return null
+        return if (Files.isRegularFile(path)) path else null
+    }
+
+    /**
+     * 加载成功后的汇总日志与降级警告。
+     *
+     * 档位一律以 [NativeLibrary] 的 JNI 实测为准：投放目录名与真实 flavor 不一致的情况是
+     * 真实发生过的（见文档 §2.2），按目录名推断会把问题藏起来。
+     */
+    private fun reportLoaded(
+        moduleName: String,
+        index: Int,
+        strongestShipped: Int,
+        candidates: List<String>,
+        soPath: String
+    ) {
+        val doublePrecision = NativeLibrary.isDoublePrecision()
+        LOGGER.info(
+            "物理 native: {}（{} + {}，{} 求解线程，Debug:{}）← {}",
+            moduleName,
+            if (doublePrecision) "Dp" else "Sp",
+            if (NativeLibrary.isThreadSafe()) "Mt" else "非Mt",
+            NativeLibrary.countThreads(),
+            NativeLibrary.isDebug(),
+            soPath
+        )
+
+        if (index <= strongestShipped) return
+        val preferred = candidates[strongestShipped]
+        LOGGER.warn(
+            "物理 native 降级：本平台最强投放档 {}（{}）未生效，实际加载 {}（{}）。本次不阻断启动。{}",
+            preferred, describeTier(preferred),
+            moduleName, describeTier(moduleName),
+            degradationHint(preferred, moduleName)
+        )
+    }
+
+    /** 从投放模块名描述预期档位；仅用于日志文案，实际档位以 JNI 实测为准 */
+    private fun describeTier(moduleName: String): String = when {
+        moduleName.endsWith("_dpmt") -> "双精度 + 多线程求解"
+        moduleName.endsWith("_dp") -> "双精度、单求解线程"
+        moduleName.endsWith("_sp") -> "单精度"
+        else -> moduleName
+    }
+
+    /** 描述从 [preferred] 落到 [loaded] 会失去什么能力 */
+    private fun degradationHint(preferred: String, loaded: String): String {
+        val lost = mutableListOf<String>()
+        if (preferred.contains("dp") && !loaded.contains("dp"))
+            lost += "绝对坐标退化为单精度（≳5e5 格处碰撞与地形对齐开始失真）"
+        if (preferred.endsWith("mt") && !loaded.endsWith("mt"))
+            lost += "求解线程数下降（高负载时物理可能降频）"
+        return if (lost.isEmpty()) "" else "影响：" + lost.joinToString("；")
     }
 
     /**
@@ -178,19 +270,20 @@ object NativeLoader {
     }
 
     /**
-     * 尝试加载指定模块的本地库，返回 Result 避免崩溃
+     * 尝试加载指定候选档的本地库，返回 Result 避免崩溃
      *
      * @return Result<String>，成功时包含库文件绝对路径，失败时包含异常
      */
     private fun tryLoadModule(
         modId: String,
         moduleName: String,
+        sourceFile: Path,
         platformPath: String,
         archPath: String,
         libFileName: String
     ): Result<String> {
         return try {
-            val soPath = extractAndPrepareLibrary(modId, moduleName, platformPath, archPath, libFileName)
+            val soPath = extractAndPrepareLibrary(modId, moduleName, sourceFile, platformPath, archPath, libFileName)
             try {
                 System.load(soPath)
             } catch (e: UnsatisfiedLinkError) {
@@ -205,23 +298,17 @@ object NativeLoader {
     /**
      * 从模组资源中提取本地库文件到临时目录
      *
+     * @param sourceFile 模组内已定位到的 native 文件
      * @return 解压后的库文件绝对路径
      */
     private fun extractAndPrepareLibrary(
         modId: String,
         moduleName: String,
+        sourceFile: Path,
         platformPath: String,
         archPath: String,
         libFileName: String
     ): String {
-        val relativePath = "natives/$moduleName/$platformPath/$archPath/$libFileName"
-
-        val modFileInfo = ModList.get().getModFileById(modId)
-            ?: throw ModLoadingException(ModLoadingIssue.error("未找到模组: $modId"))
-
-        val sourceFile = modFileInfo.file.findResource(relativePath)
-            ?: throw ModLoadingException(ModLoadingIssue.error("未找到Native核心文件: $relativePath"))
-
         val targetDir = Paths.get(
             System.getProperty("java.io.tmpdir"),
             "spark_core_natives",
@@ -264,7 +351,10 @@ object NativeLoader {
                     Files.deleteIfExists(tempFile)
                 } catch (_: Exception) {
                 }
-                throw ModLoadingException(ModLoadingIssue.error("无法解压Native库文件到临时目录: $targetFile"))
+                // 带上底层原因：这一段以前只报目标路径，排查时看不到真正失败的原因
+                throw ModLoadingException(ModLoadingIssue.error(
+                    "无法解压Native库文件到临时目录: $targetFile（源: $sourceFile，原因: ${e.message}）"
+                ))
             }
         }
 

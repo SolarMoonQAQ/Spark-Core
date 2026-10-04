@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.body.CollisionGroups
 import cn.solarmoon.spark_core.physics.body.owner
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel
-import cn.solarmoon.spark_core.physics.toBVector3f
+import cn.solarmoon.spark_core.physics.toVec3d
 import cn.solarmoon.spark_core.util.toBQuaternion
 import cn.solarmoon.spark_core.util.toRadians
 import com.jme3.bullet.collision.PhysicsCollisionObject
@@ -147,7 +147,7 @@ class CreateContraptionPhysicsHost(
                 rotationState.yRotation.toRadians(),
                 rotationState.xRotation.toRadians()
             )
-            body.setPhysicsLocation(bodyOrigin.toBVector3f())
+            body.setPhysicsLocationDp(bodyOrigin.toVec3d())
             body.setPhysicsRotation(rotation.toBQuaternion())
         }
 
@@ -193,7 +193,8 @@ class CreateContraptionPhysicsHost(
         val extrapolatedPos = extrapolationOrigin.add(
             snapshot.linearVelocity.scale(clampedTime.toDouble())
         )
-        body.setPhysicsLocation(extrapolatedPos.toBVector3f())
+        // 装置位姿是绝对世界坐标，走 Dp 写入（决策 D4）
+        body.setPhysicsLocationDp(extrapolatedPos.toVec3d())
 
         // 外推旋转
         val extrapolatedXRot = extrapolationOriginXRot + snapshot.angularVelX * clampedTime

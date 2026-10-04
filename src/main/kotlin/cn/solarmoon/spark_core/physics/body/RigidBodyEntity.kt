@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.util.putVec3
 import cn.solarmoon.spark_core.util.toBQuaternion
 import cn.solarmoon.spark_core.util.toVec3
 import com.jme3.bullet.objects.PhysicsRigidBody
+import com.simsilica.mathd.Vec3d
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket
 import net.minecraft.network.syncher.EntityDataSerializers
@@ -42,7 +43,8 @@ abstract class RigidBodyEntity(
         super.setPosRaw(x, y, z)
         if (!updating) {
             physicsLevel.submitImmediateTask {
-                body.setPhysicsLocation(Vector3f(x.toFloat(), y.toFloat(), z.toFloat()).toBVector3f())
+                // 双精度写入：setPosRaw 收到的本来就是 double，经 float 中转会在远处丢精度（决策 D4）
+                body.setPhysicsLocationDp(Vec3d(x, y, z))
             }
         }
     }
