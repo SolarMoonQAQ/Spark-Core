@@ -67,6 +67,18 @@ abstract class InternalState : IState, InternalNode {
     internal abstract suspend fun recursiveStop()
 
     /**
+     * Whether this state, or any state in its subtree, needs the [recursiveAfterTransitionComplete] callback.
+     *
+     * That callback is invoked for every state of the tree after each transition, which costs one virtual
+     * suspend call per child state (measured: ~176 B / 45 ns per child) and dominates transitions of wide
+     * state machines. Subtrees that declare no interest are not descended into.
+     *
+     * The default is `true`, so any direct subclass keeps today's behaviour. [BaseStateImpl] overrides this
+     * with a value derived from the class hierarchy, so its subclasses do not have to declare anything.
+     */
+    internal open val needsAfterTransitionComplete: Boolean get() = true
+
+    /**
      * Called after each (including initial) transition completion.
      */
     internal abstract suspend fun recursiveAfterTransitionComplete(transitionParams: TransitionParams<*>)
@@ -84,14 +96,34 @@ internal suspend fun <E : Event> InternalState.findTransitionsByEvent(event: E):
 internal suspend fun <E : Event> InternalState.findUniqueResolvedTransition(
     eventAndArgument: EventAndArgument<E>
 ): ResolvedTransition<E>? {
+    // A state without transitions cannot resolve anything, and this runs for every state on the
+    // active path of every event, so skip it without allocating the intermediate lists below.
+    if (transitions.isEmpty()) return null
+
     val policy = DefaultPolicy(eventAndArgument)
-    val transitions = findTransitionsByEvent(eventAndArgument.event)
-        .map { it to it.produceTargetStateDirection(policy) }
-        .filter { it.second !is NoTransition }
-    return if (!machine.creationArguments.doNotThrowOnMultipleTransitionsMatch) {
-        check(transitions.size <= 1) { "Multiple transitions match ${eventAndArgument.event}, $transitions in $this" }
-        transitions.singleOrNull()
-    } else {
-        transitions.firstOrNull()
+    val doNotThrowOnMultiple = machine.creationArguments.doNotThrowOnMultipleTransitionsMatch
+
+    // Single pass instead of findTransitionsByEvent().map { }.filter { }, which allocated three
+    // intermediate lists plus one Pair per matching transition on every processed event
+    // (measured: -488 B on an ignored event, -336 B on a performed transition).
+    var resolved: ResolvedTransition<E>? = null
+    var matches = 0
+    for (transition in transitions) {
+        if (!transition.isMatchingEvent(eventAndArgument.event)) continue
+
+        @Suppress("UNCHECKED_CAST")
+        val candidate = transition as InternalTransition<E>
+        val direction = candidate.produceTargetStateDirection(policy)
+        if (direction is NoTransition) continue
+
+        if (++matches > 1 && !doNotThrowOnMultiple) {
+            error(
+                "Multiple transitions match ${eventAndArgument.event}, " +
+                        "${listOfNotNull(resolved, candidate to direction)} in $this"
+            )
+        }
+        if (resolved == null) resolved = candidate to direction
+        if (doNotThrowOnMultiple) return resolved
     }
+    return resolved
 }

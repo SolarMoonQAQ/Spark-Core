@@ -84,6 +84,9 @@ open class BaseStateImpl(
         if (data.internalParent != null)
             onStateReuseDetected()
         data.internalParent = parent
+        // The subtree changed, so drop the cached "needs the completion callback" values of this state
+        // and all its new ancestors.
+        invalidateNeedsAfterTransitionComplete()
     }
 
     private fun onStateReuseDetected() {
@@ -284,8 +287,48 @@ open class BaseStateImpl(
         data.states.forEachState { it.recursiveStop() }
     }
 
+    private var needsAfterTransitionCompleteCache: Boolean? = null
+
+    /**
+     * True when this state or any state below it overrides [recursiveAfterTransitionComplete].
+     *
+     * Derived from the class hierarchy (see [declaresAfterTransitionCompleteOverride]) rather than from a
+     * hand written flag, so that a subclass cannot silently stop receiving the callback by forgetting to
+     * declare it. The tree is frozen once the machine runs, so the value is computed once and cached;
+     * [setParent] clears the cached values of the affected chain.
+     */
+    override val needsAfterTransitionComplete: Boolean
+        get() = needsAfterTransitionCompleteCache ?: (
+                declaresAfterTransitionCompleteOverride(javaClass) ||
+                        data.states.any { it.needsAfterTransitionComplete }
+                ).also { needsAfterTransitionCompleteCache = it }
+
     override suspend fun recursiveAfterTransitionComplete(transitionParams: TransitionParams<*>) {
+        // Descend only into subtrees that want the callback, see [needsAfterTransitionComplete].
+        if (!needsAfterTransitionComplete) return
         data.states.forEachState { it.recursiveAfterTransitionComplete(transitionParams) }
+    }
+
+    /**
+     * Whether any class between [type] and [BaseStateImpl] declares an override of
+     * [recursiveAfterTransitionComplete]. Matched by name prefix because Kotlin mangles the name of
+     * internal members with the module name.
+     */
+    private fun declaresAfterTransitionCompleteOverride(type: Class<*>): Boolean {
+        var current: Class<*>? = type
+        while (current != null && current != BaseStateImpl::class.java) {
+            if (current.declaredMethods.any { it.name.contains(AFTER_TRANSITION_COMPLETE) }) return true
+            current = current.superclass
+        }
+        return false
+    }
+
+    private fun invalidateNeedsAfterTransitionComplete() {
+        var current: BaseStateImpl? = this
+        while (current != null) {
+            current.needsAfterTransitionCompleteCache = null
+            current = current.internalParent as? BaseStateImpl
+        }
     }
 
     override fun getCurrentStates() = when (childMode) {
@@ -377,3 +420,6 @@ private fun TransitionParams<*>.repackForRegion(regionTargetState: IState): Tran
         copy(direction = TargetState(direction.targetStates, regionTargetState))
     }
 }
+
+/** Name of [InternalState.recursiveAfterTransitionComplete], used to detect overrides in a class hierarchy. */
+private const val AFTER_TRANSITION_COMPLETE = "recursiveAfterTransitionComplete"
