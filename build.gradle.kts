@@ -65,6 +65,14 @@ neoForge {
             programArgument("--nogui")
         }
 
+        // 无头 GameTest 车道：真的 MinecraftServer，跑完全部 @GameTest 用例后自动退出，
+        // 退出码 = 失败的必要用例数（0 = 全通过）。用例源码在 src/main/java/**/gametest/，
+        // 场地模板在 src/main/resources/data/spark_core/structure/。运行：gradlew runGameTestServer。
+        create("gameTestServer") {
+            type = "gameTestServer"
+            systemProperty("neoforge.enabledGameTestNamespaces", mod_id)
+        }
+
         create("data") {
             data()
             programArguments.addAll(

@@ -1,7 +1,6 @@
 package cn.solarmoon.spark_core.physics.terrain
 
 import cn.solarmoon.spark_core.util.BlockCollisionUtil
-import net.minecraft.core.BlockPos
 import net.minecraft.world.level.ChunkPos
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.chunk.LevelChunk
@@ -238,11 +237,11 @@ class ChunkHeightIndex {
         // 调色板预检：纯空气 section 直接跳过（覆盖下界空洞区、主世界高空/地下空洞区）
         if (section.hasOnlyAir()) return false
 
-        val baseY = secY shl 4
+        // 直接读已定位的 section，省掉每次 voxel 的 BlockPos 分配
         for (y in 0 until 16) {
             for (x in 0 until 16) {
                 for (z in 0 until 16) {
-                    val state = chunk.getBlockState(BlockPos(x, baseY + y, z))
+                    val state = section.getBlockState(x, y, z)
                     if (BlockCollisionUtil.hasCollision(state)) return true  // 早期退出
                 }
             }

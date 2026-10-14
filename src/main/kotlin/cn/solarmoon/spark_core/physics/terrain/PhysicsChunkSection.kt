@@ -44,6 +44,27 @@ class PhysicsChunkSection(
     private var snapshotForBuild: SectionSnapshot? = null
     @Volatile
     private var snapshotForCollision: SectionSnapshot? = null
+
+    /**
+     * 流体索引的**独立发布通道**（物理线程读取入口见 [getFluidIndex]）。
+     *
+     * 为什么不由 `snapshotForCollision` 携带：后者只在 `buildCollisionShape()` 成功后
+     * 由 `createPhysicsBody()` 发布，而纯流体 section 永远 build 失败（无刚体），
+     * 会导致「水越深、越纯，浮力越查不到」——船完全入水时采样点所在的整节全是水、
+     * 一块固体都没有，恰好是最需要这份数据的场景。
+     *
+     * 也不能直接读 `snapshotForBuild`：它没有 `@Volatile`，物理线程读它既无可见性保证，
+     * 也会与 `startAsyncUpdate()` 的重建竞争。
+     *
+     * 主线程写（[publishFluidIndex]）、物理线程读；`SectionFluidIndex` 实例不可变，
+     * 故单个 volatile 写即可安全发布。
+     *
+     * 额外好处：发布点在 `prepareSnapshot()`，而它由 `PhysicsChunk.load()` 对**所有**
+     * sectionY 调用 —— 因此流体索引在区块加载后、且在任何激活之前即可用，
+     * 不需要该 section 被激活或建出刚体。
+     */
+    @Volatile
+    private var fluidIndexRef: SectionFluidIndex? = null
     @Volatile
     private var lastSlipEpoch: Int = Int.MIN_VALUE
     @Volatile
@@ -103,7 +124,9 @@ class PhysicsChunkSection(
         val compoundShape = CompoundCollisionShape()
         var hasCollision = false
         val snapshot = snapshotForBuild
-        if (snapshot == null || snapshot == SectionSnapshot.EMPTY) {
+        // 守卫用 hasSolid 而非 EMPTY：纯流体 section 有流体通道内容，不是 EMPTY，
+        // 但它没有任何固体方块，不应进入（必然空手而归的）刚体构建流程。
+        if (snapshot == null || snapshot.isEmpty() || !snapshot.hasSolid) {
             collisionShape = null
             return false
         }
@@ -199,8 +222,26 @@ class PhysicsChunkSection(
     fun prepareSnapshot() {
         if (snapshotForBuild == null) {
             snapshotForBuild = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+            publishFluidIndex()
         }
     }
+
+    /**
+     * 主线程发布流体索引引用。
+     *
+     * 必须在每次 `snapshotForBuild` 被重新赋值后调用（[prepareSnapshot] / [startAsyncUpdate]）。
+     */
+    private fun publishFluidIndex() {
+        fluidIndexRef = snapshotForBuild?.fluidIndex
+    }
+
+    /**
+     * 获取本 section 的流体索引（物理线程调用）。
+     *
+     * **不得**加 `isEmpty()` / `hasSolid` 守卫：纯流体 section 的 `collisionShape` 恒为 null，
+     * `isEmpty()` 恒为 true，顺手加守卫就会把整个功能挡掉。
+     */
+    fun getFluidIndex(): SectionFluidIndex? = fluidIndexRef
 
     /**
      * 开始异步构建过程(主线程调用)
@@ -234,8 +275,25 @@ class PhysicsChunkSection(
     fun startAsyncUpdate(manager: PhysicsChunkManager) {
         // 取消之前的构建任务
         buildJob?.cancel()
+        buildJob = null
         // 缓存section内所有方块信息
-        snapshotForBuild = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+        val snapshot = SectionSnapshot.snapshotFromChunk(physicsLevel.mcLevel, chunk, sectionPos)
+        snapshotForBuild = snapshot
+        // 流体索引在此同步发布（主线程 volatile 写），与后续刚体构建成功与否无关
+        publishFluidIndex()
+
+        // 流体-only 快路径：无固体 ⇒ 不需要 4096 格 getCollisionShape + 全量 BlockMerger + 快照克隆。
+        // 流水每 tick 都会走 onBlockStateChange → startAsyncUpdate，而固体部分一个格子都没变，
+        // 走完整重建流程纯属浪费（见 docs/地形方块变更热路径优化建议.md §2.3）。
+        if (!snapshot.hasSolid) {
+            if (physicsBody != null) {
+                physicsLevel.submitImmediateTask { destroyPhysicsBody() }
+            }
+            collisionShape = null
+            buildState = BuildState.IDLE
+            return
+        }
+
         buildJob = manager.terrainBuilderScope.launch {
             val wasActive = isActive
             val hadBody = physicsBody != null
@@ -336,6 +394,10 @@ class PhysicsChunkSection(
             isActive = true
             return
         }
+        // 纯流体 section 永远 build 不出刚体（buildCollisionShape 在 !hasSolid 时早退）。
+        // 不必为它排队构建作业 —— 海洋里每个 chunk 会有约 8 个这样的 section。
+        if (snapshotForBuild?.hasSolid == false) return
+
         // 尚未构建：标记待激活并触发懒构建（构建完成后自动激活）
         pendingActivation = true
         if (buildState == BuildState.IDLE) {
@@ -426,6 +488,7 @@ class PhysicsChunkSection(
         destroyPhysicsBody()
         snapshotForBuild = null
         snapshotForCollision = null
+        fluidIndexRef = null
         lastSlipEpoch = Int.MIN_VALUE
     }
 
@@ -441,15 +504,18 @@ class PhysicsChunkSection(
     fun isEmpty(): Boolean = collisionShape == null
 
     /**
-     * 判断该 section 是否不包含任何有碰撞体积的方块（纯空气或无碰撞方块）。
+     * 判断该 section 是否不包含任何有碰撞体积的方块（纯空气、纯流体或仅无碰撞方块）。
      *
-     * 基于构建快照判断：快照由 [startAsyncBuild] 在主线程同步写入，且仅收录
-     * 非空气且有非空碰撞形状的方块，因此在构建完成前也能可靠区分
-     * "纯空气（无支撑需求）"与"尚未构建完成"。构建完成后结果与 [isEmpty] 等价。
+     * 基于构建快照判断：快照由 [startAsyncBuild] / [startAsyncUpdate] 在主线程同步写入，
+     * 因此在构建完成前也能可靠区分 "无固体（无支撑需求）" 与 "尚未构建完成"。
+     *
+     * 判据必须是 `hasSolid` 而不是 `isEmpty()`：纯水 section 有流体通道内容，不再是 EMPTY，
+     * 但它永远不会 build（`buildCollisionShape()` 早退），若用 `isEmpty()` 判定会让
+     * `isTerrainReady()` 恒为 false ⇒ 载具被判为"地形未就绪"而卡住。
      */
     fun hasNoCollisionBlocks(): Boolean {
         val snapshot = snapshotForBuild ?: return true
-        return snapshot.isEmpty()
+        return snapshot.hasSolid != true
     }
 
     /**
@@ -458,7 +524,9 @@ class PhysicsChunkSection(
     fun refreshSlipIfNeeded(epoch: Int) {
         if (lastSlipEpoch == epoch) return
         val snapshot = snapshotForCollision
-        if (snapshot == null || snapshot.isEmpty()) {
+        // 纯流体 section 的 blockSnapshots 是全 null 的共享只读数组，
+        // 下面的循环只会空转 4096 次，直接跳过。
+        if (snapshot == null || snapshot.isEmpty() || !snapshot.hasSolid) {
             lastSlipEpoch = epoch
             return
         }

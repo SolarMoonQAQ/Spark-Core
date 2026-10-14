@@ -46,7 +46,14 @@ class PhysicsChunkManager(
     private val activator = PhysicsGhostObject(SphereCollisionShape(2f))
 
     // 已加载的物理区块（包含构建状态）
-    private val loadedChunks = mutableMapOf<ChunkPos, PhysicsChunk>()
+    //
+    // 必须是并发容器：主线程在 startBuildingChunks / unloadPhysicsChunk /
+    // loadAndActivateChunkTerrain 做 insert/remove，物理线程通过 getBlockSnapshotAt 与
+    // 流体查询读它。早前是普通 LinkedHashMap，HashMap 扩容迁移期间被并发读虽不再死循环，
+    // 但「读到 null / 读到旧数据」是允许的后果；更大的风险是主线程一边迭代一边被 remove
+    // 触发 CME。流体批量采样会把访问频率从「每帧几次」放大到「每帧每艘船 × N 个静力点」，
+    // 暴露面放大 2~3 个数量级，故先堵掉结构性风险。
+    private val loadedChunks = ConcurrentHashMap<ChunkPos, PhysicsChunk>()
 
     // Minecraft已加载的区块（不构建物理表示）
     private val mcLoadedChunks = mutableMapOf<ChunkPos, LevelChunk>()
@@ -234,7 +241,7 @@ class PhysicsChunkManager(
     private fun startBuildingChunks(chunksToBuild: Set<ChunkPos>) {
         chunksToBuild.forEach { chunkPos ->
             // 如果区块未构建，开始构建
-            if (chunkPos !in loadedChunks) {
+            if (!loadedChunks.containsKey(chunkPos)) {
                 val mcChunk = mcLoadedChunks[chunkPos] ?: return@forEach
                 val chunk = PhysicsChunk(chunkPos, physicsLevel, mcChunk)
                 chunk.load()
@@ -253,6 +260,128 @@ class PhysicsChunkManager(
     fun getBlockSnapshotAt(worldPos: BlockPos): SectionSnapshot.BlockSnapshot? {
         val section = getSectionForBlockPos(worldPos) ?: return null
         return section.getBlockSnapshot(worldPos)
+    }
+
+    // ========== 流体查询（物理线程） ==========
+
+    /**
+     * 按 chunk/section 坐标直接取 section，供批量查询在缓存未命中时使用。
+     *
+     * 注意：**不要**在批量路径里逐点调用 `getSectionForBlockPos` —— 它每次分配一个
+     * `ChunkPos`。静力采样点是一团连续偏移，绝大多数点落在同一 chunk 同一 section 上，
+     * [sampleFluidBatch] 内部自带缓存，命中率极高。
+     */
+    fun getSectionByCoords(chunkX: Int, chunkZ: Int, sectionY: Int): PhysicsChunkSection? {
+        return loadedChunks[ChunkPos(chunkX, chunkZ)]?.getSection(sectionY)
+    }
+
+    /**
+     * 采样某点的流体状态。
+     *
+     * @return null = 该点无流体（含 section 未加载 / 无流体索引 / 点在液面之上）
+     */
+    fun sampleFluid(x: Double, y: Double, z: Double): FluidSample? {
+        val scratch = FloatArray(1)
+        val id = sampleFluidId(x, y, z, scratch)
+        if (id < 0) return null
+        return FluidSample(id, scratch[0], (scratch[0] - y).toFloat())
+    }
+
+    /** 该点是否浸没在流体中 */
+    fun isSubmerged(x: Double, y: Double, z: Double): Boolean =
+        sampleFluidId(x, y, z, FloatArray(1)) >= 0
+
+    /**
+     * 批量采样（**推荐路径**）。
+     *
+     * 内部缓存上一次命中的 chunk 与 section，不经过 `getSectionForBlockPos`，
+     * 且不复用 `SectionSnapshot.getRelativePos()`（那是 clamp 语义，会把跨界采样点
+     * 静默夹到边界格、返回邻格的水面高度）。
+     *
+     * @param points  `[x0,y0,z0, x1,y1,z1, ...]`
+     * @param outIds  输出 fluid 全局 id，-1 = 无
+     * @param outSy   输出液面世界 Y，无则 `Float.NEGATIVE_INFINITY`
+     * @return 命中数量
+     */
+    fun sampleFluidBatch(points: DoubleArray, outIds: IntArray, outSy: FloatArray): Int {
+        val n = points.size / 3
+        require(outIds.size >= n && outSy.size >= n) {
+            "outIds/outSy must be at least points.size / 3 = $n"
+        }
+        var lastChunkKey = Long.MIN_VALUE
+        var lastChunk: PhysicsChunk? = null
+        var lastSectionY = Int.MIN_VALUE
+        var lastIdx: SectionFluidIndex? = null
+        var lastY0 = 0
+        val scratch = FloatArray(1)
+        var hits = 0
+        var i = 0
+        for (k in 0 until n) {
+            val x = points[i]
+            val y = points[i + 1]
+            val z = points[i + 2]
+            i += 3
+
+            val fx = Math.floor(x).toInt()
+            val fy = Math.floor(y).toInt()
+            val fz = Math.floor(z).toInt()
+            val cx = fx shr 4
+            val cz = fz shr 4
+            val sy = fy shr 4
+
+            val chunkKey = ChunkPos.asLong(cx, cz)
+            if (chunkKey != lastChunkKey) {
+                lastChunkKey = chunkKey
+                lastChunk = loadedChunks[ChunkPos(cx, cz)]
+                lastSectionY = Int.MIN_VALUE      // 强制重新定位 section
+                lastIdx = null
+            }
+            if (sy != lastSectionY) {
+                lastSectionY = sy
+                lastIdx = lastChunk?.getSection(sy)?.getFluidIndex()
+                lastY0 = sy shl 4
+            }
+
+            val idx = lastIdx
+            if (idx != null) {
+                val lx = fx - (cx shl 4)
+                val ly = fy - (sy shl 4)
+                val lz = fz - (cz shl 4)
+                // strict 越界判定：越界 ≠「无水」，而是本次查询定位错误
+                if (lx in 0..15 && ly in 0..15 && lz in 0..15) {
+                    val id = idx.sampleLocal(lx, ly, lz, lastY0, y, scratch)
+                    if (id >= 0) {
+                        outIds[k] = id
+                        outSy[k] = scratch[0]
+                        hits++
+                        continue
+                    }
+                }
+            }
+            outIds[k] = -1
+            outSy[k] = Float.NEGATIVE_INFINITY
+        }
+        return hits
+    }
+
+    /**
+     * 单次采样的内部实现：返回 fluid 全局 id（-1 = 无），液面世界 Y 写入 [outSurface]。
+     */
+    private fun sampleFluidId(x: Double, y: Double, z: Double, outSurface: FloatArray): Int {
+        val fx = Math.floor(x).toInt()
+        val fy = Math.floor(y).toInt()
+        val fz = Math.floor(z).toInt()
+        val cx = fx shr 4
+        val cz = fz shr 4
+        val sy = fy shr 4
+        val idx = getSectionByCoords(cx, cz, sy)?.getFluidIndex() ?: return -1
+
+        val lx = fx - (cx shl 4)
+        val ly = fy - (sy shl 4)
+        val lz = fz - (cz shl 4)
+        // strict：越界直接判定为「无」，绝不 clamp（clamp 会返回另一个格子的数据）
+        if (lx < 0 || lx > 15 || ly < 0 || ly > 15 || lz < 0 || lz > 15) return -1
+        return idx.sampleLocal(lx, ly, lz, sy shl 4, y, outSurface)
     }
 
     /**
@@ -550,7 +679,7 @@ class PhysicsChunkManager(
         vehicleHeldRanges.getOrPut(chunkPos, ::mutableSetOf).add(yRange)
         // 仅当物理区块尚未构建时才缓存构建请求，避免已构建区块每 tick 重复走构建/激活路径
         // （已构建区块的 section 激活由 updateActivation 每 tick 合并 vehicleHeldRanges 保证）
-        if (chunkPos !in loadedChunks) {
+        if (!loadedChunks.containsKey(chunkPos)) {
             pendingBuildRequests.getOrPut(chunkPos, ::mutableSetOf).add(yRange)
         }
         // 添加 MC ticket 强制加载该 chunk（每 tick 调用即刷新 ticket 寿命）
@@ -640,7 +769,7 @@ class PhysicsChunkManager(
         }
 
         // 如果物理区块尚未构建，则构建
-        if (chunkPos !in loadedChunks) {
+        if (!loadedChunks.containsKey(chunkPos)) {
             val physicsChunk = PhysicsChunk(chunkPos, physicsLevel, mcChunk)
             physicsChunk.load()
             loadedChunks[chunkPos] = physicsChunk
@@ -695,7 +824,7 @@ class PhysicsChunkManager(
     }
 
     fun loaded(pos: ChunkPos): Boolean {
-        return pos in loadedChunks
+        return loadedChunks.containsKey(pos)
     }
 
     /**

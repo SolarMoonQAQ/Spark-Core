@@ -19,7 +19,17 @@ class PhysicsChunk(
     val physicsLevel: PhysicsLevel,
     val chunk: LevelChunk
 ) {
-    private val sections = mutableMapOf<Int, PhysicsChunkSection>()
+    /**
+     * sectionY → PhysicsChunkSection 的**不可变只读视图**。
+     *
+     * 主线程在 [load] / [unload] 时整体替换引用，物理线程只读。
+     * 早前这里是普通 `mutableMapOf`，主线程写 + 物理线程读；流体批量采样会把
+     * 「每帧几次」的读取放大到「每帧每艘船 × N 个静力点」，暴露面放大 2~3 个数量级。
+     * 由于写入只发生在 load/unload 两个点（整体替换），用不可变视图比并发容器更划算：
+     * 读路径退化为普通 `Map.get`，且迭代绝对安全。
+     */
+    @Volatile
+    private var sections: Map<Int, PhysicsChunkSection> = emptyMap()
     private var isLoaded = false
 
     /**
@@ -42,14 +52,18 @@ class PhysicsChunk(
         val minSection = physicsLevel.mcLevel.minSection
         val maxSection = physicsLevel.mcLevel.maxSection
 
+        // 先在局部可变 map 中填充，完成后整体发布为不可变视图（物理线程读）
+        val built = LinkedHashMap<Int, PhysicsChunkSection>(maxSection - minSection + 1)
         for (sectionY in minSection until maxSection) {
             val sectionPos = SectionPos.of(chunkPos, sectionY)
             val physicsSection = PhysicsChunkSection(sectionPos, physicsLevel, chunk)
 
             // 预填充构建快照（廉价），懒构建作业在首次激活时才排队
+            // 同时发布流体索引 —— 因此流体查询不需要该 section 被激活
             physicsSection.prepareSnapshot()
-            sections[sectionY] = physicsSection
+            built[sectionY] = physicsSection
         }
+        sections = built
 
         isLoaded = true
     }
@@ -59,7 +73,7 @@ class PhysicsChunk(
      */
     fun unload() {
         sections.values.forEach {it.destroy()}
-        sections.clear()
+        sections = emptyMap()
         activeSectionYs.clear()
         isLoaded = false
     }

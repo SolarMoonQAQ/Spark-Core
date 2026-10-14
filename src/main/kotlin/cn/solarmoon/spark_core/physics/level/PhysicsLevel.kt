@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.event.PhysicsSnapshotReadyEvent
 import cn.solarmoon.spark_core.physics.PhysicsHost
 import cn.solarmoon.spark_core.physics.body.*
 import cn.solarmoon.spark_core.physics.terrain.BlockShapeManager
+import cn.solarmoon.spark_core.physics.terrain.FluidSample
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkManager
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection
 import cn.solarmoon.spark_core.util.*
@@ -130,6 +131,27 @@ abstract class PhysicsLevel(
     //地形碰撞相关
     lateinit var terrainManager: PhysicsChunkManager
     lateinit var blockShapeManager: BlockShapeManager
+
+    // ========== 流体查询便捷转发（物理线程调用，语义见 PhysicsChunkManager） ==========
+
+    /** 采样某点的流体状态；null = 该点无流体。 */
+    fun sampleFluid(x: Double, y: Double, z: Double): FluidSample? =
+        terrainManager.sampleFluid(x, y, z)
+
+    /** 该点是否浸没在流体中。 */
+    fun isSubmerged(x: Double, y: Double, z: Double): Boolean =
+        terrainManager.isSubmerged(x, y, z)
+
+    /**
+     * 批量流体采样（**推荐路径**，逐点调用请使用它而不是多次 [sampleFluid]）。
+     *
+     * @param points `[x0,y0,z0, x1,y1,z1, ...]`
+     * @param outIds 输出 fluid 全局 id，-1 = 无
+     * @param outSy  输出液面世界 Y，无则 `Float.NEGATIVE_INFINITY`
+     * @return 命中数量
+     */
+    fun sampleFluidBatch(points: DoubleArray, outIds: IntArray, outSy: FloatArray): Int =
+        terrainManager.sampleFluidBatch(points, outIds, outSy)
 
     suspend fun CoroutineScope.run() {
         while (isActive) {
