@@ -50,7 +50,11 @@ data class OAnimation(
             it.group(
                 Loop.CODEC.optionalFieldOf("loop", Loop.ONCE).forGetter { it.loop },
                 Codec.FLOAT.optionalFieldOf("animation_length", 9999999.0f).forGetter { it.animationLength },
-                OBoneAnimation.MAP_CODEC.fieldOf("bones").forGetter { it.bones },
+                // bones 可选：YSM/Blockbench 导出的动画里存在只带 loop / animation_length 的
+                // 纯占位或纯 timeline 条目（如 ——默认动画——、parallel4~6、pre_parallel2~7）。
+                // 缺省回填空 map，语义等价于「不涉及任何骨骼的空动画」，权重恒 0、无副作用；
+                // 若仍用 fieldOf 则会整份动画文件解析失败（AnimationModule 直接丢弃该文件）。
+                OBoneAnimation.MAP_CODEC.optionalFieldOf("bones", LinkedHashMap()).forGetter { it.bones },
                 TIMELINE_CODEC.optionalFieldOf("timeline", LinkedHashMap()).forGetter { it.timeline }
             ).apply(it, ::OAnimation)
         }
