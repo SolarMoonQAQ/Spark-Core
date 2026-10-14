@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.animation.state
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
+import cn.solarmoon.spark_core.animation.anim.AnimState
 import cn.solarmoon.spark_core.gas.GameplayTagContainer
 import cn.solarmoon.spark_core.state_machine.graph.StateGraphController
 import cn.solarmoon.spark_core.state_machine.graph.StateMachineGraph
@@ -50,6 +51,11 @@ class AnimStateMachine(
         // 先清理动画追踪（移除 Tick handler，防止退出过渡期间覆写 weight）
         for (inst in activeAnimInstances) {
             inst.eventHandlers.remove(AnimEvent.Tick::class)
+        }
+        // 回收本节点播过的动画实例：循环动画（Loop.TRUE / HOLD_ON_LAST_FRAME）不会自行结束，
+        // 不在这里 exit 便会永久留在 AnimLayer.animations 中。
+        for (inst in activeAnimInstances) {
+            if (inst.state != AnimState.IDLE) inst.exit()
         }
         activeAnimInstances.clear()
 

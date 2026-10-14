@@ -53,7 +53,7 @@ class AnimInstance internal constructor(
     var speed = 1.0f
     var weight = 1.0f
     var currentWeight = 0.0f
-        private set
+        internal set
     var inTransitionTime = 0.15f
     var outTransitionTime = 0.15f
     var transitionTick = 0
@@ -175,16 +175,28 @@ class AnimInstance internal constructor(
         enter()
     }
 
+    /**
+     * 进入播放。持有者的 [IAnimatable.animLevel] 已关联 PhysicsLevel 时投递到物理线程，
+     * 否则退化为在调用线程直接处理事件（没有物理线程会驱动这个实例，故不引入并发；
+     * 同时消掉原先的裸 `!!`）。
+     */
     fun enter() {
-        holder.animLevel!!.physicsLevel.submitImmediateTask {
-            lifecycleStateMachine.processEventBlocking(AnimStateEvent.Start)
-        }
+        val event = AnimStateEvent.Start
+        holder.animLevel?.physicsLevel?.submitImmediateTask {
+            lifecycleStateMachine.processEventBlocking(event)
+        } ?: lifecycleStateMachine.processEventBlocking(event)
     }
 
+    /**
+     * 请求退出。语义与 [enter] 对称：[IAnimatable.animLevel] 就绪时投递到物理线程，
+     * 否则在调用线程直接处理。
+     * 已处于 IDLE 的实例收到 Stop 会被生命周期状态机忽略，重复调用安全。
+     */
     fun exit() {
-        holder.animLevel!!.physicsLevel.submitImmediateTask {
-            lifecycleStateMachine.processEventBlocking(AnimStateEvent.Stop)
-        }
+        val event = AnimStateEvent.Stop
+        holder.animLevel?.physicsLevel?.submitImmediateTask {
+            lifecycleStateMachine.processEventBlocking(event)
+        } ?: lifecycleStateMachine.processEventBlocking(event)
     }
 
     fun getProgress(physPartialTicks: Float = 0f) =

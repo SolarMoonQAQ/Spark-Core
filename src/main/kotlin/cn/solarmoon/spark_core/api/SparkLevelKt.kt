@@ -15,6 +15,13 @@ val Level.physicsLevel: PhysicsLevel
     get() = SparkLevel.getPhysicsLevel(this)
 
 /**
+ * <p>获取 Level 的 PhysicsLevel，未就绪时返回 null（不抛异常）。</p>
+ * <p>Get the PhysicsLevel associated with this Level, or null when not yet initialized.</p>
+ */
+val Level.physicsLevelOrNull: PhysicsLevel?
+    get() = SparkLevel.getPhysicsLevelOrNull(this)
+
+/**
  * <p>提交一个去重任务。</p>
  * <p>Submit a deduplicated task.</p>
  */

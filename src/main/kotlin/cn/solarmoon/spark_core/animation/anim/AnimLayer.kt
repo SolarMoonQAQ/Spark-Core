@@ -34,7 +34,14 @@ class AnimLayer {
             cachedBoneNames = boneNames
         }
         if (boneName !in boneNames) return 0.0f
-        return if (animations.size == 1) animations.maxOf { it.currentWeight } else 1.0f
+        if (animations.size == 1) return animations.maxOf { it.currentWeight }
+        // 多实例层：层权重必须与 [blendBone] 的层内分母同源，即「含该骨骼的参与实例权重和」，封顶 1。
+        // 恒返回 1.0f 时，层内分母（旧实现为全部实例权重和）与层权重不同源，参与实例会被压小或放大。
+        var participatingWeight = 0f
+        for (anim in animations) {
+            if (anim.origin.bones.containsKey(boneName)) participatingWeight += anim.currentWeight
+        }
+        return participatingWeight.coerceAtMost(1f)
     }
 
     val isPlaying get() = animations.isNotEmpty()
@@ -53,37 +60,41 @@ class AnimLayer {
     private val tmpScaleSub = Vector3f()
 
     fun blendBone(boneName: String): KeyAnimData {
-        val totalWeight = animations.sumOf { it.currentWeight.toDouble() }
         val boneBaseRot = tmpBoneBaseRot.identity()
 
-        // 如果总权重为0，则返回默认姿势（简化计算）
-        if (totalWeight <= 0.0) {
-            return KeyAnimData()
-        }
-
         val pos = tmpPos.zero()
-        val rot = boneBaseRot; var accumulatedWeight = 0f
-        val scale = tmpScale.set(1f, 1f, 1f)
+        val rot = boneBaseRot; var participatingWeight = 0f
+        // tmpScale 在此充当「缩放增量 Σ((scale_i − 1)·w_i)」的累加器，循环后原地归一化为最终缩放
+        val scaleDelta = tmpScale.zero()
         animations.forEach {
             val boneData = it.origin.getBoneAnimation(boneName) ?: return@forEach
-            val pt = (it.currentWeight / totalWeight).toFloat()
+            val w = it.currentWeight
             val time = it.typedTime
-            pos.add(boneData.getAnimPosAt(time, it).mul(pt))
-//            rot.slerp(boneData.getAnimRotAt(time, animatable).toQuaternionf(), pt)
-            scale.add(boneData.getAnimScaleAt(time, it).mul(pt)).sub(tmpScaleSub.set(pt, pt, pt))
+            pos.add(boneData.getAnimPosAt(time, it).mul(w))
+            scaleDelta.add(boneData.getAnimScaleAt(time, it).mul(w)).sub(tmpScaleSub.set(w, w, w))
 
-            // 计算pt和时间
+            // 旋转按参与实例的原始权重归一（与位置/缩放同源，不变量）
             val origRot = boneData.getAnimRotAt(time, it).toQuaternionf()
-            if (accumulatedWeight == 0f) {
+            if (participatingWeight == 0f) {
                 rot.set(origRot)
-                accumulatedWeight = pt
             } else {
-                val t = pt / (accumulatedWeight + pt)
+                val t = w / (participatingWeight + w)
                 rot.slerp(origRot, t)
-                accumulatedWeight += pt
             }
+            participatingWeight += w
         }
-        return KeyAnimData(pos.toVec3(), rot.getEulerAnglesXYZ(tmpEulerOut).toVec3(), scale.toVec3())
+
+        // 层内分母 = 含该骨骼的参与实例权重和（不再是「全部实例权重和」）。
+        // 进度由 AnimController 取用的层权重 [getBoneWeight] 用同一个和承担，故不与层内归一互相抵消。
+        if (participatingWeight <= 0f) {
+            return KeyAnimData()
+        }
+        pos.div(participatingWeight)
+        return KeyAnimData(
+            pos.toVec3(),
+            rot.getEulerAnglesXYZ(tmpEulerOut).toVec3(),
+            scaleDelta.div(participatingWeight).add(1f, 1f, 1f).toVec3()
+        )
     }
 
     fun physicsTick(overallSpeed: Float) {

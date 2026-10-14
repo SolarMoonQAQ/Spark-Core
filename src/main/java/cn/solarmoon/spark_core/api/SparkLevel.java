@@ -47,6 +47,20 @@ public final class SparkLevel {
     }
 
     /**
+     * <p>获取 Level 对应的 PhysicsLevel，未就绪时返回 null。</p>
+     * <p>Get the PhysicsLevel associated with this Level, or null when not yet initialized.</p>
+     *
+     * <p>{@link #getPhysicsLevel(Level)} 用异常表达「未就绪」，本入口供需要守卫的
+     * 客户端渲染 / tick 调用方使用，避免用异常做控制流。</p>
+     *
+     * @throws ClassCastException <p>若 Level 未被 SparkCore 正确 Mixin。</p>
+     *                            <p>Thrown if Level is not patched by SparkCore.</p>
+     */
+    public static @Nullable PhysicsLevel getPhysicsLevelOrNull(@NotNull Level level) {
+        return ((LevelPatch) level).getPhysicsLevelOrNull();
+    }
+
+    /**
      * <p>获取所有物理实体映射。</p>
      * <p>Get all physics collision bodies mapped to this Level.</p>
      */

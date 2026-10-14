@@ -1,8 +1,9 @@
 # Spark-Core 动画层混合口径与状态机退出的实例回收 —— 修正计划
 
-> **状态**：待实施，尚未改动代码。本文只定缺陷、修法与验收，不含代码。
+> **状态**：已实施（2026-10-14）。A/B/C/D 全部落地，新增 JUnit 用例 A-1（2 例）、B1–B7、C（2 例）、D（1 例）共 12 例全绿，`./gradlew --offline test` 全量通过。实施位置与结果见 §6。
 > **创建**：2026-10-14
 > **修订**：2026-10-14 —— B 的口径收口为「层内分母与层权重同源」（§2.2）；修正 §1.6 的波及面、§4 的回归清单并补 A-1 判据；§1.1 / §1.2 / §1.4 精确化。
+> **修订**：2026-10-14 —— 实施完成，补 §6 实施记录；测试缝按 §4 的方案一（`currentWeight` setter 放宽为 `internal`）落地。
 > **触发来源**：ARMS-Core `docs/表现层动画接入实现计划.md`（该文的表现层要同时使用 `MultiAnimStateMachine` 与多个常驻动画层）。两处缺陷由那份计划的审阅发现，但都不是 ARMS-Core 特有的——它们影响本仓库自己的状态机路径，以及 `../Machine-Max` 与任何内容包的 `animation_controllers`。
 > **范围**：四项。A、B 是缺陷修正；C、D 是下游需要的两个小设施。
 > **本文自包含**：结论、判据与公式写在文内；引用源码给「路径#符号」活引用，读者可在目标文件里检索该符号核验。
@@ -264,7 +265,7 @@ fun persistent(slot: Int): Int { require(slot in 0 until PERSISTENT_SLOTS); retu
 
 1. **实现必须落在 `LevelMixin`**（`src/main/java/cn/solarmoon/spark_core/mixin/extension/LevelMixin.java#physicsLevel` 是它的 private 字段，Java `default` 方法读不到），`LevelPatch` 上只加抽象方法；全仓库只有 `LevelMixin` 一个实现者。
 2. **Kotlin 侧补对称入口**：`SparkLevel.getPhysicsLevelOrNull(level)` + `val Level.physicsLevelOrNull: PhysicsLevel?`（`src/main/kotlin/cn/solarmoon/spark_core/api/SparkLevelKt.kt#physicsLevel` 已是这个形状），否则 Kotlin 下游只能用不安全的 cast 去碰 `LevelPatch`。
-3. **保留抛异常的旧入口**：多数既有调用点「未就绪」确实应该是异常；新入口只服务客户端渲染 / tick 一类需要守卫的调用方。另注意它与 `SparkLevel.isSparkLevel`（`src/main/java/cn/solarmoon/spark_core/api/SparkLevel.java#isSparkLevel`）不是同一个问题——后者问的是「有没有被 Mixin」，与物理级别是否已建立无关。
+3. **保留抛异常的旧入口**：多数既有调用点「未就绪」确实应该是异常；新入口只服务客户端渲染 / tick 一类需要守卫的调用方。另注意它与 `SparkLevel.isSparkLevel`（`src/main/java/cn/solarmoon/spark_core/api/SparkLevel.java#isSparkLevel`）不是同一个问题——后者问的是「有没有被 Mixin」，与该 Level 的 PhysicsLevel 是否已建立无关。
 
 ---
 
@@ -296,3 +297,25 @@ fun persistent(slot: Int): Int { require(slot in 0 until PERSISTENT_SLOTS); retu
 - `PlayAnimAction` 的分路逻辑与三级回退（目标自身 → 素体 → 内置）不变（`src/main/kotlin/cn/solarmoon/spark_core/state_machine/graph/actions/PlayAnimAction.kt#execute`）。
 - `AnimLayer.getBoneWeight` 的骨骼名缓存（`cachedBoneNames`）与「不含该骨骼返回 `0.0f`」不变；**返回口径改变**：单实例层不变，多实例层由恒 `1.0f` 改为 `min(1, Σ参与 currentWeight)`（§2.2，原「返回口径不变」的约定作废）。
 - `AnimInstance` 的生命周期状态机（`idle → enter → work → exit → idle`）与 `Loop` 三种模式的行为不变；唯一改动是 `enter()` / `exit()` 在 `animLevel == null` 时退化为在调用线程直接处理事件（§1.5 第 3 点），`animLevel` 非空时行为不变（`src/main/kotlin/cn/solarmoon/spark_core/animation/anim/AnimInstance.kt#lifecycleStateMachine`、`src/main/kotlin/cn/solarmoon/spark_core/animation/anim/origin/Loop.kt#Loop`）。
+
+---
+
+## 6. 实施记录（2026-10-14）
+
+| 项 | 落地位置 | 实现要点 |
+|----|----------|----------|
+| A | `.../animation/state/AnimStateMachine.kt#onExit`、`.../animation/state/MultiAnimStateMachine.kt#onExit`、`.../animation/anim/AnimInstance.kt#enter` / `#exit` | 两个 `onExit` 在清理 Tick handler 之后、`activeAnimInstances.clear()` 之前，对 `state != AnimState.IDLE` 的实例调 `exit()`；`enter` / `exit` 在 `animLevel == null` 时退化为调用线程直接处理事件，并消掉裸 `!!` |
+| B | `.../animation/anim/AnimLayer.kt#blendBone`、`#getBoneWeight` | `blendBone` 的分母改为「含该骨骼的参与实例权重和」；多实例层的 `getBoneWeight` 由恒 `1.0f` 改为 `min(1, Σ参与 currentWeight)` |
+| C | `.../animation/anim/AnimGroups.kt#persistent` | 新增 `PERSISTENT_BASE = -8`、`PERSISTENT_SLOTS = 8` 与 `persistent(slot)`；顶部 KDoc 改为「语义层 2 的幂 + 常驻段低位连续整数」 |
+| D | `LevelPatch.java#getPhysicsLevelOrNull`、`mixin/extension/LevelMixin.java#getPhysicsLevelOrNull`、`api/SparkLevel.java#getPhysicsLevelOrNull`、`api/SparkLevelKt.kt#physicsLevelOrNull` | 纯追加的可空入口；抛异常的旧入口保持不变 |
+
+测试与结果：
+
+- 替身与构造器：`src/test/kotlin/cn/solarmoon/spark_core/animation/anim/AnimTestSupport.kt`（`animLevel == null` 的 `StubAnimatable` + 纯数字关键帧构造，不依赖世界/资源包）。
+- `.../animation/anim/AnimLayerBlendTest.kt`：B1–B7（7 例）。
+- `.../animation/state/AnimStateMachineExitRecycleTest.kt`：A-1（`AnimStateMachine` 与 `MultiAnimStateMachine` 各 1 例，判据为实例 `state == AnimState.EXIT`）。
+- `.../animation/anim/AnimGroupsTest.kt`：C（2 例，含越界 `require`）。
+- `.../api/PhysicsLevelReadyEntryTest.kt`：D（1 例，Java/Kotlin 两侧可空入口的编译期引用）。
+- 测试缝：`AnimInstance.currentWeight` 的 setter 由 `private set` 放宽为 `internal set`（§4 的方案一）。
+
+结果：`./gradlew --offline test` 全量通过（7m04s）；新增 12 例全绿。§4 中依赖实机 / 渲染的 `runClient` 靶子（B 靶子 1/2 与可选的 A 靶子）未在本环境执行。

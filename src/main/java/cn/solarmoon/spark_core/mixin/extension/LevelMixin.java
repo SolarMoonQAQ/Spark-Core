@@ -11,6 +11,7 @@ import kotlin.Unit;
 import kotlin.jvm.functions.Function0;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 
 import java.util.HashMap;
@@ -57,6 +58,11 @@ public abstract class LevelMixin implements LevelPatch, ILevelMixin {
         if (physicsLevel == null) {
             throw new IllegalStateException("PhysicsLevel is not initialized for level class: " + level.getClass().getName());
         }
+        return physicsLevel;
+    }
+
+    @Override
+    public @Nullable PhysicsLevel getPhysicsLevelOrNull() {
         return physicsLevel;
     }
 

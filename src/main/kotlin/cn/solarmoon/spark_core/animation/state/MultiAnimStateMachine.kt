@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.AnimEvent
 import cn.solarmoon.spark_core.animation.anim.AnimGroups
 import cn.solarmoon.spark_core.animation.anim.AnimInstance
+import cn.solarmoon.spark_core.animation.anim.AnimState
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.molang.SparkMolangContext
@@ -89,6 +90,11 @@ open class MultiAnimStateMachine(
         // 清理动画追踪（移除 Tick handler，防止退出过渡期间覆写 weight）
         for (inst in activeAnimInstances) {
             inst.eventHandlers.remove(AnimEvent.Tick::class)
+        }
+        // 回收本节点播过的动画实例：循环动画（Loop.TRUE / HOLD_ON_LAST_FRAME）不会自行结束，
+        // 不在这里 exit 便会永久留在 AnimLayer.animations 中。
+        for (inst in activeAnimInstances) {
+            if (inst.state != AnimState.IDLE) inst.exit()
         }
         activeAnimInstances.clear()
         super.onExit(node)
