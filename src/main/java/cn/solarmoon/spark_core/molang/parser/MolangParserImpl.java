@@ -129,10 +129,17 @@ final class MolangParserImpl implements MolangParser {
                 return expr;
             case SUB:
                 lexer.next();
-                final Expression operatedExpression = parseSingle(lexer);
+                Expression operatedExpression = parseSingle(lexer);
                 if (operatedExpression instanceof DoubleExpression) {
                     // NEGATE(A) is just parsed as (-A)
                     return new DoubleExpression(-((DoubleExpression) operatedExpression).value());
+                }
+                // 修复: - 的优先级应低于函数调用
+                // -math.clamp(x, 0, 40) 应解析为 -(math.clamp(x, 0, 40))
+                // 而非 (-math.clamp)(x, 0, 40)：后者的函数表达式不是成员访问，
+                // 解释路径与编译路径都取不到这个函数，返回 0（且不抛异常，值静默错误）
+                if (lexer.current().kind() == TokenKind.LPAREN) {
+                    operatedExpression = parseCompound(lexer, operatedExpression, 0);
                 }
                 return new UnaryExpression(UnaryExpression.Op.ARITHMETICAL_NEGATION, operatedExpression);
             case BANG:

@@ -61,12 +61,9 @@ public final class ExpressionInterpreter<T> implements ExpressionVisitor<Value>,
             arithmetic((a, b) -> a.eval() - b.eval()),
             arithmetic((a, b) -> a.eval() * b.eval()),
             arithmetic((a, b) -> {
-                // Molang allows division by zero,
-                // which is always equal to 0
-                final double dividend = a.eval();
-                final double divisor = b.eval();
-                if (divisor == 0) return 0;
-                else return dividend / divisor;
+                // Molang allows division by zero, which is always equal to 0.
+                // 与编译路径共用 MolangArithmetic.divide，两条路径不会再各写一份实现。
+                return MolangArithmetic.divide(a.eval(), b.eval());
             }),
             (evaluator, a, b) -> { // arrow
                 final Value val = a.visit(evaluator);

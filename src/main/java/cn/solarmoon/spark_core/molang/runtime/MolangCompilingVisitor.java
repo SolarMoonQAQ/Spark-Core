@@ -66,6 +66,7 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
     private static final Type OBJECT_VALUE_TYPE = Type.getType(ObjectValue.class);
     private static final Type VALUE_TYPE = Type.getType(Value.class);
     private static final Type NUMBER_VALUE_TYPE = Type.getType(NumberValue.class);
+    private static final Type MOLANG_ARITHMETIC_TYPE = Type.getType(MolangArithmetic.class);
 
     /**
      * 全局命名空间简写映射。所有 context 自动生效，无需在注解中重复声明。
@@ -159,10 +160,11 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
         if (op == BinaryExpression.Op.ASSIGN) {
             final Expression left = expression.left();
             if (left instanceof AccessExpression) {
-                final Expression objectExpr = ((AccessExpression) left).object();
+                final AccessExpression access = (AccessExpression) left;
+                final Expression objectExpr = access.object();
                 if (objectExpr instanceof IdentifierExpression) {
                     final String name = ((IdentifierExpression) objectExpr).name();
-                    final String property = ((AccessExpression) left).property();
+                    final String property = access.property();
 
                     if (name.equals("temp") || name.equals("t")) {
                         final CompileVisitResult result = expression.right().visit(this);
@@ -230,6 +232,10 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
                         }
                     }
                 }
+
+                // 多级左值（如 v.roaming.leg_armor = 1）：按解释器的 ObjectValue#set 语义生成。
+                // 其余无法走上面快速路径的形状在 emitObjectValueReference 里明确报错。
+                return compileNestedAssignment(access, expression.right(), expression);
             }
         }
 
@@ -331,7 +337,11 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
                 expression.left().visit(this);
                 expression.right().visit(this);
                 expectedType = currentExpectedType;
-                mv.visitInsn(Opcodes.DDIV);
+                // Molang 口径：除数为 0 时结果为 0。调用与解释路径同一个实现，
+                // 而不是内联 DDIV，避免两条路径的除法口径再次漂移。
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC,
+                        MOLANG_ARITHMETIC_TYPE.getInternalName(), "divide",
+                        Type.getMethodDescriptor(Type.DOUBLE_TYPE, Type.DOUBLE_TYPE, Type.DOUBLE_TYPE), false);
                 return new CompileVisitResult(Type.DOUBLE_TYPE);
             }
             case NULL_COALESCE: {
@@ -378,7 +388,124 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
             case CONDITIONAL:
                 break;
         }
-        return null;
+
+        // 兜底：这个算子或这个形状没有编译实现。绝不能返回 null —— 调用方会把 null
+        // 当成「表达式无返回值」继续补 DRETURN，产出不可加载的类。
+        // 这里改成编译期响亮失败，异常带算子名与表达式形状，便于内容作者定位。
+        throw new IllegalArgumentException(
+                "Unsupported Molang binary operator '" + op + "': " + expression);
+    }
+
+    /**
+     * 编译「左值是访问表达式」的赋值（例如 {@code v.roaming.leg_armor = 1}）。
+     * <p>
+     * 与 {@link ExpressionInterpreter} 的赋值语义一致：求右值 → 求左值对象这一级的
+     * {@link ObjectValue} → 若为对象则 {@link ObjectValue#set(String, Value)} →
+     * 把右值作为整个赋值表达式的结果。
+     */
+    private CompileVisitResult compileNestedAssignment(final @NotNull AccessExpression target,
+                                                       final @NotNull Expression value,
+                                                       final @NotNull BinaryExpression expression) {
+        final Type savedExpectedType = expectedType;
+
+        // 结果槽：右值既用于 set，也作为表达式结果留下；另开一个槽暂存对象引用。
+        final int resultLocal = functionCompileState.maxLocals();
+        functionCompileState.maxLocals(resultLocal + 2);
+        final int objectLocal = functionCompileState.maxLocals();
+        functionCompileState.maxLocals(objectLocal + 1);
+
+        // 与解释器同序：先求右值，再求「左值的对象」这一级（v.roaming.leg_armor = 1 → v.roaming）
+        expectedType = Type.DOUBLE_TYPE;
+        value.visit(this);
+        expectedType = savedExpectedType;
+        AsmUtil.addStore(mv, resultLocal, Type.DOUBLE_TYPE);
+
+        emitObjectValueReference(target.object(), expression);
+        AsmUtil.addStore(mv, objectLocal, VALUE_TYPE);
+
+        // if (object instanceof ObjectValue) ((ObjectValue) object).set(property, NumberValue.of(result));
+        final Label skipLabel = new Label();
+        mv.visitVarInsn(Opcodes.ALOAD, objectLocal);
+        mv.visitTypeInsn(Opcodes.INSTANCEOF, OBJECT_VALUE_TYPE.getInternalName());
+        mv.visitJumpInsn(Opcodes.IFEQ, skipLabel);
+
+        mv.visitVarInsn(Opcodes.ALOAD, objectLocal);
+        mv.visitTypeInsn(Opcodes.CHECKCAST, OBJECT_VALUE_TYPE.getInternalName());
+        mv.visitLdcInsn(target.property());
+        mv.visitVarInsn(Opcodes.DLOAD, resultLocal);
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, NUMBER_VALUE_TYPE.getInternalName(), "of",
+                Type.getMethodDescriptor(NUMBER_VALUE_TYPE, Type.DOUBLE_TYPE), false);
+        mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, OBJECT_VALUE_TYPE.getInternalName(), "set",
+                Type.getMethodDescriptor(Type.BOOLEAN_TYPE, STRING_TYPE, VALUE_TYPE), true);
+        mv.visitInsn(Opcodes.POP);
+
+        mv.visitLabel(skipLabel);
+        mv.visitVarInsn(Opcodes.DLOAD, resultLocal);
+
+        return new CompileVisitResult(Type.DOUBLE_TYPE);
+    }
+
+    /**
+     * 为多级赋值的目标对象生成求值序列，结果是一个 {@link Value} 引用。
+     * <p>
+     * 只支持以 variable / {@code v} 命名空间为根的多级访问（{@code v.a.b = 1} 的
+     * {@code v.a} 这一级）；其它形状与解释器不可互通的语义一样会在此编译期报错，
+     * 而不是静默产出坏字节码。
+     */
+    private void emitObjectValueReference(final @NotNull Expression objectExpr,
+                                          final @NotNull BinaryExpression expression) {
+        if (objectExpr instanceof IdentifierExpression) {
+            final String name = ((IdentifierExpression) objectExpr).name();
+            if (name.equalsIgnoreCase("variable") || name.equalsIgnoreCase("v")) {
+                final int entityLoadIndex = functionCompileState.entityParameterLoadIndex();
+                if (entityLoadIndex < 0) {
+                    throw unsupportedAssignment(expression);
+                }
+                final Method getter;
+                try {
+                    getter = functionCompileState.entityParameterType().getMethod("getVariableStorage");
+                } catch (NoSuchMethodException e) {
+                    throw new IllegalStateException("Could not resolve getVariableStorage", e);
+                }
+                mv.visitVarInsn(Opcodes.ALOAD, entityLoadIndex);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
+                        Type.getInternalName(functionCompileState.entityParameterType()), "getVariableStorage",
+                        Type.getMethodDescriptor(Type.getType(getter.getReturnType())), false);
+                return;
+            }
+            throw unsupportedAssignment(expression);
+        }
+
+        if (objectExpr instanceof AccessExpression) {
+            final AccessExpression access = (AccessExpression) objectExpr;
+            emitObjectValueReference(access.object(), expression);
+
+            // base instanceof ObjectValue ? ((ObjectValue) base).get(property) : NumberValue.zero()
+            final Label elseLabel = new Label();
+            final Label endLabel = new Label();
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitTypeInsn(Opcodes.INSTANCEOF, OBJECT_VALUE_TYPE.getInternalName());
+            mv.visitJumpInsn(Opcodes.IFEQ, elseLabel);
+            mv.visitTypeInsn(Opcodes.CHECKCAST, OBJECT_VALUE_TYPE.getInternalName());
+            mv.visitLdcInsn(access.property());
+            mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, OBJECT_VALUE_TYPE.getInternalName(), "get",
+                    Type.getMethodDescriptor(VALUE_TYPE, STRING_TYPE), true);
+            mv.visitJumpInsn(Opcodes.GOTO, endLabel);
+            mv.visitLabel(elseLabel);
+            mv.visitInsn(Opcodes.POP);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, NUMBER_VALUE_TYPE.getInternalName(), "zero",
+                    Type.getMethodDescriptor(NUMBER_VALUE_TYPE), false);
+            mv.visitTypeInsn(Opcodes.CHECKCAST, VALUE_TYPE.getInternalName());
+            mv.visitLabel(endLabel);
+            return;
+        }
+
+        throw unsupportedAssignment(expression);
+    }
+
+    private static IllegalArgumentException unsupportedAssignment(final @NotNull BinaryExpression expression) {
+        return new IllegalArgumentException(
+                "Unsupported Molang assignment target '" + expression.op() + "': " + expression);
     }
 
     public void endVisit() {
@@ -493,6 +620,12 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
             }
             case ARITHMETICAL_NEGATION: {
                 final CompileVisitResult result = expression.expression().visit(this);
+                // 与被取负的操作数同为「已推入栈的值」，不能返回 null：调用方
+                // （例如再套一层取负、或任何需要读取返回类型的父节点）会直接 NPE。
+                if (result == null || result.lastPushedType() == null) {
+                    throw new IllegalStateException(
+                            "Unsupported negation operand (no value produced): " + expression);
+                }
                 if (result.is(Type.DOUBLE_TYPE)) {
                     mv.visitInsn(Opcodes.DNEG);
                 } else if (result.is(Type.LONG_TYPE)) {
@@ -507,12 +640,11 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
                 } else {
                     throw new IllegalStateException("Unsupported type for negation: " + result);
                 }
-                break;
+                return new CompileVisitResult(result.lastPushedType());
             }
             default:
                 throw new UnsupportedOperationException("Unsupported unary operator: " + expression.op());
         }
-        return null;
     }
 
     @Override
