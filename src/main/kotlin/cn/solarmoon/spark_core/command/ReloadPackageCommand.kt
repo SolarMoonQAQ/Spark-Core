@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.command
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.SparkPackLoader
 import cn.solarmoon.spark_core.pack.SparkPackResourceLoader
+import cn.solarmoon.spark_core.pack.diagnostic.PackLoadContext
 import cn.solarmoon.spark_core.pack.sync.SparkPackageReloadPayload
 import com.mojang.brigadier.context.CommandContext
 import net.minecraft.commands.CommandBuildContext
@@ -25,10 +26,11 @@ class ReloadPackageCommand: PackageCommand(2) {
             { Component.translatable("command.${SparkCore.MOD_ID}.package.reload.progressing") },
             true
         )
+        SparkPackLoader.beginSession(PackLoadContext.SERVER_LOCAL)
         SparkPackResourceLoader.reload()
-        SparkPackLoader.readPackageGraph(false)
-        SparkPackLoader.readPackageContent(false, false)
-        SparkPackLoader.injectPackageContent(false, false)
+        SparkPackLoader.readPackageGraph(PackLoadContext.SERVER_LOCAL)
+        SparkPackLoader.readPackageContent(PackLoadContext.SERVER_LOCAL)
+        SparkPackLoader.injectPackageContent(PackLoadContext.SERVER_LOCAL)
         PacketDistributor.sendToAllPlayers(SparkPackageReloadPayload(SparkPackLoader.collectRemote()))
         source.sendSuccess(
             { Component.translatable("command.${SparkCore.MOD_ID}.package.reload.success") },

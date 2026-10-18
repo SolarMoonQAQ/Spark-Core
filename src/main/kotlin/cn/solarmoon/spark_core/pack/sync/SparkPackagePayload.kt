@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.pack.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.SparkPackLoader
+import cn.solarmoon.spark_core.pack.diagnostic.PackLoadContext
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.StreamCodec
@@ -22,6 +23,7 @@ data class SparkPackagePayload(
         @JvmStatic
         fun handleInClient(payload: SparkPackagePayload, context: IPayloadContext) {
             context.enqueueWork {
+                SparkPackLoader.beginSession(PackLoadContext.CLIENT_REMOTE)
                 SparkPackLoader.acceptRemote(payload.packs)
 
                 SparkPackLoader.LOGGER.info(buildString {
@@ -39,8 +41,8 @@ data class SparkPackagePayload(
                     append("包含模块: ${modules.joinToString(", ")}")
                 })
 
-                SparkPackLoader.readPackageContent(true, true)
-                SparkPackLoader.injectPackageContent(true, true)
+                SparkPackLoader.readPackageContent(PackLoadContext.CLIENT_REMOTE)
+                SparkPackLoader.injectPackageContent(PackLoadContext.CLIENT_REMOTE)
 
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))

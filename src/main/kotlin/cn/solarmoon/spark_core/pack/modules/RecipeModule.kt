@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.pack.modules
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
+import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
 import cn.solarmoon.spark_core.registry.common.SparkPackModuleRegister
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import com.google.common.collect.ArrayListMultimap
@@ -12,7 +13,6 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonElement
 import com.google.gson.JsonParseException
-import com.google.gson.JsonParser
 import com.google.gson.JsonSerializer
 import com.mojang.datafixers.util.Pair
 import com.mojang.serialization.JsonOps
@@ -29,7 +29,6 @@ import net.minecraft.world.item.crafting.RecipeType
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.event.AddReloadListenerEvent
-import java.nio.charset.StandardCharsets
 
 class RecipeModule : SparkPackModule {
 
@@ -58,7 +57,7 @@ class RecipeModule : SparkPackModule {
             "recipe/${pathSegments.joinToString("/")}/$fileName"
         }
 
-        val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
+        val json = PackCodec.parse(content)
         val cleanJson = SparkPackModule.gson.toJson(json) // 返回无注释的 JSON 字符串
         SparkPackLoaderApplier.DATA_PACK.put(
             PackType.SERVER_DATA,

@@ -3,11 +3,11 @@ package cn.solarmoon.spark_core.pack.modules
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
 import cn.solarmoon.spark_core.animation.model.ModelIndex
+import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
-import com.google.gson.JsonParser
-import com.mojang.serialization.JsonOps
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
-import java.nio.charset.StandardCharsets
 
 class AnimationModule: SparkPackModule {
 
@@ -27,9 +27,16 @@ class AnimationModule: SparkPackModule {
         fromServer: Boolean
     ) {
         if (!fromServer) return
-        if (pathSegments.size < 2) throw IllegalArgumentException("动画的文件路径必须指向一个具体的模型名称（如：minecraft/animations/entity/player/test.json 指向名为 minecraft:player 的entity类模型，test.json为该模型下的动画）")
-        val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-        val animationSet = OAnimationSet.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+        if (pathSegments.size < 2) {
+            throw PackContentException(
+                Component.translatableWithFallback(
+                    "spark_core.pack.error.animation_path",
+                    "Animation path must point to a specific model (e.g. minecraft/animations/entity/player/test.json).",
+                )
+            )
+        }
+        val json = PackCodec.parse(content)
+        val animationSet = PackCodec.read(OAnimationSet.CODEC, json)
         val id = ResourceLocation.fromNamespaceAndPath(namespace, pathSegments[1])
         OAnimationSet.ORIGINS.getOrPut(ModelIndex(pathSegments[0], id)) { OAnimationSet.EMPTY }.animations.putAll(animationSet.animations)
     }

@@ -3,6 +3,20 @@ package cn.solarmoon.spark_core
 import net.neoforged.neoforge.common.ModConfigSpec
 
 /**
+ * 客户端内容包问题提示模式。
+ */
+enum class PackIssueNotificationMode {
+    /** 不发送聊天提示，日志仍然完整 */
+    OFF,
+
+    /** 一条摘要（默认） */
+    SUMMARY,
+
+    /** 按模块列出前几条，最多 10 行 */
+    DETAIL,
+}
+
+/**
  * Spark-Core 配置系统。
  *
  * 使用 NeoForge Common Config（ModConfig.Type.COMMON），
@@ -19,6 +33,11 @@ object SparkCoreConfig {
     /** 是否启用单线程物理模式（调试/兼容性诊断用） */
     @JvmStatic
     val SINGLE_THREAD_PHYSICS: ModConfigSpec.BooleanValue
+
+    // ==================== 内容包诊断 ====================
+    /** 客户端进入游戏/重载时如何提示内容包读取问题 */
+    @JvmStatic
+    val PACK_ISSUE_NOTIFICATION: ModConfigSpec.EnumValue<PackIssueNotificationMode>
 
     init {
         val builder = ModConfigSpec.Builder()
@@ -42,6 +61,22 @@ object SparkCoreConfig {
                 "Useful for debugging and compatibility diagnostics."
             )
             .define("singleThreadPhysics", false)
+
+        builder.comment(
+            "内容包诊断",
+            "Content pack diagnostics.",
+            "控制客户端进入游戏/重载时如何提示内容包读取问题。",
+            "Controls how content pack read issues are reported in chat on the client.",
+        )
+
+        PACK_ISSUE_NOTIFICATION = builder
+            .comment(
+                "提示模式：OFF（关闭聊天提示）、SUMMARY（一条摘要，默认）、DETAIL（按模块最多列出 10 条）",
+                "Notification mode: OFF, SUMMARY (default), DETAIL (up to 10 lines).",
+                "无论该值如何，日志都会保留完整记录。",
+                "Logs keep the full record regardless of this value.",
+            )
+            .defineEnum("packIssueNotification", PackIssueNotificationMode.SUMMARY)
 
         SPEC = builder.build()
     }

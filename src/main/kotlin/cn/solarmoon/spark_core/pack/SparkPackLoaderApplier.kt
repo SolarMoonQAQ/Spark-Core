@@ -14,6 +14,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener
 import net.minecraft.util.profiling.ProfilerFiller
+import cn.solarmoon.spark_core.pack.diagnostic.PackLoadContext
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.fml.loading.FMLEnvironment
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent
@@ -47,10 +48,11 @@ object SparkPackLoaderApplier {
             if (DATA_PACK.size(PackType.CLIENT_RESOURCES) == 0) {
                 // 首次进入游戏，未触发重载时，预加载客户端资源
                 SparkPackLoader.apply {
+                    beginSession(PackLoadContext.CLIENT_LOCAL)
                     initialize(true)
-                    readPackageGraph(true)
-                    readPackageContent(isClientSide = true, fromServer = false)
-                    injectPackageContent(isClientSide = true, fromServer = false)
+                    readPackageGraph(PackLoadContext.CLIENT_LOCAL)
+                    readPackageContent(PackLoadContext.CLIENT_LOCAL)
+                    injectPackageContent(PackLoadContext.CLIENT_LOCAL)
                 }
             }
             // 添加为虚拟资源包
@@ -68,10 +70,11 @@ object SparkPackLoaderApplier {
             if (DATA_PACK.size(PackType.SERVER_DATA) == 0) {
                 // 首次进入世界，未触发重载时，预加载服务器数据
                 SparkPackLoader.apply {
+                    beginSession(PackLoadContext.SERVER_LOCAL)
                     initialize(false)
-                    readPackageGraph(false)
-                    readPackageContent(isClientSide = false, fromServer = true)
-                    injectPackageContent(isClientSide = false, fromServer = true)
+                    readPackageGraph(PackLoadContext.SERVER_LOCAL)
+                    readPackageContent(PackLoadContext.SERVER_LOCAL)
+                    injectPackageContent(PackLoadContext.SERVER_LOCAL)
                 }
             }
             // 添加为虚拟数据包
@@ -101,15 +104,16 @@ object SparkPackLoaderApplier {
 
             override fun prepare(manager: ResourceManager, profiler: ProfilerFiller) {
                 SparkPackLoader.apply {
+                    beginSession(PackLoadContext.SERVER_LOCAL)
                     initialize(false)
-                    readPackageGraph(false)
-                    readPackageContent(isClientSide = false, fromServer = true)
+                    readPackageGraph(PackLoadContext.SERVER_LOCAL)
+                    readPackageContent(PackLoadContext.SERVER_LOCAL)
                 }
             }
 
             override fun apply(unit: Unit, manager: ResourceManager, profiler: ProfilerFiller) {
                 SparkPackLoader.apply {
-                    injectPackageContent(isClientSide = false, fromServer = true)
+                    injectPackageContent(PackLoadContext.SERVER_LOCAL)
                 }
             }
         }
@@ -119,15 +123,16 @@ object SparkPackLoaderApplier {
 
             override fun prepare(manager: ResourceManager, profiler: ProfilerFiller) {
                 SparkPackLoader.apply {
+                    beginSession(PackLoadContext.CLIENT_LOCAL)
                     initialize(true)
-                    readPackageGraph(true)
-                    readPackageContent(isClientSide = true, fromServer = false)
+                    readPackageGraph(PackLoadContext.CLIENT_LOCAL)
+                    readPackageContent(PackLoadContext.CLIENT_LOCAL)
                 }
             }
 
             override fun apply(unit: Unit, manager: ResourceManager, profiler: ProfilerFiller) {
                 SparkPackLoader.apply {
-                    injectPackageContent(isClientSide = true, fromServer = false)
+                    injectPackageContent(PackLoadContext.CLIENT_LOCAL)
                 }
             }
         }

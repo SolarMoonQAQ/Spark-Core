@@ -3,17 +3,17 @@ package cn.solarmoon.spark_core.pack.modules
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.animation.model.ModelIndex
 import cn.solarmoon.spark_core.animation.model.origin.*
+import cn.solarmoon.spark_core.pack.diagnostic.PackCodec
+import cn.solarmoon.spark_core.pack.diagnostic.PackContentException
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.util.div
 import cn.solarmoon.spark_core.util.toRadians
 import com.google.gson.JsonElement
-import com.google.gson.JsonParser
-import com.mojang.serialization.JsonOps
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.GsonHelper
 import net.minecraft.world.phys.Vec3
 import org.joml.Vector2i
-import java.nio.charset.StandardCharsets
 
 class ModelModule: SparkPackModule {
 
@@ -32,8 +32,15 @@ class ModelModule: SparkPackModule {
         isClientSide: Boolean, fromServer: Boolean
     ) {
         if (!fromServer) return
-        if (pathSegments.isEmpty()) throw IllegalArgumentException("模型的文件路径必须指向一个模型父名称（如：minecraft/models/entity/player.json 指向名为 minecraft:player 的entity模型）")
-        val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
+        if (pathSegments.isEmpty()) {
+            throw PackContentException(
+                Component.translatableWithFallback(
+                    "spark_core.pack.error.model_path",
+                    "Model path must point to a model parent (e.g. minecraft/models/entity/player.json).",
+                )
+            )
+        }
+        val json = PackCodec.parse(content)
         val geometryArray = json.asJsonObject.getAsJsonArray("minecraft:geometry")
         val geometry = geometryArray.first().asJsonObject
         val bonesArray = geometry.getAsJsonArray("bones")
@@ -42,7 +49,7 @@ class ModelModule: SparkPackModule {
         val texture = geometry.getAsJsonObject("description")
         val coord = Vector2i(GsonHelper.getAsInt(texture, "texture_width"), GsonHelper.getAsInt(texture, "texture_height"))
 
-        val bones = OBone.MAP_CODEC.decode(JsonOps.INSTANCE, bonesArray).orThrow.first.mapValues { boneEntry ->
+        val bones = PackCodec.read(OBone.MAP_CODEC, bonesArray).mapValues { boneEntry ->
             val bone = boneEntry.value
 
             // 应用长宽和修正到所有方块

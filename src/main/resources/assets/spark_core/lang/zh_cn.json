@@ -1,3 +1,14 @@
 {
-  "command.spark.physics.step.help": "=== Spark 物理步进命令 ===\n物理时间推进速度控制命令，用于在负载高时调节性能\n\n/spark physics step get - 获取当前物理步进参数\n  显示当前动态步进次数、最小/最大步进限制\n\n/spark physics step set <min> <max> - 设置物理步进范围\n  min: 最小步进次数 (≥1), max: 最大步进次数 (≥min)\n  示例: /spark physics step set 2 10\n\n/spark physics step min <value> - 设置最小物理步进\n  value: 最小步进次数 (≥1)\n  示例: /spark physics step min 3\n\n/spark physics step max <value> - 设置最大物理步进\n  value: 最大步进次数 (≥当前min值)\n  示例: /spark physics step max 15\n\n/spark physics step reset - 重置物理步进为默认值\n  恢复为默认的最小1步、最大5步\n\n/spark physics step help - 显示此帮助信息\n\n说明:\n• 物理步进控制物理时间倍率（每tick的物理模拟次数）\n• 系统会根据性能负载自动在min-max范围内调整\n• 较高的步进值 = 更快的物理时间，但性能消耗更大\n• 较低的步进值 = 更慢的物理时间，但性能更好"
+  "command.spark.physics.step.help": "=== Spark 物理步进命令 ===\n物理时间推进速度控制命令，用于在负载高时调节性能\n\n/spark physics step get - 获取当前物理步进参数\n  显示当前动态步进次数、最小/最大步进限制\n\n/spark physics step set <min> <max> - 设置物理步进范围\n  min: 最小步进次数 (≥1), max: 最大步进次数 (≥min)\n  示例: /spark physics step set 2 10\n\n/spark physics step min <value> - 设置最小物理步进\n  value: 最小步进次数 (≥1)\n  示例: /spark physics step min 3\n\n/spark physics step max <value> - 设置最大物理步进\n  value: 最大步进次数 (≥当前min值)\n  示例: /spark physics step max 15\n\n/spark physics step reset - 重置物理步进为默认值\n  恢复为默认的最小1步、最大5步\n\n/spark physics step help - 显示此帮助信息\n\n说明:\n• 物理步进控制物理时间倍率（每tick的物理模拟次数）\n• 系统会根据性能负载自动在min-max范围内调整\n• 较高的步进值 = 更快的物理时间，但性能消耗更大\n• 较低的步进值 = 更慢的物理时间，但性能更好",
+  "spark_core.pack.error.missing_field": "缺少必填字段：%s",
+  "spark_core.pack.error.json_syntax": "JSON 语法错误：%s",
+  "spark_core.pack.error.model_path": "模型路径必须指向模型父目录（例如 minecraft/models/entity/player.json）。",
+  "spark_core.pack.error.animation_path": "动画路径必须指向具体模型（例如 minecraft/animations/entity/player/test.json）。",
+  "spark_core.pack.issue.summary": "内容包有 %s 个错误、%s 个警告，涉及 %s 个模块：%s。详情见日志。",
+  "spark_core.pack.issue.detail.header": "内容包问题（%s 个错误、%s 个警告）：",
+  "spark_core.pack.issue.detail.line": "[%s] %s：%s",
+  "spark_core.pack.issue.detail.more": "……另有 %s 条，详见日志。",
+  "spark_core.pack.issue.truncated": "另有 %s 条记录被截断，详见日志。",
+  "spark_core.pack.issue.server_summary": "内容包读取完成：%s 个模块有问题（%s 错误 / %s 警告，另有 %s 条被截断）：%s",
+  "spark_core.pack.issue.server_clean": "内容包读取完成：没有发现问题。"
 }

@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.pack.sync
 
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.SparkPackLoader
+import cn.solarmoon.spark_core.pack.diagnostic.PackLoadContext
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import net.minecraft.network.chat.Component
 import net.minecraft.network.codec.StreamCodec
@@ -21,13 +22,14 @@ data class SparkPackageReloadPayload(
         @JvmStatic
         fun handleInClient(payload: SparkPackageReloadPayload, context: IPayloadContext) {
             context.enqueueWork {
+                SparkPackLoader.beginSession(PackLoadContext.CLIENT_REMOTE)
                 SparkPackLoader.reset()
-                SparkPackLoader.readPackageGraph(true)
+                SparkPackLoader.readPackageGraph(PackLoadContext.CLIENT_REMOTE)
                 SparkPackLoader.acceptRemote(payload.packs)
                 context.player().sendSystemMessage(Component.translatable("command.${SparkCore.MOD_ID}.package.reload.success.client", payload.packs.size))
                 SparkPackLoader.LOGGER.info("已从服务器重载 ${payload.packs.size} 个拓展包: ${payload.packs.map { it.meta.id }}")
-                SparkPackLoader.readPackageContent(true, true)
-                SparkPackLoader.injectPackageContent(true, true)
+                SparkPackLoader.readPackageContent(PackLoadContext.CLIENT_REMOTE)
+                SparkPackLoader.injectPackageContent(PackLoadContext.CLIENT_REMOTE)
             }.exceptionally {
                 context.disconnect(Component.literal("未能成功接受拓展包数据"))
                 return@exceptionally null
