@@ -120,9 +120,9 @@ fun Level.hasChunkIndex(chunkPos: ChunkPos): Boolean =
     SparkLevel.hasChunkIndex(this, chunkPos)
 
 /**
- * 预约在指定延迟后加载指定区块的指定 Y 范围地形，并在保持一定 tick 后自动释放。
+ * 预约在指定延迟后加载指定区块的指定 Y 范围地形，并在保持一定时长后自动释放。
  *
- * 多次调度同一 chunk 取最晚过期（自动合并）。
+ * 同一 chunk 上的多次调度彼此叠加：激活范围取并集，有效期取最晚。
  * 调用方无需手动 release，系统在到期后自动释放。
  *
  * 调用线程：任意线程（内部自动投递到主线程处理 chunk 加载）

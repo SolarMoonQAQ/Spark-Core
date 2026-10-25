@@ -88,17 +88,21 @@ class PhysicsChunkManager(
     // ===== 预约调度系统（Phase 2.7，基于 MC Ticket） =====
 
     /**
-     * 每个 chunk 的最晚过期 tick（合并后的值）。
-     * 用于每 tick 扫表判断哪些 chunk 需要自动释放。
-     * 多次调度同一 chunk 时取最晚值。
+     * 每个 chunk 的最晚过期物理步（同一 chunk 多次调度取最大）。
+     *
+     * 取最大值是租约语义：续期可以延长、不能缩短，因此只要还有一方在有效期内重新登记，
+     * 这个区块就不会被提前释放。
      */
     private val chunkExpireTicks = ConcurrentHashMap<ChunkPos, Int>()
 
     /**
-     * terrain 调度为每个 chunk 激活的 section Y 范围（多来源取并集）。
-     * 供 updateActivation 与载具激活范围合并，避免载具覆盖 terrain 调度。
+     * terrain 调度为每个 chunk 需要激活的 section Y 范围（多来源取并集）。
+     *
+     * 只增不减直到该区块被释放：多来源（多发弹、首段与视界）各自登记自己的窗口，读时取并集，
+     * 任何一方还在有效期内就保持激活。停用只发生在 [releaseChunkTerrain] 之后由
+     * [updateActivation] 观察到"已无任何来源"时，因此持有期内不会出现"停用尾部 + 启用新段"的往返。
      */
-    private val terrainActivationRanges = ConcurrentHashMap<ChunkPos, MutableSet<IntRange>>()
+    private val terrainRanges = ConcurrentHashMap<ChunkPos, MutableSet<IntRange>>()
 
     /**
      * API 强制路径缓存的地形构建请求。
@@ -422,9 +426,9 @@ class PhysicsChunkManager(
         }
 
         // 收集激活候选：载具激活范围 ∪ terrain 调度 ∪ 动态物体占用 ∪ 上次激活过的 chunk
-        val candidates = HashSet<ChunkPos>(activationMap.size + terrainActivationRanges.size + vehicleHeldRanges.size + activeChunks.size + 8)
+        val candidates = HashSet<ChunkPos>(activationMap.size + terrainRanges.size + vehicleHeldRanges.size + activeChunks.size + 8)
         candidates.addAll(activationMap.keys)
-        candidates.addAll(terrainActivationRanges.keys)
+        candidates.addAll(terrainRanges.keys)
         candidates.addAll(vehicleHeldRanges.keys)
         candidates.addAll(activeChunks)
 
@@ -432,21 +436,21 @@ class PhysicsChunkManager(
         candidates.forEach { chunkPos ->
             val chunk = loadedChunks[chunkPos] ?: return@forEach
 
-            // terrain 调度为该 chunk 激活的 Y 范围（若有）
-            val terrainRanges = terrainActivationRanges[chunkPos]
+            // terrain 调度为该 chunk 激活的 Y 范围（多来源取并集，若有）
+            val terrainRangesForChunk = terrainRanges[chunkPos]
             // 载具为该 chunk 需要的 Y 范围（若有）
             val vehicleRanges = activationMap[chunkPos]
             // 动态物体占用的保活 Y 范围（若有）
             val heldRanges = vehicleHeldRanges[chunkPos]
 
-            if (vehicleRanges.isNullOrEmpty() && terrainRanges.isNullOrEmpty() && heldRanges.isNullOrEmpty()) {
+            if (vehicleRanges.isNullOrEmpty() && terrainRangesForChunk.isNullOrEmpty() && heldRanges.isNullOrEmpty()) {
                 // 既无载具需要也无 terrain 调度，停用
                 chunk.deactivateAll()
             } else {
                 // 合并载具范围 ∪ terrain 调度范围 ∪ 动态物体占用范围
                 val allRanges = mutableSetOf<IntRange>()
                 vehicleRanges?.let { allRanges.addAll(it) }
-                terrainRanges?.let { allRanges.addAll(it) }
+                terrainRangesForChunk?.let { allRanges.addAll(it) }
                 heldRanges?.let { allRanges.addAll(it) }
                 val mergedRanges = mergeRanges(allRanges)
                 chunk.activateSectionsInRanges(mergedRanges)
@@ -590,14 +594,15 @@ class PhysicsChunkManager(
     // ========== 预约调度实现（基于 MC Ticket 系统，内部方法仅主线程调用） ==========
 
     /**
-     * 预约加载指定区块的指定 Y 范围地形，并在保持一定 tick 后自动释放。
+     * 预约加载指定区块的指定 Y 范围地形，并在保持一定物理步后自动释放。
      *
      * 立即添加 MC ticket + 构建 PhysicsChunk + 激活 section。
-     * 多次调度同一 chunk 会取最晚 expire（自动合并）。
+     * 同一 chunk 上的多次调度按来源取并集：范围累加、过期取最晚，因此任何一方还在有效期内
+     * 该区块就保持加载与激活。
      *
      * @param chunkPos 目标区块
      * @param yRange 需要加载的 section Y 范围（section 坐标）
-     * @param holdTicks terrain 激活后保持多少 tick。逾时自动释放
+     * @param holdTicks 从登记时刻起保持多少**物理步**（与 physicsLevel.tickCount 比较）。逾时自动释放
      *
      * 调用线程：仅主线程。
      *           跨线程调用方应通过 SparkLevel.scheduleChunkLoad 外观（内部已投递主线程）。
@@ -606,11 +611,11 @@ class PhysicsChunkManager(
         val currentTick = physicsLevel.tickCount
         val expireTick = currentTick + holdTicks
 
-        // 1. 合并最晚过期时间
+        // 1. 过期取最晚——续期可以延长、不能缩短
         chunkExpireTicks.merge(chunkPos, expireTick) { old, new -> maxOf(old, new) }
 
-        // 1b. 记录 terrain 激活范围（多来源取并集，供 updateActivation 合并）
-        terrainActivationRanges.getOrPut(chunkPos, ::mutableSetOf).add(yRange)
+        // 1b. 记录该来源的激活范围（多来源取并集，供 updateActivation 合并）
+        terrainRanges.getOrPut(chunkPos, ::mutableSetOf).add(yRange)
 
         // 2. 添加 MC ticket 强制加载该 chunk
         val serverLevel = physicsLevel.mcLevel as? ServerLevel ?: return
@@ -642,16 +647,19 @@ class PhysicsChunkManager(
      * 无需手动调用 unloadPhysicsChunk（避免误卸载载具正在使用的 chunk）。
      */
     private fun releaseChunkTerrain(chunkPos: ChunkPos) {
+        // 清理本系统追踪的状态（激活范围由下一帧 updateActivation 接管，要么载具续上要么自然停用）
+        chunkExpireTicks.remove(chunkPos)
+        terrainRanges.remove(chunkPos)
+        // 载具仍通过 holdVehicleChunkTerrain 持有该区块时，票要留给它。MC 的票是
+        // SortedArraySet#addOrGet 语义（同一张票重复 add 只刷新 createdTick，remove 一次即整条摘除），
+        // 没有引用计数，所以“还有别方持有就不摘票”只能在调用侧守住。
+        if (vehicleHeldRanges.containsKey(chunkPos)) return
+        pendingBuildRequests.remove(chunkPos)
         // 移除 MC ticket——之后 MC 根据玩家距离等条件自行决定是否卸载该 chunk
         val serverLevel = physicsLevel.mcLevel as? ServerLevel
         serverLevel?.chunkSource?.removeRegionTicket(
-            SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos
+            SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos, true
         )
-
-        // 清理追踪状态（激活范围由下一帧 updateActivation 接管，要么载具续上要么自然停用）
-        chunkExpireTicks.remove(chunkPos)
-        terrainActivationRanges.remove(chunkPos)
-        pendingBuildRequests.remove(chunkPos)
     }
 
     // ========== 动态物体占用区块保活（主线程调用） ==========
@@ -697,11 +705,13 @@ class PhysicsChunkManager(
      */
     fun releaseVehicleHeldChunkTerrain(chunkPos: ChunkPos) {
         vehicleHeldRanges.remove(chunkPos)
+        // 另一侧（terrain 调度）仍持有该区块时，票要留给它
+        if (terrainRanges.containsKey(chunkPos)) return
         // 取消残留的构建请求，避免载具离开后 requestStep 重新构建/强制加载该区块
         pendingBuildRequests.remove(chunkPos)
         val serverLevel = physicsLevel.mcLevel as? ServerLevel
         serverLevel?.chunkSource?.removeRegionTicket(
-            SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos
+            SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos, true
         )
     }
 
@@ -716,7 +726,12 @@ class PhysicsChunkManager(
             val section = physicsChunk.getSection(sectionY) ?: continue
             // 无碰撞方块的 section 不提供支撑，也无需等待构建/激活，视为就绪
             if (section.hasNoCollisionBlocks()) continue
-            if (!section.isActive || !section.isBuilt()) return false
+            // 就绪 = 已激活 + 刚体已在碰撞世界里。两个条件缺任一个都有一侧假阳性：
+            // 只看 isInWorld：deactivate() 先把 removePhysicsBody 排进物理线程、再同步置
+            //   isActive = false，这段窗口里刚体仍算在世界上，会假通过；
+            // 只看 isActive：activate() 在入场任务刚入队时就置 isActive = true，而那个任务要到
+            //   本物理步的 processTasks(ALL) 才执行，因此 isActive 可以先于“真正进世界”为真。
+            if (!section.isActive || section.physicsBody?.isInWorld != true) return false
         }
         return true
     }
@@ -753,10 +768,11 @@ class PhysicsChunkManager(
     }
 
     /**
-     * 实际执行区块的地形构建和激活（在延迟任务回调中调用）。
+     * 构建该区块的 PhysicsChunk（在 [processPendingBuildRequests] 里调用）。
      *
      * 此时 MC ticket 已提前添加，chunk 由 MC ticket 系统保证已加载。
-     * 仅需构建 PhysicsChunk 并激活指定 section 范围。
+     * 只建容器、不建刚体：section 的激活由紧随其后的 [updateActivation] 按所有来源的并集统一决定，
+     * 避免两条路径各算一个目标集而互相抵消（见方法内的注释）。
      */
     private fun loadAndActivateChunkTerrain(chunkPos: ChunkPos, yRange: IntRange) {
         // 非阻塞：仅当 MC 已加载（ChunkEvent.Load 已触发写入 mcLoadedChunks）时才构建，
@@ -775,10 +791,12 @@ class PhysicsChunkManager(
             loadedChunks[chunkPos] = physicsChunk
         }
 
-        // 激活指定 section 范围
-        val physicsChunk = loadedChunks[chunkPos] ?: return
-        physicsChunk.activateSectionsInRanges(listOf(yRange))
-        // 直接激活的路径也要登记进活跃集合，保证后续 updateActivation 增量遍历会检查该 chunk
+        // 这里不激活 section：激活目标集只能由 updateActivation 按“所有来源的并集”决定。
+        // 若在这里按本批区间调用 activateSectionsInRanges，它会重算目标集、把别的来源刚激活的
+        // section 停掉，紧接着同一 tick 的 updateActivation 又补回来——一次 activate/deactivate
+        // 往返就是过去 reactivations 抖动的唯一来源。
+        // 本方法与 updateActivation 都在同一个 requestStep 内（前者在 processPendingBuildRequests，
+        // 后者紧随其后），所以推迟激活不会晚于本 tick。
         activeChunks.add(chunkPos)
     }
 
@@ -841,9 +859,9 @@ class PhysicsChunkManager(
     fun destroy() {
         // 先释放所有 MC ticket（预约调度 + 动态物体保活）
         val serverLevel = physicsLevel.mcLevel as? ServerLevel
-        (chunkExpireTicks.keys + vehicleHeldRanges.keys).toSet().forEach { chunkPos ->
+        (chunkExpireTicks.keys + terrainRanges.keys + vehicleHeldRanges.keys).toSet().forEach { chunkPos ->
             serverLevel?.chunkSource?.removeRegionTicket(
-                SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos
+                SPARK_TERRAIN_TICKET, chunkPos, 2, chunkPos, true
             )
         }
 
@@ -856,7 +874,7 @@ class PhysicsChunkManager(
 
         // 清空调度与保活状态
         chunkExpireTicks.clear()
-        terrainActivationRanges.clear()
+        terrainRanges.clear()
         pendingBuildRequests.clear()
         vehicleHeldRanges.clear()
         activeChunks.clear()

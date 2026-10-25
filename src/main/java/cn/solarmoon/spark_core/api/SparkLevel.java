@@ -275,8 +275,9 @@ public final class SparkLevel {
      * <p>Schedule loading of terrain for the given chunk and Y range after a delay,
      * holding it for a given duration before auto-release.</p>
      *
-     * <p>多次调度同一 chunk 取最晚过期（自动合并）。</p>
-     * <p>Multiple schedules for the same chunk merge to the latest expiry.</p>
+     * <p>同一 chunk 上的多次调度彼此叠加：激活范围取并集，有效期取最晚。因此多发弹、多个
+     * 调用方预约同一区块时互不覆盖，任何一方还在有效期内该区块就保持加载与激活。</p>
+     * <p>Repeated schedules for the same chunk accumulate: ranges union, latest expiry wins.</p>
      *
      * <p>任意线程可调用，内部通过 submitImmediateTask 投递到主线程执行。</p>
      * <p>Thread-safe — defers to main thread via submitImmediateTask.</p>
@@ -286,7 +287,7 @@ public final class SparkLevel {
      * @param yMin       Y 下界 / lower Y bound
      * @param yMax       Y 上界 / upper Y bound
      * @param delayTicks 延迟 tick 数（0 = 立即）
-     * @param holdTicks  加载就绪后保持 tick 数
+     * @param holdTicks  从登记时刻起保持多少<b>物理步</b>（与物理步计数比较，不是游戏 tick）
      */
     public static void scheduleChunkLoad(
             @NotNull Level level,
