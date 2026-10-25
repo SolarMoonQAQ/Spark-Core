@@ -692,8 +692,41 @@ fun copy(): SectionSnapshot = when {
 `markRemoved()`（`:404-410`）写的是 `null`——对全 null 的共享数组都是无操作，
 且两者都被 `isEmpty()` 提前挡住。
 
-> 这条独立于 P0-1 仍然值得做：流水**每 tick** 都会触发整节重建（§10.3），
-> 每次省 16~32 KB 的克隆在重建风暴下是实打实的收益。
+> **实现后修正（重要）**：在最终采用的 D3 独立发布通道下，本条**实际是死代码** ——
+> 流体-only 快照根本走不到 `replaceCollisionSnapshot()`（`createPhysicsBody()` 要求
+> build 成功，`startAsyncUpdate()` 在 `!hasSolid` 时走快路径早退），
+> 因此 `copy()` 永远只见到 `hasSolid == true` 的快照。§6.5 的原始动机（评审 P0-1 配套）
+> 已不成立，保留它只作为防御性写法。
+>
+> 真正的收益点在别处，见 §6.5b。
+
+### 6.5b `snapshotFromChunk` 的 4096 数组必须惰性分配
+
+这是实现后才暴露的、比 §6.5 大得多的浪费：
+
+```kotlin
+val blockSnapshots = arrayOfNulls<BlockSnapshot>(4096)   // ← 无条件分配
+```
+
+纯流体 section 一个固体都不写入，却照样新分配一份 4096 全 null 引用并塞进快照。
+海洋里每 chunk 约 8 个这样的 section ⇒ **128 KB/chunk 的纯浪费**，
+且流水每 tick 重建时会反复产生这种短命垃圾。
+
+**改**：惰性分配 + 无固体时回落到共享的 `EMPTY_BLOCKS`：
+
+```kotlin
+var blockSnapshots: Array<BlockSnapshot?>? = null
+// … 仅在通道 A 命中时按需分配 …
+return if (hasSolid || hasFluid)
+    SectionSnapshot(blockSnapshots ?: EMPTY_BLOCKS, fluidBuilder.build(), pos, hasSolid, hasFluid)
+else EMPTY
+```
+
+> **为什么 `EMPTY_BLOCKS` 必须是 4096 而不是 1**：
+> `getBlockSnapshot(x,y,z)` 按 `x + (y shl 4) + (z shl 8)` 直接索引 0..4095。
+> `EMPTY` **哨兵**本身用长度 1 是安全的（所有访问点都被 `isEmpty()` 挡住），
+> 但它与无固体快照**共用同一份**数组，后者的索引路径要求满长度。
+> 共享后全局只有一份实例（16~32 KB），换来的是每个流体-only section 省 16~32 KB —— 净收益为正。
 
 ### 6.6 `getBlockCount()`
 
@@ -872,7 +905,7 @@ mod 注册在启动期固定，会话内 id 稳定；但**跨 datapack reload �
 
 | 文件 | 改动 |
 | --- | --- |
-| `SectionSnapshot.kt` | 双通道遍历（`isAir` 早退 + `hasFluid` 判据）、`fluidIndex`/`hasSolid`/`hasFluid`、EMPTY 语义、三处构造点、`copy()` 共享空数组、`MutableBlockPos` 复用（S0） |
+| `SectionSnapshot.kt` | 双通道遍历（`isAir` 早退 + `hasFluid` 判据）、`fluidIndex`/`hasSolid`/`hasFluid`、EMPTY 语义、三处构造点、`copy()` 共享空数组、**4096 数组惰性分配 + 无固体回落到共享 `EMPTY_BLOCKS`**（§6.5b）、`MutableBlockPos` 复用（S0） |
 | `PhysicsChunkSection.kt` | `@Volatile fluidIndexRef` 独立发布、`getFluidIndex()`、`buildCollisionShape()` 守卫、流体-only 快路径、`activate()`/`refreshSlipIfNeeded()` 跳过纯流体 |
 | `PhysicsChunk.kt` | `sections` 改不可变视图 |
 | `PhysicsChunkManager.kt` | `loadedChunks` 改 CHM、`getSectionByCoords`、`sampleFluid`/`sampleFluidBatch`/`isSubmerged` |
@@ -983,4 +1016,4 @@ mod 注册在启动期固定，会话内 id 稳定；但**跨 datapack reload �
 | D11 | 客户端只保证首次加载正确 | 无变更失效通知是**确定的事实**，不是待验证项（P1-6） |
 | D12 | 空气 voxel 双通道早退；流体判据用 `hasFluid` 而非 `isSolid` | `isSolid` 与 `hasFluid` 互不可推导；`isAir` 对 air/cave_air/void_air 均为 true 且三者都不可能含流体 |
 | — | ~~用 `BlockCollisionUtil.hasCollision(state)` 替代 `getCollisionShape(...).isEmpty`~~ | **暂不采用**：语义不等价（`Block.hasCollision` 是属性标志，非形状判据），改动固体通道有行为风险。仅作为 §6.9 之外的可选性能项记录 |
-| — | ~~评审建议：在 `buildCollisionShape()` 早退分支补 `replaceCollisionSnapshot()`~~ | 更强但不够：懒构建下从未激活的 section 仍为 null，且仍需 clone。已被 D3 取代；其中「`copy()` 共享空数组」一条单独保留为 §6.5 |
+| — | ~~评审建议：在 `buildCollisionShape()` 早退分支补 `replaceCollisionSnapshot()`~~ | 更强但不够：懒构建下从未激活的 section 仍为 null，且仍需 clone。已被 D3 取代；其中「`copy()` 共享空数组」降级为防御性写法（§6.5），真正的内存收益改由 §6.5b 的惰性分配承担 |

@@ -42,7 +42,20 @@ class SectionSnapshot private constructor(
 ) {
 
     companion object {
-        /** 无固体方块的 section 共享此只读空数组，`copy()` 时无需克隆 16~32 KB */
+        /**
+         * 无固体方块的 section 共享此只读空数组。**全局仅一份实例**（16~32 KB）。
+         *
+         * 长度必须是 4096（不能像哨兵那样用 1）：`getBlockSnapshot(x,y,z)` 会按
+         * `x + (y shl 4) + (z shl 8)` 直接索引 0..4095，短数组会 AIOOBE。
+         *
+         * 它同时服务三处：① [EMPTY] 哨兵；② 无固体 section 的 [blockSnapshots] 载体；
+         * ③ `copy()` 的共享目标。真正省内存的是 ② —— 海洋里每 chunk 约 8 个纯流体 section，
+         * 逐个新分配 4096 引用是 128 KB/chunk 的纯浪费（且流水每 tick 重建会反复产生垃圾）。
+         *
+         * 安全性：[blockSnapshots] 的所有写入都发生在「有非空碰撞形状」分支内，
+         * 因此 `hasSolid == false` 的快照拿到的一定是全 null；`markRemoved()` 写的是 null，
+         * `refreshSlipIfNeeded()` 已被 `!hasSolid` 挡住，两者都不会改动这份共享数组。
+         */
         private val EMPTY_BLOCKS: Array<BlockSnapshot?> = arrayOfNulls(4096)
 
         /**
@@ -79,7 +92,10 @@ class SectionSnapshot private constructor(
                 return EMPTY
             }
 
-            val blockSnapshots = arrayOfNulls<BlockSnapshot>(4096)
+            // 惰性分配：只有真正出现有碰撞形状的方块时才开 4096 引用数组。
+            // 纯流体 section 一个固体都没有，直接共享 EMPTY_BLOCKS，
+            // 省掉 16~32 KB 的数组分配（海洋每 chunk 约 8 节 → 128 KB/chunk）。
+            var blockSnapshots: Array<BlockSnapshot?>? = null
             val fluidBuilder = SectionFluidIndex.Builder()
             val scratch = BlockPos.MutableBlockPos()
             val originX = pos.minBlockX()
@@ -108,7 +124,12 @@ class SectionSnapshot private constructor(
                             // 一次 DataMap 查找获取全部物理属性数据，避免重复查询
                             val worldPos = scratch.set(originX + x, originY + y, originZ + z)
                             val physicsData = BlockCollisionUtil.getPhysicsData(blockState)
-                            blockSnapshots[index] = BlockSnapshot(
+                            var arr = blockSnapshots
+                            if (arr == null) {
+                                arr = arrayOfNulls(4096)
+                                blockSnapshots = arr
+                            }
+                            arr[index] = BlockSnapshot(
                                 blockState,
                                 physicsData.friction,
                                 physicsData.rollingFriction,
@@ -155,7 +176,7 @@ class SectionSnapshot private constructor(
             // 无固体且无流体才返回 EMPTY —— 纯水 section 有流体通道内容，不是 EMPTY
             val hasFluid = fluidBuilder.hasAny()
             return if (hasSolid || hasFluid)
-                SectionSnapshot(blockSnapshots, fluidBuilder.build(), pos, hasSolid, hasFluid)
+                SectionSnapshot(blockSnapshots ?: EMPTY_BLOCKS, fluidBuilder.build(), pos, hasSolid, hasFluid)
             else EMPTY
         }
 
