@@ -162,8 +162,7 @@ class AnimController(
                 animatable.onBoneUpdate(bonePose)
             }
             // TODO: IK / 动画后处理需求 — 此处发送模型级 ModelPoseUpdatedEvent，
-            //       一次性携带所有骨骼姿态，替代已移除的逐骨骼 BoneUpdateEvent。
-            //       IK 求解器订阅该事件，读取并直接修改 bonePose.localTransform。
+            //       一次性携带所有骨骼姿态，供 IK 求解器读取并修改 bonePose.localTransform。
         }
 
         layers.values.forEach { it.tick() }
