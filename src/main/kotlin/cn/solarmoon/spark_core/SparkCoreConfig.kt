@@ -9,10 +9,10 @@ enum class PackIssueNotificationMode {
     /** 不发送聊天提示，日志仍然完整 */
     OFF,
 
-    /** 一条摘要（默认） */
+    /** 一条摘要 */
     SUMMARY,
 
-    /** 按模块列出前几条，最多 10 行 */
+    /** 按模块列出前几条，最多 10 行（默认） */
     DETAIL,
 }
 
@@ -71,12 +71,12 @@ object SparkCoreConfig {
 
         PACK_ISSUE_NOTIFICATION = builder
             .comment(
-                "提示模式：OFF（关闭聊天提示）、SUMMARY（一条摘要，默认）、DETAIL（按模块最多列出 10 条）",
-                "Notification mode: OFF, SUMMARY (default), DETAIL (up to 10 lines).",
+                "提示模式：OFF（关闭聊天提示）、SUMMARY（一条摘要）、DETAIL（按模块最多列出 10 条，默认）",
+                "Notification mode: OFF, SUMMARY, DETAIL (up to 10 lines, default).",
                 "无论该值如何，日志都会保留完整记录。",
                 "Logs keep the full record regardless of this value.",
             )
-            .defineEnum("packIssueNotification", PackIssueNotificationMode.SUMMARY)
+            .defineEnum("packIssueNotification", PackIssueNotificationMode.DETAIL)
 
         SPEC = builder.build()
     }

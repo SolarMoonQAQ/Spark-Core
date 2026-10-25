@@ -33,7 +33,7 @@
 - **会话按上下文隔离**：用四值 `PackLoadContext` 表示“端 + 来源”，清空、读取、`onFinish`、汇总都围绕这个上下文进行，客户端本地包与服务端下发包互不清空。
 - **统一捕获**：模块内 `throw`、构造函数不变量、`DataResult` 错误、资源图解析、依赖排序都落到同一张表；自动打包失败至少在日志与汇总提示中出现（V1 不进玩家列表，见 §3.4）。
 - **模块顶层分组**：同一模块的问题放在一起；`packId` / `location` 只做二级定位。
-- **玩家可见**：客户端每次进入游戏/重载时一条摘要，服务端每次读取结束时打按模块分组的汇总日志；V1 不做命令。
+- **玩家可见**：客户端每次进入游戏/重载时默认按 DETAIL 列出问题（最多 10 行），服务端每次读取结束时打按模块分组的汇总日志；V1 不做命令。
 
 ### 范围
 
@@ -513,9 +513,9 @@ Spark-Core 的客户端类统一由 `SparkClientEventRegister` 在 `FMLEnvironme
 - 订阅 `PackAllFinishedEvent`（`context.side == CLIENT` 时），在事件处理器里调用 `notifyIfAny(PackSide.CLIENT)`。这样 `SparkPackagePayload` / `SparkPackageReloadPayload` / `SparkPackLoaderApplier.client()` 不需要直接引用客户端类。
 - `notifyIfAny(side)` 用 `SparkPackIssues.sideSessionId(side)` 判断本侧会话是否已通知：同一会话只发一次，既避免“登录 + 刚完成的 payload”重复弹，也避免 `CLIENT_LOCAL` / `CLIENT_REMOTE` 各发一条。摘要本身是 `summary(CLIENT)`，会把两个上下文合并展示。
 - 退出（`LoggingOut`）时清空两个 CLIENT 上下文并重置通知器的 `lastNotified`，避免下次登录看到上一次服务器的旧记录。
-- 配置 `packIssueNotification`：`OFF` / `SUMMARY`（默认） / `DETAIL`。
+- 配置 `packIssueNotification`：`OFF` / `SUMMARY` / `DETAIL`（默认）。
   - `SUMMARY`：一条消息，`内容包有 N 个错误、M 个警告，涉及 K 个模块：parts(2)、models(1)… 详情见日志。`
-  - `DETAIL`：按模块各一行，每模块最多 5 条、总共最多 10 行；超出的提示查看日志。V1 没有命令，不要在聊天里倾倒全部记录。
+  - `DETAIL`：按模块各一行，每模块最多 5 条、总共最多 10 行；超出的提示查看日志。默认使用该档，玩家可在配置中调回 `SUMMARY` 或 `OFF`。V1 没有命令，不要在聊天里倾倒全部记录。
 - 没有记录时不发任何消息。
 
 #### 服务端
@@ -687,8 +687,8 @@ class PackAllFinishedEvent(
 
 验收：
 
-- 客户端进入游戏只出现一条摘要（有记录时）；没有记录时不出现。
-- 每次客户端重载/payload 完成，若有新记录，出现一条摘要；同一 session 不重复。
+- 客户端进入游戏默认出现 DETAIL 详情（有记录时，最多 10 行）；没有记录时不出现。
+- 每次客户端重载/payload 完成，若有新记录，出现一组 DETAIL 详情；同一 session 不重复。
 - `OFF` 时不发聊天提示，日志仍完整。
 - 服务端启动/重载日志有按模块分组的汇总。
 - 专用服务器上，客户端摘要只反映 CLIENT 侧记录；服务端配方/研发错误只在服务端日志里（且受“汇总边界”限制）。
@@ -715,7 +715,7 @@ class PackAllFinishedEvent(
 - `/spark package reload` 的行为会变化：从“多数模块直接 return”变为真正按 `SERVER_LOCAL` 读取。这是本版有意修复的行为变化。
 - 新增的 `PackCodec` / `PackContentException` 是加法 API；消费方可以按自己的节奏迁移。
 - `SparkPackLoader` 的日志格式会变化：从 `包 X 读取 Y 模块失败: ...` 变为 `[Y] X/location → message`。依赖旧日志文本的外部脚本需要同步。
-- 客户端提示默认开启摘要；`packIssueNotification = OFF` 时不发聊天提示，日志仍完整。
+- 客户端提示默认开启 DETAIL（最多 10 行）；`packIssueNotification = OFF` 时不发聊天提示，日志仍完整。
 - V1 不提供 `/spark package issues`；依赖该命令的迁移文档/脚本需要等后续版本。
 
 ---
@@ -781,3 +781,4 @@ class PackAllFinishedEvent(
 | 1.2 | 2026-10-18 | 补充 §3.9 实施前检查：依赖排序失败跳过 `onFinish`、客户端通知走 common 事件、`beginSession` 顺序、日志与上限、测试隔离 |
 | 1.3 | 2026-10-18 | 事件命名与契约：`PackAllFinishedEvent` 取代 `SparkPackSessionFinishedEvent`；P3 模块级事件定为 `PackModuleStartEvent` / `PackModuleFinishEvent`；V1 不做 per-file `read` 事件，必要时加元数据版 `PackFileReadEvent` 或每模块一次的 `PackModuleReadFinishedEvent` |
 | 1.4 | 2026-10-18 | 实现 P0–P3：诊断数据模型/收集器/错误通道、加载器四值上下文接入、reload 修复、服务端汇总、客户端摘要与配置、三个加载阶段事件；补收集器/`PackCodec`/Java 互操作单元测试；记录实现差异与 P3 剩余项 |
+| 1.5 | 2026-10-23 | 默认提示档位由 `SUMMARY` 改为 `DETAIL`（最多 10 行）；`SUMMARY` / `OFF` 仍可由玩家在配置中选回。聊天摘要仍只覆盖 CLIENT 侧，服务端侧问题仍以日志为准 |
