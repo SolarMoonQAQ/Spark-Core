@@ -596,13 +596,18 @@ class PhysicsChunkManager(
     /**
      * 预约加载指定区块的指定 Y 范围地形，并在保持一定物理步后自动释放。
      *
-     * 立即添加 MC ticket + 构建 PhysicsChunk + 激活 section。
+     * 立即添加 MC ticket，并把 Y 范围登记为激活来源、把构建请求排进 `pendingBuildRequests`
+     * （构建与激活都等到同一个 `requestStep` 里处理，激活目标集只由 [updateActivation] 决定）。
      * 同一 chunk 上的多次调度按来源取并集：范围累加、过期取最晚，因此任何一方还在有效期内
      * 该区块就保持加载与激活。
      *
      * @param chunkPos 目标区块
      * @param yRange 需要加载的 section Y 范围（section 坐标）
-     * @param holdTicks 从登记时刻起保持多少**物理步**（与 physicsLevel.tickCount 比较）。逾时自动释放
+     * @param holdTicks 从登记时刻起保持多少**物理步**（与 physicsLevel.tickCount 比较）。逾时自动释放。
+     *                  上限受 MC 票的寿命约束：本方法只加票、不续期，票的寿命是 1200 **游戏 tick**，
+     *                  而物理步以 `dynamicRepeat` 个/游戏 tick 的速度推进，所以 holdTicks 最多只能是
+     *                  `1200 × dynamicRepeat`（标称 5 → 6000 物理步；降频到 1 时收缩到 1200）。
+     *                  超过这个值会在租约到点之前先丢票，chunk 可能被卸载而 chunkExpireTicks 仍持有。
      *
      * 调用线程：仅主线程。
      *           跨线程调用方应通过 SparkLevel.scheduleChunkLoad 外观（内部已投递主线程）。
@@ -628,11 +633,13 @@ class PhysicsChunkManager(
     }
 
     /**
-     * 取消对某区块的全部调度请求，移除 MC ticket。
+     * 取消对某区块的全部 terrain 调度请求，并在没有其它来源持有时摘票。
      * PhysicsChunk 由 MC 自然卸载时通过 onChunkUnloaded 自动清理。
      *
      * 调用方：SparkLevel.cancelChunkLoad（Level 公开 API）。
-     * 语义：取消该 chunk 的所有预约，立刻释放——投射物离开后立刻卸载。
+     * 语义：取消该 chunk 上**所有** terrain 调度的范围登记与过期时刻——它不区分来源，
+     * 一发弹提前取消会把同一区块上其它弹丸的窗口一起清掉；载具保活（[holdVehicleChunkTerrain]）
+     * 走另一张表，仍在持有时票会保留。
      *
      * 调用线程：仅主线程。
      *           跨线程调用方应通过 SparkLevel.cancelChunkLoad 外观（内部已投递主线程）。
@@ -653,7 +660,11 @@ class PhysicsChunkManager(
         // 载具仍通过 holdVehicleChunkTerrain 持有该区块时，票要留给它。MC 的票是
         // SortedArraySet#addOrGet 语义（同一张票重复 add 只刷新 createdTick，remove 一次即整条摘除），
         // 没有引用计数，所以“还有别方持有就不摘票”只能在调用侧守住。
+        // 这条守卫覆盖的是 terrain 调度与载具保活这一对来源；同一区块上的多个载具之间没有计数
+        // （vehicleHeldRanges 每区块一条，接口不带持有者身份），这是既有模型的粒度。
         if (vehicleHeldRanges.containsKey(chunkPos)) return
+        // 构建请求到这里才摘：载具仍持有时容器它也要用，而激活已完全由 updateActivation 按并集
+        // 决定，terrain 的范围既已清掉就不会把激活窗口撑宽。
         pendingBuildRequests.remove(chunkPos)
         // 移除 MC ticket——之后 MC 根据玩家距离等条件自行决定是否卸载该 chunk
         val serverLevel = physicsLevel.mcLevel as? ServerLevel
@@ -701,11 +712,15 @@ class PhysicsChunkManager(
      * 释放动态物体对某区块的占用（移除 MC ticket 与保活范围）。
      * 之后该区块随 MC 自然卸载机制处理（PhysicsChunk 由 onChunkUnloaded 自动清理）。
      *
+     * 粒度是**区块**而不是持有者：`vehicleHeldRanges` 每区块一条，本方法不带持有者身份，
+     * 所以同一区块上的两个载具里先离开的那个会把保活范围一起摘掉，另一个要到下一次
+     * `holdVehicleChunkTerrain` 才补回（中间有一次激活目标集为空）。这是既有模型，不是本方法引入。
+     *
      * 调用线程：仅主线程。
      */
     fun releaseVehicleHeldChunkTerrain(chunkPos: ChunkPos) {
         vehicleHeldRanges.remove(chunkPos)
-        // 另一侧（terrain 调度）仍持有该区块时，票要留给它
+        // 另一侧（terrain 调度）仍持有该区块时，票与构建请求都留给它
         if (terrainRanges.containsKey(chunkPos)) return
         // 取消残留的构建请求，避免载具离开后 requestStep 重新构建/强制加载该区块
         pendingBuildRequests.remove(chunkPos)
@@ -759,9 +774,14 @@ class PhysicsChunkManager(
      * PhysicsChunk 由 onChunkUnloaded 在 MC 自然卸载时自动清理。
      */
     fun updateScheduledChunks() {
-        if (chunkExpireTicks.isEmpty()) return
+        if (chunkExpireTicks.isEmpty() && terrainRanges.isEmpty()) return
         val now = physicsLevel.tickCount
-        val toRelease = chunkExpireTicks.filter { (_, expire) -> now >= expire }.keys.toSet()
+        // 两张表理论上成对（scheduleTerrain 同时写、releaseChunkTerrain 同时清），但配对只靠调用约定。
+        // 扫并集可兜住“有范围、没有过期时刻”的残留：那种条目不会被任何其它扫描捞到，还会让
+        // releaseVehicleHeldChunkTerrain 的守卫永远早退，两侧都不再摘票。缺过期时刻按立即到期处理。
+        val toRelease = (chunkExpireTicks.keys + terrainRanges.keys)
+            .filter { chunkPos -> chunkExpireTicks[chunkPos]?.let { now >= it } ?: true }
+            .toSet()
         for (chunkPos in toRelease) {
             releaseChunkTerrain(chunkPos)
         }

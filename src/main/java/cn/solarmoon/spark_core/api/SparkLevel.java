@@ -275,9 +275,18 @@ public final class SparkLevel {
      * <p>Schedule loading of terrain for the given chunk and Y range after a delay,
      * holding it for a given duration before auto-release.</p>
      *
-     * <p>同一 chunk 上的多次调度彼此叠加：激活范围取并集，有效期取最晚。因此多发弹、多个
-     * 调用方预约同一区块时互不覆盖，任何一方还在有效期内该区块就保持加载与激活。</p>
-     * <p>Repeated schedules for the same chunk accumulate: ranges union, latest expiry wins.</p>
+     * <p><b>叠加语义只对“已经执行的登记”成立</b>：每次落到 {@code scheduleTerrain} 的调用都会把
+     * Y 范围并进该 chunk 的范围集合、并把过期时刻取两者较大值，因此多个调用方预约同一区块时
+     * 互不覆盖——只要还有一方在有效期内，该区块就保持加载与激活。</p>
+     * <p>但 {@code delayTicks > 0} 时这次调用先进入按 chunk 命名的延迟槽位
+     * （键为 {@code "terrain_api_" + chunkPos}），同一 chunk 的重复登记是<b>替换</b>而不是排队：
+     * 后一次会顶掉前一次尚未执行的预约，连同它的延迟、Y 范围与 holdTicks。{@code delayTicks == 0}
+     * 走即时队列、每次调用都会执行，不受这条限制。</p>
+     * <p>Accumulation applies to registrations that actually reach {@code scheduleTerrain}. With
+     * {@code delayTicks > 0} the call is parked in a per-chunk delayed slot keyed by chunk
+     * position, so a later registration replaces an earlier still-pending one (delay, Y range and
+     * holdTicks are lost with it). {@code delayTicks == 0} uses the non-deduplicated immediate
+     * queue and is unaffected.</p>
      *
      * <p>任意线程可调用，内部通过 submitImmediateTask 投递到主线程执行。</p>
      * <p>Thread-safe — defers to main thread via submitImmediateTask.</p>
@@ -286,8 +295,11 @@ public final class SparkLevel {
      * @param chunkPos   目标区块 / target chunk
      * @param yMin       Y 下界 / lower Y bound
      * @param yMax       Y 上界 / upper Y bound
-     * @param delayTicks 延迟 tick 数（0 = 立即）
-     * @param holdTicks  从登记时刻起保持多少<b>物理步</b>（与物理步计数比较，不是游戏 tick）
+     * @param delayTicks 延迟多少<b>游戏 tick</b> 后执行（0 = 立即）
+     * @param holdTicks  从登记时刻起保持多少<b>物理步</b>（与物理步计数比较，不是游戏 tick）。
+     *                   两个参数的单位不同：物理步与游戏 tick 的比值随过载降频变化
+     *                   （`dynamicRepeat` 从 5 降到 1），所以同一个 holdTicks 在墙钟上会长到 5 倍——
+     *                   只会更久，不会更短。
      */
     public static void scheduleChunkLoad(
             @NotNull Level level,

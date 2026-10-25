@@ -122,8 +122,13 @@ fun Level.hasChunkIndex(chunkPos: ChunkPos): Boolean =
 /**
  * 预约在指定延迟后加载指定区块的指定 Y 范围地形，并在保持一定时长后自动释放。
  *
- * 同一 chunk 上的多次调度彼此叠加：激活范围取并集，有效期取最晚。
+ * 每次真正执行的登记都会把 Y 范围并进该 chunk 的范围集合、并把过期时刻取较大值，所以多个
+ * 调用方预约同一区块时互不覆盖。`delayTicks > 0` 时这次调用先进入按 chunk 命名的延迟槽位，
+ * 同一 chunk 的重复登记是替换而不是排队；`delayTicks = 0` 走即时队列，不受此限制。
  * 调用方无需手动 release，系统在到期后自动释放。
+ *
+ * `holdTicks` 的单位是**物理步**，`delayTicks` 是**游戏 tick**：过载降频时物理步与游戏 tick
+ * 的比值会从 5 掉到 1，因此同一个 `holdTicks` 在墙钟上只会更久、不会更短。
  *
  * 调用线程：任意线程（内部自动投递到主线程处理 chunk 加载）
  */
@@ -145,7 +150,8 @@ fun Level.isChunkTerrainReady(chunkPos: ChunkPos, yMin: Double, yMax: Double): B
 
 /**
  * 取消对某区块的自动释放调度（投射物销毁时可选调用）。
- * 仅取消到期自动卸载的定时器，不立即释放物理区块。
+ * 清掉该区块上所有 terrain 调度的范围登记与过期时刻，并在没有其它来源（载具保活）持有时摘票；
+ * 载具保活仍在持有的话票保留。PhysicsChunk 本身随 MC 自然卸载清理。
  */
 fun Level.cancelChunkLoad(chunkPos: ChunkPos) {
     SparkLevel.cancelChunkLoad(this, chunkPos)
