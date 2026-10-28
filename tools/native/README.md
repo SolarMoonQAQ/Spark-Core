@@ -127,7 +127,7 @@ bulletjmeWindows64ReleaseDpMtSharedLibrary` 与脚本等价。
 见文首表格），然后重建 jar：
 
 ```bash
-./gradlew --offline jar shadowJar
+./gradlew --offline jar
 ```
 
 **不要从上游发布包整包替换 `natives/`。** 十一个二进制里有十个是 23.1.0 出厂件、这一个是

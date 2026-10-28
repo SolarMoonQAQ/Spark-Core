@@ -6,12 +6,10 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.serialization") version "2.2.20"
     id("com.vanniktech.maven.publish") version "0.34.0"
-    // ★ Shadow：将 GraalJS 的 org.graalvm 包重定位，避免与 GraalVM JDK 内置模块冲突
-    // 使用 8.3.x 以兼容 Gradle 8.9（9.x 要求 Gradle 9.0+）
-    id("com.gradleup.shadow") version "8.3.11"
 }
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.tasks.GenerateModuleMetadata
 
 val mod_version: String by project
 val mod_group_id: String by project
@@ -152,53 +150,12 @@ tasks.named<Test>("test") {
 }
 
 // ==========================================
-// ShadowJar：将 GraalJS 包名重定位以解决与 GraalVM JDK 的模块冲突
-// 当玩家使用 GraalVM 作为运行 JVM 时，JDK 自带的 org.graalvm.* 模块会与
-// 内嵌的 GraalJS jar 发生模块名冲突。通过 Shadow relocate 将所有 org.graalvm
-// 包移至 cn.solarmoon.spark_core.shadow.org.graalvm 下彻底消除冲突。
+// 打包：只有一个 jar（mod 类 + 内嵌 natives + 资源）
+// 这里曾经有一个 ShadowJar，把 GraalJS 重定位进 jar；Molang 换成自研 Mocha
+// 引擎后 GraalJS 已无任何代码引用，随即一并删除（jar 从 ~57MB 降到 ~19MB）。
 // ==========================================
-val shadowPrefix = "cn.solarmoon.spark_core.shadow"
-val graaljsForShadow by configurations.creating {
-    isTransitive = false
-}
-
 tasks.named<Jar>("jar") {
-    archiveClassifier.set("slim")          // 原始 jar 改名为 slim（无 GraalJS 依赖）
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-tasks.named<ShadowJar>("shadowJar") {
-    archiveClassifier.set("")              // shadowJar 作为最终分发的 mod jar
-    dependsOn(tasks.jar)                   // 先等 slim jar 构建完成
-
-    // 以 slim jar 为基底（包含主源码 + jarJar 依赖如 extlibs），再合并 GraalJS
-    from(zipTree(tasks.jar.get().archiveFile))
-    configurations = listOf(graaljsForShadow)
-
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    // 去除签名文件、module-info（含多版本 jar 中的），避免模块层冲突
-    exclude(
-        "META-INF/INDEX.LIST",
-        "META-INF/*.SF",
-        "META-INF/*.DSA",
-        "META-INF/*.RSA",
-        "module-info.class",
-        "META-INF/versions/*/module-info.class"
-    )
-    mergeServiceFiles()
-
-    // ★ 核心：将所有 GraalVM 相关包重定位到内部命名空间
-    // org.graalvm.* — GraalVM SDK / Polyglot / Truffle 主包
-    relocate("org.graalvm", "$shadowPrefix.org.graalvm")
-    // com.oracle.svm.* — nativeimage 模块（与 GraalVM JDK 的 org.graalvm.nativeimage 冲突）
-    relocate("com.oracle.svm", "$shadowPrefix.com.oracle.svm")
-    // com.oracle.truffle.* — Truffle 语言框架内部包（与 GraalVM JDK 的 org.graalvm.truffle 冲突）
-    relocate("com.oracle.truffle", "$shadowPrefix.com.oracle.truffle")
-}
-
-tasks.named("assemble") {
-    dependsOn("shadowJar")
 }
 
 tasks.register<JavaExec>("generateJSDocs") {
@@ -213,24 +170,6 @@ fun DependencyHandlerScope.additionalRuntimeClasspath(dep: Any) {
         dependencies.create(dep)
     )
 }
-
-val graaljsVersion = property("graaljs_version").toString()
-val graaljsJarJarVersionRange = "[${property("graaljs_min_version")},${property("graaljs_next_major_version")})"
-val graaljsJarJarModules = listOf(
-    "org.graalvm.polyglot:polyglot",
-    "org.graalvm.js:js-language",
-    "org.graalvm.regex:regex",
-    "org.graalvm.shadowed:icu4j",
-    "org.graalvm.shadowed:xz",
-    "org.graalvm.truffle:truffle-api",
-    "org.graalvm.truffle:truffle-compiler",
-    "org.graalvm.truffle:truffle-runtime",
-    "org.graalvm.sdk:collections",
-    "org.graalvm.sdk:jniutils",
-    "org.graalvm.sdk:nativebridge",
-    "org.graalvm.sdk:nativeimage",
-    "org.graalvm.sdk:word",
-)
 
 dependencies {
     // KotlinForForge
@@ -268,22 +207,8 @@ dependencies {
     compileOnly("maven.modrinth:embeddium:1.0.11+mc1.21.1-neoforge")
 
     // 外部库 ------------------------------------------------------------------------------------------------------------
-    // GraalJS：编译期用原始坐标；ShadowJar 通过 graaljsForShadow 配置合并并重定位；
-    // 开发环境仍通过 additionalRuntimeClasspath 使用原始模块（classpath 不触发模块检核）。
-    graaljsJarJarModules.forEach { module ->
-        implementation(module) {
-            version {
-                strictly(graaljsJarJarVersionRange)
-                prefer(graaljsVersion)
-            }
-        }
-    }
-    graaljsJarJarModules.forEach { module ->
-        graaljsForShadow("$module:$graaljsVersion")
-    }
-    graaljsJarJarModules.forEach { module ->
-        additionalRuntimeClasspath("$module:$graaljsVersion")
-    }
+    // GraalJS 已移除：Molang 改用自研 Mocha 引擎，仓库内不再有任何 org.graalvm 引用。
+
     // 状态机
 //    implementation("io.github.nsk90:kstatemachine-jvm:0.34.2")?.let { jarJar(it) }
 //    additionalRuntimeClasspath("io.github.nsk90:kstatemachine-jvm:0.34.2")
@@ -301,14 +226,6 @@ dependencies {
 
 repositories {
     mavenLocal()
-    exclusiveContent {
-        forRepository {
-            mavenCentral()
-        }
-        filter {
-            includeGroupByRegex("org\\.graalvm(\\..*)?")
-        }
-    }
     mavenCentral()
 
     maven {
@@ -387,9 +304,9 @@ tasks.javadoc {
 }
 
 mavenPublishing {
-    publishToMavenCentral(automaticRelease = true)
-    signAllPublications()
-
+    // 发布目标：自建 Nexus（https://maven.sighs.cc/ 的 maven-releases）。
+    // 原先的 publishToMavenCentral(automaticRelease = true) 与 signAllPublications() 已停用：
+    // Nexus 不要求 GPG 签名，也不需要 Sonatype 的 staging/release 流程。
     coordinates("io.github.solarmoonqaq", "${property("artifact_id")}-${property("mod_loader")}", "${property("mod_version")}")
 
     pom {
@@ -419,4 +336,41 @@ mavenPublishing {
     }
 }
 
+publishing {
+    publications.withType(MavenPublication::class.java).configureEach {
+        // 发布物只留 jar 本身：jade / create / geckolib 这些坐标只存在于 Modrinth、
+        // CurseForge 等第三方仓库，写进 POM 只会让消费方解析时卡在 Nexus 上。
+        // 消费方需要哪个联动 mod，自己声明即可（这些 mod 本来就要装）。
+        pom.withXml {
+            val root = asNode()
+            root.children()
+                .filterIsInstance<groovy.util.Node>()
+                // POM 的节点名是带命名空间的 QName，取 localPart 比较
+                .filter { (it.name() as? groovy.namespace.QName)?.localPart in setOf("dependencies", "dependencyManagement") }
+                .forEach { root.remove(it) }
+        }
+    }
+    repositories {
+        maven {
+            // 版本号以 -SNAPSHOT 结尾时投递到快照仓，其余投递到发布仓
+            val isSnapshot = version.toString().endsWith("-SNAPSHOT")
+            name = if (isSnapshot) "SighsMavenSnapshots" else "SighsMavenReleases"
+            url = uri(
+                if (isSnapshot) "https://maven.sighs.cc/repository/maven-snapshots/"
+                else "https://maven.sighs.cc/repository/maven-releases/"
+            )
+            // 凭据放在用户级环境变量里，不写进仓库：
+            //   SIGHS_MAVEN_USER / SIGHS_MAVEN_PASS
+            credentials {
+                username = System.getenv("SIGHS_MAVEN_USER")
+                password = System.getenv("SIGHS_MAVEN_PASS")
+            }
+        }
+    }
+}
 
+// Gradle 消费方会优先读 .module，而它同样会带上完整依赖清单；关闭生成，
+// 让消费方只看到上面那份已清空 dependencies 的 POM。
+tasks.withType<GenerateModuleMetadata>().configureEach {
+    enabled = false
+}
