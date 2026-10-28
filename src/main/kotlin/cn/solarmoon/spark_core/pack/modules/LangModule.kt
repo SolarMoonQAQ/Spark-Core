@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.pack.modules
 import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.SparkPackLoaderApplier
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import net.minecraft.resources.ResourceLocation
@@ -53,10 +52,33 @@ class LangModule : SparkPackModule {
 
     override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (FMLEnvironment.dist.isClient && !fromServer) {
-            // 第一步：将同 namespace:path 的多个内容包贡献按依赖顺序合并为一张完整表
-            // 合并后得到 perLocationMerge: ResourceLocation -> 该语言文件的最终完整键值表
-            val perLocationMerge: MutableMap<ResourceLocation, Map<String, String>> = HashMap()
-            for ((location, contents) in collectedLangContents) {
+            // 合并同一语言文件的多个包贡献 → 按命名空间做语言回退 → 序列化
+            val langFiles = buildLangFiles(collectedLangContents)
+            for ((location, data) in langFiles) {
+                SparkPackLoaderApplier.CLIENT_PACK.put(PackType.CLIENT_RESOURCES, location, data)
+            }
+
+            SparkCore.LOGGER.info(
+                "从外部包读取了 {} 个语言文件，按命名空间合并后写出 {} 个",
+                count,
+                langFiles.size
+            )
+        }
+    }
+
+    companion object {
+        private val GSON = GsonBuilder().setPrettyPrinting().create()
+        private val CHINESE_CODES = listOf("zh_cn", "zh_tw", "zh_hk")
+
+        /**
+         * 将同 namespace:path 的多个内容包贡献按读取（依赖）顺序合并成一张完整表。
+         * 返回 ResourceLocation -> 该语言文件的完整键值表，各命名空间互不干扰。
+         */
+        internal fun mergeCollectedContents(
+            collected: Map<ResourceLocation, List<ByteArray>>
+        ): MutableMap<ResourceLocation, MutableMap<String, String>> {
+            val perLocationMerge: MutableMap<ResourceLocation, MutableMap<String, String>> = HashMap()
+            for ((location, contents) in collected) {
                 val merged = HashMap<String, String>()
                 for (content in contents) {
                     val json = JsonParser.parseString(content.decodeToString()).asJsonObject
@@ -66,69 +88,73 @@ class LangModule : SparkPackModule {
                 }
                 perLocationMerge[location] = merged
             }
-
-            // 从 perLocationMerge 中按语言代码分组，供第二步回退补足
-            // location 格式为 namespace:lang/{langCode}.json，提取出 langCode
-            val langCodeToLocation: MutableMap<String, ResourceLocation> = HashMap()
-            val mergedTables: MutableMap<String, MutableMap<String, String>> = HashMap()
-            for ((location, table) in perLocationMerge) {
-                val code = langCodeFromLocation(location) ?: continue
-                langCodeToLocation[code] = location
-                mergedTables[code] = table as MutableMap<String, String>
-            }
-
-            // 第二步：对中文变体做互相补足，再用英文兜底
-            buildChineseFallback(mergedTables)
-
-            // 第三步：将合并后的表写回 CLIENT_PACK 的对应 location
-            for ((code, table) in mergedTables) {
-                val location = langCodeToLocation[code]!!
-                val data = GSON.toJson(table).toByteArray()
-                SparkPackLoaderApplier.CLIENT_PACK.put(PackType.CLIENT_RESOURCES, location, data)
-            }
-
-            SparkCore.LOGGER.info("从外部包注册了 {} 个语言文件", count)
+            return perLocationMerge
         }
-    }
 
-    /**
-     * 对 zh_cn / zh_tw / zh_hk 各自做互相补足，再用英文兜底。
-     * 补足后的结果直接写回对应语言的合并表，不依赖当前选中的语言。
-     * 这样玩家在游戏中随时切换语言都能看到完整翻译。
-     */
-    private fun buildChineseFallback(tables: MutableMap<String, MutableMap<String, String>>) {
-        for (code in CHINESE_CODES) {
-            val main = tables[code] ?: continue
-            for (fallbackCode in chineseFallbackChain(code)) {
-                val fallbackTable = tables[fallbackCode] ?: continue
-                for ((key, value) in fallbackTable) {
+        /**
+         * 语言回退（zh_cn / zh_tw / zh_hk 互相补足，再用 en_us 兜底）只在同一命名空间内进行。
+         * 不能按 langCode 跨命名空间分组：moji、t90a、m1a2_sep 都会提供 lang/zh_cn.json，
+         * 以 langCode 为全局键会让后一个覆盖前一个，导致除一个命名空间外其余语言文件全部丢失。
+         */
+        internal fun fillFallbackPerNamespace(
+            perLocationMerge: MutableMap<ResourceLocation, MutableMap<String, String>>
+        ) {
+            for (locations in perLocationMerge.keys.groupBy { it.namespace }.values) {
+                val tables: MutableMap<String, MutableMap<String, String>> = HashMap()
+                for (location in locations) {
+                    val code = langCodeFromLocation(location) ?: continue
+                    tables[code] = perLocationMerge.getValue(location)
+                }
+                buildChineseFallback(tables)
+            }
+        }
+
+        /**
+         * 合并 + 回退 + 序列化，返回每个语言文件最终写入虚拟资源包的内容。
+         * 键是完整的 namespace:lang/xx.json，因此不同命名空间不会互相顶掉。
+         */
+        internal fun buildLangFiles(
+            collected: Map<ResourceLocation, List<ByteArray>>
+        ): Map<ResourceLocation, ByteArray> {
+            val perLocationMerge = mergeCollectedContents(collected)
+            fillFallbackPerNamespace(perLocationMerge)
+            return perLocationMerge.mapValues { (_, table) -> GSON.toJson(table).toByteArray() }
+        }
+
+        /**
+         * 对 zh_cn / zh_tw / zh_hk 各自做互相补足，再用英文兜底。
+         * 补足后的结果直接写回对应语言的合并表，不依赖当前选中的语言。
+         * 这样玩家在游戏中随时切换语言都能看到完整翻译。
+         */
+        private fun buildChineseFallback(tables: MutableMap<String, MutableMap<String, String>>) {
+            for (code in CHINESE_CODES) {
+                val main = tables[code] ?: continue
+                for (fallbackCode in chineseFallbackChain(code)) {
+                    val fallbackTable = tables[fallbackCode] ?: continue
+                    for ((key, value) in fallbackTable) {
+                        main.putIfAbsent(key, value)
+                    }
+                }
+                val enTable = tables["en_us"] ?: continue
+                for ((key, value) in enTable) {
                     main.putIfAbsent(key, value)
                 }
             }
-            val enTable = tables["en_us"] ?: continue
-            for ((key, value) in enTable) {
-                main.putIfAbsent(key, value)
-            }
         }
-    }
 
-    /** 中文变体回退优先级链 */
-    private fun chineseFallbackChain(code: String): List<String> = when (code) {
-        "zh_cn" -> listOf("zh_tw", "zh_hk")
-        "zh_tw" -> listOf("zh_hk", "zh_cn")
-        "zh_hk" -> listOf("zh_tw", "zh_cn")
-        else    -> emptyList()
-    }
+        /** 中文变体回退优先级链 */
+        private fun chineseFallbackChain(code: String): List<String> = when (code) {
+            "zh_cn" -> listOf("zh_tw", "zh_hk")
+            "zh_tw" -> listOf("zh_hk", "zh_cn")
+            "zh_hk" -> listOf("zh_tw", "zh_cn")
+            else    -> emptyList()
+        }
 
-    /** 从 ResourceLocation（lang/xx.json）中提取语言代码 xx */
-    private fun langCodeFromLocation(location: ResourceLocation): String? {
-        val path = location.path
-        if (!path.startsWith("lang/") || !path.endsWith(".json")) return null
-        return path.substringAfter("lang/").substringBeforeLast(".json")
-    }
-
-    companion object {
-        private val GSON = GsonBuilder().setPrettyPrinting().create()
-        private val CHINESE_CODES = listOf("zh_cn", "zh_tw", "zh_hk")
+        /** 从 ResourceLocation（lang/xx.json）中提取语言代码 xx */
+        private fun langCodeFromLocation(location: ResourceLocation): String? {
+            val path = location.path
+            if (!path.startsWith("lang/") || !path.endsWith(".json")) return null
+            return path.substringAfter("lang/").substringBeforeLast(".json")
+        }
     }
 }
