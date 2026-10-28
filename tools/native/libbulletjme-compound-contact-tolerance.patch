@@ -1,0 +1,111 @@
+diff --git a/src/main/native/bullet3/BulletCollision/CollisionDispatch/btCompoundCollisionAlgorithm.cpp b/src/main/native/bullet3/BulletCollision/CollisionDispatch/btCompoundCollisionAlgorithm.cpp
+index 6f7ea014..4ff642ab 100644
+--- a/src/main/native/bullet3/BulletCollision/CollisionDispatch/btCompoundCollisionAlgorithm.cpp
++++ b/src/main/native/bullet3/BulletCollision/CollisionDispatch/btCompoundCollisionAlgorithm.cpp
+@@ -23,6 +23,21 @@ subject to the following restrictions:
+ #include "btManifoldResult.h"
+ #include "BulletCollision/CollisionDispatch/btCollisionObjectWrapper.h"
+ 
++//Altered source: child culling must accept the same near contacts the narrow
++//phase accepts. That tolerance is per pair -- btCollisionDispatcher scales
++//gContactBreakingThreshold by the shapes' angular motion disc (half the AABB
++//diagonal), which for this wheel's sphere is 1.46 m, i.e. 29.2 mm of near
++//contact. An intermediate build extending by the bare global 0.02 still
++//culled everything between 20 mm and 29.2 mm, so the wheel lost a substep of
++//support exactly there. The formula below reproduces the dispatcher's
++//getNewManifold for the default CD_USE_RELATIVE_CONTACT_BREAKING_THRESHOLD;
++//callers pass wrapper shapes, which are roots only for one-level layouts.
++static btScalar btPairContactTolerance(const btCollisionShape* shapeA, const btCollisionShape* shapeB)
++{
++	return btMin(shapeA->getContactBreakingThreshold(gContactBreakingThreshold),
++				 shapeB->getContactBreakingThreshold(gContactBreakingThreshold));
++}
++
+ btShapePairCallback gCompoundChildShapePairCallback = 0;
+ 
+ btCompoundCollisionAlgorithm::btCompoundCollisionAlgorithm(const btCollisionAlgorithmConstructionInfo& ci, const btCollisionObjectWrapper* body0Wrap, const btCollisionObjectWrapper* body1Wrap, bool isSwapped)
+@@ -129,7 +144,8 @@ public:
+ 		btVector3 aabbMin0, aabbMax0;
+ 		childShape->getAabb(newChildWorldTrans, aabbMin0, aabbMax0);
+ 
+-		btVector3 extendAabb(m_resultOut->m_closestPointDistanceThreshold, m_resultOut->m_closestPointDistanceThreshold, m_resultOut->m_closestPointDistanceThreshold);
++		btScalar extend = m_resultOut->m_closestPointDistanceThreshold + btPairContactTolerance(compoundShape, m_otherObjWrap->getCollisionShape());
++		btVector3 extendAabb(extend, extend, extend);
+ 		aabbMin0 -= extendAabb;
+ 		aabbMax0 += extendAabb;
+ 
+@@ -284,7 +300,8 @@ void btCompoundCollisionAlgorithm::processCollision(const btCollisionObjectWrapp
+ 		btTransform otherInCompoundSpace;
+ 		otherInCompoundSpace = colObjWrap->getWorldTransform().inverse() * otherObjWrap->getWorldTransform();
+ 		otherObjWrap->getCollisionShape()->getAabb(otherInCompoundSpace, localAabbMin, localAabbMax);
+-		btVector3 extraExtends(resultOut->m_closestPointDistanceThreshold, resultOut->m_closestPointDistanceThreshold, resultOut->m_closestPointDistanceThreshold);
++		btScalar extra = resultOut->m_closestPointDistanceThreshold + btPairContactTolerance(compoundShape, otherObjWrap->getCollisionShape());
++		btVector3 extraExtends(extra, extra, extra);
+ 		localAabbMin -= extraExtends;
+ 		localAabbMax += extraExtends;
+ 
+@@ -329,6 +346,13 @@ void btCompoundCollisionAlgorithm::processCollision(const btCollisionObjectWrapp
+ 				childShape->getAabb(newChildWorldTrans, aabbMin0, aabbMax0);
+ 				otherObjWrap->getCollisionShape()->getAabb(otherObjWrap->getWorldTransform(), aabbMin1, aabbMax1);
+ 
++				//keep the algorithm alive as long as a near contact can still be reported
++				btScalar keep = btPairContactTolerance(compoundShape, otherObjWrap->getCollisionShape());
++				btVector3 keepVec(keep, keep, keep);
++				aabbMin0 -= keepVec;
++				aabbMax0 += keepVec;
++				aabbMin1 -= keepVec;
++				aabbMax1 += keepVec;
+ 				if (!TestAabbAgainstAabb2(aabbMin0, aabbMax0, aabbMin1, aabbMax1))
+ 				{
+ 					m_childCollisionAlgorithms[i]->~btCollisionAlgorithm();
+diff --git a/src/main/native/bullet3/BulletCollision/CollisionDispatch/btCompoundCompoundCollisionAlgorithm.cpp b/src/main/native/bullet3/BulletCollision/CollisionDispatch/btCompoundCompoundCollisionAlgorithm.cpp
+index 044b60db..2f41b02f 100644
+--- a/src/main/native/bullet3/BulletCollision/CollisionDispatch/btCompoundCompoundCollisionAlgorithm.cpp
++++ b/src/main/native/bullet3/BulletCollision/CollisionDispatch/btCompoundCompoundCollisionAlgorithm.cpp
+@@ -27,6 +27,17 @@ subject to the following restrictions:
+ //USE_LOCAL_STACK will avoid most (often all) dynamic memory allocations due to resizing in processCollision and MycollideTT
+ #define USE_LOCAL_STACK 1
+ 
++//Altered source: child culling must accept the same near contacts the narrow
++//phase accepts. That tolerance is per pair and computed by the dispatcher from
++//the shapes' angular motion disc; an intermediate build using the bare global
++//0.02 under-covers large shapes by an order of magnitude. See btPairContactTolerance in
++//btCompoundCollisionAlgorithm.cpp for the derivation.
++static btScalar btPairContactTolerance(const btCollisionShape* shapeA, const btCollisionShape* shapeB)
++{
++	return btMin(shapeA->getContactBreakingThreshold(gContactBreakingThreshold),
++				 shapeB->getContactBreakingThreshold(gContactBreakingThreshold));
++}
++
+ btShapePairCallback gCompoundCompoundChildShapePairCallback = 0;
+ 
+ btCompoundCompoundCollisionAlgorithm::btCompoundCompoundCollisionAlgorithm(const btCollisionAlgorithmConstructionInfo& ci, const btCollisionObjectWrapper* body0Wrap, const btCollisionObjectWrapper* body1Wrap, bool isSwapped)
+@@ -145,7 +156,8 @@ struct btCompoundCompoundLeafCallback : btDbvt::ICollide
+ 		childShape0->getAabb(newChildWorldTrans0, aabbMin0, aabbMax0);
+ 		childShape1->getAabb(newChildWorldTrans1, aabbMin1, aabbMax1);
+ 
+-		btVector3 thresholdVec(m_resultOut->m_closestPointDistanceThreshold, m_resultOut->m_closestPointDistanceThreshold, m_resultOut->m_closestPointDistanceThreshold);
++		btScalar threshold = m_resultOut->m_closestPointDistanceThreshold + btPairContactTolerance(m_compound0ColObjWrap->getCollisionShape(), m_compound1ColObjWrap->getCollisionShape());
++		btVector3 thresholdVec(threshold, threshold, threshold);
+ 
+ 		aabbMin0 -= thresholdVec;
+ 		aabbMax0 += thresholdVec;
+@@ -342,7 +354,7 @@ void btCompoundCompoundCollisionAlgorithm::processCollision(const btCollisionObj
+ 	btCompoundCompoundLeafCallback callback(col0ObjWrap, col1ObjWrap, this->m_dispatcher, dispatchInfo, resultOut, this->m_childCollisionAlgorithmCache, m_sharedManifold);
+ 
+ 	const btTransform xform = col0ObjWrap->getWorldTransform().inverse() * col1ObjWrap->getWorldTransform();
+-	MycollideTT(tree0->m_root, tree1->m_root, xform, &callback, resultOut->m_closestPointDistanceThreshold);
++	MycollideTT(tree0->m_root, tree1->m_root, xform, &callback, resultOut->m_closestPointDistanceThreshold + btPairContactTolerance(col0ObjWrap->getCollisionShape(), col1ObjWrap->getCollisionShape()));
+ 
+ 	//printf("#compound-compound child/leaf overlap =%d                      \r",callback.m_numOverlapPairs);
+ 
+@@ -374,7 +386,8 @@ void btCompoundCompoundCollisionAlgorithm::processCollision(const btCollisionObj
+ 					newChildWorldTrans0 = col0ObjWrap->getWorldTransform() * childTrans0;
+ 					childShape0->getAabb(newChildWorldTrans0, aabbMin0, aabbMax0);
+ 				}
+-				btVector3 thresholdVec(resultOut->m_closestPointDistanceThreshold, resultOut->m_closestPointDistanceThreshold, resultOut->m_closestPointDistanceThreshold);
++				btScalar keepThreshold = resultOut->m_closestPointDistanceThreshold + btPairContactTolerance(col0ObjWrap->getCollisionShape(), col1ObjWrap->getCollisionShape());
++				btVector3 thresholdVec(keepThreshold, keepThreshold, keepThreshold);
+ 				aabbMin0 -= thresholdVec;
+ 				aabbMax0 += thresholdVec;
+ 				{
