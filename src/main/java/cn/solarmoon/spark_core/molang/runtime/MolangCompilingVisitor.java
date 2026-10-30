@@ -63,6 +63,9 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
     private static final Logger LOGGER = LoggerFactory.getLogger("Spark-Core/Molang/VISITOR");
 
     private static final Type STRING_TYPE = Type.getType(String.class);
+    private static final String OBJECTS_INTERNAL = Type.getInternalName(java.util.Objects.class);
+    private static final String OBJECTS_EQUALS_DESCRIPTOR =
+            Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(Object.class), Type.getType(Object.class));
     private static final Type OBJECT_VALUE_TYPE = Type.getType(ObjectValue.class);
     private static final Type VALUE_TYPE = Type.getType(Value.class);
     private static final Type NUMBER_VALUE_TYPE = Type.getType(NumberValue.class);
@@ -282,6 +285,32 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
             case LTE:
             case GT:
             case GTE: {
+                final Type resultType = currentExpectedType == null ? Type.BOOLEAN_TYPE : currentExpectedType;
+
+                // 任一侧是字符串型表达式时按文本比较：两侧都按 String 编译，
+                // 用 Objects.equals 一并处理字符串查询未命中的 null。
+                // 只剩数值比较时两侧按 double 编译，行为与顺序比较一致。
+                if ((op == BinaryExpression.Op.EQ || op == BinaryExpression.Op.NEQ)
+                        && (isStringValued(expression.left()) || isStringValued(expression.right()))) {
+                    expectedType = STRING_TYPE;
+                    visitAsString(expression.left());
+                    visitAsString(expression.right());
+                    expectedType = currentExpectedType;
+
+                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, OBJECTS_INTERNAL, "equals",
+                            OBJECTS_EQUALS_DESCRIPTOR, false);
+
+                    Label trueLabel = new Label();
+                    Label endLabel = new Label();
+                    mv.visitJumpInsn(op == BinaryExpression.Op.EQ ? Opcodes.IFNE : Opcodes.IFEQ, trueLabel);
+                    emitBoolean(false, resultType);
+                    mv.visitJumpInsn(Opcodes.GOTO, endLabel);
+                    mv.visitLabel(trueLabel);
+                    emitBoolean(true, resultType);
+                    mv.visitLabel(endLabel);
+                    return new CompileVisitResult(resultType);
+                }
+
                 expectedType = Type.DOUBLE_TYPE;
                 expression.left().visit(this);
                 expression.right().visit(this);
@@ -301,12 +330,12 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
                     case NEQ: mv.visitJumpInsn(Opcodes.IFNE, trueLabel); break;
                 }
 
-                emitConst0();
+                emitBoolean(false, resultType);
                 mv.visitJumpInsn(Opcodes.GOTO, endLabel);
                 mv.visitLabel(trueLabel);
-                emitConst1();
+                emitBoolean(true, resultType);
                 mv.visitLabel(endLabel);
-                return new CompileVisitResult(expectedType == null ? Type.BOOLEAN_TYPE : expectedType);
+                return new CompileVisitResult(resultType);
             }
             case ADD: {
                 expectedType = Type.DOUBLE_TYPE;
@@ -394,6 +423,81 @@ final class MolangCompilingVisitor implements ExpressionVisitor<CompileVisitResu
         // 这里改成编译期响亮失败，异常带算子名与表达式形状，便于内容作者定位。
         throw new IllegalArgumentException(
                 "Unsupported Molang binary operator '" + op + "': " + expression);
+    }
+
+    /**
+     * 编译期判断表达式是否产出字符串。
+     * <p>
+     * 只有这里列出的形状在 String 目标下会真的推入 {@code java.lang.String}（见
+     * {@link #visitString}、{@link #visitAccess}、{@link #visitCall}、{@link #visitTernaryConditional}）；
+     * {@code ==}/{@code !=} 据此决定按文本比还是按数值比，两条编译分支必须与
+     * {@link ExpressionInterpreter} 的判定口径一致。
+     */
+    private boolean isStringValued(final @NotNull Expression expression) {
+        if (expression instanceof StringExpression) {
+            return true;
+        }
+        if (expression instanceof AccessExpression) {
+            final AccessExpression access = (AccessExpression) expression;
+            if (!(access.object() instanceof IdentifierExpression)) {
+                return false;
+            }
+            final String namespace = ((IdentifierExpression) access.object()).name();
+            if (namespace.equals("temp") || namespace.equals("t")
+                    || namespace.equalsIgnoreCase("variable") || namespace.equalsIgnoreCase("v")) {
+                // 变量与 temp 槽在编译路径里只能存 double
+                return false;
+            }
+            return findStringQueryMethod(access.property(), namespace) != null;
+        }
+        if (expression instanceof CallExpression) {
+            final Expression function = ((CallExpression) expression).function();
+            return function instanceof AccessExpression
+                    && ((AccessExpression) function).object() instanceof IdentifierExpression
+                    && findStringQueryCallMethod(
+                            ((AccessExpression) function).property(),
+                            ((IdentifierExpression) ((AccessExpression) function).object()).name()) != null;
+        }
+        if (expression instanceof BinaryExpression) {
+            final BinaryExpression binary = (BinaryExpression) expression;
+            // ?? 的结果类型跟随左值
+            return binary.op() == BinaryExpression.Op.NULL_COALESCE && isStringValued(binary.left());
+        }
+        if (expression instanceof TernaryConditionalExpression) {
+            final TernaryConditionalExpression ternary = (TernaryConditionalExpression) expression;
+            return isStringValued(ternary.trueExpression()) && isStringValued(ternary.falseExpression());
+        }
+        return false;
+    }
+
+    /**
+     * 推入 {@code 0}/{@code 1} 并按目标类型转换。
+     * <p>
+     * 比较结果的声明类型必须与实际推入的栈值一致：String 目标下由
+     * {@link AsmUtil#addCast} 转成 {@code "1"}/{@code "0"}，double 目标下转成 1.0/0.0。
+     */
+    private void emitBoolean(final boolean value, final @NotNull Type target) {
+        mv.visitInsn(value ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
+        if (!Type.BOOLEAN_TYPE.equals(target) && !Type.INT_TYPE.equals(target)) {
+            AsmUtil.addCast(mv, Type.INT_TYPE, target);
+        }
+    }
+
+    /**
+     * 按 {@link #expectedType} 求值表达式，并把栈值统一成 {@code java.lang.String}。
+     * <p>
+     * 少数访问形状不看 {@code expectedType}（{@code temp.*} 固定推 double、
+     * {@code temp.x = …} 的赋值表达式不推值），这里按实际推入类型补转换，
+     * 字符串比较两侧才能都满足 {@code Objects.equals(Object, Object)}。
+     */
+    private void visitAsString(final @NotNull Expression expression) {
+        final CompileVisitResult result = expression.visit(this);
+        final Type pushed = result == null ? null : result.lastPushedType();
+        if (pushed == null) {
+            mv.visitInsn(Opcodes.ACONST_NULL);
+        } else if (!STRING_TYPE.equals(pushed)) {
+            AsmUtil.addCast(mv, pushed, STRING_TYPE);
+        }
     }
 
     /**

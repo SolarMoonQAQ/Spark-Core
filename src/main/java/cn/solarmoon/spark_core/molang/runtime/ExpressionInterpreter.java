@@ -41,6 +41,7 @@ import static java.util.Objects.requireNonNull;
 
 @ApiStatus.Internal
 public final class ExpressionInterpreter<T> implements ExpressionVisitor<Value>, ExecutionContext<T> {
+    // 按 BinaryExpression.Op 的 ordinal 索引（见 visitBinary），末尾两项依次是 EQ、NEQ。
     private static final List<Evaluator> BINARY_EVALUATORS = Arrays.asList(
             bool((a, b) -> a.eval() && b.eval()),
             bool((a, b) -> a.eval() || b.eval()),
@@ -111,8 +112,8 @@ public final class ExpressionInterpreter<T> implements ExpressionVisitor<Value>,
                 }
                 return NumberValue.zero();
             },
-            arithmetic((a, b) -> ((a.eval() == b.eval()) ? 1.0F : 0.0F)), // eq
-            arithmetic((a, b) -> ((a.eval() != b.eval()) ? 1.0F : 0.0F))  // neq
+            (evaluator, a, b) -> equality(evaluator, a, b, true),  // eq
+            (evaluator, a, b) -> equality(evaluator, a, b, false)  // neq
     );
 
     private final T entity;
@@ -146,6 +147,24 @@ public final class ExpressionInterpreter<T> implements ExpressionVisitor<Value>,
                 () -> a.visit(evaluator).getAsNumber(),
                 () -> b.visit(evaluator).getAsNumber()
         ));
+    }
+
+    /**
+     * {@code ==} / {@code !=}：任一侧是字符串值时按文本比较，否则按数值比较。
+     * <p>
+     * 与编译路径（{@link MolangCompilingVisitor} 的 EQ/NEQ 分支）同一口径：
+     * 字符串与数字混比时，数字按 {@link Value#getAsString()} 转成文本。
+     */
+    private static @NotNull Value equality(final @NotNull ExpressionInterpreter<?> evaluator,
+                                           final @NotNull Expression a,
+                                           final @NotNull Expression b,
+                                           final boolean equal) {
+        final Value aVal = a.visit(evaluator);
+        final Value bVal = b.visit(evaluator);
+        final boolean same = aVal.isString() || bVal.isString()
+                ? aVal.getAsString().equals(bVal.getAsString())
+                : aVal.getAsNumber() == bVal.getAsNumber();
+        return NumberValue.of(same == equal ? 1.0 : 0.0);
     }
 
     public void warnOnReflectiveFunctionUsage(final boolean warnOnReflectiveFunctionUsage) {
