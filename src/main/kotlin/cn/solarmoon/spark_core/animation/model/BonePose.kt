@@ -25,9 +25,6 @@ class BonePose(
 
     /**
      * 主线程调用，将物理线程写入的动画数据发布到本地变换（双缓冲，供渲染插值）。
-     * <p>
-     * 不再逐骨骼发送 BoneUpdateEvent（每帧 1500+ 次 EventBus.post 是性能灾难）。
-     * IK 等需求应订阅模型级事件 {@link ModelPoseUpdatedEvent}，一次性获取所有骨骼。
      */
     internal fun setChanged() {
         oLocalTransform = localTransform

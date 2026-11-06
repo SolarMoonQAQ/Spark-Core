@@ -12,8 +12,8 @@ import cn.solarmoon.spark_core.util.toVec3
 import net.minecraft.world.phys.Vec3
 import org.joml.Quaterniond
 import org.joml.Vector3f
-import kotlin.collections.component1
-import kotlin.collections.component2
+import java.util.SortedMap
+import java.util.concurrent.ConcurrentSkipListMap
 
 class AnimController(
     val animatable: IAnimatable<*>
@@ -34,7 +34,8 @@ class AnimController(
     val originAnimations get() = OAnimationSet.getOrEmpty(animatable.modelController.model?.index)
     val originStateMachines get() = OAnimStateMachineSet.getOrEmpty(animatable.modelController.model?.index?.location)
 
-    val layers = sortedMapOf<Int, AnimLayer>()  // TreeMap，天然有序，避免每帧每骨骼 sortedBy
+    // 物理线程可在主线程 tick 遍历时创建层，保留组号顺序并允许并发迭代。
+    val layers: SortedMap<Int, AnimLayer> = ConcurrentSkipListMap()
 
     val stateMachines by lazy { originStateMachines.buildRootMachines(animatable) }
 
@@ -54,16 +55,16 @@ class AnimController(
     }
 
     fun playAnimation(anim: AnimInstance) {
-        layers.getOrPut(anim.group) { AnimLayer() }.animations.add(anim)
+        layers.computeIfAbsent(anim.group) { AnimLayer() }.addAnimation(anim)
     }
 
     fun stopAnimation(group: Int) {
-        layers[group]?.animations?.toList()?.forEach { it.exit() }
+        layers[group]?.snapshotAnimations()?.forEach { it.exit() }
     }
 
     fun stopAllAnimation() {
         layers.values.forEach {
-            it.animations.toList().forEach { it.exit() }
+            it.snapshotAnimations().forEach { it.exit() }
         }
     }
 
@@ -82,8 +83,7 @@ class AnimController(
         val pos = tmpPos.zero()
         val rot = tmpRot.identity()
         val scale = tmpScale.set(1f, 1f, 1f)
-        layers.entries.forEach { (_, layer) ->  // TreeMap 已有序，无需每帧重新排序
-            if (!layer.isPlaying) return@forEach
+        layers.values.forEach { layer ->
             val weight = layer.getBoneWeight(boneName).toDouble()
             if (weight == 0.0) return@forEach // 先查 HashSet.contains，无动画则跳过昂贵的 blendBone
             val boneTransform = layer.blendBone(boneName)
@@ -137,6 +137,7 @@ class AnimController(
             for (bonePose in model.pose.bonePoseList) {
                 bonePose.updateInternal(blendBone(bonePose.name))
             }
+            // TODO(IK): 增加默认 null 的姿态处理器字段；整份姿态混合后在物理线程直调一次，供 IK 读写本步姿态，再整批提交供主线程发布。
         }
 
         if (speedChangeTime > 0) speedChangeTime--
@@ -161,8 +162,6 @@ class AnimController(
                 bonePose.setChanged()
                 animatable.onBoneUpdate(bonePose)
             }
-            // TODO: IK / 动画后处理需求 — 此处发送模型级 ModelPoseUpdatedEvent，
-            //       一次性携带所有骨骼姿态，供 IK 求解器读取并修改 bonePose.localTransform。
         }
 
         layers.values.forEach { it.tick() }

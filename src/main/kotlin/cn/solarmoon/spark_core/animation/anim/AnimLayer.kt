@@ -8,9 +8,15 @@ import org.joml.Vector3f
 
 class AnimLayer {
 
-    // 所有写操作（add / removeIf）仅在物理线程执行，主线程仅读取。
-    // 主线程侧已通过 toList() 快照化，物理线程单线程串行——无需 CHM。
+    /** 物理线程拥有的集合；跨线程读取请使用 [snapshotAnimations]。 */
     val animations = LinkedHashSet<AnimInstance>()
+
+    /** 把复制本身和增删互斥；回调在锁外执行。 */
+    fun snapshotAnimations(): List<AnimInstance> = synchronized(animations) { animations.toList() }
+
+    internal fun addAnimation(anim: AnimInstance) = synchronized(animations) {
+        if (animations.add(anim)) cachedBoneNames = null
+    }
 
     var blendMode = BlendMode.OVERRIDE
 
@@ -18,8 +24,7 @@ class AnimLayer {
      * 本层所有动画所涉及的骨骼名缓存。
      * <p>
      * null 表示缓存已失效，下次 getBoneWeight 调用时重建。
-     * animations 仅物理线程修改（add via processTasks, removeIf via physicsTick），
-     * 故在 physicsTick 末尾失效即可。
+     * 由物理线程读写，动画加入或离开层时失效。
      */
     private var cachedBoneNames: Set<String>? = null
 
@@ -44,7 +49,7 @@ class AnimLayer {
         return participatingWeight.coerceAtMost(1f)
     }
 
-    val isPlaying get() = animations.isNotEmpty()
+    val isPlaying get() = synchronized(animations) { animations.isNotEmpty() }
 
     // ==== blendBone 热路径临时对象复用（仅在 physTick 中调用，物理线程串行安全） ====
 
@@ -103,13 +108,15 @@ class AnimLayer {
         }
 
         // 仅当确实有动画被移除时才失效缓存，避免大部分 tick 的无意义重建
-        if (animations.removeIf { it.state == AnimState.IDLE }) {
-            cachedBoneNames = null
+        synchronized(animations) {
+            if (animations.removeIf { it.state == AnimState.IDLE }) {
+                cachedBoneNames = null
+            }
         }
     }
 
     fun tick() {
-        animations.toList().forEach {
+        snapshotAnimations().forEach {
             it.tick()
         }
     }
