@@ -33,6 +33,7 @@ package com.jme3.bullet.collision;
 
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyState;
 import cn.solarmoon.spark_core.util.InlineEventConsumer;
 import cn.solarmoon.spark_core.util.InlineEventHandler;
 import com.jme3.bounding.BoundingBox;
@@ -72,10 +73,22 @@ abstract public class PhysicsCollisionObject extends NativePhysicsObject impleme
     public int collideWithOwnerGroups = CollisionGroups.NONE;
 
     private final Map<KClass<? extends PhysicsBodyEvent>, List<InlineEventConsumer<? extends PhysicsBodyEvent>>> eventHandlers = new HashMap<>();
+    private volatile PhysicsBodyState bodyState;
 
     @Override
     public Map<KClass<? extends PhysicsBodyEvent>, List<InlineEventConsumer<? extends PhysicsBodyEvent>>> getEventHandlers() {
         return eventHandlers;
+    }
+
+    /** 刚体持有自己的位姿缓存；首次读取时原生刚体已经初始化。 */
+    public final PhysicsBodyState getBodyState() {
+        var state = bodyState;
+        return state == null ? initializeBodyState() : state;
+    }
+
+    private synchronized PhysicsBodyState initializeBodyState() {
+        if (bodyState == null) bodyState = new PhysicsBodyState(this);
+        return bodyState;
     }
 
     /**

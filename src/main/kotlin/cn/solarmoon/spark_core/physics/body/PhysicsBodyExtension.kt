@@ -14,10 +14,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 
 
-private val states = mutableMapOf<PhysicsCollisionObject, PhysicsBodyState>()
-fun stateOf(collisionObject: PhysicsCollisionObject): PhysicsBodyState {
-    return states.getOrPut(collisionObject) { PhysicsBodyState(collisionObject) }
-}
+fun stateOf(collisionObject: PhysicsCollisionObject): PhysicsBodyState = collisionObject.bodyState
 
 var PhysicsCollisionObject.owner: PhysicsHost?
     get() = userObject as? PhysicsHost
