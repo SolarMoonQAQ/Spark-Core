@@ -125,6 +125,21 @@ abstract class PhysicsLevel(
     var lastPhysicsTickTime = System.nanoTime()
     var overloadWarnCooldown = 0
 
+    /**
+     * 因上一轮物理仍在运行而被整段丢弃的 [requestStep] 次数（累计）。
+     *
+     * <p>被丢弃的那一 tick 不会执行快照同步、[dynamicRepeat] 次步进与地形更新，是一次真实的仿真掉步，
+     * 因此单独计数：它既不会被 [tickCount] 反映，也不会体现在 [lastStepTickTime] 上。</p>
+     */
+    @Volatile
+    var skippedRequests = 0L
+        private set
+
+    /** 连续被丢弃的请求次数；成功执行一轮后清零。 */
+    @Volatile
+    var consecutiveSkips = 0
+        private set
+
     var entities = listOf<Entity>()
         private set
 
@@ -169,6 +184,17 @@ abstract class PhysicsLevel(
         val fixedStep = 1f / tps
         val ticker = System.nanoTime()
         stateFlow.value = PhysicsLevelState.RUNNING
+        try {
+            runStepRound(fixedStep, ticker)
+        } finally {
+            // 异常也必须回到 IDLE：否则 requestStep() 永远落进"仍在运行"分支，
+            // 物理静默停摆且一条日志都不会有。
+            stateFlow.value = PhysicsLevelState.IDLE
+        }
+    }
+
+    /** [stepPhysics] 的一轮步进本体；RUNNING/IDLE 的状态恢复由调用方在 finally 里负责。 */
+    private fun runStepRound(fixedStep: Float, ticker: Long) {
         val stepSleepTime = if (targetStepTime > 0) {
             // 仅当设置了目标步进时间才插入休眠（targetStepTime=0 表示尽可能快完成，不休眠）
             ((targetStepTime - smoothedStepTime) / dynamicRepeat).toLong().coerceAtLeast(0L)
@@ -227,28 +253,53 @@ abstract class PhysicsLevel(
             }
         }
         // 整轮计算完成（lastStepTickTime 已在循环内实时更新，这里保持最终值一致）
-        stateFlow.value = PhysicsLevelState.IDLE
     }
 
     /**
      * 在主线程每tick调用，向物理线程发送模拟请求（或多线程模式直接同步调用）。
      * 多线程模式下物理线程接收到请求后会立刻模拟约1主线程tick时间的物理步进，
      * 此时主线程会继续执行后续内容。单线程模式下直接同步执行。
+     *
+     * 上一次请求的步进如果还没跑完，本次请求整段作废：快照同步、[dynamicRepeat] 次步进与地形更新
+     * 都不执行，只累加 [skippedRequests] / [consecutiveSkips] 并按冷却告警。这是唯一的掉步路径，
+     * [PhysicsBodyState.transform] 也因此会比网络 tick 慢一拍——诊断方读这两个计数即可判断，
+     * 不必从位姿是否变化反推。
      */
     fun requestStep() {
         if (!::world.isInitialized) return
-        // 如果物理线程已经在运行，跳过此次同步等待其完成
+        // 冷却在两条路径上都衰减：连续掉步期间若只让失败分支衰减，恢复后会把积攒的间隔一次刷完
+        if (overloadWarnCooldown > 0) overloadWarnCooldown--
+        // 物理线程仍在跑：本轮请求整段丢弃——快照同步、dynamicRepeat 次步进与地形更新都不执行。
+        // 这是"真正的过载"，也是唯一会掉步的分支，所以计数与告警都放在这里。
         if (stateFlow.value == PhysicsLevelState.RUNNING) {
+            skippedRequests++
+            consecutiveSkips++
+            if (overloadWarnCooldown <= 0) {
+                SparkCore.LOGGER.warn(
+                    "{} tick {} overdue: previous round still running {}ms after its last step, " +
+                        "this tick's {} steps skipped ({} skipped total, {} in a row, {} rigid bodies, {} chunks loaded)",
+                    name,
+                    tickCount,
+                    (System.nanoTime() - lastPhysicsTickTime) / 1_000_000,
+                    dynamicRepeat,
+                    skippedRequests,
+                    consecutiveSkips,
+                    world.pcoList.size,
+                    mcLevel.chunkSource.loadedChunksCount
+                )
+                overloadWarnCooldown = 100
+            }
             return
         }
-        // 警告信息
-        if (overloadWarnCooldown > 0) overloadWarnCooldown--
-        if ((lastStepTickTime / 1000000) >= 50 && overloadWarnCooldown <= 0) {
+        consecutiveSkips = 0
+        // 上一轮跑完了但很慢：与降频判据用同一把尺子（smoothedStepTime 对 TICK_BUDGET_NS），
+        // 而不是另一套硬编码阈值，否则告警会比降频晚一档、且随单轮抖动
+        if (smoothedStepTime >= TICK_BUDGET_NS * OVERLOAD_THRESHOLD_RATIO && overloadWarnCooldown <= 0) {
             SparkCore.LOGGER.warn(
-                "{} tick {} overloaded, last tick time: {}ms, speed: {}%, rigid body in world: {} with {}, while {} chunks loaded.",
+                "{} tick {} slow: {}ms smoothed, speed {}%, rigid body in world: {} with {}, while {} chunks loaded.",
                 name,
                 tickCount,
-                (lastStepTickTime / 1000000).toInt(),
+                (smoothedStepTime / 1_000_000).toInt(),
                 dynamicRepeat * 100 / baseStep,
                 world.pcoList.size,
                 terrainManager.getStats(),
