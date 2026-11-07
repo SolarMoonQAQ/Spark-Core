@@ -9,6 +9,10 @@ data class KeyAnimData(
     val scale: Vec3 = Vec3(1.0, 1.0, 1.0)
 ) {
 
+    companion object {
+        internal val IDENTITY = KeyAnimData()
+    }
+
     fun lerp(target: KeyAnimData, progress: Double): KeyAnimData {
         return KeyAnimData(
             position.lerp(target.position, progress),

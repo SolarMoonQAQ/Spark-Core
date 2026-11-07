@@ -11,16 +11,17 @@ class BonePose(
     val name: String
 ) {
 
-    private var internalTransform = KeyAnimData()
+    internal var physicsTransform = KeyAnimData.IDENTITY
+        private set
 
-    internal var oLocalTransform = KeyAnimData()
-    internal var localTransform = KeyAnimData()
+    internal var oLocalTransform = KeyAnimData.IDENTITY
+    internal var localTransform = KeyAnimData.IDENTITY
 
     /**
-     * 内部线程更新骨骼数据，更新不会立刻生效，将在下一个主线程tick开始时统一更新
+     * 物理线程写入当前混合姿态，供同一步读取。渲染样本由主线程通过 [setChanged] 发布。
      */
     internal fun updateInternal(newData: KeyAnimData) {
-        internalTransform = newData
+        physicsTransform = newData
     }
 
     /**
@@ -28,7 +29,7 @@ class BonePose(
      */
     internal fun setChanged() {
         oLocalTransform = localTransform
-        localTransform = internalTransform
+        localTransform = physicsTransform
     }
 
     fun getLocalPosition(partialTicks: Number = 1.0) = oLocalTransform.position.lerp(localTransform.position, partialTicks.toDouble())
@@ -85,7 +86,7 @@ class BonePose(
     }
 
     fun copy() = BonePose(model, name).apply {
-        this@apply.internalTransform = this@BonePose.internalTransform
+        this@apply.physicsTransform = this@BonePose.physicsTransform
         this@apply.oLocalTransform = this@BonePose.oLocalTransform
         this@apply.localTransform = this@BonePose.localTransform
     }

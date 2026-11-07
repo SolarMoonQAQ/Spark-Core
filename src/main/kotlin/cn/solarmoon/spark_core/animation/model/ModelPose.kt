@@ -1,10 +1,9 @@
 package cn.solarmoon.spark_core.animation.model
 
+import cn.solarmoon.spark_core.animation.anim.KeyAnimData
 import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 import org.joml.Vector3f
-import kotlin.collections.HashMap
-import kotlin.text.get
 
 class ModelPose(
     val model: ModelInstance
@@ -31,6 +30,18 @@ class ModelPose(
     fun getBonePose(name: String) = bonePoses[name]!! // 理论上骨骼组创建时已经根据当前origin获取了所有骨骼，所以不存在不存在的骨骼
 
     fun getBonePoseOrCreateEmpty(name: String) = bonePoses.getOrPut(name) { BonePose(model, name) }
+
+    /** 物理线程读取本子步混合结果。返回值只含动画增量。 */
+    fun getPhysicsLocalTransform(name: String): KeyAnimData? = bonePoses[name]?.physicsTransform
+
+    /** 物理线程按骨骼名共享动画增量。固定骨骼及源模型缺失的骨骼清除旧动画增量。 */
+    fun copyPhysicsAnimationFrom(source: ModelPose, fixedBones: Set<String>) {
+        for (bone in bonePoseList) {
+            val sourceTransform = if (bone.name in fixedBones) null else source.getPhysicsLocalTransform(bone.name)
+            val transform = sourceTransform ?: KeyAnimData.IDENTITY
+            if (bone.physicsTransform !== transform) bone.updateInternal(transform)
+        }
+    }
 
     fun getSpaceBoneLocatorMatrix(name: String, partialTicks: Number = 1.0): Matrix4f {
         val locator = model.origin.locators[name] ?: return Matrix4f()
