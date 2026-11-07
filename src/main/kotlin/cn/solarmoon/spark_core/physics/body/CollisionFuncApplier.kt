@@ -1,68 +1,96 @@
 package cn.solarmoon.spark_core.physics.body
 
-import cn.solarmoon.spark_core.SparkCore
-import cn.solarmoon.spark_core.physics.PhysicsHost
+import cn.solarmoon.spark_core.api.physicsLevel
+import cn.solarmoon.spark_core.physics.toVec3d
+import cn.solarmoon.spark_core.util.Subscription
 import cn.solarmoon.spark_core.util.onEvent
-import com.jme3.bullet.collision.PhysicsCollisionObject
 import com.jme3.bullet.collision.shapes.BoxCollisionShape
 import com.jme3.bullet.objects.PhysicsRigidBody
-import com.jme3.math.Vector3f
 import net.minecraft.world.entity.Entity
-import net.minecraft.world.entity.player.Player
+import net.minecraft.world.level.Level
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent
-import net.neoforged.neoforge.event.tick.EntityTickEvent
 
 object CollisionFuncApplier {
 
+    private class DefaultBody(val level: Level, shape: BoxCollisionShape) : PhysicsRigidBody(shape) {
+        lateinit var follow: Subscription
+    }
+
     @SubscribeEvent
     private fun addBodyForEntity(event: EntityJoinLevelEvent) {
-        val entity = event.entity
-        if (entity is PhysicsHost
-            && entity !is CollisionObjectEntity
-            && entity.shouldCreateDefaultPhysicsBody()
-        ) {
-            val bb = entity.boundingBox
-            val x = (bb.xsize / 2).toFloat()
-            val y = (bb.ysize / 3).toFloat()
-            val z = (bb.zsize / 2).toFloat()
-            val body = PhysicsRigidBody(BoxCollisionShape(x, y, z)).apply {
-                name = "body"
-                owner = entity
-                isKinematic = true
-                isContactResponse = false
-                collisionGroup = CollisionGroups.PAWN
-                // 默认刚体不参与任何碰撞（isContactResponse = false），显式清空碰撞掩码：
-                // JME 默认 collideWithGroups = COLLISION_GROUP_01（与 TERRAIN 位相同），
-                // 若不显式设置，玩家刚体会被 PhysicsLevel.requestStep() 误判为"与地形碰撞"，
-                // 从而持续驱动无载具场景下的物理区块构建/激活，造成 CPU 占用
-                setCollideWithGroups(CollisionGroups.NONE)
-                onEvent<PhysicsBodyEvent.Tick> {
-                    val bb = entity.boundingBox
-                    val x: Float = (bb.xsize / 2).toFloat()
-                    val y: Float = (bb.ysize / 2).toFloat()
-                    val z: Float = (bb.zsize / 2).toFloat()
-                    val shape = collisionShape as BoxCollisionShape
-                    val halfExtent = shape.getHalfExtents(null)
-                    //仅尺寸发生变化时更新碰撞体形状
-                    if (halfExtent.x != x || halfExtent.y != y || halfExtent.z != z) {
-                        entity.physicsLevel.submitImmediateTask {
-                            collisionShape = BoxCollisionShape(x, y, z)
-                        }
+        refreshDefaultBody(event.entity, event.level)
+    }
+
+    @JvmStatic
+    fun refreshDefaultBody(entity: Entity, level: Level) {
+        if (entity is CollisionObjectEntity) return
+        val physics = level.physicsLevel
+        physics.submitImmediateTask {
+            synchronized(entity) {
+                if (entity.isRemoved || entity.level() !== level) return@synchronized
+                val current = entity.getPhysicsBody("body")
+                val enabled = entity.shouldCreateDefaultPhysicsBody()
+                if (current is DefaultBody && (current.level !== level || !enabled)) {
+                    removeDefaultBody(current)
+                }
+                if (enabled && entity.getPhysicsBody("body") == null) {
+                    createDefaultBody(entity, level)
+                }
+            }
+        }
+    }
+
+    private fun createDefaultBody(entity: Entity, level: Level) {
+        val bb = entity.boundingBox
+        val body = DefaultBody(level, BoxCollisionShape(
+            (bb.xsize / 2).toFloat(), (bb.ysize / 2).toFloat(), (bb.zsize / 2).toFloat()
+        )).apply {
+            name = "body"
+            isKinematic = true
+            isContactResponse = false
+            collisionGroup = CollisionGroups.PAWN
+            setCollideWithGroups(CollisionGroups.NONE)
+            setPhysicsLocationDp(bb.center.toVec3d())
+            follow = onEvent<PhysicsBodyEvent.Tick> {
+                val bounds = entity.boundingBox
+                setPhysicsLocationDp(bounds.center.toVec3d())
+                val x = (bounds.xsize / 2).toFloat()
+                val y = (bounds.ysize / 2).toFloat()
+                val z = (bounds.zsize / 2).toFloat()
+                val halfExtent = (collisionShape as BoxCollisionShape).getHalfExtents(null)
+                if (halfExtent.x != x || halfExtent.y != y || halfExtent.z != z) {
+                    level.physicsLevel.submitImmediateTask {
+                        if (isInWorld) collisionShape = BoxCollisionShape(x, y, z)
                     }
                 }
             }
-            body.attachToEntity(entity)
-            event.level.addPhysicsBody(body)
+        }
+        body.owner = entity
+        level.physicsLevel.world.addCollisionObject(body)
+    }
+
+    private fun removeDefaultBody(body: DefaultBody) {
+        body.owner = null
+        val physics = body.level.physicsLevel
+        physics.submitImmediateTask {
+            body.follow.dispose()
+            if (body.isInWorld) physics.world.removeCollisionObject(body)
         }
     }
 
     @SubscribeEvent
     private fun removeBodyForEntity(event: EntityLeaveLevelEvent) {
         val entity = event.entity
-        entity.allPhysicsBodies.forEach {
-            event.level.removePhysicsBody(it.value)
+        synchronized(entity) {
+            entity.allPhysicsBodies.values.toList().forEach { body ->
+                if (body is DefaultBody) {
+                    if (body.level === event.level) removeDefaultBody(body)
+                } else {
+                    event.level.removePhysicsBody(body)
+                }
+            }
         }
     }
 
