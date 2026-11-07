@@ -64,10 +64,6 @@ class PhysicsWorld(val level: PhysicsLevel) : PhysicsSpace(
         manifoldPointId: Long
     ) {
         pointProcessed++
-//        if (true) {
-//            ManifoldPoints.setDistance1(manifoldPointId, 1000f)
-//            return
-//        }
         val o1Point = ManifoldPoint(manifoldPointId, 0)
         val o2Point = ManifoldPoint(manifoldPointId, 1)
 
