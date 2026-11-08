@@ -191,6 +191,10 @@ public class EventExecutor {
 
         ParticleEmitterInstance child = new ParticleEmitterInstance(childDef, level);
         child.setPosition(pos);
+        // 子发射器继承父发射器的朝向与缩放：内容包用 events 组合出来的效果（火花 + 闪光 + 烟尘）
+        // 靠这一条才能把各自的局部轴（形状方向、初始速度）对到父发射器定下的轴上
+        child.setRotation(emitter.getRotation());
+        child.setScale(emitter.getScale());
 
         // PARTICLE_WITH_VELOCITY：继承粒子速度
         if (e.getParticleEffectType() == EventNode.ParticleEffectType.PARTICLE_WITH_VELOCITY && buf != null && particleIndex >= 0) {
