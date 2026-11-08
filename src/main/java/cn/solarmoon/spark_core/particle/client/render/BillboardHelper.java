@@ -6,6 +6,8 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -27,7 +29,7 @@ import org.joml.Vector3f;
  *   <li>{@code ROTATE_XYZ}：同时抵消 yaw 和 pitch，面片始终正对摄像机</li>
  *   <li>{@code ROTATE_Y}：仅抵消 yaw + pitch + roll，面片绕世界 Y 轴旋转</li>
  *   <li>{@code DIRECTION_*}：通过视图矩阵获取世界轴方向，用 rotateTo 对齐</li>
- *   <li>{@code LOOKAT_DIRECTION}：速度经视图变换后用 rotateTo 对齐</li>
+ *   <li>{@code LOOKAT_DIRECTION}：速度对齐的拉伸 billboard，面片宽度轴沿速度、法线尽量朝相机</li>
  * </ul>
  */
 public final class BillboardHelper {
@@ -36,6 +38,8 @@ public final class BillboardHelper {
     private static final Vector3f TEMP_DIR = new Vector3f();
     private static final Vector3f TEMP_AXIS = new Vector3f();
     private static final Matrix4f TEMP_MAT = new Matrix4f();
+    private static final Matrix3f TEMP_BASIS = new Matrix3f();
+    private static final Quaternionf TEMP_QUAT = new Quaternionf();
 
     private BillboardHelper() {}
 
@@ -54,6 +58,7 @@ public final class BillboardHelper {
      * @param rotation    粒子自旋角（度）
      * @param mode        Billboard 朝向模式
      * @param velX,velY,velZ 粒子速度（用于 LOOKAT_DIRECTION）
+     * @param px,py,pz    粒子世界坐标（LOOKAT_DIRECTION 求「朝相机」的轴时需要）
      * @param light       光照值
      */
     public static void renderBillboard(VertexConsumer vc, PoseStack pose,
@@ -63,12 +68,17 @@ public final class BillboardHelper {
                                         float r, float g, float b, float a,
                                         float rotation, BillboardMode mode,
                                         float velX, float velY, float velZ,
+                                        float px, float py, float pz,
                                         int light) {
         float hw = width / 2f;
         float hh = height / 2f;
 
         // 1. 应用 Billboard 朝向旋转（抵消/部分抵消摄像机旋转）
-        applyBillboardRotation(pose, viewPose, camera, mode, velX, velY, velZ);
+        if (mode == BillboardMode.LOOKAT_DIRECTION) {
+            applyDirectionAligned(pose, viewPose, camera, velX, velY, velZ, px, py, pz);
+        } else {
+            applyBillboardRotation(pose, viewPose, camera, mode, velX, velY, velZ);
+        }
 
         // 2. 应用粒子自旋（作用于 XY 平面）
         if (rotation != 0) {
@@ -137,6 +147,58 @@ public final class BillboardHelper {
                 // EMITTER_TRANSFORM_XY / XZ / YZ 暂未实现
             }
         }
+    }
+
+    /**
+     * 速度对齐的拉伸 billboard（{@code lookat_direction}）。
+     * <p>
+     * 面片的宽度轴（局部 +X，即贴图 U 方向）对齐粒子的世界速度，因此一张横条贴图会被拉成沿飞行方向的
+     * 拖尾；面片法线取「相机方向在垂直速度平面上的投影」，面片于是始终尽量正对相机，不会像
+     * {@code rotateTo(法线 → 速度)} 那样在速度横穿视野时侧看成一条线而消失。
+     * <p>
+     * 速度为零、或粒子正沿视线飞行（此时法线无解）时退回 {@code rotate_xyz} 的正面朝向。
+     * <p>
+     * 偏移量在 {@link #renderBillboard} 里是相对粒子位置的<b>世界坐标</b>偏移，所以这里的基向量也取世界坐标；
+     * {@code emitter_local_space.position = true} 的发射器把粒子存在发射器局部空间，这类发射器上本模式
+     * 只会得到「局部空间里的世界朝向」，需要随发射器旋转的效果应改用 {@code rotate_xyz} 或
+     * {@code direction_*}。
+     */
+    private static void applyDirectionAligned(PoseStack pose, Matrix4f viewPose, Camera camera,
+                                              float velX, float velY, float velZ,
+                                              float px, float py, float pz) {
+        float lenSq = velX * velX + velY * velY + velZ * velZ;
+        if (lenSq < 1.0E-8f) {
+            applyBillboardRotation(pose, viewPose, camera, BillboardMode.ROTATE_XYZ, velX, velY, velZ);
+            return;
+        }
+        float inv = 1f / (float) Math.sqrt(lenSq);
+        float dx = velX * inv, dy = velY * inv, dz = velZ * inv;
+
+        // 相机方向减去它在速度上的分量 = 垂直于速度、且最接近「朝相机」的法线
+        Vec3 cam = camera.getPosition();
+        float tx = (float) cam.x - px;
+        float ty = (float) cam.y - py;
+        float tz = (float) cam.z - pz;
+        float dot = tx * dx + ty * dy + tz * dz;
+        tx -= dx * dot;
+        ty -= dy * dot;
+        tz -= dz * dot;
+        float tLen = (float) Math.sqrt(tx * tx + ty * ty + tz * tz);
+        if (tLen < 1.0E-4f) {
+            applyBillboardRotation(pose, viewPose, camera, BillboardMode.ROTATE_XYZ, velX, velY, velZ);
+            return;
+        }
+        tx /= tLen;
+        ty /= tLen;
+        tz /= tLen;
+
+        // 局部 +Y = 法线 × 速度；(速度, 侧向, 法线) 右手正交，局部 +Z 即面片法线
+        float yx = ty * dz - tz * dy;
+        float yy = tz * dx - tx * dz;
+        float yz = tx * dy - ty * dx;
+
+        TEMP_BASIS.set(dx, dy, dz, yx, yy, yz, tx, ty, tz);
+        pose.mulPose(TEMP_QUAT.setFromNormalized(TEMP_BASIS).normalize());
     }
 
     /**

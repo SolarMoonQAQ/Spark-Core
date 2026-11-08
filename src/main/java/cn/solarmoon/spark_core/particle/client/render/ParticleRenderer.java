@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 /**
  * 粒子 Billboard 渲染器入口。
@@ -22,6 +23,9 @@ import org.joml.Matrix4f;
  * 建议挂在 RenderLevelStageEvent.Stage.AFTER_ENTITIES 阶段。
  */
 public class ParticleRenderer {
+
+    /** 求粒子世界坐标的临时向量（渲染线程独占）。 */
+    private static final Vector3f TEMP_WORLD_POS = new Vector3f();
 
     /**
      * 渲染单个发射器中的所有粒子。
@@ -44,7 +48,8 @@ public class ParticleRenderer {
         VertexConsumer vc = buffer.getBuffer(renderType);
 
         // Local space 模式：粒子坐标相对于 emitter，先通过变换矩阵偏移 PoseStack
-        if (emitter.getDefinition().getEmitterPreset().hasLocalPosition()) {
+        boolean localSpace = emitter.getDefinition().getEmitterPreset().hasLocalPosition();
+        if (localSpace) {
             pose.pushPose();
             Matrix4f transform = emitter.getTransform();
             pose.last().pose().mul(transform);
@@ -65,18 +70,25 @@ public class ParticleRenderer {
             pose.pushPose();
             pose.translate(rx, ry, rz);
 
+            // lookat_direction 的方向基取世界坐标；局部空间发射器的粒子坐标是发射器局部坐标，先换到世界
+            Vector3f worldPos = TEMP_WORLD_POS.set(rx, ry, rz);
+            if (localSpace) {
+                emitter.getTransform().transformPosition(worldPos);
+            }
+
             BillboardHelper.renderBillboard(vc, pose, viewPose, camera,
                     buf.getRenderWidth(i, partialTick), buf.getRenderHeight(i, partialTick),
                     buf.getU0(i), buf.getV0(i), buf.getU1(i), buf.getV1(i),
                     buf.getR(i), buf.getG(i), buf.getB(i), buf.getA(i),
                     buf.getRot(i), mode,
                     buf.getVelX(i), buf.getVelY(i), buf.getVelZ(i),
+                    worldPos.x, worldPos.y, worldPos.z,
                     light);
 
             pose.popPose();
         }
 
-        if (emitter.getDefinition().getEmitterPreset().hasLocalPosition()) {
+        if (localSpace) {
             pose.popPose();
         }
     }
