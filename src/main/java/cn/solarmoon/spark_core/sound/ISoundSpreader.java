@@ -1,6 +1,5 @@
 package cn.solarmoon.spark_core.sound;
 
-import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -31,11 +30,15 @@ import java.util.UUID;
  */
 public interface ISoundSpreader {
 
+    /** 返回声源所属世界，用于选择播放端和限制实例的生命周期。 */
+    @NotNull
+    Level getLevel();
+
     /**
      * 获取声源的实时位置
      *
-     * <p>此方法在每个游戏tick都会被调用，用于更新声音波面的发射源位置。
-     * 返回的位置将作为声音传播的起点，声音会从此位置以音速向外传播。</p>
+     * <p>传播音效每个游戏 tick 用它生成波面，FMOD 3D 事件每个客户端渲染帧用它更新实例位置。
+     * 实现应只读，可在同一游戏 tick 内多次取样。</p>
      *
      * <p>实现注意事项：</p>
      * <ul>
@@ -44,18 +47,17 @@ public interface ISoundSpreader {
      *   <li>对于移动声源，建议返回质心或主要发声部位的位置</li>
      * </ul>
      *
-     * @param uuid  声源的UUID
-     * @param event 当前播放的声音事件
-     * @return 声源在当前游戏刻的三维世界坐标，单位：方块
+     * @param uuid 播放实例的 UUID
+     * @return 声源的三维世界坐标，单位为方块
      */
     @NotNull
-    Vec3 getPosition(UUID uuid, SoundEvent event);
+    Vec3 getPosition(UUID uuid);
 
     /**
      * 获取声源的实时运动速度
      *
-     * <p>此速度用于计算多普勒效应，即声音频率因声源与收听者相对运动而发生的变化。
-     * 速度向量的大小和方向会影响收听者听到的音高。</p>
+     * <p>传播音效和 FMOD 3D 事件使用此世界速度计算多普勒效应。
+     * 实现应只读，可在同一游戏 tick 内多次取样。</p>
      *
      * <p>物理原理：</p>
      * <ul>
@@ -64,12 +66,11 @@ public interface ISoundSpreader {
      *   <li>速度向量应反映声源在当前游戏刻的瞬时速度</li>
      * </ul>
      *
-     * @param uuid  声源的UUID
-     * @param event 当前播放的声音事件
+     * @param uuid 播放实例的 UUID
      * @return 声源的运动速度向量，单位：方块/秒（注意：不是每tick）
      */
     @NotNull
-    default Vec3 getSpeed(UUID uuid, SoundEvent event) {
+    default Vec3 getSpeed(UUID uuid) {
         return Vec3.ZERO;
     }
 
@@ -86,11 +87,10 @@ public interface ISoundSpreader {
      * <p>此音高值会在多普勒效应计算的基础上进一步叠加，允许实现基于
      * 声源状态的音高变化（如引擎转速变化）。</p>
      *
-     * @param uuid  声源的UUID
-     * @param event 当前播放的声音事件
+     * @param uuid 播放实例的 UUID
      * @return 音高乘数，有效范围通常为 [0.5, 2.0]
      */
-    default float getPitch(UUID uuid, SoundEvent event) {
+    default float getPitch(UUID uuid) {
         return 1.0f;
     }
 
@@ -107,75 +107,25 @@ public interface ISoundSpreader {
      *   <li>大于1.0的值可能造成削波失真，不推荐使用</li>
      * </ul>
      *
-     * @param uuid  声源的UUID
-     * @param event 当前播放的声音事件
+     * @param uuid 播放实例的 UUID
      * @return 声源原始音量，范围 [0.0, 1.0]
      */
-    default float getVolume(UUID uuid, SoundEvent event) {
+    default float getVolume(UUID uuid) {
         return 1.0f;
     }
 
     /**
-     * 判断是否应对当前收听者应用"内部"音效变体。
-     *
-     * <p>由 {@link SpreadingSoundInstance#getSoundBuffer()} 在解析音频 buffer 前调用，
-     * 传入当前收听者实体和摄像机模式。若返回 true，音效系统会优先查找
-     * 带 {@code _interior} 后缀的音效变体（如 {@code engine_idle_interior}），
-     * 找不到时回退为通用版本。</p>
-     *
-     * <p>典型用途：车辆模组中，第一人称且玩家在载具内时返回 true，
-     * 第三人称或玩家在车外时返回 false。</p>
-     *
-     * <p>所有参数均为两端共有类型或原语，避免跨模组类加载问题。</p>
-     *
-     * @param listener      当前收听者实体（客户端摄像机附着实体），可能为 null
-     * @param event         当前播放的声音事件
-     * @param isFirstPerson 摄像机是否处于第一人称模式
-     * @return true 表示应尝试使用 _interior 音效变体
+     * 判断本地听者是否应听车内版本。客户端主线程在播放前及 FMOD 播放期间调用。
+     * 返回 true 时，传播音效优先选择 {@code _interior} 缓冲，FMOD 将可写的 {@code interior} 设为 1。
+     * 实现只读取听者和声源状态。
      */
-    default boolean shouldApplyInteriorEffect(@Nullable Entity listener, SoundEvent event, boolean isFirstPerson) {
+    default boolean shouldApplyInteriorEffect(@Nullable Entity cameraEntity, boolean firstPerson) {
         return false;
-    }
-
-    /**
-     * 播放带音速延迟和多普勒效果的扩散音效，适用于定点播放的声音，双端可用
-     *
-     * @param level      播放声音的维度
-     * @param soundEvent 音效事件，包含音效注册名
-     * @param soundType  声音类型，方块，环境等
-     * @param position   声音位置
-     * @param speed      声音发出时的速度
-     * @param pitch      声音的音高
-     * @param volume     声音的音量
-     * @param fadeIn     声音的淡入时间
-     * @param fadeOut    声音的淡出时间
-     * @param loop       是否循环播放
-     * @return UUID 用于标识该声音的唯一ID
-     */
-    static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume, int fadeIn, int fadeOut, boolean loop) {
-        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume, fadeIn, fadeOut, loop);
-    }
-
-    /**
-     * 播放带音速延迟和多普勒效果的扩散音效，适用于定点播放的声音，双端可用
-     *
-     * @param level      播放声音的维度
-     * @param soundEvent 音效事件，包含音效注册名
-     * @param soundType  声音类型，方块，环境等
-     * @param position   声音位置
-     * @param speed      声音发出时的速度
-     * @param pitch      声音的音高
-     * @param volume     声音的音量
-     * @return UUID 用于标识该声音的唯一ID
-     */
-    static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, Vec3 position, Vec3 speed, float pitch, float volume) {
-        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, position, speed, pitch, volume);
     }
 
     /**
      * 播放带音速延迟和多普勒效果的扩散音效，适用于持续播放且移动的声音，仅在客户端调用时有效
      *
-     * @param level      播放声音的维度
      * @param soundEvent 声音事件，随用随建，用于指定声音传播范围和音效路径
      * @param soundType  声音类型，方块，环境等
      * @param fadeIn     声音的淡入时间 (tick)
@@ -183,31 +133,25 @@ public interface ISoundSpreader {
      * @return UUID 用于标识该声音的唯一ID
      */
     @Nullable
-    default UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, int fadeIn, int fadeOut, boolean loop) {
-        if (!level.isClientSide()) {
-            SparkCore.LOGGER.warn("ISoundSpreader.playSpreadingSound() should only be called on the client side!");
-            return null;
-        }
-        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, this, fadeIn, fadeOut, loop);
+    default UUID playSpreadingSound(SoundEvent soundEvent, SoundSource soundType, int fadeIn, int fadeOut, boolean loop) {
+        return SpreadingSoundHelper.playSpreadingSound(soundEvent, soundType, this, fadeIn, fadeOut, loop);
     }
 
     /**
      * 播放带音速延迟和多普勒效果的扩散音效，适用于持续播放且移动的声音，仅在客户端调用时有效
      *
-     * @param level      播放声音的维度
      * @param soundEvent 声音事件，随用随建，用于指定声音传播范围和音效路径
      * @param soundType  声音类型，方块，环境等
      * @return UUID 用于标识该声音的唯一ID
      */
     @Nullable
-    default UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType) {
-        return SpreadingSoundHelper.playSpreadingSound(level, soundEvent, soundType, this);
+    default UUID playSpreadingSound(SoundEvent soundEvent, SoundSource soundType) {
+        return playSpreadingSound(soundEvent, soundType, 0, 0, false);
     }
 
     /**
      * 播放带音速延迟和多普勒效果的扩散音效并将其与现有的音效交叉淡入淡出(CrossFadeIn/Out)，适用引擎等音效会发生变化的音源，仅在客户端调用时有效
      *
-     * @param level          播放声音的维度
      * @param oldSoundSource 旧声源标识（UUID）
      * @param newSoundEvent  新音效事件
      * @param soundType      声音类型
@@ -216,42 +160,52 @@ public interface ISoundSpreader {
      * @return 新实例的UUID
      */
     @Nullable
-    default UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType, int fadeIn, int fadeOut, boolean loop) {
-        if (!level.isClientSide()) {
-            SparkCore.LOGGER.warn("ISoundSpreader.transitionSound() should only be called on the client side!");
-            return null;
-        }
-        return SpreadingSoundHelper.transitionSound(level, oldSoundSource, newSoundEvent, soundType, this, fadeIn, fadeOut, loop);
+    default UUID transitionSound(UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType, int fadeIn, int fadeOut, boolean loop) {
+        return SpreadingSoundHelper.transitionSound(oldSoundSource, newSoundEvent, soundType, this, fadeIn, fadeOut, loop);
+    }
+
+    /** 开始淡出此声源的传播音效实例。 */
+    default void fadeSound(UUID uuid) {
+        Level level = getLevel();
+        if (level.isClientSide()) SpreadingSoundHelper.fadeSound(level, uuid);
+    }
+
+    /** 立即停止此声源的传播音效实例。 */
+    default void stopSound(UUID uuid) {
+        Level level = getLevel();
+        if (level.isClientSide()) SpreadingSoundHelper.stopSound(level, uuid);
     }
 
     /** 查询指定 FMOD bank 是否已在当前客户端加载。服务端返回 false。 */
-    default boolean isFmodBankLoaded(Level level, ResourceLocation bankId) {
-        return SpreadingSoundHelper.isFmodBankLoaded(level, bankId);
+    default boolean isFmodBankLoaded(ResourceLocation bankId) {
+        return SpreadingSoundHelper.isFmodBankLoaded(getLevel(), bankId);
     }
 
     /**
-     * 在听者原位播放指定 FMOD 事件。客户端在启动前应用初始参数，成功时返回实例 UUID。
+     * 播放指定 FMOD 事件。3D 事件跟随此声源，2D 事件在听者原位播放。
+     * 客户端在启动前应用初始参数和听者判定，成功时返回实例 UUID。
+     * 绑定声源后，局部参数 {@code interior} 由播放器维护。
      * 服务端或事件无法启动时返回 null，客户端调用方可按需回退到传播音效。
      */
     @Nullable
-    default UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
+    default UUID tryPlayFmodSound(ResourceLocation bankId, String eventPath,
                                  SoundSource category, Map<String, Float> initialParams) {
-        return SpreadingSoundHelper.tryPlayFmodSound(level, bankId, eventPath, category, initialParams);
+        return SpreadingSoundHelper.tryPlayFmodSound(this, bankId, eventPath, category, initialParams);
     }
 
     /** 为指定 FMOD 实例更新一个局部参数，服务端调用返回 false。 */
-    default boolean setFmodParameter(Level level, @Nullable UUID uuid, String name, float value) {
-        return SpreadingSoundHelper.setFmodParameter(level, uuid, name, value);
+    default boolean setFmodParameter(@Nullable UUID uuid, String name, float value) {
+        return SpreadingSoundHelper.setFmodParameter(getLevel(), uuid, name, value);
     }
 
     /** 按 Studio 事件的停止过渡淡出，服务端调用返回 false。 */
-    default boolean fadeFmodSound(Level level, @Nullable UUID uuid) {
-        return SpreadingSoundHelper.fadeFmodSound(level, uuid);
+    default boolean fadeFmodSound(@Nullable UUID uuid) {
+        return SpreadingSoundHelper.fadeFmodSound(getLevel(), uuid);
     }
 
     /** 立即停止并释放指定 FMOD 实例，服务端调用返回 false。 */
-    default boolean stopFmodSound(Level level, @Nullable UUID uuid) {
-        return SpreadingSoundHelper.stopFmodSound(level, uuid);
+    default boolean stopFmodSound(@Nullable UUID uuid) {
+        return SpreadingSoundHelper.stopFmodSound(getLevel(), uuid);
     }
 
 }

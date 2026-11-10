@@ -77,7 +77,6 @@ public class SpreadingSoundHelper {
     /**
      * 播放带音速延迟和多普勒效果的扩散音效，适用于持续播放且移动的声音，仅在客户端调用时有效
      *
-     * @param level         播放声音的维度
      * @param soundEvent    声音事件，随用随建时可用于分辨来自同一源的不同声音
      * @param soundType     声音类型，方块，环境等
      * @param soundSpreader 声源，音效会通过接口提供的方法更新其位置
@@ -85,27 +84,28 @@ public class SpreadingSoundHelper {
      * @param fadeOut       声音的淡出时间
      * @return UUID 用于标识该声音的唯一ID
      */
-    public static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop) {
-        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, soundSpreader, fadeIn, fadeOut, loop);
+    @Nullable
+    public static UUID playSpreadingSound(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop) {
+        Level level = soundSpreader.getLevel();
+        return level.isClientSide() ? INSTANCE.playSpreadingSound(level, soundEvent, soundType, soundSpreader, fadeIn, fadeOut, loop) : null;
     }
 
     /**
      * 播放带音速延迟和多普勒效果的扩散音效，适用于持续播放且移动的声音，仅在客户端调用时有效
      *
-     * @param level         播放声音的维度
      * @param soundEvent    声音事件，随用随建时可用于分辨来自同一源的不同声音
      * @param soundType     声音类型，方块，环境等
      * @param soundSpreader 声源，音效会通过接口提供的方法更新其位置
      * @return UUID 用于标识该声音的唯一ID
      */
-    public static UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader) {
-        return INSTANCE.playSpreadingSound(level, soundEvent, soundType, soundSpreader, 0, 0, false);
+    @Nullable
+    public static UUID playSpreadingSound(SoundEvent soundEvent, SoundSource soundType, ISoundSpreader soundSpreader) {
+        return playSpreadingSound(soundEvent, soundType, soundSpreader, 0, 0, false);
     }
 
     /**
      * 播放带音速延迟和多普勒效果的扩散音效并将其与现有的音效交叉淡入淡出(CrossFadeIn/Out)，适用引擎等音效会发生变化的音源，仅在客户端调用时有效
      *
-     * @param level          播放声音的维度
      * @param oldSoundSource 旧声源标识（UUID）
      * @param newSoundEvent  新音效事件
      * @param soundType      声音类型
@@ -114,9 +114,12 @@ public class SpreadingSoundHelper {
      * @param fadeOut        淡出时长
      * @return 新实例的UUID
      */
-    public static UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
+    @Nullable
+    public static UUID transitionSound(UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
                                        ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop) {
-        return INSTANCE.transitionSound(level, oldSoundSource, newSoundEvent, soundType, soundSpreader, fadeIn, fadeOut, loop);
+        Level level = soundSpreader.getLevel();
+        return level.isClientSide() ? INSTANCE.transitionSound(level, oldSoundSource, newSoundEvent, soundType,
+                soundSpreader, fadeIn, fadeOut, loop) : null;
     }
 
     /**
@@ -145,7 +148,14 @@ public class SpreadingSoundHelper {
     @Nullable
     public static UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
                                        SoundSource category, Map<String, Float> initialParams) {
-        return INSTANCE.tryPlayFmodSound(level, bankId, eventPath, category, initialParams);
+        return INSTANCE.tryPlayFmodSound(level, bankId, eventPath, category, initialParams, null);
+    }
+
+    /** 播放绑定到声源的 FMOD 事件。3D 事件跟随声源，车内混音由听者判定维护。 */
+    @Nullable
+    public static UUID tryPlayFmodSound(ISoundSpreader soundSpreader, ResourceLocation bankId, String eventPath,
+                                       SoundSource category, Map<String, Float> initialParams) {
+        return INSTANCE.tryPlayFmodSound(soundSpreader.getLevel(), bankId, eventPath, category, initialParams, soundSpreader);
     }
 
     /** 按 UUID 更新 FMOD 局部参数。服务端或实例不可用时返回 false。 */

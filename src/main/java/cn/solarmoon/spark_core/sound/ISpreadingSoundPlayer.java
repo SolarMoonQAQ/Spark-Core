@@ -27,6 +27,7 @@ public interface ISpreadingSoundPlayer {
      * 创建并绑定可传播声音至音源，并播放
      * @return UUID 用于标识该声音的唯一ID
      */
+    @Nullable
     UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, int fadeIn, int fadeOut, boolean loop);
 
     /**
@@ -41,6 +42,7 @@ public interface ISpreadingSoundPlayer {
      * @param loop 是否循环
      * @return 新实例的UUID
      */
+    @Nullable
     UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
                          ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop);
 
@@ -59,10 +61,11 @@ public interface ISpreadingSoundPlayer {
         return false;
     }
 
-    /** 在听者原位播放 FMOD 事件。服务端或无法启动时返回 null。 */
+    /** 播放 FMOD 事件。绑定声源时由其提供 3D 位置和听者判定，服务端或无法启动时返回 null。 */
     @Nullable
     default UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
-                                 SoundSource category, Map<String, Float> initialParams) {
+                                 SoundSource category, Map<String, Float> initialParams,
+                                 @Nullable ISoundSpreader soundSpreader) {
         return null;
     }
 

@@ -3,7 +3,6 @@ package cn.solarmoon.spark_core.sound;
 import cn.solarmoon.spark_core.SparkCore;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -91,7 +90,7 @@ public interface IMultiChannelSoundSpreader extends ISoundSpreader {
     /**
      * 返回主音量（不含通道权重），默认 1。
      */
-    default float getMasterVolume(UUID uuid, SoundEvent event) {
+    default float getMasterVolume(UUID uuid) {
         return 1.0f;
     }
 
@@ -113,10 +112,10 @@ public interface IMultiChannelSoundSpreader extends ISoundSpreader {
      * 音量 = 主音量 × 通道权重。
      */
     @Override
-    default float getVolume(UUID uuid, SoundEvent event) {
+    default float getVolume(UUID uuid) {
         SoundChannel channel = getChannel(uuid);
         if (channel == null) return 0.0f;
-        return Math.max(0.0f, getMasterVolume(uuid, event) * channel.getWeight());
+        return Math.max(0.0f, getMasterVolume(uuid) * channel.getWeight());
     }
 
     /**
@@ -126,8 +125,8 @@ public interface IMultiChannelSoundSpreader extends ISoundSpreader {
      * 1. 确保每个通道至少有一个活跃实例（首次播放）。
      * 2. 按各通道的重播间隔执行同事件过渡重播，避免长音轨断流。</p>
      */
-    default void tickSoundChannels(Level level, SoundSource soundType, int currentTick, int fadeIn, int fadeOut) {
-        if (!level.isClientSide()) {
+    default void tickSoundChannels(SoundSource soundType, int currentTick, int fadeIn, int fadeOut) {
+        if (!getLevel().isClientSide()) {
             SparkCore.LOGGER.warn("IMultiChannelSoundSpreader.tickSoundChannels() should only be called on the client side!");
             return;
         }
@@ -137,7 +136,7 @@ public interface IMultiChannelSoundSpreader extends ISoundSpreader {
 
             // 首次进入时为通道创建实例，满足\u201c多通道同时播放\u201d的基础要求。
             if (channel.getUuid() == null) {
-                UUID uuid = playSpreadingSound(level, event, soundType, fadeIn, fadeOut, false);
+                UUID uuid = playSpreadingSound(event, soundType, fadeIn, fadeOut, false);
                 channel.setUuid(uuid);
                 channel.setLastRetriggerTick(currentTick);
                 continue;
@@ -147,7 +146,7 @@ public interface IMultiChannelSoundSpreader extends ISoundSpreader {
             int interval = channel.getRetriggerIntervalTicks();
             if (interval > 0 && channel.getWeight() > 0.0f
                     && currentTick - channel.getLastRetriggerTick() >= interval) {
-                UUID next = transitionSound(level, channel.getUuid(), event, soundType, fadeIn, fadeOut, false);
+                UUID next = transitionSound(channel.getUuid(), event, soundType, fadeIn, fadeOut, false);
                 channel.setUuid(next);
                 channel.setLastRetriggerTick(currentTick);
             }

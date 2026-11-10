@@ -77,8 +77,9 @@ object FModModule : SparkPackModule {
                 val handle = stack.mallocPointer(1)
                 checkFmod("创建 Studio System", FMOD_Studio_System_Create(handle, FMOD_VERSION))
                 studio = handle[0]
+                // Minecraft 世界坐标和相机向量沿用右手系。
                 checkFmod("初始化 Studio System",
-                    FMOD_Studio_System_Initialize(studio, 64, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0L))
+                    FMOD_Studio_System_Initialize(studio, 64, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_3D_RIGHTHANDED, 0L))
 
                 // 包的首次出现顺序由内容包加载器决定。一个包加载失败时，保留其它包的 bank。
                 val loaded = linkedMapOf<ResourceLocation, Long>()

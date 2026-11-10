@@ -39,6 +39,7 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
     public final ISoundSpreader ISoundSpreader;
     private final SoundEvent soundEvent;
     public final float maxRange;
+    private volatile boolean interior;
 
     // 声音传播点数据
     public final LinkedList<SoundSourcePoint> soundPoints = new LinkedList<>();
@@ -105,21 +106,21 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.ISoundSpreader = soundSpreader;
         this.attenuation = Attenuation.NONE;//衰减根据与听者的距离自动调整
         this.soundEvent = soundEvent;
-        var position = soundSpreader.getPosition(this.uuid, soundEvent);
+        var position = soundSpreader.getPosition(this.uuid);
         this.x = position.x;
         this.y = position.y;
         this.z = position.z;
         this.maxRange = soundEvent.getRange(1.0f);
-        this.pitch = soundSpreader.getPitch(this.uuid, soundEvent);
-        this.volume = soundSpreader.getVolume(this.uuid, soundEvent);
-        this.speed = soundSpreader.getSpeed(this.uuid, soundEvent);
+        this.pitch = soundSpreader.getPitch(this.uuid);
+        this.volume = soundSpreader.getVolume(this.uuid);
+        this.speed = soundSpreader.getSpeed(this.uuid);
         this.fadeInTicks = fadeInTicks;
         this.fadeOutTicks = fadeOutTicks;
         this.fadeProgress = (fadeInTicks > 0) ? 0 : 1; // 如果没有淡入，立即完成
         this.fadeFactor = fadeProgress;
         this.looping = loop;
         // 创建初始声音点
-        SoundSourcePoint soundPoint = new SoundSourcePoint(position, soundSpreader.getSpeed(this.uuid, soundEvent), this.pitch, this.volume);
+        SoundSourcePoint soundPoint = new SoundSourcePoint(position, soundSpreader.getSpeed(this.uuid), this.pitch, this.volume);
         this.soundPoints.add(soundPoint);
         // 初始化AABB
         updateAABB();
@@ -161,10 +162,10 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
 
             if (ISoundSpreader != null) {
                 // 动态声源：从ISoundSpreader获取实时位置、速度、音高、音量
-                pointPos = ISoundSpreader.getPosition(this.uuid, getSoundEvent());
-                pointPitch = ISoundSpreader.getPitch(this.uuid, getSoundEvent());
-                pointVolume = ISoundSpreader.getVolume(this.uuid, getSoundEvent());
-                pointSpeed = ISoundSpreader.getSpeed(this.uuid, getSoundEvent());
+                pointPos = ISoundSpreader.getPosition(this.uuid);
+                pointPitch = ISoundSpreader.getPitch(this.uuid);
+                pointVolume = ISoundSpreader.getVolume(this.uuid);
+                pointSpeed = ISoundSpreader.getSpeed(this.uuid);
             } else {
                 // 循环静态声源：从当前位置持续发射波面
                 pointPos = new Vec3(x, y, z);
@@ -257,8 +258,8 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.z = other.z;
         this.speed = other.speed;
         if(this.ISoundSpreader != null) {
-            this.pitch = this.ISoundSpreader.getPitch(this.uuid, this.soundEvent);
-            this.volume = this.ISoundSpreader.getVolume(this.uuid, this.soundEvent);
+            this.pitch = this.ISoundSpreader.getPitch(this.uuid);
+            this.volume = this.ISoundSpreader.getVolume(this.uuid);
         }else{
             this.pitch = other.pitch;
             this.volume = other.volume;
@@ -354,25 +355,28 @@ public class SpreadingSoundInstance extends AbstractTickableSoundInstance {
         this.soundPoints.remove(point);
     }
 
+    /** 波面抵达后在客户端主线程判定混音，只把结果交给绑定音频缓冲的线程。 */
+    public void preparePlayback() {
+        Minecraft client = Minecraft.getInstance();
+        interior = ISoundSpreader != null
+                && ISoundSpreader.shouldApplyInteriorEffect(client.getCameraEntity(), client.options.getCameraType().isFirstPerson());
+    }
+
     @Nullable
     public SoundBuffer getSoundBuffer() {
         ResourceLocation location = getSoundEvent().getLocation();
         SoundData soundData = null;
 
         // ★ 车内/车外音效差异化：依次查找 _interior 后缀变体
-        if (ISoundSpreader != null) {
-            var cameraEntity = Minecraft.getInstance().getCameraEntity();
-            boolean isFirstPerson = Minecraft.getInstance().options.getCameraType().isFirstPerson();
-            if (ISoundSpreader.shouldApplyInteriorEffect(cameraEntity, getSoundEvent(), isFirstPerson)) {
-                ResourceLocation interiorLoc = ResourceLocation.fromNamespaceAndPath(
-                        location.getNamespace(), location.getPath() + "_interior");
-                // 1. 先查 SoundModule 内的车内变体
-                soundData = SoundModule.getSound(interiorLoc);
-                // 2. 回退到原版 SoundManager 的车内变体
-                if (soundData == null) {
-                    SoundBuffer interiorBuffer = SpreadingSoundHelper.INSTANCE.getSoundBuffer(interiorLoc);
-                    if (interiorBuffer != null) return interiorBuffer;
-                }
+        if (interior) {
+            ResourceLocation interiorLoc = ResourceLocation.fromNamespaceAndPath(
+                    location.getNamespace(), location.getPath() + "_interior");
+            // 1. 先查 SoundModule 内的车内变体
+            soundData = SoundModule.getSound(interiorLoc);
+            // 2. 回退到原版 SoundManager 的车内变体
+            if (soundData == null) {
+                SoundBuffer interiorBuffer = SpreadingSoundHelper.INSTANCE.getSoundBuffer(interiorLoc);
+                if (interiorBuffer != null) return interiorBuffer;
             }
         }
 

@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
@@ -28,6 +29,12 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     public static final RandomSource RANDOM = RandomSource.create();
 
     private static final ConcurrentHashMap<UUID, SpreadingSoundInstance> activeInstances = new ConcurrentHashMap<>();
+
+    /** 返回听者的世界速度，单位为方块/秒。乘客随载具移动时由根载具提供速度。 */
+    public static Vec3 getListenerVelocity(@Nullable Entity cameraEntity) {
+        if (cameraEntity == null) return Vec3.ZERO;
+        return cameraEntity.getRootVehicle().getDeltaMovement().scale(20);
+    }
 
     public static void playSpreadingSound(SpreadingSoundInstance soundInstance) {
         ISoundManagerMixin soundManager = (ISoundManagerMixin) Minecraft.getInstance().getSoundManager();
@@ -48,7 +55,8 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
         return sound.getUUID();
     }
 
-    public UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, int fadeIn, int fadeOut, boolean loop) {
+    public @Nullable UUID playSpreadingSound(Level level, SoundEvent soundEvent, SoundSource soundType, ISoundSpreader ISoundSpreader, int fadeIn, int fadeOut, boolean loop) {
+        if (!isCurrentClientLevel(level)) return null;
         var sound = new SpreadingSoundInstance(soundEvent, soundType, ISoundSpreader, fadeIn, fadeOut, loop);
         playSpreadingSound(sound);
         return sound.getUUID();
@@ -65,8 +73,9 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
      * @param loop 是否循环
      * @return 新实例的UUID
      */
-    public UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
+    public @Nullable UUID transitionSound(Level level, UUID oldSoundSource, SoundEvent newSoundEvent, SoundSource soundType,
                                 ISoundSpreader soundSpreader, int fadeIn, int fadeOut, boolean loop) {
+        if (!isCurrentClientLevel(level)) return null;
         SpreadingSoundInstance oldInstance = activeInstances.get(oldSoundSource);
 
         // 创建新实例
@@ -105,8 +114,10 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     /** {@inheritDoc} */
     @Override
     public @Nullable UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
-                                          SoundSource category, Map<String, Float> initialParams) {
-        return isCurrentClientLevel(level) ? FModSoundPlayer.tryPlay(bankId, eventPath, initialParams, category) : null;
+                                          SoundSource category, Map<String, Float> initialParams,
+                                          @Nullable ISoundSpreader soundSpreader) {
+        return isCurrentClientLevel(level)
+                ? FModSoundPlayer.tryPlay(bankId, eventPath, initialParams, category, soundSpreader) : null;
     }
 
     /** {@inheritDoc} */

@@ -12,7 +12,6 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.client.sounds.SoundEngine;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -95,6 +94,7 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
                         //预初始化音调音量
                         instance.setVolume(spark_core$calculateVolume(instance));
                         instance.setPitch(spark_core$calculatePitch(instance));
+                        instance.preparePlayback();
                         this.play(instance);
                         instance.isPlaying = true;
                     }
@@ -157,16 +157,7 @@ public abstract class SoundEngineMixin implements ISoundEngineMixin {
 
     @Unique
     public float spark_core$calculatePitch(SpreadingSoundInstance sound) {
-        Vec3 listenerSpeed;
-        if (Minecraft.getInstance().getCameraEntity() instanceof Entity entity) {
-            if (!entity.isPassenger())
-                listenerSpeed = entity.getDeltaMovement().scale(20);
-            else {
-                listenerSpeed = entity.getRootVehicle().getDeltaMovement().scale(20);
-            }
-        } else {
-            listenerSpeed = Vec3.ZERO;
-        }
+        Vec3 listenerSpeed = ClientSpreadingSoundPlayer.getListenerVelocity(Minecraft.getInstance().getCameraEntity());
         Vec3 sourcePos = new Vec3(sound.getX(), sound.getY(), sound.getZ());
         Vec3 sourceSpeed = sound.getSpeed();
         Vec3 toListener = listener.getTransform().position().subtract(sourcePos).normalize();
