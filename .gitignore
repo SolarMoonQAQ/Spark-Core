@@ -32,3 +32,4 @@ gradlew
 gradlew.bat
 .kotlin
 /bin/
+/fmod/

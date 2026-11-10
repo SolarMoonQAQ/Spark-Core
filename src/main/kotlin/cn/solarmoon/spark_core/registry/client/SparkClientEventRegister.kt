@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.registry.client
 import cn.solarmoon.spark_core.entity.player.PlayerApplier
 import cn.solarmoon.spark_core.local_control.LocalController
 import cn.solarmoon.spark_core.pack.diagnostic.client.PackIssueNotifier
+import cn.solarmoon.spark_core.pack.modules.FModModule
 import cn.solarmoon.spark_core.physics.level.ClientPhysicsLevelApplier
 import cn.solarmoon.spark_core.visual_effect.VisualEffectTicker
 import cn.solarmoon.spark_core.visual_effect.camera_shake.CameraShakeApplier
@@ -18,6 +19,7 @@ object SparkClientEventRegister {
         add(CameraShakeApplier)
         add(LocalController)
         add(PackIssueNotifier)
+        add(FModModule)
     }
 
     private fun add(event: Any) {

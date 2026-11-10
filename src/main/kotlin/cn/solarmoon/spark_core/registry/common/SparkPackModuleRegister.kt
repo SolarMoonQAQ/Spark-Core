@@ -3,6 +3,7 @@ package cn.solarmoon.spark_core.registry.common
 import cn.solarmoon.spark_core.event.SparkPackageReaderRegisterEvent
 import cn.solarmoon.spark_core.pack.modules.*
 import net.neoforged.bus.api.IEventBus
+import net.neoforged.fml.loading.FMLEnvironment
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent
 
 object SparkPackModuleRegister {
@@ -17,6 +18,7 @@ object SparkPackModuleRegister {
         event.register(AnimStateModule())
         event.register(AbilityTypeModule())
         event.register(SoundModule())
+        if (FMLEnvironment.dist.isClient) event.register(FModModule)
         event.register(ParticleModule())
     }
 

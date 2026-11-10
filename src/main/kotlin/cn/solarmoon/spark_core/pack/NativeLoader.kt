@@ -7,6 +7,12 @@ import com.jme3.system.Platform.Os.*
 import net.neoforged.fml.ModList
 import net.neoforged.fml.ModLoadingException
 import net.neoforged.fml.ModLoadingIssue
+import org.lwjgl.fmod.FMOD
+import org.lwjgl.fmod.FMODStudio
+import org.lwjgl.system.Configuration
+import org.lwjgl.system.Platform as LwjglPlatform
+import java.io.IOException
+import java.io.UncheckedIOException
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -16,7 +22,15 @@ import java.util.concurrent.TimeUnit
 
 object NativeLoader {
 
-    val LOGGER = SparkCore.logger("Native加载器")
+    val LOGGER by lazy { SparkCore.logger("Native加载器") }
+
+    /** Spark-Core 模组内的 FMOD 原生资源根目录，供运行时和成品 JAR 探针共用。 */
+    const val FMOD_RESOURCE_ROOT = "natives/fmod/2.03.15"
+
+    /** FMOD API 返回的 BCD 版本号，对应随模组打包的 Engine 2.03.15。 */
+    const val FMOD_RUNTIME_VERSION = 0x00020315
+
+    private var fmodAvailable: Boolean? = null
 
     /**
      * 已知的 .so 依赖库到各 Linux 发行版软件包的映射
@@ -188,10 +202,126 @@ object NativeLoader {
      * 并连带打出一条假的降级警告。
      */
     private fun findResourceOrNull(modId: String, relativePath: String): Path? {
+        val path = findModResource(modId, relativePath) ?: return null
+        return if (Files.isRegularFile(path)) path else null
+    }
+
+    /**
+     * 尝试从 Spark-Core 的模组资源加载 FMOD Engine 2.03.15。
+     *
+     * 由首次使用 FMOD 音效的客户端调用。NeoForge 为开发资源目录和成品 JAR 提供相同的资源路径入口。
+     *
+     * @return 两个原生库加载成功时返回 true，调用方继续初始化播放。失败时返回 false，跳过 FMOD 音效。
+     */
+    @JvmStatic
+    fun loadFmod(): Boolean = tryLoadFmod {
+        findModResource(SparkCore.MOD_ID, FMOD_RESOURCE_ROOT)
+            ?: error("未找到 Spark-Core 的 FMOD 资源目录 $FMOD_RESOURCE_ROOT")
+    }
+
+    /**
+     * 尝试从指定资源根目录加载 FMOD。播放探针通过此入口使用与游戏相同的加载和静音判据。
+     *
+     * @param nativeRoot FMOD 2.03.15 的资源根目录，可以是磁盘目录，也可以是 JAR 文件系统内的路径
+     * @return 是否允许调用方继续初始化 FMOD 播放
+     */
+    @JvmStatic
+    fun loadFmod(nativeRoot: Path): Boolean = tryLoadFmod { nativeRoot }
+
+    /**
+     * 串行完成首次加载，并在本进程内复用结果。
+     *
+     * 各平台加载成功后走相同的播放入口。平台不受支持、资源或系统依赖缺失、绑定初始化失败时按静音处理。
+     * 缓存失败可以避免后续音效反复尝试初始化已加载一半的绑定。
+     */
+    @Synchronized
+    private fun tryLoadFmod(resolveRoot: () -> Path): Boolean {
+        fmodAvailable?.let { return it }
+
+        val failure = try {
+            val android = isAndroidRuntime()
+            loadFmodLibraries(resolveRoot().toAbsolutePath().normalize(), android)
+            if (android) {
+                LOGGER.info("FMOD Android arm64 原生库已加载")
+            }
+            fmodAvailable = true
+            return true
+        } catch (e: Exception) {
+            e
+        } catch (e: LinkageError) {
+            e
+        }
+        fmodAvailable = false
+        LOGGER.warn("本次运行将跳过 FMOD 音效：{}", failure.message ?: failure.javaClass.simpleName)
+        return false
+    }
+
+    /**
+     * 识别 Android 进程及 Pojav 系启动器。启动器内嵌的 OpenJDK 可能把系统名报告为 Linux。
+     */
+    private fun isAndroidRuntime(): Boolean =
+        System.getProperty("os.name").equals("Android", ignoreCase = true) ||
+                System.getProperty("java.runtime.name").equals("Android Runtime", ignoreCase = true) ||
+                System.getenv("ANDROID_ROOT") != null ||
+                System.getenv("POJAV_NATIVEDIR") != null
+
+    /**
+     * 按平台和 JVM 架构选择库文件，提取后按 Core、Studio 的依赖顺序打开共享库。
+     *
+     * @param root FMOD 资源根目录
+     * @param android JVM 是否由 Android 宿主运行
+     */
+    private fun loadFmodLibraries(root: Path, android: Boolean) {
+        val arch = when (LwjglPlatform.getArchitecture()) {
+            LwjglPlatform.Architecture.X64 -> "x86_64"
+            LwjglPlatform.Architecture.ARM64 -> "arm64"
+            // FMOD 随包提供 64 位库，按 JVM 架构拒绝 32 位进程。
+            LwjglPlatform.Architecture.X86, LwjglPlatform.Architecture.ARM32 ->
+                error("Spark-Core 的 FMOD 需要 64 位 JVM（x86_64 或 arm64）")
+        }
+        val (platformPath, coreName, studioName) = if (android) {
+            // Pojav 系 OpenJDK 可能报告 Linux，Android 的 Bionic 构件必须优先单独选取。
+            check(arch == "arm64") { "Spark-Core 的 FMOD Android 原生库仅提供 arm64-v8a" }
+            Triple("android/arm64-v8a", "libfmod.so", "libfmodstudio.so")
+        } else {
+            when (LwjglPlatform.get()) {
+                LwjglPlatform.WINDOWS -> Triple("windows/$arch", "fmod.dll", "fmodstudio.dll")
+                // Linux SDK 的实际文件带版本号，按实际文件名查找。macOS 两种架构共用通用二进制。
+                LwjglPlatform.LINUX -> Triple("linux/$arch", "libfmod.so.14.15", "libfmodstudio.so.14.15")
+                LwjglPlatform.MACOSX -> Triple("macos", "libfmod.dylib", "libfmodstudio.dylib")
+            }
+        }
+
+        val source = root.resolve(platformPath)
+        val core = source.resolve(coreName)
+        val studio = source.resolve(studioName)
+        // 确认两个库都能提取，再触发 LWJGL 的类初始化。绑定会在初始化时读取库路径配置。
+        check(Files.isRegularFile(core) && Files.isRegularFile(studio)) {
+            "FMOD Engine 2.03.15 需要同时存在 $core 和 $studio"
+        }
+        val cache = Paths.get(System.getProperty("java.io.tmpdir"), "spark_core_natives", SparkCore.MOD_ID)
+            .resolve(FMOD_RESOURCE_ROOT).resolve(platformPath).toAbsolutePath()
+        val cachedCore = cache.resolve(coreName)
+        val cachedStudio = cache.resolve(studioName)
+        try {
+            extractNativeFile(core, cachedCore)
+            extractNativeFile(studio, cachedStudio)
+        } catch (e: IOException) {
+            throw UncheckedIOException("无法将 FMOD Engine 提取到 $cache", e)
+        }
+
+        // 通过 LWJGL 打开共享库。Android 路径也只执行库链接，宿主的 JNI 和音频初始化由宿主负责。
+        Configuration.FMOD_LIBRARY_NAME.set(cachedCore.toString())
+        Configuration.FMOD_STUDIO_LIBRARY_NAME.set(cachedStudio.toString())
+        FMOD.getLibrary()
+        FMODStudio.getLibrary()
+    }
+
+    /** 解析 NeoForge 模组文件内的路径。调用方按文件或目录各自校验资源是否存在。 */
+    private fun findModResource(modId: String, relativePath: String): Path? {
         val modFileInfo = ModList.get().getModFileById(modId)
             ?: throw ModLoadingException(ModLoadingIssue.error("未找到模组: $modId"))
-        val path = modFileInfo.file.findResource(relativePath) ?: return null
-        return if (Files.isRegularFile(path)) path else null
+        return modFileInfo.file.findResource(relativePath)
     }
 
     /**
@@ -317,48 +447,45 @@ object NativeLoader {
             platformPath,
             archPath
         )
-        Files.createDirectories(targetDir)
-
         val targetFile = targetDir.resolve(libFileName)
-
-        val needCopy = if (Files.exists(targetFile)) {
-            val sourceSize = Files.size(sourceFile)
-            val targetSize = Files.size(targetFile)
-            val sourceModified = Files.getLastModifiedTime(sourceFile)
-            val targetModified = Files.getLastModifiedTime(targetFile)
-            sourceSize != targetSize || sourceModified > targetModified
-        } else {
-            true
-        }
-
-        if (needCopy) {
-            Files.createDirectories(targetFile.parent)
-            val tempFile = Files.createTempFile(targetDir, "tmp_", null)
-            try {
-                Files.copy(sourceFile, tempFile, StandardCopyOption.REPLACE_EXISTING)
-                try {
-                    Files.move(
-                        tempFile,
-                        targetFile,
-                        StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING
-                    )
-                } catch (e: AtomicMoveNotSupportedException) {
-                    Files.move(tempFile, targetFile, StandardCopyOption.REPLACE_EXISTING)
-                }
-            } catch (e: Exception) {
-                try {
-                    Files.deleteIfExists(tempFile)
-                } catch (_: Exception) {
-                }
-                // 带上底层原因：这一段以前只报目标路径，排查时看不到真正失败的原因
-                throw ModLoadingException(ModLoadingIssue.error(
-                    "无法解压Native库文件到临时目录: $targetFile（源: $sourceFile，原因: ${e.message}）"
-                ))
-            }
+        try {
+            extractNativeFile(sourceFile, targetFile)
+        } catch (e: Exception) {
+            throw ModLoadingException(ModLoadingIssue.error(
+                "无法解压Native库文件到临时目录: $targetFile（源: $sourceFile，原因: ${e.message}）"
+            ))
         }
 
         return targetFile.toAbsolutePath().toString()
+    }
+
+    /**
+     * 将原生库复制到可供系统加载的磁盘路径。
+     *
+     * 缓存的大小和修改时间满足复用条件时直接返回。需要更新时先复制到同目录的临时文件，
+     * 再提交完整文件，避免并行启动时读到只复制了一部分的库。
+     *
+     * @param source 开发目录或模组 JAR 内的库文件
+     * @param target 磁盘缓存中的目标文件
+     */
+    private fun extractNativeFile(source: Path, target: Path) {
+        if (Files.exists(target) && Files.size(source) == Files.size(target) &&
+            Files.getLastModifiedTime(source) <= Files.getLastModifiedTime(target)
+        ) return
+
+        val directory = Files.createDirectories(target.parent)
+        val temp = Files.createTempFile(directory, "tmp_", null)
+        try {
+            Files.copy(source, temp, StandardCopyOption.REPLACE_EXISTING)
+            try {
+                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+            } catch (_: AtomicMoveNotSupportedException) {
+                // 文件系统不支持原子移动时，提交已写完的临时文件。
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING)
+            }
+        } finally {
+            Files.deleteIfExists(temp)
+        }
     }
 
     /**

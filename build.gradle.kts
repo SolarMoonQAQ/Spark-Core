@@ -149,6 +149,18 @@ tasks.named<Test>("test") {
     useJUnitPlatform()
 }
 
+tasks.register<JavaExec>("fmodSmoke") {
+    group = "verification"
+    description = "从资源目录或成品 JAR 加载 FMOD 并播放测试音"
+    javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set(file("tools/fmod-smoke/FmodSmoke.java").absolutePath)
+    args(providers.gradleProperty("fmodSmokeSource").getOrElse("src/main/resources/natives/fmod/2.03.15"))
+    if (providers.gradleProperty("fmodSmokeWav").isPresent) {
+        args(layout.buildDirectory.file("fmod-smoke/mixed.wav").get().asFile.absolutePath)
+    }
+}
+
 // ==========================================
 // 打包：只有一个 jar（mod 类 + 内嵌 natives + 资源）
 // 这里曾经有一个 ShadowJar，把 GraalJS 重定位进 jar；Molang 换成自研 Mocha
@@ -156,6 +168,24 @@ tasks.named<Test>("test") {
 // ==========================================
 tasks.named<Jar>("jar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+val fmodBindingVersion = "3.3.5"
+val fmodBinding = "org.lwjgl:lwjgl-fmod:$fmodBindingVersion"
+val fmodBindingArchive by configurations.creating {
+    isCanBeConsumed = false
+    isTransitive = false
+}
+
+val packageFmodBinding = tasks.register<Jar>("packageFmodBinding") {
+    archiveBaseName.set("lwjgl-fmod")
+    archiveVersion.set(fmodBindingVersion)
+    destinationDirectory.set(layout.buildDirectory.dir("fmod-binding"))
+    manifest.attributes("Automatic-Module-Name" to "org.lwjgl.fmod")
+    from({ fmodBindingArchive.map { zipTree(it) } }) {
+        // 专服在初始化客户端 FMOD 之前就会解析内嵌模块，专服的模块层没有 LWJGL Core。
+        exclude("module-info.class", "META-INF/versions/**/module-info.class", "META-INF/MANIFEST.MF")
+    }
 }
 
 tasks.register<JavaExec>("generateJSDocs") {
@@ -174,6 +204,12 @@ fun DependencyHandlerScope.additionalRuntimeClasspath(dep: Any) {
 dependencies {
     // KotlinForForge
     implementation("thedarkcolour:kotlinforforge-neoforge:${property("kotlinforforge_version")}")
+
+    // FMOD 3.3.5 绑定面向 FMOD Engine 2.03；Core 及其原生库由 Minecraft 提供。
+    implementation(fmodBinding) { isTransitive = false }
+    add(fmodBindingArchive.name, fmodBinding)
+    jarJar(files(packageFmodBinding))
+    add("clientAdditionalRuntimeClasspath", fmodBinding) { isTransitive = false }
 
     // === 测试依赖 ===
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
