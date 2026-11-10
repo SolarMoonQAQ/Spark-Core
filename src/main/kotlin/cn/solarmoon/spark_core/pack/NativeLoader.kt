@@ -10,7 +10,6 @@ import net.neoforged.fml.ModLoadingIssue
 import org.lwjgl.fmod.FMOD
 import org.lwjgl.fmod.FMODStudio
 import org.lwjgl.system.Configuration
-import org.lwjgl.system.Platform as LwjglPlatform
 import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.file.AtomicMoveNotSupportedException
@@ -272,23 +271,25 @@ object NativeLoader {
      * @param android JVM 是否由 Android 宿主运行
      */
     private fun loadFmodLibraries(root: Path, android: Boolean) {
-        val arch = when (LwjglPlatform.getArchitecture()) {
-            LwjglPlatform.Architecture.X64 -> "x86_64"
-            LwjglPlatform.Architecture.ARM64 -> "arm64"
-            // FMOD 随包提供 64 位库，按 JVM 架构拒绝 32 位进程。
-            LwjglPlatform.Architecture.X86, LwjglPlatform.Architecture.ARM32 ->
-                error("Spark-Core 的 FMOD 需要 64 位 JVM（x86_64 或 arm64）")
+        // 共用加载器也用于专用服务端。用 JVM 属性识别平台，避免 Kotlin 的枚举映射间接链接 LWJGL。
+        val rawArch = System.getProperty("os.arch", "").lowercase()
+        val arch = resolveArchPath(if (android) Android else Linux, rawArch).removeSuffix("-v8a")
+        check(arch == "x86_64" || arch == "arm64") {
+            "Spark-Core 的 FMOD 需要 64 位 JVM（x86_64 或 arm64），当前架构：$rawArch"
         }
         val (platformPath, coreName, studioName) = if (android) {
             // Pojav 系 OpenJDK 可能报告 Linux，Android 的 Bionic 构件必须优先单独选取。
             check(arch == "arm64") { "Spark-Core 的 FMOD Android 原生库仅提供 arm64-v8a" }
             Triple("android/arm64-v8a", "libfmod.so", "libfmodstudio.so")
         } else {
-            when (LwjglPlatform.get()) {
-                LwjglPlatform.WINDOWS -> Triple("windows/$arch", "fmod.dll", "fmodstudio.dll")
+            val osName = System.getProperty("os.name", "").lowercase()
+            when {
+                osName.startsWith("windows") -> Triple("windows/$arch", "fmod.dll", "fmodstudio.dll")
                 // Linux SDK 的实际文件带版本号，按实际文件名查找。macOS 两种架构共用通用二进制。
-                LwjglPlatform.LINUX -> Triple("linux/$arch", "libfmod.so.14.15", "libfmodstudio.so.14.15")
-                LwjglPlatform.MACOSX -> Triple("macos", "libfmod.dylib", "libfmodstudio.dylib")
+                osName.startsWith("linux") -> Triple("linux/$arch", "libfmod.so.14.15", "libfmodstudio.so.14.15")
+                osName.startsWith("mac") || osName.startsWith("darwin") ->
+                    Triple("macos", "libfmod.dylib", "libfmodstudio.dylib")
+                else -> error("Spark-Core 的 FMOD 未提供 $osName 平台的原生库")
             }
         }
 

@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.registry.client
 
+import cn.solarmoon.spark_core.client.sound.FModSoundPlayer
 import cn.solarmoon.spark_core.entity.player.PlayerApplier
 import cn.solarmoon.spark_core.local_control.LocalController
 import cn.solarmoon.spark_core.pack.diagnostic.client.PackIssueNotifier
@@ -20,6 +21,7 @@ object SparkClientEventRegister {
         add(LocalController)
         add(PackIssueNotifier)
         add(FModModule)
+        add(FModSoundPlayer)
     }
 
     private fun add(event: Any) {

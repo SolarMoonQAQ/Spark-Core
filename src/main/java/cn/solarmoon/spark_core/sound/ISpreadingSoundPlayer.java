@@ -8,6 +8,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.UUID;
 
 public interface ISpreadingSoundPlayer {
@@ -52,6 +53,33 @@ public interface ISpreadingSoundPlayer {
      * 立即停止指定声源
      */
     void stopSound(Level level, UUID soundSource);
+
+    /** 查询当前客户端世界可用的 FMOD bank。服务端默认返回 false。 */
+    default boolean isFmodBankLoaded(Level level, ResourceLocation bankId) {
+        return false;
+    }
+
+    /** 在听者原位播放 FMOD 事件。服务端或无法启动时返回 null。 */
+    @Nullable
+    default UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
+                                 SoundSource category, Map<String, Float> initialParams) {
+        return null;
+    }
+
+    /** 更新 FMOD 实例的局部参数。返回本次更新是否被接受。 */
+    default boolean setFmodParameter(Level level, @Nullable UUID uuid, String name, float value) {
+        return false;
+    }
+
+    /** 按 Studio 事件的停止过渡淡出。服务端或无对应实例时返回 false。 */
+    default boolean fadeFmodSound(Level level, @Nullable UUID uuid) {
+        return false;
+    }
+
+    /** 立即停止 FMOD 实例。服务端或无对应实例时返回 false。 */
+    default boolean stopFmodSound(Level level, @Nullable UUID uuid) {
+        return false;
+    }
 
     @Nullable
     SoundBuffer getSoundBuffer(ResourceLocation location);

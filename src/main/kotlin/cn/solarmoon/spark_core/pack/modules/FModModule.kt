@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.pack.modules
 
+import cn.solarmoon.spark_core.client.sound.FModSoundPlayer
 import cn.solarmoon.spark_core.pack.NativeLoader
 import cn.solarmoon.spark_core.pack.diagnostic.PackIssue
 import cn.solarmoon.spark_core.pack.diagnostic.PackLoadContext
@@ -28,9 +29,12 @@ object FModModule : SparkPackModule {
     override val mode = ReadMode.CLIENT_LOCAL_ONLY
 
     private val pending = linkedMapOf<ResourceLocation, MutableMap<ResourceLocation, ByteArray>>()
-    private var studio = 0L
+    /** 原生句柄仅可在持有本模块锁时使用，避免与重载或退出时的释放交错。 */
+    internal var studio = 0L
+        private set
     @Volatile
-    private var loadedBanks: Set<ResourceLocation> = emptySet()
+    internal var loadedBanks: Map<ResourceLocation, Long> = emptyMap()
+        private set
 
     /** 查询当前客户端会话中是否已加载指定 bank。 */
     @JvmStatic
@@ -77,7 +81,7 @@ object FModModule : SparkPackModule {
                     FMOD_Studio_System_Initialize(studio, 64, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, 0L))
 
                 // 包的首次出现顺序由内容包加载器决定。一个包加载失败时，保留其它包的 bank。
-                val loaded = linkedSetOf<ResourceLocation>()
+                val loaded = linkedMapOf<ResourceLocation, Long>()
                 for ((packId, banks) in pending) {
                     val duplicate = banks.keys.firstOrNull { it in loaded }
                     if (duplicate != null) {
@@ -90,7 +94,7 @@ object FModModule : SparkPackModule {
                     releaseStudio()
                 } else {
                     checkFmod("更新 Studio System", FMOD_Studio_System_Update(studio))
-                    loadedBanks = loaded.toSet()
+                    loadedBanks = loaded.toMap()
                 }
             }
         } catch (e: Exception) {
@@ -111,11 +115,17 @@ object FModModule : SparkPackModule {
         releaseStudio()
     }
 
+    /** 更新失败时释放当前会话，使后续播放请求能走回退。播放器在持锁时调用。 */
+    internal fun disablePlayback(result: Int) {
+        SparkPackIssues.warn(Component.literal("FMOD 播放不可用：" + resultMessage(result)))
+        releaseStudio()
+    }
+
     /** 加载一个包的 bank。任一 bank 加载失败时撤销该包的本轮装载。 */
     private fun loadPackBanks(
         packId: ResourceLocation,
         banks: Map<ResourceLocation, ByteArray>
-    ): Set<ResourceLocation> = MemoryStack.stackPush().use { stack ->
+    ): Map<ResourceLocation, Long> = MemoryStack.stackPush().use { stack ->
         val handle = stack.mallocPointer(1)
         val loaded = linkedMapOf<ResourceLocation, Long>()
         // 按 ID 排序，使包内的次序独立于目录遍历或 ZIP 条目顺序。
@@ -138,19 +148,21 @@ object FModModule : SparkPackModule {
                 if (loaded.isNotEmpty()) {
                     checkFmod("提交 FMOD bank 卸载", FMOD_Studio_System_FlushCommands(studio))
                 }
-                return@use emptySet()
+                return@use emptyMap()
             }
             loaded[bank] = handle[0]
         }
-        loaded.keys.toSet()
+        loaded
     }
 
     /** 清空查询索引，再释放本轮持有的 Studio System。 */
     private fun releaseStudio() {
-        loadedBanks = emptySet()
+        loadedBanks = emptyMap()
         val handle = studio
         studio = 0L
         if (handle == 0L) return
+        // 原生 System 会释放全部实例，客户端同时丢弃旧 UUID 和声源回调。
+        FModSoundPlayer.onStudioReleased()
         try {
             checkFmod("释放 Studio System", FMOD_Studio_System_Release(handle))
         } catch (e: Exception) {

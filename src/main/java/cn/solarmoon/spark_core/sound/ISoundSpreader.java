@@ -2,6 +2,7 @@ package cn.solarmoon.spark_core.sound;
 
 import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -10,6 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -220,6 +222,36 @@ public interface ISoundSpreader {
             return null;
         }
         return SpreadingSoundHelper.transitionSound(level, oldSoundSource, newSoundEvent, soundType, this, fadeIn, fadeOut, loop);
+    }
+
+    /** 查询指定 FMOD bank 是否已在当前客户端加载。服务端返回 false。 */
+    default boolean isFmodBankLoaded(Level level, ResourceLocation bankId) {
+        return SpreadingSoundHelper.isFmodBankLoaded(level, bankId);
+    }
+
+    /**
+     * 在听者原位播放指定 FMOD 事件。客户端在启动前应用初始参数，成功时返回实例 UUID。
+     * 服务端或事件无法启动时返回 null，客户端调用方可按需回退到传播音效。
+     */
+    @Nullable
+    default UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
+                                 SoundSource category, Map<String, Float> initialParams) {
+        return SpreadingSoundHelper.tryPlayFmodSound(level, bankId, eventPath, category, initialParams);
+    }
+
+    /** 为指定 FMOD 实例更新一个局部参数，服务端调用返回 false。 */
+    default boolean setFmodParameter(Level level, @Nullable UUID uuid, String name, float value) {
+        return SpreadingSoundHelper.setFmodParameter(level, uuid, name, value);
+    }
+
+    /** 按 Studio 事件的停止过渡淡出，服务端调用返回 false。 */
+    default boolean fadeFmodSound(Level level, @Nullable UUID uuid) {
+        return SpreadingSoundHelper.fadeFmodSound(level, uuid);
+    }
+
+    /** 立即停止并释放指定 FMOD 实例，服务端调用返回 false。 */
+    default boolean stopFmodSound(Level level, @Nullable UUID uuid) {
+        return SpreadingSoundHelper.stopFmodSound(level, uuid);
     }
 
 }

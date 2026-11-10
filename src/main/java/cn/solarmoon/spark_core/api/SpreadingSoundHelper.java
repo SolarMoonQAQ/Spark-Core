@@ -11,7 +11,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.loading.FMLEnvironment;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -129,6 +131,36 @@ public class SpreadingSoundHelper {
      */
     public static void stopSound(Level level, UUID soundSource) {
         INSTANCE.stopSound(level, soundSource);
+    }
+
+    /** 查询当前客户端世界是否已加载指定 FMOD bank，服务端调用返回 false。 */
+    public static boolean isFmodBankLoaded(Level level, ResourceLocation bankId) {
+        return INSTANCE.isFmodBankLoaded(level, bankId);
+    }
+
+    /**
+     * 在当前客户端世界的听者原位播放 FMOD 事件，并在启动前设置局部参数。
+     * 调用方可以在返回 null 时选择原版音效。服务端调用也返回 null。
+     */
+    @Nullable
+    public static UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
+                                       SoundSource category, Map<String, Float> initialParams) {
+        return INSTANCE.tryPlayFmodSound(level, bankId, eventPath, category, initialParams);
+    }
+
+    /** 按 UUID 更新 FMOD 局部参数。服务端或实例不可用时返回 false。 */
+    public static boolean setFmodParameter(Level level, @Nullable UUID uuid, String name, float value) {
+        return INSTANCE.setFmodParameter(level, uuid, name, value);
+    }
+
+    /** 按 Studio 事件的停止过渡淡出，服务端调用返回 false。 */
+    public static boolean fadeFmodSound(Level level, @Nullable UUID uuid) {
+        return INSTANCE.fadeFmodSound(level, uuid);
+    }
+
+    /** 立即停止并释放 FMOD 实例，服务端调用返回 false。 */
+    public static boolean stopFmodSound(Level level, @Nullable UUID uuid) {
+        return INSTANCE.stopFmodSound(level, uuid);
     }
 
     public static SoundBuffer getSoundBuffer(ResourceLocation location) {

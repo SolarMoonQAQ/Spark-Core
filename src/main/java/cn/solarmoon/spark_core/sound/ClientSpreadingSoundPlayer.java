@@ -1,5 +1,6 @@
 package cn.solarmoon.spark_core.sound;
 
+import cn.solarmoon.spark_core.client.sound.FModSoundPlayer;
 import cn.solarmoon.spark_core.mixin_interface.ISoundManagerMixin;
 import com.mojang.blaze3d.audio.SoundBuffer;
 import net.minecraft.client.Minecraft;
@@ -93,6 +94,43 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
     @Override
     public void stopSound(Level level, UUID soundSource) {
         stopSound(soundSource);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isFmodBankLoaded(Level level, ResourceLocation bankId) {
+        return isCurrentClientLevel(level) && FModSoundPlayer.isBankLoaded(bankId);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public @Nullable UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
+                                          SoundSource category, Map<String, Float> initialParams) {
+        return isCurrentClientLevel(level) ? FModSoundPlayer.tryPlay(bankId, eventPath, initialParams, category) : null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean setFmodParameter(Level level, @Nullable UUID uuid, String name, float value) {
+        return uuid != null && isCurrentClientLevel(level) && FModSoundPlayer.setParameter(uuid, name, value);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean fadeFmodSound(Level level, @Nullable UUID uuid) {
+        return uuid != null && isCurrentClientLevel(level) && FModSoundPlayer.fadeOut(uuid);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean stopFmodSound(Level level, @Nullable UUID uuid) {
+        return uuid != null && isCurrentClientLevel(level) && FModSoundPlayer.stop(uuid);
+    }
+
+    /** FMOD 属于当前客户端世界。物理客户端里的集成服务端也会走到此分派入口。 */
+    private static boolean isCurrentClientLevel(Level level) {
+        // 先检查逻辑侧，集成服务端线程不会访问客户端世界。
+        return level.isClientSide() && Minecraft.getInstance().level == level;
     }
 
     @Override
