@@ -25,6 +25,23 @@ public abstract class ParticleRenderType extends RenderType {
      */
     private static final Function<ResourceLocation, RenderType> ADDITIVE_PARTICLE_CACHE =
             Util.memoize(ParticleRenderType::createAdditiveParticle);
+    private static final Function<ResourceLocation, RenderType> BLENDED_PARTICLE_CACHE =
+            Util.memoize(ParticleRenderType::createBlendedParticle);
+
+    /** 半透明烟尘接受世界深度测试，只写颜色；淡出的公告板不成为后处理的实体遮挡面。 */
+    private static RenderType createBlendedParticle(ResourceLocation texture) {
+        CompositeState state = CompositeState.builder()
+                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                .setCullState(NO_CULL)
+                .setLightmapState(LIGHTMAP)
+                .setOverlayState(OVERLAY)
+                .setWriteMaskState(COLOR_WRITE)
+                .createCompositeState(false);
+        return create("particle_blended", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+                1536, true, true, state);
+    }
 
     /**
      * 获取 additive（叠加）混合模式的 RenderType（缓存）。
@@ -64,7 +81,7 @@ public abstract class ParticleRenderType extends RenderType {
         return switch (material) {
             case "particles_opaque", "particles_alpha" -> RenderType.entityCutout(texture);
             case "particles_add" -> additiveParticle(texture);
-            default -> RenderType.entityTranslucent(texture);
+            default -> BLENDED_PARTICLE_CACHE.apply(texture);
         };
     }
 }
