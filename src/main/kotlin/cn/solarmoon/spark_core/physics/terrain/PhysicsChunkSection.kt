@@ -202,9 +202,14 @@ class PhysicsChunkSection(
                 val shape = childShape.shape
                 val childTransform = childShape.copyTransform(null)
 
-                // 合并变换：方块位置 + 子形状相对位置
-                val combinedTransform =
-                    MyMath.combine(Transform(relativePos, Quaternion.IDENTITY), childTransform, null)
+                // 合并变换：先应用子形状相对方块中心的变换，再平移到方块在 section
+                // 局部坐标系中的位置。MyMath.combine(child, parent, store) 中第一个参数
+                // 是「先应用」的 child，顺序写反会把子形状的偏移绕 section 原点旋转。
+                val combinedTransform = MyMath.combine(
+                    childTransform,
+                    Transform(relativePos, Quaternion.IDENTITY),
+                    null
+                )
 
                 // 添加子形状到最终的复合形状
                 compoundShape.addChildShape(shape, combinedTransform)
