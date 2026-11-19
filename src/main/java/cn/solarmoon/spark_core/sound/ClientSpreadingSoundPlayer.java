@@ -122,6 +122,15 @@ public class ClientSpreadingSoundPlayer implements ISpreadingSoundPlayer {
 
     /** {@inheritDoc} */
     @Override
+    public @Nullable UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
+                                          SoundSource category, Map<String, Float> initialParams,
+                                          Vec3 position, Vec3 velocity) {
+        return isCurrentClientLevel(level)
+                ? FModSoundPlayer.tryPlay(bankId, eventPath, initialParams, category, position, velocity) : null;
+    }
+
+    /** {@inheritDoc} */
+    @Override
     public boolean setFmodParameter(Level level, @Nullable UUID uuid, String name, float value) {
         return uuid != null && isCurrentClientLevel(level) && FModSoundPlayer.setParameter(uuid, name, value);
     }

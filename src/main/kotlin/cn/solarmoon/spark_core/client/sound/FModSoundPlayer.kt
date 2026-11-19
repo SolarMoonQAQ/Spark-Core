@@ -20,16 +20,27 @@ import org.lwjgl.fmod.FMOD_VECTOR
 import org.lwjgl.system.MemoryStack
 import java.util.UUID
 
-/** 客户端 FMOD 播放入口。2D 事件直接播放，绑定声源的 3D 事件跟随其位姿。 */
+/** 客户端 FMOD 播放入口。2D 事件在听者原位播放，3D 事件跟随声源或落在世界定点。 */
 object FModSoundPlayer {
     private const val INTERIOR = "interior"
+
+    /**
+     * 3D 事件的声源形状。
+     *
+     * [Tracking] 每帧向声源取样位置与速度，`interior` 也由播放器按听者判定维护；
+     * [Point] 的世界定点与速度只在启动时取一次，播放期间不动，`interior` 因此留给调用方在初始参数里写。
+     */
+    private sealed interface Source {
+        class Tracking(val spreader: ISoundSpreader) : Source
+        class Point(val position: Vec3, val velocity: Vec3) : Source
+    }
 
     private class Voice(
         val handle: Long,
         val description: Long,
         val level: ClientLevel,
         val category: SoundSource,
-        val soundSpreader: ISoundSpreader?,
+        val source: Source?,
         val spatial: Boolean
     ) {
         var paused = false
@@ -50,8 +61,9 @@ object FModSoundPlayer {
      * 资源缺失、初始参数无效或启动失败时返回空，调用方可播放备用音效。
      * 返回 UUID 表示 Studio 已接受启动命令，实际出声由 Studio 异步处理。
      * 循环由 Studio 事件定义，[category] 对应 Minecraft 的音量选项。
-     * 绑定 [soundSpreader] 后，播放器用实时听者判定维护可选的 interior 参数。
-     * 只有绑定声源的 3D 事件才读取位置和速度。播放和控制方法须在客户端主线程调用。
+     * 不绑定声源时按 2D 在听者原位播放；绑定 [soundSpreader] 后，3D 事件跟随声源，
+     * 并用实时听者判定维护可选的 interior 参数。
+     * 只有 3D 事件才读取位置和速度。播放和控制方法须在客户端主线程调用。
      */
     @JvmStatic
     @JvmOverloads
@@ -61,9 +73,41 @@ object FModSoundPlayer {
         initialParams: Map<String, Float> = emptyMap(),
         category: SoundSource = SoundSource.NEUTRAL,
         soundSpreader: ISoundSpreader? = null
+    ): UUID? = start(
+        bankId, eventPath, initialParams, category,
+        soundSpreader?.let { Source.Tracking(it) }
+    )
+
+    /**
+     * 在世界的定点播放 3D 事件，一次性事件由此入口播放。
+     * 位置与速度只在启动时取一次，听者移动后相对位置每帧重算，多普勒取 [velocity]。
+     * 定点没有声源侧的听者判定，需要车内混音的事件由调用方把 `interior` 放进 [initialParams]。
+     * 其余与声源版相同：服务端、资源缺失或启动失败时返回空。
+     */
+    @JvmStatic
+    fun tryPlay(
+        bankId: ResourceLocation,
+        eventPath: String,
+        initialParams: Map<String, Float>,
+        category: SoundSource,
+        position: Vec3,
+        velocity: Vec3
+    ): UUID? = start(
+        bankId, eventPath, initialParams, category,
+        Source.Point(position, velocity)
+    )
+
+    private fun start(
+        bankId: ResourceLocation,
+        eventPath: String,
+        initialParams: Map<String, Float>,
+        category: SoundSource,
+        source: Source?
     ): UUID? {
         val client = Minecraft.getInstance()
         if (!client.isSameThread || !eventPath.startsWith("event:/") || '\u0000' in eventPath) return null
+        // 定点的位置与速度只有启动时这一份，非有限值在这里拦掉，避免写进原生混音。
+        if (source is Source.Point && (!source.position.isFinite() || !source.velocity.isFinite())) return null
         val level = client.level ?: return null
         return synchronized(FModModule) {
             val bank = FModModule.loadedBanks[bankId] ?: return@synchronized null
@@ -71,13 +115,13 @@ object FModSoundPlayer {
             MemoryStack.stackPush().use { stack ->
                 val pointer = stack.mallocPointer(1)
                 val description = findEvent(studio, bank, eventPath, stack) ?: return@use null
-                val spatial = if (soundSpreader == null) false else {
+                val spatial = if (source == null) false else {
                     val is3D = stack.mallocInt(1)
                     if (FMOD_Studio_EventDescription_Is3D(description, is3D) != FMOD_OK) return@use null
                     is3D[0] != 0
                 }
                 if (FMOD_Studio_EventDescription_CreateInstance(description, pointer) != FMOD_OK) return@use null
-                val voice = Voice(pointer[0], description, level, category, soundSpreader, spatial)
+                val voice = Voice(pointer[0], description, level, category, source, spatial)
                 val uuid = UUID.randomUUID()
                 var started = false
                 try {
@@ -207,13 +251,20 @@ object FModSoundPlayer {
         return origin.takeIf { FMOD_Studio_System_SetListenerAttributes(studio, 0, attributes, null) == FMOD_OK }
     }
 
-    /** 按 UUID 取样当前位置和世界速度。首版点声源使用固定朝向。 */
+    /** 按 UUID 取样当前位置和世界速度。定点只读启动时的那一份，首版点声源使用固定朝向。 */
     private fun updateSource(uuid: UUID, voice: Voice, origin: Vec3, attributes: FMOD_3D_ATTRIBUTES): Boolean {
-        val source = voice.soundSpreader ?: return false
-        val position = source.getPosition(uuid).subtract(origin)
-        if (!position.isFinite()) return false
-        val velocity = if (voice.paused) Vec3.ZERO else source.getSpeed(uuid)
-        attributes.`position$`().setFrom(position)
+        val source = voice.source ?: return false
+        val position = when (source) {
+            is Source.Tracking -> source.spreader.getPosition(uuid)
+            is Source.Point -> source.position
+        }
+        val velocity = if (voice.paused) Vec3.ZERO else when (source) {
+            is Source.Tracking -> source.spreader.getSpeed(uuid)
+            is Source.Point -> source.velocity
+        }
+        val relative = position.subtract(origin)
+        if (!relative.isFinite()) return false
+        attributes.`position$`().setFrom(relative)
         attributes.velocity().setFrom(if (velocity.isFinite()) velocity else Vec3.ZERO)
         attributes.forward().set(0f, 0f, -1f)
         attributes.up().set(0f, 1f, 0f)
@@ -269,15 +320,15 @@ object FModSoundPlayer {
             }
         }
 
-    /** 绑定声源后只有播放器能驱动车内混音，未绑定声源的事件仍可自行传参。 */
+    /** 绑定跟随声源后只有播放器能驱动车内混音，定点与 2D 事件仍可自行传参。 */
     private fun usesListenerParameter(voice: Voice, name: String): Boolean =
-        voice.soundSpreader != null && name.equals(INTERIOR, ignoreCase = true)
+        voice.source is Source.Tracking && name.equals(INTERIOR, ignoreCase = true)
 
     /** 仅在听者判定改变时写参数。事件缺少可写的 interior 时继续按工程默认播放。 */
     private fun updateInterior(voice: Voice, cameraEntity: Entity?, firstPerson: Boolean) {
-        val soundSpreader = voice.soundSpreader ?: return
+        val spreader = (voice.source as? Source.Tracking)?.spreader ?: return
         if (!isWritableParameter(voice, INTERIOR)) return
-        val interior = soundSpreader.shouldApplyInteriorEffect(cameraEntity, firstPerson)
+        val interior = spreader.shouldApplyInteriorEffect(cameraEntity, firstPerson)
         if (voice.interior != interior && writeParameter(voice, INTERIOR, if (interior) 1f else 0f)) {
             voice.interior = interior
         }

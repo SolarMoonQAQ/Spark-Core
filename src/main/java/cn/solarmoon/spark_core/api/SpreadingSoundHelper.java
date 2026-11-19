@@ -158,6 +158,17 @@ public class SpreadingSoundHelper {
         return INSTANCE.tryPlayFmodSound(soundSpreader.getLevel(), bankId, eventPath, category, initialParams, soundSpreader);
     }
 
+    /**
+     * 在世界的定点播放一次性 FMOD 事件，位置与速度只在启动时取一次。
+     * 3D 事件按该点的世界坐标衰减，听者移动后相对位置每帧重算；服务端或实例起不来时返回 null。
+     */
+    @Nullable
+    public static UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
+                                       SoundSource category, Map<String, Float> initialParams,
+                                       Vec3 position, Vec3 velocity) {
+        return INSTANCE.tryPlayFmodSound(level, bankId, eventPath, category, initialParams, position, velocity);
+    }
+
     /** 按 UUID 更新 FMOD 局部参数。服务端或实例不可用时返回 false。 */
     public static boolean setFmodParameter(Level level, @Nullable UUID uuid, String name, float value) {
         return INSTANCE.setFmodParameter(level, uuid, name, value);

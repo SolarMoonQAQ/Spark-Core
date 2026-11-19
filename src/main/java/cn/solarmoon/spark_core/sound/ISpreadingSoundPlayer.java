@@ -69,6 +69,17 @@ public interface ISpreadingSoundPlayer {
         return null;
     }
 
+    /**
+     * 在世界的定点播放 3D 事件。位置与速度只在启动时取一次，服务端或无法启动时返回 null。
+     * 定点没有声源侧的听者判定，需要车内混音的事件由调用方把 {@code interior} 写进初始参数。
+     */
+    @Nullable
+    default UUID tryPlayFmodSound(Level level, ResourceLocation bankId, String eventPath,
+                                 SoundSource category, Map<String, Float> initialParams,
+                                 Vec3 position, Vec3 velocity) {
+        return null;
+    }
+
     /** 更新 FMOD 实例的局部参数。返回本次更新是否被接受。 */
     default boolean setFmodParameter(Level level, @Nullable UUID uuid, String name, float value) {
         return false;
