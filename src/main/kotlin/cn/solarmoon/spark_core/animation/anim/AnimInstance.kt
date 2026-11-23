@@ -21,12 +21,12 @@ import kotlin.reflect.KClass
  * 动画实例 —— 封装单个动画的播放生命周期。
  *
  * 提供两个构造路径：
- * - [AnimInstance(IAnimatable, OAnimation)] — 直接传入已解析的 [OAnimation]，
- *   用于 MultiAnimStateMachine 回退动画场景（动画来自素体/内置集而非 target 自身模型）。
+ * - [AnimInstance(IAnimatable, OAnimation)] — 直接传入已解析的 [OAnimation]，用于动画片段已经
+ *   由动画体的资源绑定解析出来的场景（单目标控制器的按名播放、事件动画、外部持有片段引用的调用方）。
  * - [AnimInstance(IAnimatable, AnimIndex)] — 通过 [AnimIndex] 从持有者模型集中查找，
- *   标准路径，用于动画来自 target 自身模型的场景。
+ *   用于显式指定模型索引与片段名的场景。
  */
-class AnimInstance internal constructor(
+class AnimInstance(
     val holder: IAnimatable<*>,
     val origin: OAnimation
 ) {

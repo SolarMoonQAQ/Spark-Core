@@ -5,13 +5,11 @@ import cn.solarmoon.spark_core.animation.state.AnimStateMachine
 import cn.solarmoon.spark_core.gas.GameplayTagContainer
 import cn.solarmoon.spark_core.state_machine.graph.StateMachineGraph
 import cn.solarmoon.spark_core.state_machine.graph.StateNode
-import cn.solarmoon.spark_core.state_machine.graph.StateTransition
 import cn.solarmoon.spark_core.state_machine.graph.StateVariableContainer
 import cn.solarmoon.spark_core.state_machine.graph.actions.MoLangAction
 import cn.solarmoon.spark_core.state_machine.graph.actions.ParticleAction
 import cn.solarmoon.spark_core.state_machine.graph.actions.PlayAnimAction
 import cn.solarmoon.spark_core.state_machine.graph.actions.SoundAction
-import cn.solarmoon.spark_core.state_machine.graph.conditions.MoLangCondition
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 
@@ -61,13 +59,7 @@ data class OAnimStateMachine(
 
             StateNode(
                 name = stateName,
-                transitions = os.transitions.map { (target, condition) ->
-                    StateTransition(
-                        event = null,  // Bedrock 模式：每 tick 自动求值
-                        target = target,
-                        condition = MoLangCondition(condition)  // JSMolangValue 对象，避免重新编译
-                    )
-                },
+                transitions = os.transitions.map { (target, trigger) -> OTransitionTrigger.from(trigger).toTransition(target) },
                 onEntry = buildList {
                     addAll(animActions)
                     os.onEntry.takeIf { it.value != "0" }?.let { add(MoLangAction(it)) }
@@ -92,9 +84,20 @@ data class OAnimStateMachine(
     companion object {
         val CODEC: Codec<OAnimStateMachine> = RecordCodecBuilder.create { ins ->
             ins.group(
-                Codec.STRING.fieldOf("initial_state").forGetter { it.initialState },
-                Codec.unboundedMap(Codec.STRING, OAnimState.CODEC).fieldOf("states").forGetter { it.states }
-            ).apply(ins, ::OAnimStateMachine)
+                Codec.STRING.optionalFieldOf("initial_state")
+                    .forGetter { java.util.Optional.of(it.initialState) },
+                Codec.unboundedMap(Codec.STRING, OAnimState.CODEC)
+                    .xmap({ LinkedHashMap(it) }, { LinkedHashMap(it) })
+                    .fieldOf("states")
+                    .forGetter { LinkedHashMap(it.states) }
+            ).apply(ins) { initialState, states ->
+                OAnimStateMachine(
+                    initialState.orElseGet {
+                        states.keys.firstOrNull() ?: error("动画控制器 states 不能为空")
+                    },
+                    states
+                )
+            }
         }
     }
 

@@ -17,7 +17,7 @@ enum class Loop {
                 { it.name.lowercase() }
             )
         ).xmap(
-            { it.map({TRUE}, {it}) },
+            { it.map({ loop -> if (loop) TRUE else ONCE }, { mode -> mode }) },
             { if (it == TRUE) Either.left(true) else Either.right(it) }
         )
 

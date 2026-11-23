@@ -14,7 +14,7 @@ data class OAnimState(
     val onExit: JSMolangValue,
     val particleEffects: List<OParticleEffect>,
     val soundEffects: List<String>,
-    val transitions: Map<String, JSMolangValue>,
+    val transitions: List<Pair<String, JSMolangValue>>,
     val blendTransition: Float,
     val blendViaShortestPath: Boolean
 ) {
@@ -47,17 +47,9 @@ data class OAnimState(
                 Codec.STRING.listOf().optionalFieldOf("sound_effects", listOf()).forGetter { it.soundEffects },
 
                 Codec.unboundedMap(Codec.STRING, JSMolangValue.CODEC).listOf().xmap(
-                    { l ->
-                        val map = mutableMapOf<String, JSMolangValue>()
-                        for (stringMolangValueMap in l) {
-                            for ((key, value) in stringMolangValueMap) {
-                                map[key] = value
-                            }
-                        }
-                        map.toMap()
-                    },
-                    { listOf(it) }
-                ).optionalFieldOf("transitions", mapOf<String, JSMolangValue>()).forGetter { it.transitions },
+                    { groups -> groups.flatMap { it.toList() } },
+                    { entries -> entries.map { mapOf(it) } }
+                ).optionalFieldOf("transitions", emptyList()).forGetter { it.transitions },
 
                 Codec.FLOAT.optionalFieldOf("blend_transition", 0f).forGetter { it.blendTransition },
                 Codec.BOOL.optionalFieldOf("blend_via_shortest_path", false).forGetter { it.blendViaShortestPath }

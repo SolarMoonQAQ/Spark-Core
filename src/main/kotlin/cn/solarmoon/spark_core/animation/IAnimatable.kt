@@ -28,6 +28,25 @@ interface IAnimatable<T> {
     val defaultModelIndex: ModelIndex
 
     /**
+     * 动画集资源键；{@code null} 表示没有绑定动画集。
+     *
+     * 默认从 [modelController] 的**当前**模型索引派生：模型决定骨骼与 locator，动画集默认与模型同名。
+     * 运行期换模后本键随之变化；[defaultModelIndex] 只负责初始模型选择。
+     * 实现类可覆写以独立指定动画集。
+     */
+    val animationSetKey: AnimResourceKey?
+        get() = modelController.model?.index?.let { AnimResourceKey(it.type, it.location) }
+
+    /**
+     * 控制器集资源键；{@code null} 表示没有绑定控制器集。
+     *
+     * 默认与 [animationSetKey] 一样从当前模型索引派生，但两者在各自的资源表里解析：
+     * 控制器集不从动画集推导，可以指向另一套资源。
+     */
+    val controllerSetKey: AnimResourceKey?
+        get() = modelController.model?.index?.let { AnimResourceKey(it.type, it.location) }
+
+    /**
      * 动画控制器，包含了对动画的控制/过渡/混合/获取等控制性操作，在类中新建一个新的即可
      */
     val animController: AnimController

@@ -1,6 +1,7 @@
 package cn.solarmoon.spark_core.animation.state.origin
 
 import cn.solarmoon.spark_core.SparkCore
+import cn.solarmoon.spark_core.animation.AnimResourceKey
 import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.anim.AnimGroups
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet
@@ -13,7 +14,6 @@ import cn.solarmoon.spark_core.state_machine.graph.StateMachineGraph
 import cn.solarmoon.spark_core.state_machine.graph.StateVariableContainer
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
-import net.minecraft.resources.ResourceLocation
 
 data class OAnimStateMachineSet(
     val animationControllers: MutableMap<String, OAnimStateMachine>
@@ -75,9 +75,9 @@ data class OAnimStateMachineSet(
      *   <li>未传入 [variables] 或 [tags] 时在本方法内新建并递归共享</li>
      * </ul>
      *
-     * <p>JSON 控制器使用 [cn.solarmoon.spark_core.state_machine.graph.conditions.MoLangCondition] 做转移条件，
-     * 不支持事件触发转移和 [cn.solarmoon.spark_core.state_machine.graph.conditions.CheckVariableCondition]。
-     * 需要硬编码补充时可直接构造 [MultiAnimStateMachine] 并传入同一份 [variables]。
+     * <p>JSON 控制器支持 MoLang 条件转移，以及由 Blockbench 条件 `event.<事件名>` 声明的一次性事件转移；
+     * 不支持 [cn.solarmoon.spark_core.state_machine.graph.conditions.CheckVariableCondition]。
+     * 需要补充变量条件时，可直接构造 [MultiAnimStateMachine] 并传入同一份 [variables]。
      *
      * @param animTargets        广播目标列表（如机甲的所有 SubPart）
      * @param contextProvider    MoLang 上下文提供者（来自宿主实体）
@@ -130,6 +130,26 @@ data class OAnimStateMachineSet(
     }
 
     /**
+     * 本控制器集里由状态按动画名引用的片段名集合。
+     *
+     * <p>判据与 [compiledGraphs] 相同：状态 `animations` 的键能解析成控制器集里的控制器时是子控制器，
+     * 其余键才是动画片段名。动画体据此划分循环片段的归属——命中的片段随控制器状态启停，
+     * 未命中的 `loop:true` 片段由动画体自己播放。
+     *
+     * <p>回环引用的控制器名会进入返回集合：那个名字在被引用处解析不出子控制器，
+     * 而回环本身已在 [compiledGraphs] 记录错误日志。
+     */
+    fun referencedAnimationNames(): Set<String> = buildSet {
+        animationControllers.values.forEach { controller ->
+            controller.states.values.forEach { state ->
+                state.animations.keys.forEach { name ->
+                    if (name !in animationControllers) add(name)
+                }
+            }
+        }
+    }
+
+    /**
      * 编译全部控制器为 [StateMachineGraph]（带回环检测）。
      */
     private fun compiledGraphs(): Map<String, StateMachineGraph> {
@@ -156,9 +176,31 @@ data class OAnimStateMachineSet(
     }
 
     companion object {
-        val ORIGINS = mutableMapOf<ResourceLocation, OAnimStateMachineSet>()
+        /** 已发布的控制器集，键含资源类型。加载器整表替换，不就地改写。 */
+        @JvmStatic
+        var ORIGINS: MutableMap<AnimResourceKey, OAnimStateMachineSet> = linkedMapOf()
 
-        fun getOrEmpty(modelIndex: ResourceLocation?) = ORIGINS[modelIndex] ?: OAnimStateMachineSet(mutableMapOf())
+        /** 共享的空控制器集。 */
+        @JvmStatic
+        val EMPTY: OAnimStateMachineSet = OAnimStateMachineSet(linkedMapOf())
+
+        /**
+         * 按资源键查找控制器集；没有对应集合时返回 {@code null}。
+         *
+         * 返回 {@code null} 而不是每次新建空集合：绑定比较用对象引用，临时空集会让判据永远不成立。
+         */
+        @JvmStatic
+        fun getOrNull(key: AnimResourceKey?): OAnimStateMachineSet? = if (key == null) null else ORIGINS[key]
+
+        /**
+         * 整表替换已发布的控制器集。
+         *
+         * 加载器在全部文件读完后一次调用；资源重载后同一键对应的对象引用会变化，动画体据此重新绑定。
+         */
+        @JvmStatic
+        fun publish(sets: Map<AnimResourceKey, OAnimStateMachineSet>) {
+            ORIGINS = LinkedHashMap(sets)
+        }
 
         val CODEC: Codec<OAnimStateMachineSet> = RecordCodecBuilder.create { ins ->
             ins.group(
