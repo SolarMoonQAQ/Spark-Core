@@ -265,10 +265,6 @@ repositories {
     mavenCentral()
 
     maven {
-        name = "Progwml6 maven"
-        url = uri("https://dvs1.progwml6.com/files/maven/")
-    }
-    maven {
         name = "ModMaven"
         url = uri("https://modmaven.dev")
     }
@@ -287,10 +283,6 @@ repositories {
         url = uri("https://maven.blamejared.com/")
     }
     maven {
-        name = "tterrag maven"
-        url = uri("https://maven.tterrag.com/")
-    }
-    maven {
         name = "Create Maven"
         url = uri("https://maven.createmod.net")
     }
@@ -300,12 +292,6 @@ repositories {
     }
     maven {
         url = uri("https://api.modrinth.com/maven")
-    }
-    maven {
-        url = uri("https://maven.ryanliptak.com/")
-    }
-    maven {
-        url = uri("https://maven.theillusivec4.top/")
     }
     maven {
         name = "Kotlin for Forge"
@@ -320,13 +306,6 @@ repositories {
     }
     maven {
         url = uri("https://maven.azuredoom.com/mods")
-    }
-    maven {
-        url = uri("https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core")
-        credentials {
-            username = System.getenv("GITMAVEN_USERNAME")
-            password = System.getenv("SolarMoonCore_TOKEN")
-        }
     }
     flatDir {
         dirs("libs")
