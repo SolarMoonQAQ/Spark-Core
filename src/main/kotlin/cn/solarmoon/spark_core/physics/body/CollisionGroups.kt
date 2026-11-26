@@ -69,5 +69,5 @@ object CollisionGroups {
      * Collision groups tracked by WorldSnapshot, i.e. the set of bodies visible to
      * main-thread read-only queries.
      */
-    val SNAPSHOT_TRACKED = setOf(PHYSICS_BODY, PROJECTILE)
+    val SNAPSHOT_TRACKED = setOf(PHYSICS_BODY, PAWN, PROJECTILE)
 }

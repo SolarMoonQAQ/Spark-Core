@@ -129,6 +129,10 @@ class WorldSnapshot(
      */
     fun syncTransform() {
         for ((main, snap) in snapshotMap) {
+            // Entity proxies replace their shape when the tracked entity dimensions change.
+            if (snap.collisionShape !== main.collisionShape) {
+                snap.collisionShape = main.collisionShape
+            }
             if (!main.isStatic)
                 syncPose(main, snap)
         }
