@@ -67,15 +67,15 @@ object SparkPackLoaderApplier {
                 )
             }
         } else if (event.packType == PackType.SERVER_DATA) {
-            if (DATA_PACK.size(PackType.SERVER_DATA) == 0) {
-                // 首次进入世界，未触发重载时，预加载服务器数据
-                SparkPackLoader.apply {
-                    beginSession(PackLoadContext.SERVER_LOCAL)
-                    initialize(false)
-                    readPackageGraph(PackLoadContext.SERVER_LOCAL)
-                    readPackageContent(PackLoadContext.SERVER_LOCAL)
-                    injectPackageContent(PackLoadContext.SERVER_LOCAL)
-                }
+            // 每次创建服务端数据包仓库都从当前内容包重建，避免上个世界或 reload 留下的条目
+            // 让 size 门控跳过新一轮加载。
+            DATA_PACK.clear(PackType.SERVER_DATA)
+            SparkPackLoader.apply {
+                beginSession(PackLoadContext.SERVER_LOCAL)
+                initialize(false)
+                readPackageGraph(PackLoadContext.SERVER_LOCAL)
+                readPackageContent(PackLoadContext.SERVER_LOCAL)
+                injectPackageContent(PackLoadContext.SERVER_LOCAL)
             }
             // 添加为虚拟数据包
             event.addRepositorySource { consumer ->

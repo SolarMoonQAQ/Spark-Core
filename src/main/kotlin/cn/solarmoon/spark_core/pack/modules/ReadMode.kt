@@ -16,6 +16,20 @@ enum class ReadMode {
     },
 
     /**
+     * 只在服务端读取本地内容包；原始模块文件不通过 Spark payload 发送。
+     * Minecraft 自身对解析后数据的同步不受此模式影响。
+     */
+    SERVER_LOCAL_ONLY {
+        override fun shouldRead(isClientSide: Boolean): Boolean {
+            return !isClientSide
+        }
+
+        override fun shouldSend(): Boolean {
+            return false
+        }
+    },
+
+    /**
      * 双端都只读取本地文件
      */
     LOCAL_ONLY {

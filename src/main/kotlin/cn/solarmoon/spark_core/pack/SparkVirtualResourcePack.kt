@@ -37,6 +37,10 @@ class SparkVirtualResourcePack(val type: PackType, val id: String) : PackResourc
 
     fun size(type: PackType) = resources[type]?.size ?: 0
 
+    fun clear(type: PackType) {
+        resources[type]!!.clear()
+    }
+
     fun put(
         type: PackType,
         id: ResourceLocation,
